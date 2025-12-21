@@ -1,0 +1,45 @@
+# ==========================================
+# 동네비서 - Git 제외 파일
+# ==========================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 가상환경
+venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Streamlit 시크릿 (민감 정보)
+.streamlit/secrets.toml
+
+# Google Cloud 서비스 계정 키
+service_account.json
+
+# 로컬 테스트/임시 파일
+stores.json
+ngrok.exe
+*.txt
+!requirements.txt
+
+# OS 파일
+.DS_Store
+Thumbs.db
+
+# 주문/테스트 데이터
+주문장부.txt
+test_input.txt

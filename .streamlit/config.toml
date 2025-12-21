@@ -1,0 +1,24 @@
+# ==========================================
+# 동네비서 - Streamlit 설정
+# ==========================================
+
+[server]
+headless = true
+port = 8501
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#333333"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#fafafa"
+textColor = "#333333"
+font = "sans serif"
+
+[client]
+showErrorDetails = false
+toolbarMode = "minimal"
+
