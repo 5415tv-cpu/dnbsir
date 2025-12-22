@@ -36,7 +36,8 @@ except Exception as e:
 st.set_page_config(
     page_title="동네비서 - 똑똑한 AI 이웃", 
     page_icon="🏘️", 
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # CSS 스타일 - 모바일 최적화 미니멀리즘 (라인 디자인)
