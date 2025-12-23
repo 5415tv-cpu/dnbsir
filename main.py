@@ -77,27 +77,47 @@ html, body, [class*="css"] {
 /* 카드 스타일 */
 .app-card {
     background-color: #ffffff;
-    border: 2px solid #333333;
-    border-radius: 12px;
-    padding: 20px;
+    border: 3px solid #007bff;
+    border-radius: 15px;
+    padding: 25px;
     margin-bottom: 15px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 15px rgba(0, 123, 255, 0.15);
     cursor: pointer;
-    transition: all 0.2s ease;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .app-card:hover {
-    transform: translateY(-5px);
-    border-color: #007bff;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.02);
+    background-color: #f8fbff;
+    box-shadow: 0 10px 20px rgba(0, 123, 255, 0.25);
 }
 .app-card h3 {
     color: #333333;
-    font-size: 1.1em;
-    margin-bottom: 5px;
+    font-size: 1.2em;
+    margin-bottom: 8px;
 }
 .app-card p {
     color: #666666;
     font-size: 0.9em;
+}
+
+/* 아이콘 크기 및 색상 강조 */
+.card-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+/* 눌러보세요 유도 문구 스타일 */
+.action-btn {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 5px 15px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.8rem;
 }
 
 /* 상단/하단 고정바 스타일 */
