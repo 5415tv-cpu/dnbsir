@@ -1324,7 +1324,7 @@ def render_general_form(store, store_id):
 # 📱 사이드바 메뉴
 # ==========================================
 with st.sidebar:
-    st.markdown("**동네비서**")
+    st.markdown("<h1 style='font-size: 2rem; margin-bottom: 1rem;'>🏘️ 동네비서</h1>", unsafe_allow_html=True)
     
     menu = st.radio(
         "메뉴", 
@@ -1421,7 +1421,7 @@ if menu == "서비스 선택":
         # --- 상단 레이아웃 ---
         col1, col2 = st.columns([3, 1])
         with col1:
-            st.markdown('### 동네비서')
+            st.markdown("<h1 style='font-size: 2.2rem; font-weight: bold; margin: 0;'>🏘️ 동네비서</h1>", unsafe_allow_html=True)
         with col2:
             if st.session_state.user_role:
                 if st.button("🔓 로그아웃", key="logout_btn"):
