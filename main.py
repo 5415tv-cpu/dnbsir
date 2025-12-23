@@ -1708,6 +1708,15 @@ if menu == "서비스 선택":
                     "최근 방문일": ["어제", "2일 전", "3일 전", "오늘", "1주일 전"]
                 })
                 st.table(top_customers)
+                
+                # 단골 대상 맞춤 마케팅
+                st.write("---")
+                st.markdown("#### 🎁 단골 대상 맞춤 마케팅")
+                target = st.selectbox("마케팅 대상 선택", ["전체 고객", "3회 이상 방문 고객", "한 달간 미방문 고객"])
+                
+                if st.button(f"{target}에게 감사 문자/쿠폰 보내기"):
+                    st.success(f"✅ {target} 총 45명에게 감사 메시지 전송 신호를 보냈습니다.")
+                    st.info("점주님 폰의 'SMS Gateway'를 통해 순차 발송됩니다.")
         
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
