@@ -120,6 +120,57 @@ html, body, [class*="css"] {
     font-size: 0.8rem;
 }
 
+/* 전체 기본 텍스트 크기 상향 */
+html, body, [class*="st-"] {
+    font-size: 1.1rem; 
+}
+
+/* 카드 제목 크기 강조 */
+.app-card h3 {
+    font-size: 1.6rem !important;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* 작은 카드(게시판 등) 제목 크기 */
+.app-card h5 {
+    font-size: 1.3rem !important;
+    font-weight: bold;
+}
+
+/* 하이라이트 카드 (초록색) */
+.highlight-card {
+    border-color: #28a745 !important;
+    box-shadow: 0 6px 15px rgba(40, 167, 69, 0.15) !important;
+}
+.highlight-card h3 {
+    color: #28a745 !important;
+}
+
+/* 프로모션 카드 (주황색) */
+.promo-card {
+    border-color: #fd7e14 !important;
+    box-shadow: 0 6px 15px rgba(253, 126, 20, 0.15) !important;
+    background: linear-gradient(135deg, #fff9f0 0%, #ffffff 100%) !important;
+}
+.promo-card h3 {
+    color: #fd7e14 !important;
+}
+
+/* 하단 슬로건 스타일 */
+.slogan {
+    text-align: center;
+    margin-top: 40px;
+    margin-bottom: 60px;
+    color: #444;
+    font-size: 1.2rem;
+    line-height: 1.8;
+}
+.slogan b {
+    font-size: 1.4rem;
+    color: #000;
+}
+
 /* 상단/하단 고정바 스타일 */
 .fixed-header, .fixed-footer {
     position: fixed;
@@ -1351,57 +1402,42 @@ if menu == "서비스 선택":
         # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # --- 중앙 주요 메뉴 (서비스 바로가기) ---
-        st.markdown("<h2 style='text-align:center; margin-bottom:20px;'>✨ 서비스 바로가기</h2>", unsafe_allow_html=True)
+        # --- 중앙 카드 배치 ---
         
-        # 1번 카드: 매장예약 + 택배접수 (일반 고객용 통합)
-        st.markdown("""
-        <div class="app-card">
-            <span class="card-icon">📅 📦</span>
-            <h2 style="margin:0;">매장예약 & 택배접수</h2>
-            <p style="color:#666;">예약부터 택배까지 한 번에 해결하세요.</p>
-            <div class="action-btn">고객 서비스 이용하기 〉</div>
-        </div>
-        """, unsafe_allow_html=True)
+        # 매장예약 카드
+        st.markdown("""<div class="app-card"><span class="card-icon">📅</span><h3>매장예약</h3></div>""", unsafe_allow_html=True)
+        if st.button("매장 예약하기", key="btn_store", use_container_width=True):
+            st.session_state.service_type = "store"
+            st.session_state.show_store_list = True
+            st.rerun()
         
+        # 택배접수 카드
+        st.markdown("""<div class="app-card"><span class="card-icon">📦</span><h3>택배접수</h3></div>""", unsafe_allow_html=True)
+        if st.button("택배 접수하기", key="btn_delivery", use_container_width=True):
+            st.session_state.service_type = "delivery"
+            st.session_state.show_delivery_form = True
+            st.rerun()
+        
+        # 사장님 회원가입 카드 (초록색)
+        st.markdown("""<div class="app-card highlight-card"><span class="card-icon">👨‍💼</span><h3>사장님 회원가입</h3></div>""", unsafe_allow_html=True)
+        
+        # 프로모션 카드 (주황색)
+        st.markdown("""<div class="app-card promo-card"><span class="card-icon">🎁</span><h3>지금 가입하면 한달간 무료체험</h3></div>""", unsafe_allow_html=True)
+        
+        # 하단 2열 카드
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("매장 예약", key="btn_store", use_container_width=True):
-                st.session_state.service_type = "store"
-                st.session_state.show_store_list = True
-                st.rerun()
+            st.markdown("""<div class="app-card"><h5>고객게시판</h5></div>""", unsafe_allow_html=True)
         with col2:
-            if st.button("택배 접수", key="btn_delivery", use_container_width=True):
-                st.session_state.service_type = "delivery"
-                st.session_state.show_delivery_form = True
-                st.rerun()
+            st.markdown("""<div class="app-card"><h5>공지사항</h5></div>""", unsafe_allow_html=True)
         
-        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-        
-        # 2번 카드: 정산관리 + 공지사항 (매장 운영 통합)
+        # 슬로건
         st.markdown("""
-        <div class="app-card">
-            <span class="card-icon">📊 📢</span>
-            <h2 style="margin:0;">매장 운영 & 소식</h2>
-            <p style="color:#666;">실시간 정산 내역과 새로운 소식을 확인하세요.</p>
-            <div class="action-btn">운영 관리하기 〉</div>
+        <div class="slogan">
+            기억하며, 연결하며,<br>
+            <b>24시간 함께 합니다</b>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("---")
-        
-        # 3번 카드: 사장님 전용 회원가입
-        st.markdown("""
-        <div class="app-card" style="border-color: #28a745; box-shadow: 0 6px 15px rgba(40, 167, 69, 0.15);">
-            <span class="card-icon" style="color: #28a745;">👨‍💼</span>
-            <h2 style="margin:0; color: #28a745;">사장님 전용 회원가입</h2>
-            <p style="color:#666;">동네비서 파트너가 되어 매장을 효율적으로 관리하세요.</p>
-            <div class="action-btn" style="background-color: #28a745;">파트너 신청하기 〉</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # 하단바 공간 확보
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
         
         # --- 하단 내비게이션 바 ---
         st.markdown("""
