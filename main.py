@@ -1512,6 +1512,24 @@ if menu == "서비스 선택":
             </div>
             """, unsafe_allow_html=True)
             
+            # AI 비서 '동네탐정' 첩보 (호기심 유발)
+            import random
+            def ai_secret_report():
+                secrets = [
+                    "🤫 사장님, 최근 3일간 옆 동네에서 이사 온 손님이 5명이나 됩니다. 소문이 났나 봐요!",
+                    "🔍 어머! 6개월간 안 오던 '잠자는 사자' 단골 3명이 방금 우리 앱을 구경하고 갔어요. 미끼를 던질 시간입니다!",
+                    "🔥 오늘 오후 3시, '빨래 대란'이 예상됩니다. 커피 미리 한 잔 마셔두세요. 제가 데이터로 봤거든요.",
+                    "💎 우리 동네 '세탁 큰손' TOP 3가 이번 주에 약속이라도 한 듯 방문을 안 하셨네요. 무슨 일이 있는 걸까요?"
+                ]
+                return random.choice(secrets)
+            
+            st.markdown(f"""
+            <div style="background-color: #1E1E1E; padding: 20px; border-radius: 15px; border: 2px solid #FFD700; color: #FFD700; margin-bottom: 20px;">
+                <h4 style="margin: 0; color: #FFD700;">🧐 AI 비서 '동네탐정'의 첩보</h4>
+                <p style="font-size: 1rem; color: white; margin-top: 10px; line-height: 1.5;">"{ai_secret_report()}"</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             # 블루투스 프린터 연결 상태 바
             st.markdown("""
                 <div style="background-color: #007bff; padding: 15px; border-radius: 10px; color: white; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
