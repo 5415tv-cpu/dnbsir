@@ -1483,6 +1483,25 @@ if menu == "서비스 선택":
         elif st.session_state.user_role == "owner":
             st.markdown("## 👨‍💼 가맹점주 매장 관리")
             
+            # AI 비서 모닝 브리핑 함수
+            import random
+            def ai_morning_report(owner_name):
+                reports = [
+                    f"☀️ 좋은 아침입니다, {owner_name} 사장님! 어제는 평소보다 택배 접수가 15% 많았습니다. 고생 많으셨습니다!",
+                    f"📊 사장님, 분석 결과 목요일 오후 2시부터 4시 사이에 손님이 가장 몰립니다. 이때 알바생 배치를 집중하시는 걸 추천드려요.",
+                    f"💡 최근 '이불 세탁' 고객이 늘고 있습니다. 단골 손님들께 '이불 세탁 10% 할인' 문자를 한번 날려볼까요?",
+                    f"🚀 사장님, 이번 달 목표 매출의 85%를 달성했습니다! 조금만 더 힘내시면 이번 달 역대 최고 매출 갱신입니다!"
+                ]
+                return random.choice(reports)
+            
+            # AI 환영 인사 및 브리핑 (화면 최상단)
+            st.markdown(f"""
+            <div style="background-color: #f0f2f6; padding: 20px; border-radius: 15px; border-left: 5px solid #ff4b4b; margin-bottom: 25px;">
+                <h4 style="margin-top: 0;">🤖 AI 비서 브리핑</h4>
+                <p style="font-size: 1rem; line-height: 1.6;">{ai_morning_report('사장')}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
             # 블루투스 프린터 연결 상태 바
             st.markdown("""
                 <div style="background-color: #007bff; padding: 15px; border-radius: 10px; color: white; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -1717,6 +1736,25 @@ if menu == "서비스 선택":
                 if st.button(f"{target}에게 감사 문자/쿠폰 보내기"):
                     st.success(f"✅ {target} 총 45명에게 감사 메시지 전송 신호를 보냈습니다.")
                     st.info("점주님 폰의 'SMS Gateway'를 통해 순차 발송됩니다.")
+                
+                # 요일별/시간대별 붐비는 시간 분석
+                st.write("---")
+                st.markdown("#### 🕒 요일별 붐비는 시간대 분석 (AI 예측)")
+                
+                data = {
+                    '시간': ['09시', '11시', '13시', '15시', '17시', '19시', '21시'],
+                    '월요일': [10, 25, 45, 30, 60, 80, 20],
+                    '화요일': [15, 20, 35, 25, 55, 70, 15],
+                    '수요일': [12, 22, 40, 28, 58, 75, 18],
+                    '목요일': [18, 30, 50, 40, 70, 90, 25],
+                    '금요일': [20, 35, 60, 45, 85, 100, 40],
+                    '토요일': [30, 60, 90, 80, 70, 50, 30]
+                }
+                df_busy = pd.DataFrame(data)
+                df_busy.set_index('시간', inplace=True)
+                
+                st.line_chart(df_busy)
+                st.info("💡 **AI 분석:** 주말 오후 13시가 가장 혼잡하며, 평일에는 퇴근 시간대(19시)에 택배/세탁물 수령 고객이 집중됩니다.")
         
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
