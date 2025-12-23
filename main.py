@@ -1483,22 +1483,32 @@ if menu == "서비스 선택":
         elif st.session_state.user_role == "owner":
             st.markdown("## 👨‍💼 가맹점주 매장 관리")
             
-            # AI 비서 모닝 브리핑 함수
-            import random
-            def ai_morning_report(owner_name):
-                reports = [
-                    f"☀️ 좋은 아침입니다, {owner_name} 사장님! 어제는 평소보다 택배 접수가 15% 많았습니다. 고생 많으셨습니다!",
-                    f"📊 사장님, 분석 결과 목요일 오후 2시부터 4시 사이에 손님이 가장 몰립니다. 이때 알바생 배치를 집중하시는 걸 추천드려요.",
-                    f"💡 최근 '이불 세탁' 고객이 늘고 있습니다. 단골 손님들께 '이불 세탁 10% 할인' 문자를 한번 날려볼까요?",
-                    f"🚀 사장님, 이번 달 목표 매출의 85%를 달성했습니다! 조금만 더 힘내시면 이번 달 역대 최고 매출 갱신입니다!"
+            # AI 비서 '동네지기' 브리핑 함수
+            import datetime
+            def get_ai_briefing(owner_name):
+                now = datetime.datetime.now()
+                briefings = [
+                    f"👋 안녕하세요, {owner_name} 사장님! 어제는 평일 평균보다 매출이 18% 높았습니다. 정말 고생 많으셨어요!",
+                    f"📈 사장님, 분석 결과 이번 주는 '운동화 세탁' 요청이 급증하고 있습니다. 관련 소모품을 미리 체크해보세요.",
+                    f"🕒 알림: 오늘은 오후 6시부터 8시 사이에 퇴근길 택배 접수가 몰릴 것으로 예상됩니다. 대비가 필요합니다!",
+                    f"👑 VIP 단골인 '김철수'님이 2주째 방문이 없으십니다. 오늘 '안부 문자' 한 통 어떠신가요?"
                 ]
-                return random.choice(reports)
+                return briefings[now.day % len(briefings)]
             
-            # AI 환영 인사 및 브리핑 (화면 최상단)
+            # AI 환영 인사 및 브리핑 (강렬한 그라데이션 디자인)
             st.markdown(f"""
-            <div style="background-color: #f0f2f6; padding: 20px; border-radius: 15px; border-left: 5px solid #ff4b4b; margin-bottom: 25px;">
-                <h4 style="margin-top: 0;">🤖 AI 비서 브리핑</h4>
-                <p style="font-size: 1rem; line-height: 1.6;">{ai_morning_report('사장')}</p>
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <span style="font-size: 2rem; margin-right: 15px;">🤖</span>
+                    <h3 style="margin: 0; color: white; font-size: 1.3rem;">AI 비서 '동네지기' 보고</h3>
+                </div>
+                <p style="font-size: 1.1rem; line-height: 1.6; font-weight: 300; margin-bottom: 15px;">
+                    "{get_ai_briefing('사장')}"
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <span style="background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">#매출분석완료</span>
+                    <span style="background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">#혼잡도예측중</span>
+                </div>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1737,24 +1747,39 @@ if menu == "서비스 선택":
                     st.success(f"✅ {target} 총 45명에게 감사 메시지 전송 신호를 보냈습니다.")
                     st.info("점주님 폰의 'SMS Gateway'를 통해 순차 발송됩니다.")
                 
-                # 요일별/시간대별 붐비는 시간 분석
+                # 요일별/시간대별 붐비는 시간 분석 (AI 예측)
                 st.write("---")
-                st.markdown("#### 🕒 요일별 붐비는 시간대 분석 (AI 예측)")
+                st.markdown("#### 🕒 요일별 방문객 혼잡도 분석 (AI 예측)")
                 
-                data = {
-                    '시간': ['09시', '11시', '13시', '15시', '17시', '19시', '21시'],
-                    '월요일': [10, 25, 45, 30, 60, 80, 20],
-                    '화요일': [15, 20, 35, 25, 55, 70, 15],
-                    '수요일': [12, 22, 40, 28, 58, 75, 18],
-                    '목요일': [18, 30, 50, 40, 70, 90, 25],
-                    '금요일': [20, 35, 60, 45, 85, 100, 40],
-                    '토요일': [30, 60, 90, 80, 70, 50, 30]
-                }
-                df_busy = pd.DataFrame(data)
-                df_busy.set_index('시간', inplace=True)
+                hours = [f"{h:02d}시" for h in range(9, 23, 2)]
+                days = ['월', '화', '수', '목', '금', '토', '일']
                 
-                st.line_chart(df_busy)
-                st.info("💡 **AI 분석:** 주말 오후 13시가 가장 혼잡하며, 평일에는 퇴근 시간대(19시)에 택배/세탁물 수령 고객이 집중됩니다.")
+                busy_data = pd.DataFrame(
+                    np.array([
+                        [10, 15, 12, 18, 25, 40, 30],
+                        [30, 25, 35, 40, 50, 85, 70],
+                        [50, 45, 40, 55, 65, 95, 80],
+                        [40, 35, 45, 50, 70, 75, 60],
+                        [70, 65, 75, 85, 95, 60, 45],
+                        [90, 85, 80, 95, 100, 50, 40],
+                        [40, 30, 35, 45, 55, 30, 20]
+                    ]),
+                    index=hours, columns=days
+                )
+                
+                st.area_chart(busy_data)
+                st.caption("※ 수치가 높을수록 손님이 몰리는 시간대입니다. (AI 과거 데이터 분석 결과)")
+                
+                # 이달의 우수 단골 + 쿠폰 발송
+                st.write("---")
+                col_v1, col_v2 = st.columns([2, 1])
+                with col_v1:
+                    st.markdown("#### 👥 이달의 우수 단골")
+                    st.info("AI가 분석한 '방문 주기가 가장 규칙적인' 단골 명단입니다.")
+                with col_v2:
+                    if st.button("🚀 단골 전원에게 감사쿠폰 발송"):
+                        st.balloons()
+                        st.success("점주님 폰으로 발송 예약 완료!")
         
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
