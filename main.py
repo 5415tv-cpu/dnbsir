@@ -1351,14 +1351,16 @@ if menu == "서비스 선택":
         # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # --- 중앙 주요 메뉴 (카드형 디자인 통합 버전) ---
-        st.markdown("<h3 style='text-align:center; margin-bottom:20px;'>무엇을 도와드릴까요?</h3>", unsafe_allow_html=True)
+        # --- 중앙 주요 메뉴 (추천 서비스) ---
+        st.markdown("<h2 style='text-align:center; margin-bottom:20px;'>✨ 추천 서비스</h2>", unsafe_allow_html=True)
         
-        # 1. 매장예약 (통합 카드)
+        # 1. 매장예약 카드
         st.markdown("""
         <div class="app-card">
-            <h3>📅 매장 예약하기</h3>
-            <p>원하시는 날짜와 시간에 방문 예약을 도와드립니다.</p>
+            <span class="card-icon">📅</span>
+            <h2 style="margin:0;">매장 예약하기</h2>
+            <p style="color:#666;">기다림 없이 바로 이용하는 스마트 예약</p>
+            <div class="action-btn">지금 바로 예약 〉</div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("매장 예약", key="btn_store", use_container_width=True):
@@ -1366,13 +1368,15 @@ if menu == "서비스 선택":
             st.session_state.show_store_list = True
             st.rerun()
         
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
         
-        # 2. 택배접수 (통합 카드)
+        # 2. 택배접수 카드
         st.markdown("""
         <div class="app-card">
-            <h3>📦 택배 접수하기</h3>
-            <p>집에서 편리하게 택배를 보내세요. 접수부터 수거까지!</p>
+            <span class="card-icon">📦</span>
+            <h2 style="margin:0;">택배 접수하기</h2>
+            <p style="color:#666;">무거운 짐도 집 앞에서 편하게 발송</p>
+            <div class="action-btn">접수 신청하기 〉</div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("택배 접수", key="btn_delivery", use_container_width=True):
@@ -1380,24 +1384,7 @@ if menu == "서비스 선택":
             st.session_state.show_delivery_form = True
             st.rerun()
         
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        
-        # 3. 추가 메뉴 (하단에 나란히 배치)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""
-            <div class="app-card">
-                <h3>📊 정산 보기</h3>
-            </div>
-            """, unsafe_allow_html=True)
-        with col2:
-            st.markdown("""
-            <div class="app-card">
-                <h3>📢 공지사항</h3>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
         
         # 사장님 혜택
         with st.expander("🎁 사장님 혜택"):
