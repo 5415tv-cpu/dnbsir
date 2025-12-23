@@ -1953,6 +1953,26 @@ if menu == "서비스 선택":
                         "연락처": "010-1234-5678"
                     }
                 
+                # AI 의류 감별사 (호기심 슝슝!)
+                st.subheader("📸 AI 의류 감별사 (호기심 슝슝!)")
+                uploaded_cloth = st.file_uploader("보내실 옷이나 물건을 사진 찍어주세요!", type=['jpg', 'png'], key="cloth_analyzer")
+                
+                if uploaded_cloth:
+                    st.image(uploaded_cloth, width=250)
+                    with st.spinner("AI가 옷의 기분을 분석 중..."):
+                        import random
+                        fun_comments = [
+                            "🧸 '이 곰인형은 지금 주인이 그리워서 눈물을 흘리고 있네요. 깨끗하게 씻겨드릴게요!'",
+                            "👔 셔츠가 말하네요: '아이고~ 목때 때문에 숨을 못 쉬겠어요! 사장님께 살려달라고 전해줘요!'",
+                            "👟 '이 운동화는 어제 산길을 다녀왔군요? 진흙 향기가 예술입니다. 새 신으로 태어나게 해줄게요!'"
+                        ]
+                        st.info(random.choice(fun_comments))
+                        
+                        if st.button("✨ 내 옷이 새 옷이 될 확률 확인하기"):
+                            st.balloons()
+                            st.write(f"🎉 축하합니다! AI 분석 결과 **99.8%** 확률로 광채가 날 예정입니다!")
+                
+                st.write("---")
                 st.header("📦 스마트 AI 택배 비서")
                 st.info("메모지를 사진 찍어 올리거나, AI와 대화로 접수하세요!")
                 
