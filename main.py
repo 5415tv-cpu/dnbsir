@@ -1721,80 +1721,90 @@ if menu == "서비스 선택":
             # 택배 접수 상세 화면
             if st.session_state.show_delivery_detail:
                 st.write("---")
-                st.subheader("📦 택배 접수 및 요금 안내")
                 
                 # 요금표 데이터
                 import pandas as pd
                 from PIL import Image
                 
-                delivery_fee = [
-                    {"구분": "초소형 (2kg 이하)", "권역내": "3,200원", "권역외": "3,700원", "제주": "6,200원"},
-                    {"구분": "소형 (5kg 이하)", "권역내": "3,700원", "권역외": "4,200원", "제주": "6,700원"},
-                    {"구분": "중형 (15kg 이하)", "권역내": "4,200원", "권역외": "4,700원", "제주": "7,200원"},
-                    {"구분": "대형 (20kg 이하)", "권역내": "5,200원", "권역외": "5,700원", "제주": "8,200원"}
-                ]
-                df_fee = pd.DataFrame(delivery_fee)
+                # AI 텍스트 추출 엔진 (시뮬레이션)
+                def ai_vision_ocr(uploaded_file):
+                    return {
+                        "보내는이": "김사장",
+                        "받는이": "이철수",
+                        "주소": "서울시 강남구 테헤란로 123",
+                        "연락처": "010-1234-5678"
+                    }
                 
-                # 요금표 출력
-                st.markdown("#### 💰 전국 택배 요금표")
-                st.table(df_fee)
+                st.header("📦 스마트 AI 택배 비서")
+                st.info("메모지를 사진 찍어 올리거나, AI와 대화로 접수하세요!")
                 
-                st.write("---")
+                # 요금표
+                with st.expander("💰 전국 택배 요금표 보기"):
+                    delivery_fee = [
+                        {"구분": "초소형 (2kg 이하)", "권역내": "3,200원", "권역외": "3,700원", "제주": "6,200원"},
+                        {"구분": "소형 (5kg 이하)", "권역내": "3,700원", "권역외": "4,200원", "제주": "6,700원"},
+                        {"구분": "중형 (15kg 이하)", "권역내": "4,200원", "권역외": "4,700원", "제주": "7,200원"},
+                        {"구분": "대형 (20kg 이하)", "권역내": "5,200원", "권역외": "5,700원", "제주": "8,200원"}
+                    ]
+                    st.table(pd.DataFrame(delivery_fee))
                 
-                # 스마트 택배 비서
-                st.subheader("🤖 스마트 택배 비서")
+                # 상단 탭 구분 (사진 입력 / 대화 입력)
+                input_tab1, input_tab2 = st.tabs(["📸 사진으로 접수", "💬 대화로 접수"])
                 
-                # 사진으로 주소 입력받기 (OCR 시뮬레이션)
-                uploaded_memo = st.file_uploader("📝 메모지나 주소 사진을 찍어 올려주세요", type=['jpg', 'jpeg', 'png'])
-                
-                if uploaded_memo is not None:
-                    image = Image.open(uploaded_memo)
-                    st.image(image, caption="인식 중인 메모지", width=300)
+                with input_tab1:
+                    st.write("#### 📝 손글씨 메모 인식")
+                    img_file = st.file_uploader("주소가 적힌 메모지 사진을 올려주세요", type=['jpg', 'png', 'jpeg'])
                     
-                    with st.spinner("AI가 한글 메모를 읽고 있습니다..."):
-                        extracted_text = "보내는 사람: 김사장, 받는 사람: 이철수, 주소: 서울시 강남구 테헤란로 123, 물품: 운동화"
-                        st.success("✨ 텍스트 변환 완료!")
-                        st.info(f"📍 인식된 내용: {extracted_text}")
+                    if img_file:
+                        st.image(img_file, caption="업로드된 메모", width=300)
+                        if st.button("AI 분석 시작"):
+                            with st.spinner("AI가 필기체를 분석 중입니다..."):
+                                result = ai_vision_ocr(img_file)
+                                st.session_state.temp_delivery_data = result
+                                st.success("✨ 분석 완료! 아래 폼에 자동 입력되었습니다.")
                 
-                # AI와 대화하며 접수하기
-                with st.expander("💬 AI와 대화하며 접수하기"):
+                with input_tab2:
+                    st.write("#### 🗣️ 대화형 접수")
                     if "delivery_chat" not in st.session_state:
                         st.session_state.delivery_chat = []
                     
                     for m in st.session_state.delivery_chat:
                         st.chat_message(m["role"]).write(m["content"])
                     
-                    if p := st.chat_input("예: '서울로 보내는 의류 택배 접수해줘'"):
-                        st.session_state.delivery_chat.append({"role": "user", "content": p})
-                        ai_ans = "네! 말씀하신 내용을 바탕으로 택배 폼을 작성했습니다. 주소만 다시 한번 확인해 주세요!"
-                        st.session_state.delivery_chat.append({"role": "assistant", "content": ai_ans})
+                    chat_p = st.chat_input("예: '서울 사는 이철수한테 운동화 택배 보낼래'")
+                    if chat_p:
+                        st.session_state.delivery_chat.append({"role": "user", "content": chat_p})
+                        st.session_state.delivery_chat.append({"role": "assistant", "content": "네! 말씀하신 정보를 바탕으로 접수 폼을 채워두었습니다. 주소를 확인해 주세요!"})
+                        st.session_state.temp_delivery_data = ai_vision_ocr(None)
                         st.rerun()
                 
                 st.write("---")
                 
-                # 접수 양식
-                with st.form("delivery_form"):
-                    st.markdown("#### 📝 최종 접수 확인")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        sender = st.text_input("보내시는 분 성함")
-                        s_phone = st.text_input("보내시는 분 연락처")
-                    with col2:
-                        receiver = st.text_input("받으시는 분 성함")
-                        r_phone = st.text_input("받으시는 분 연락처")
+                # 최종 접수 폼 (자동 채워지기 기능)
+                st.subheader("📋 접수 내역 확인")
+                
+                # AI가 분석한 데이터가 있으면 불러오고, 없으면 비워둠
+                def_data = st.session_state.get('temp_delivery_data', {"보내는이": "", "받는이": "", "주소": "", "연락처": ""})
+                
+                with st.form("final_delivery_form"):
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        s_name = st.text_input("보내는 분", value=def_data.get("보내는이", ""))
+                        r_name = st.text_input("받는 분", value=def_data.get("받는이", ""))
+                    with c2:
+                        r_phone = st.text_input("연락처", value=def_data.get("연락처", ""))
+                        r_addr = st.text_input("상세 주소", value=def_data.get("주소", ""))
                     
-                    address = st.text_input("받으시는 분 상세 주소")
-                    item_desc = st.selectbox("물품 종류", ["의류", "잡화", "도서", "가전", "기타"])
+                    item_type = st.selectbox("물품 종류", ["의류", "잡화", "도서", "가전", "기타"])
                     
-                    submit_btn = st.form_submit_button("택배 접수 완료", use_container_width=True)
-                    
-                    if submit_btn:
-                        if sender and receiver and address:
-                            st.success(f"✅ {sender}님의 택배가 정상 접수되었습니다! 점주님 확인 후 운송장이 발급됩니다.")
-                            st.session_state.show_delivery_detail = False
+                    if st.form_submit_button("최종 접수 완료", use_container_width=True):
+                        if s_name and r_name and r_addr:
                             st.balloons()
+                            st.success("🖨️ 접수가 완료되었습니다! 점주님 프린터로 전송합니다.")
+                            st.session_state.show_delivery_detail = False
+                            st.session_state.temp_delivery_data = {}
                         else:
-                            st.error("⚠️ 모든 정보를 정확히 입력해 주세요.")
+                            st.error("⚠️ 모든 정보를 입력해 주세요.")
                 
                 st.write("---")
             
