@@ -1725,6 +1725,8 @@ if menu == "서비스 선택":
                 
                 # 요금표 데이터
                 import pandas as pd
+                from PIL import Image
+                
                 delivery_fee = [
                     {"구분": "초소형 (2kg 이하)", "권역내": "3,200원", "권역외": "3,700원", "제주": "6,200원"},
                     {"구분": "소형 (5kg 이하)", "권역내": "3,700원", "권역외": "4,200원", "제주": "6,700원"},
@@ -1737,9 +1739,42 @@ if menu == "서비스 선택":
                 st.markdown("#### 💰 전국 택배 요금표")
                 st.table(df_fee)
                 
+                st.write("---")
+                
+                # 스마트 택배 비서
+                st.subheader("🤖 스마트 택배 비서")
+                
+                # 사진으로 주소 입력받기 (OCR 시뮬레이션)
+                uploaded_memo = st.file_uploader("📝 메모지나 주소 사진을 찍어 올려주세요", type=['jpg', 'jpeg', 'png'])
+                
+                if uploaded_memo is not None:
+                    image = Image.open(uploaded_memo)
+                    st.image(image, caption="인식 중인 메모지", width=300)
+                    
+                    with st.spinner("AI가 한글 메모를 읽고 있습니다..."):
+                        extracted_text = "보내는 사람: 김사장, 받는 사람: 이철수, 주소: 서울시 강남구 테헤란로 123, 물품: 운동화"
+                        st.success("✨ 텍스트 변환 완료!")
+                        st.info(f"📍 인식된 내용: {extracted_text}")
+                
+                # AI와 대화하며 접수하기
+                with st.expander("💬 AI와 대화하며 접수하기"):
+                    if "delivery_chat" not in st.session_state:
+                        st.session_state.delivery_chat = []
+                    
+                    for m in st.session_state.delivery_chat:
+                        st.chat_message(m["role"]).write(m["content"])
+                    
+                    if p := st.chat_input("예: '서울로 보내는 의류 택배 접수해줘'"):
+                        st.session_state.delivery_chat.append({"role": "user", "content": p})
+                        ai_ans = "네! 말씀하신 내용을 바탕으로 택배 폼을 작성했습니다. 주소만 다시 한번 확인해 주세요!"
+                        st.session_state.delivery_chat.append({"role": "assistant", "content": ai_ans})
+                        st.rerun()
+                
+                st.write("---")
+                
                 # 접수 양식
                 with st.form("delivery_form"):
-                    st.markdown("#### 📝 접수 정보 입력")
+                    st.markdown("#### 📝 최종 접수 확인")
                     col1, col2 = st.columns(2)
                     with col1:
                         sender = st.text_input("보내시는 분 성함")
@@ -1757,6 +1792,7 @@ if menu == "서비스 선택":
                         if sender and receiver and address:
                             st.success(f"✅ {sender}님의 택배가 정상 접수되었습니다! 점주님 확인 후 운송장이 발급됩니다.")
                             st.session_state.show_delivery_detail = False
+                            st.balloons()
                         else:
                             st.error("⚠️ 모든 정보를 정확히 입력해 주세요.")
                 
