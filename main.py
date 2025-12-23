@@ -46,6 +46,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# 웹뷰/PWA 최적화 설정
+st.markdown("""
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="동네비서">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#007bff">
+</head>
+""", unsafe_allow_html=True)
+
 # CSS 스타일 - 모바일 앱 스타일
 st.markdown("""
 <style>
