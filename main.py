@@ -1479,7 +1479,7 @@ if menu == "서비스 선택":
             c3.metric("오늘 매출", "125,000원", "정상")
             
             st.write("---")
-            t1, t2, t3 = st.tabs(["🕒 예약 현황", "📦 택배 관리", "🤖 AI 점주비서"])
+            t1, t2, t3, t4 = st.tabs(["🕒 예약 현황", "🛠️ 상품 관리", "📦 택배 관리", "🤖 AI 점주비서"])
             
             with t1:
                 st.write("#### 실시간 방문 예정자")
@@ -1489,9 +1489,38 @@ if menu == "서비스 선택":
                 ], use_container_width=True)
             
             with t2:
-                st.write("📦 **현재 보관 중인 택배:** 5건 (수거 대기 중)")
+                st.subheader("🛠️ 우리 매장 메뉴/가격 설정")
+                st.info("여기서 수정한 내용이 손님들의 예약 화면에 바로 반영됩니다.")
+                
+                # 기존 메뉴 데이터
+                if 'menu_data' not in st.session_state:
+                    st.session_state.menu_data = [
+                        {"상품명": "와이셔츠 세탁", "가격": 3000},
+                        {"상품명": "드라이클리닝(상의)", "가격": 7000},
+                        {"상품명": "바지 수선", "가격": 5000}
+                    ]
+                
+                # 메뉴 수정/삭제/추가 화면
+                import pandas as pd
+                menu_df = pd.DataFrame(st.session_state.menu_data)
+                
+                # 엑셀처럼 직접 수정 가능한 표
+                edited_menu = st.data_editor(
+                    menu_df, 
+                    num_rows="dynamic",
+                    use_container_width=True,
+                    key="menu_editor"
+                )
+                
+                if st.button("💾 메뉴판 설정 저장하기"):
+                    st.session_state.menu_data = edited_menu.to_dict('records')
+                    st.success("메뉴판이 성공적으로 업데이트되었습니다!")
+                    st.balloons()
             
             with t3:
+                st.write("📦 **현재 보관 중인 택배:** 5건 (수거 대기 중)")
+            
+            with t4:
                 st.write("#### AI 매니저와 대화")
                 if "admin_chat" not in st.session_state:
                     st.session_state.admin_chat = []
