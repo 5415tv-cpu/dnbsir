@@ -1402,16 +1402,14 @@ if menu == "서비스 선택":
         # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # --- 중앙 주요 메뉴 (큼직한 통합 버튼) ---
-        st.markdown("<h2 style='text-align:center; margin-bottom:20px;'>✨ 주요 서비스</h2>", unsafe_allow_html=True)
+        # --- 중앙 주요 메뉴 (하나씩 크게 통합) ---
         
-        # 1. 매장예약 (통합 및 대형화)
+        # 1. 매장예약 (딱 하나로 크게)
         st.markdown("""
-        <div class="app-card" style="padding: 35px 20px;">
+        <div class="app-card">
             <span class="card-icon" style="font-size: 3.5rem;">📅</span>
-            <h3>매장 예약하기</h3>
-            <p style="font-size: 1.1rem; color: #666;">날짜와 시간을 선택해 간편하게 예약하세요</p>
-            <div class="action-btn" style="font-size: 1rem; padding: 10px 30px;">지금 바로 예약하기 〉</div>
+            <h3>매장예약</h3>
+            <div class="action-btn">지금 예약하기 〉</div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("매장 예약", key="btn_store", use_container_width=True):
@@ -1419,15 +1417,12 @@ if menu == "서비스 선택":
             st.session_state.show_store_list = True
             st.rerun()
         
-        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-        
-        # 2. 택배접수 (통합 및 대형화)
+        # 2. 택배접수 (딱 하나로 크게)
         st.markdown("""
-        <div class="app-card" style="padding: 35px 20px;">
+        <div class="app-card">
             <span class="card-icon" style="font-size: 3.5rem;">📦</span>
-            <h3>택배 접수하기</h3>
-            <p style="font-size: 1.1rem; color: #666;">번거로운 택배 접수를 한 번에 해결하세요</p>
-            <div class="action-btn" style="font-size: 1rem; padding: 10px 30px;">지금 바로 접수하기 〉</div>
+            <h3>택배접수</h3>
+            <div class="action-btn">지금 접수하기 〉</div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("택배 접수", key="btn_delivery", use_container_width=True):
@@ -1435,22 +1430,37 @@ if menu == "서비스 선택":
             st.session_state.show_delivery_form = True
             st.rerun()
         
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        # 3. 사장님 회원가입 (하나로 크게)
+        st.markdown("""
+        <div class="app-card highlight-card">
+            <span class="card-icon">👨‍💼</span>
+            <h3>사장님 회원가입</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # 사장님 회원가입 카드 (초록색)
-        st.markdown("""<div class="app-card highlight-card"><span class="card-icon">👨‍💼</span><h3>사장님 회원가입</h3></div>""", unsafe_allow_html=True)
+        # 4. 무료체험 (하나로 크게)
+        st.markdown("""
+        <div class="app-card promo-card">
+            <span class="card-icon">🎁</span>
+            <h3>지금 가입하면 한달간 무료체험</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # 프로모션 카드 (주황색)
-        st.markdown("""<div class="app-card promo-card"><span class="card-icon">🎁</span><h3>지금 가입하면 한달간 무료체험</h3></div>""", unsafe_allow_html=True)
+        # 5. 고객게시판 (한 줄에 하나씩 크게)
+        st.markdown("""
+        <div class="app-card">
+            <h3>고객게시판</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # 하단 2열 카드
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""<div class="app-card"><h5>고객게시판</h5></div>""", unsafe_allow_html=True)
-        with col2:
-            st.markdown("""<div class="app-card"><h5>공지사항</h5></div>""", unsafe_allow_html=True)
+        # 6. 공지사항 (한 줄에 하나씩 크게)
+        st.markdown("""
+        <div class="app-card">
+            <h3>공지사항</h3>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # 슬로건
+        # 마지막 슬로건
         st.markdown("""
         <div class="slogan">
             기억하며, 연결하며,<br>
