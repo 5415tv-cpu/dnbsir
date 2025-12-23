@@ -1331,34 +1331,51 @@ if menu == "서비스 선택":
         # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # --- 중앙 주요 메뉴 (카드형 디자인) ---
+        # --- 중앙 주요 메뉴 (카드형 디자인 통합 버전) ---
         st.markdown("<h3 style='text-align:center; margin-bottom:20px;'>무엇을 도와드릴까요?</h3>", unsafe_allow_html=True)
         
-        col1, col2 = st.columns(2)
+        # 1. 매장예약 (통합 카드)
+        st.markdown("""
+        <div class="app-card">
+            <h3>📅 매장 예약하기</h3>
+            <p>원하시는 날짜와 시간에 방문 예약을 도와드립니다.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("매장 예약", key="btn_store", use_container_width=True):
+            st.session_state.service_type = "store"
+            st.session_state.show_store_list = True
+            st.rerun()
         
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        
+        # 2. 택배접수 (통합 카드)
+        st.markdown("""
+        <div class="app-card">
+            <h3>📦 택배 접수하기</h3>
+            <p>집에서 편리하게 택배를 보내세요. 접수부터 수거까지!</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("택배 접수", key="btn_delivery", use_container_width=True):
+            st.session_state.service_type = "delivery"
+            st.session_state.show_delivery_form = True
+            st.rerun()
+        
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        
+        # 3. 추가 메뉴 (하단에 나란히 배치)
+        col1, col2 = st.columns(2)
         with col1:
             st.markdown("""
             <div class="app-card">
-                <h3>🏠 매장 예약</h3>
-                <p>예약, 주문 접수</p>
+                <h3>📊 정산 보기</h3>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("매장 예약", key="btn_store", use_container_width=True):
-                st.session_state.service_type = "store"
-                st.session_state.show_store_list = True
-                st.rerun()
-        
         with col2:
             st.markdown("""
             <div class="app-card">
-                <h3>📦 택배 접수</h3>
-                <p>로젠택배 연동</p>
+                <h3>📢 공지사항</h3>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("택배 접수", key="btn_delivery", use_container_width=True):
-                st.session_state.service_type = "delivery"
-                st.session_state.show_delivery_form = True
-                st.rerun()
         
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
@@ -1370,11 +1387,6 @@ if menu == "서비스 선택":
 ✅ 자동 정산  
 ✅ 단골 관리
             """)
-        
-        # 최신 소식
-        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-        st.markdown("<h4>최신 소식</h4>", unsafe_allow_html=True)
-        st.info("🎉 동네비서 앱이 새롭게 출시되었습니다!")
         
         # 하단바 공간 확보
         st.markdown("<br><br><br>", unsafe_allow_html=True)
