@@ -45,6 +45,11 @@ st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
     
+    /* 스트림릿 기본 UI 숨기기 */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
     /* 전체 폰트 (14px 고정) */
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, sans-serif !important;
