@@ -34,132 +34,165 @@ except Exception as e:
 # 🎨 페이지 설정
 # ==========================================
 st.set_page_config(
-    page_title="동네비서 - 똑똑한 AI 이웃", 
-    page_icon="🏘️", 
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="동네비서",
+    page_icon="🏘️",
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
-# CSS 스타일 - 모바일 최적화 미니멀리즘 (라인 디자인)
+# CSS 스타일 - 모바일 앱 스타일
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-    
-    /* 스트림릿 기본 UI 숨기기 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* 전체 폰트 (14px 고정) */
-    html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, sans-serif !important;
-        font-size: 14px !important;
-        color: #333 !important;
-        background: #fff !important;
-    }
-    
-    /* 메인 컨테이너 중앙 정렬 */
-    .block-container {
-        max-width: 480px !important;
-        padding: 1rem 1rem !important;
-        margin: 0 auto !important;
-    }
-    
-    /* 버튼 - 라인 스타일 (중앙 정렬) */
-    .stButton > button {
-        width: 100% !important;
-        height: 56px !important;
-        min-height: 56px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        border-radius: 0 !important;
-        padding: 0 16px !important;
-        margin: 0 !important;
-        background: transparent !important;
-        border: 1px solid #ccc !important;
-        color: #333 !important;
-        box-shadow: none !important;
-        transition: border-color 0.2s !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        text-align: center !important;
-    }
-    
-    .stButton > button:hover {
-        background: transparent !important;
-        border-color: #000 !important;
-        color: #000 !important;
-    }
-    
-    .stButton > button:active {
-        background: #f5f5f5 !important;
-    }
-    
-    /* 입력 필드 - 라인 스타일 */
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea,
-    .stSelectbox > div > div > div,
-    .stNumberInput > div > div > input {
-        font-size: 14px !important;
-        padding: 12px !important;
-        min-height: 44px !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        border: 1px solid #ccc !important;
-        color: #333 !important;
-    }
-    
-    .stTextInput > div > div > input:focus,
-    .stTextArea > div > div > textarea:focus {
-        border-color: #000 !important;
-        box-shadow: none !important;
-    }
-    
-    .stTextInput label,
-    .stTextArea label,
-    .stSelectbox label,
-    .stNumberInput label {
-        font-size: 14px !important;
-        font-weight: 400 !important;
-        color: #666 !important;
-    }
-    
-    /* 탭 - 라인 스타일 */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 0 !important;
-        background: transparent !important;
-        border-bottom: 1px solid #ccc !important;
-        padding: 0 !important;
-        border-radius: 0 !important;
-    }
-    
-    .stTabs [data-baseweb="tab"] {
-        min-height: 40px !important;
-        font-size: 14px !important;
-        font-weight: 400 !important;
-        padding: 10px 16px !important;
-        border-radius: 0 !important;
-        color: #999 !important;
-        border-bottom: 2px solid transparent !important;
-    }
-    
-    .stTabs [aria-selected="true"] {
-        background: transparent !important;
-        color: #000 !important;
-        border-bottom: 2px solid #000 !important;
-    }
-    
-    /* 익스팬더 - 라인 스타일 */
-    .stExpander {
-        background: transparent !important;
-        border: 1px solid #eee !important;
-        border-radius: 0 !important;
-    }
-    
-    .stExpander > div:first-child {
-        background: transparent !important;
-    }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+/* 전체 배경색 */
+body {
+    background-color: #f0f2f6;
+}
+
+/* 메인 콘텐츠 영역 (중앙) 스타일 */
+.main .block-container {
+    max-width: 480px;
+    padding-top: 2rem;
+    padding-right: 1rem;
+    padding-left: 1rem;
+    padding-bottom: 2rem;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 스트림릿 기본 헤더/푸터 숨기기 */
+#MainMenu { visibility: hidden; }
+header { visibility: hidden; }
+footer { visibility: hidden; }
+
+/* 전체 폰트 */
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, sans-serif !important;
+    font-size: 14px !important;
+    color: #333 !important;
+}
+
+/* 카드 스타일 */
+.app-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+.app-card:hover {
+    transform: translateY(-3px);
+}
+.app-card h3 {
+    color: #333333;
+    font-size: 1.1em;
+    margin-bottom: 5px;
+}
+.app-card p {
+    color: #666666;
+    font-size: 0.9em;
+}
+
+/* 버튼 스타일 */
+.stButton > button {
+    width: 100% !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    padding: 0 16px !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    border: 1px solid #ddd !important;
+    color: #333 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.2s ease !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.stButton > button:hover {
+    background: #f8f9fa !important;
+    border-color: #333 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.stButton > button:active {
+    background: #f0f0f0 !important;
+    transform: translateY(0) !important;
+}
+
+/* 입력 필드 스타일 */
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea,
+.stSelectbox > div > div > div,
+.stNumberInput > div > div > input {
+    font-size: 14px !important;
+    padding: 12px !important;
+    min-height: 44px !important;
+    border-radius: 8px !important;
+    background: #fff !important;
+    border: 1px solid #ddd !important;
+    color: #333 !important;
+}
+
+.stTextInput > div > div > input:focus,
+.stTextArea > div > div > textarea:focus {
+    border-color: #333 !important;
+    box-shadow: 0 0 0 2px rgba(51, 51, 51, 0.1) !important;
+}
+
+.stTextInput label,
+.stTextArea label,
+.stSelectbox label,
+.stNumberInput label {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #555 !important;
+}
+
+/* 탭 스타일 */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 0 !important;
+    background: transparent !important;
+    border-bottom: 1px solid #ddd !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    min-height: 40px !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    padding: 10px 16px !important;
+    border-radius: 0 !important;
+    color: #999 !important;
+    border-bottom: 2px solid transparent !important;
+}
+
+.stTabs [aria-selected="true"] {
+    background: transparent !important;
+    color: #333 !important;
+    border-bottom: 2px solid #333 !important;
+}
+
+/* 익스팬더 스타일 */
+.stExpander {
+    background: #fff !important;
+    border: 1px solid #eee !important;
+    border-radius: 8px !important;
+}
+
+.stExpander > div:first-child {
+    background: transparent !important;
+}
     
     .stExpander summary {
         font-size: 14px !important;
