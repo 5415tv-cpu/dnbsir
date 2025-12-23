@@ -2770,7 +2770,12 @@ elif menu == "사장님 가입":
             elif st.session_state.signup_step == i + 1:
                 st.info(step)
             else:
-                st.markdown(f"<div style='color: #aaa; text-align: center;'>{step}</div>", unsafe_allow_html=True)
+                # 미래 단계도 같은 박스 스타일로 표시
+                st.markdown(f"""
+                <div style='background-color: #f0f2f6; border: 1px solid #ddd; border-radius: 5px; padding: 10px; text-align: center; color: #888;'>
+                    {step}
+                </div>
+                """, unsafe_allow_html=True)
     
     st.markdown("---")
     
