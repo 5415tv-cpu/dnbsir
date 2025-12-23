@@ -1573,6 +1573,19 @@ if menu == "서비스 선택":
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
             
+            # PWA 어플 설치 유도 섹션
+            st.markdown("""
+            <head>
+                <meta name="apple-mobile-web-app-capable" content="yes">
+                <meta name="apple-mobile-web-app-status-bar-style" content="black">
+            </head>
+
+            <div style="background-color: #fff3cd; padding: 15px; border-radius: 10px; border: 1px solid #ffeeba; margin-bottom: 20px;">
+                <strong>📱 어플처럼 사용하고 싶으신가요?</strong><br>
+                <span style="font-size: 0.9rem;">브라우저 설정에서 <b>'홈 화면에 추가'</b>를 누르면 별도의 설치 없이 어플처럼 바로 접속할 수 있습니다!</span>
+            </div>
+            """, unsafe_allow_html=True)
+            
             # 예약 상세 세션 상태 초기화
             if 'show_reserve_detail' not in st.session_state:
                 st.session_state.show_reserve_detail = False
