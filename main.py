@@ -1389,15 +1389,33 @@ if menu == "서비스 선택":
     )
     
     if show_service_selection:
-        # --- 상단 레이아웃 (관리자 로그인 우측 배치) ---
-        st.markdown("""
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0px; margin-bottom: 20px; border-bottom: 1px solid #eee;">
-            <div style="font-size: 1.2rem; font-weight: bold; color: #333;">동네비서</div>
-            <div style="background-color: #f0f2f6; padding: 5px 15px; border-radius: 15px; border: 1px solid #ddd;">
-                <a href="#" style="text-decoration: none; color: #333; font-size: 0.9rem; font-weight: bold;">🔒 관리자 로그인</a>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        # 로그인 상태 관리
+        if 'admin_mode' not in st.session_state:
+            st.session_state.admin_mode = False
+        
+        # --- 상단 레이아웃 (버튼 클릭 기능 연결) ---
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.markdown('<div style="font-size: 1.5rem; font-weight: bold; padding: 10px 0;">동네비서</div>', unsafe_allow_html=True)
+        with col2:
+            if st.button("🔒 관리자", key="admin_btn"):
+                st.session_state.admin_mode = not st.session_state.admin_mode
+                st.rerun()
+        
+        st.markdown("<div style='border-bottom: 1px solid #eee; margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        
+        # 로그인 버튼을 눌렀을 때 나타날 화면
+        if st.session_state.admin_mode:
+            with st.form("admin_login"):
+                st.subheader("관리자 인증")
+                password = st.text_input("비밀번호를 입력하세요", type="password")
+                submit = st.form_submit_button("로그인")
+                if submit:
+                    if password == "1234":
+                        st.success("인증되었습니다. 관리 페이지로 이동합니다.")
+                    else:
+                        st.error("비밀번호가 틀렸습니다.")
+            st.markdown("---")
         
         # --- 중앙 주요 메뉴 (하나씩 크게 통합) ---
         
