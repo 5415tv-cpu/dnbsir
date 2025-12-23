@@ -1425,51 +1425,60 @@ if menu == "서비스 선택":
         
         # --- 화면 전환 로직 ---
         if st.session_state.logged_in:
-            # [A] 관리자 전용 페이지 내용
-            st.success("✅ 관리자 모드로 접속 중입니다.")
-            st.markdown("## 👨‍💼 매장 관리자 센터")
+            # [A] 관리자 전용 페이지: 점주 대시보드
             
-            tab1, tab2, tab3 = st.tabs(["예약 현황", "택배 관리", "회원 명부"])
+            # 1. 상단 헤더
+            st.markdown("""
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1 style="margin:0;">👨‍💼 점주 센터</h1>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # 2. 핵심 지표 (오늘의 매장 성적)
+            st.markdown("### 📊 오늘 실시간 현황")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric(label="신규 예약", value="3건", delta="12% ⬆️")
+            with c2:
+                st.metric(label="택배 접수", value="8건", delta="신규 2")
+            with c3:
+                st.metric(label="예상 수익", value="15.8만원", delta="목표달성")
+            
+            st.write("---")
+            
+            # 3. 메인 작업 관리 (탭으로 깔끔하게 정리)
+            st.markdown("### 📝 예약 및 접수 관리")
+            tab1, tab2, tab3 = st.tabs(["🕒 예약 리스트", "📦 택배 현황", "👤 단골 관리"])
             
             with tab1:
-                st.subheader("오늘의 예약")
-                st.write("- 홍길동 님 (14:00)")
-                st.info("새로운 예약이 2건 있습니다.")
-                
+                st.dataframe([
+                    {"시간": "10:00", "성함": "홍길동", "서비스": "와이셔츠", "상태": "대기"},
+                    {"시간": "11:30", "성함": "이순신", "서비스": "드라이", "상태": "완료"},
+                    {"시간": "14:00", "성함": "강감찬", "서비스": "바지수선", "상태": "진행중"}
+                ], use_container_width=True)
+            
             with tab2:
-                st.subheader("택배 접수 리스트")
-                st.write("- 접수번호 1002번: 처리중")
-                
+                st.write("📦 **현재 보관 중인 택배:** 5건 (수거 대기 중)")
+            
             with tab3:
-                st.subheader("신규 가입 사장님")
-                st.write("- 대박세탁소 사장님")
+                st.write("👤 **우수 고객:** 김사장님 외 12명")
             
-            # --- 가맹점주 전용 AI 비서 섹션 ---
             st.write("---")
-            st.subheader("🤖 동네비서 AI 매니저")
-            st.info("매장 운영이나 예약 현황에 대해 AI에게 물어보세요.")
             
-            # 채팅 기록 저장용 변수 설정
-            if "admin_messages" not in st.session_state:
-                st.session_state.admin_messages = []
-            
-            # 대화 기록 출력
-            for message in st.session_state.admin_messages:
-                with st.chat_message(message["role"]):
-                    st.markdown(message["content"])
-            
-            # 채팅 입력창
-            if prompt := st.chat_input("AI에게 매장 현황에 대해 물어보세요 (예: 오늘 예약 요약해줘)"):
-                # 사용자가 보낸 메시지 저장 및 표시
-                st.session_state.admin_messages.append({"role": "user", "content": prompt})
-                with st.chat_message("user"):
-                    st.markdown(prompt)
+            # 4. 하단 고정: AI 점주 비서 (접이식으로 깔끔하게)
+            with st.expander("🤖 AI 매니저에게 질문하기", expanded=True):
+                st.info("오늘 매출 분석이나 예약 요약을 요청해 보세요.")
+                if "admin_chat" not in st.session_state:
+                    st.session_state.admin_chat = []
                 
-                # AI의 응답 (현재는 테스트용 자동 응답)
-                with st.chat_message("assistant"):
-                    response = f"사장님, '{prompt}'에 대해 분석 중입니다. 현재 매장에는 3건의 예약이 대기 중이며, 가장 빠른 예약은 14:30 김철수 님입니다."
-                    st.markdown(response)
-                    st.session_state.admin_messages.append({"role": "assistant", "content": response})
+                # 간단한 채팅 UI
+                for m in st.session_state.admin_chat:
+                    st.chat_message(m["role"]).write(m["content"])
+                
+                if p := st.chat_input("점주 전용 AI 비서"):
+                    st.session_state.admin_chat.append({"role": "user", "content": p})
+                    st.session_state.admin_chat.append({"role": "assistant", "content": f"사장님, 요청하신 '{p}' 내용을 분석한 결과 오늘 오후가 가장 붐빌 것으로 예상됩니다."})
+                    st.rerun()
         
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
