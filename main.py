@@ -1497,7 +1497,7 @@ if menu == "서비스 선택":
             c3.metric("오늘 매출", "125,000원", "정상")
             
             st.write("---")
-            t1, t2, t3, t4, t5 = st.tabs(["🕒 예약 현황", "🛠️ 상품 관리", "📦 택배 관리", "🤖 AI 점주비서", "🖨️ QR/프린터"])
+            t1, t2, t3, t4, t5, t6 = st.tabs(["🕒 예약 현황", "🛠️ 상품 관리", "📦 택배 관리", "🤖 AI 점주비서", "🖨️ QR/프린터", "📈 경영분석"])
             
             # 카카오 알림톡 발송 함수
             def send_kakao_notification(phone, name, invoice_no):
@@ -1641,6 +1641,157 @@ if menu == "서비스 선택":
                     
                     if st.button("설정 저장"):
                         st.success("✅ 로젠택배 연동 설정이 저장되었습니다!")
+                
+                # SMS Gateway 가이드
+                with st.expander("📲 내 폰으로 문자 자동 발송하는 방법 (필독)", expanded=False):
+                    st.markdown("""
+                    ### **무제한 요금제라면 발송 비용이 0원!**
+                    아래 순서대로 한 번만 설정하면, 운송장 뽑을 때 문자가 자동으로 나갑니다.
+                    
+                    ---
+                    #### **1단계: 앱 설치**
+                    안드로이드 폰의 **Play 스토어**에서 **'SMS Gateway'** (또는 본사가 지정한 앱)를 설치하세요.
+                    
+                    #### **2단계: 연동 키 입력**
+                    앱 실행 후 설정창에 아래의 **점주 고유 API 키**를 복사해서 붙여넣으세요.
+                    """)
+                    st.code("DONGNE_BISU_TB_01_KEY", language="text")
+                    st.markdown("""
+                    #### **3단계: 권한 허용**
+                    앱에서 '문자 발송 권한'과 '배터리 최적화 제외'를 꼭 허용해 주세요.
+                    (폰이 잠겨 있어도 문자가 나가야 하니까요!)
+                    
+                    ---
+                    **⚠️ 주의사항**
+                    * 반드시 **안드로이드** 폰만 가능합니다. (아이폰은 보안상 자동 발송 불가)
+                    * 하루에 너무 많은 양(대략 150건 이상)을 보내면 통신사에서 차단될 수 있으니 주의하세요.
+                    """)
+                    if st.button("✅ 설정 완료 및 테스트 문자 발송"):
+                        st.write("점주님 폰으로 테스트 신호를 보냈습니다. 문자가 오는지 확인하세요!")
+                
+                # 보안 설정
+                with st.expander("🔐 보안 설정", expanded=False):
+                    st.subheader("🔐 보안 설정")
+                    logen_id_display = st.text_input("로젠 ID", value="taebaek_manager", disabled=True)
+                    st.text_input("API Password", value="********", type="password", disabled=True)
+                    if st.button("🔑 정보 수정하기"):
+                        st.warning("정보 수정을 위해 본인 인증이 필요합니다.")
+            
+            with t6:
+                import numpy as np
+                import random
+                from datetime import datetime
+                
+                st.subheader("📈 동네비서 경영 대시보드")
+                
+                # AI 비서 브리핑 함수
+                def get_ai_briefing(owner_name):
+                    now = datetime.now()
+                    briefings = [
+                        f"👋 안녕하세요, {owner_name} 사장님! 어제는 평일 평균보다 매출이 18% 높았습니다. 정말 고생 많으셨어요!",
+                        f"📈 사장님, 분석 결과 이번 주는 '운동화 세탁' 요청이 급증하고 있습니다. 관련 소모품을 미리 체크해보세요.",
+                        f"🕒 알림: 오늘은 오후 6시부터 8시 사이에 퇴근길 택배 접수가 몰릴 것으로 예상됩니다. 대비가 필요합니다!",
+                        f"👑 VIP 단골인 '김철수'님이 2주째 방문이 없으십니다. 오늘 '안부 문자' 한 통 어떠신가요?"
+                    ]
+                    return briefings[now.day % len(briefings)]
+                
+                # AI 비서 브리핑 (상단)
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 2rem; margin-right: 15px;">🤖</span>
+                        <h2 style="margin: 0; color: white; font-size: 1.5rem;">AI 비서 '동네지기' 보고</h2>
+                    </div>
+                    <p style="font-size: 1.2rem; line-height: 1.6; font-weight: 300; margin-bottom: 15px;">
+                        "{get_ai_briefing('사장')}"
+                    </p>
+                    <div style="display: flex; gap: 10px;">
+                        <span style="background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">#매출분석완료</span>
+                        <span style="background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">#혼잡도예측중</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # AI 동네탐정 비밀 첩보
+                def ai_secret_report():
+                    secrets = [
+                        "🤫 사장님, 최근 3일간 옆 동네에서 이사 온 손님이 5명이나 됩니다. 소문이 났나 봐요!",
+                        "🔍 어머! 6개월간 안 오던 '잠자는 사자' 단골 3명이 방금 우리 앱을 구경하고 갔어요. 미끼를 던질 시간입니다!",
+                        "🔥 오늘 오후 3시, '빨래 대란'이 예상됩니다. 커피 미리 한 잔 마셔두세요. 제가 데이터로 봤거든요!",
+                        "💎 우리 동네 '세탁 큰손' TOP 3가 이번 주에 약속이라도 한 듯 방문을 안 하셨네요. 무슨 일이 있는 걸까요?"
+                    ]
+                    return random.choice(secrets)
+                
+                st.markdown(f"""
+                <div style="background-color: #1E1E1E; padding: 25px; border-radius: 20px; border: 2px solid #FFD700; color: #FFD700; margin-bottom: 20px;">
+                    <h3 style="margin: 0; color: #FFD700;">🧐 AI 비서 '동네탐정'의 첩보</h3>
+                    <p style="font-size: 1.2rem; color: white; margin-top: 10px;">{ai_secret_report()}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # 핵심 지표 (Key Metrics)
+                st.markdown("### 📊 핵심 경영 지표")
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("이번 달 매출", "4,250,000원", "12%")
+                with col2:
+                    st.metric("택배 접수 건수", "184건", "5%")
+                with col3:
+                    st.metric("신규 단골", "12명", "2명")
+                with col4:
+                    st.metric("예상 수익(순이익)", "1,200,000원", "8%")
+                
+                # 매출 추이 그래프
+                st.write("---")
+                st.subheader("📅 주간 매출 추이")
+                chart_data = pd.DataFrame(
+                    np.random.randn(7, 2) * [100000, 50000] + [500000, 200000],
+                    columns=['세탁 매출', '택배 수수료']
+                )
+                st.area_chart(chart_data)
+                
+                # 핫플 지수 롤러코스터
+                st.write("---")
+                st.subheader("🎢 우리 가게 '핫플 지수' 롤러코스터")
+                st.caption("AI가 예측한 손님 몰림 현상! 가장 높을 때가 '대박 타임'입니다.")
+                
+                hours = [f"{h:02d}시" for h in range(9, 23, 2)]
+                days = ['월', '화', '수', '목', '금', '토', '일']
+                
+                busy_data = pd.DataFrame(
+                    np.array([
+                        [10, 15, 12, 18, 25, 40, 30],
+                        [30, 25, 35, 40, 50, 85, 70],
+                        [50, 45, 40, 55, 65, 95, 80],
+                        [40, 35, 45, 50, 70, 75, 60],
+                        [70, 65, 75, 85, 95, 60, 45],
+                        [90, 85, 80, 95, 100, 50, 40],
+                        [40, 30, 35, 45, 55, 30, 20]
+                    ]),
+                    index=hours,
+                    columns=days
+                )
+                st.area_chart(busy_data)
+                st.caption("※ 수치가 높을수록 손님이 몰리는 시간대입니다. (AI 과거 데이터 분석 결과)")
+                
+                # 단골 관리 (VIP 리스트)
+                st.write("---")
+                st.subheader("👑 우리 가게 VIP 단골 TOP 5")
+                top_customers = pd.DataFrame({
+                    "고객명": ["김철수", "이영희", "박지민", "최동해", "정광호"],
+                    "누적 방문": ["42회", "38회", "25회", "21회", "18회"],
+                    "누적 결제액": ["850,000원", "720,000원", "550,000원", "480,000원", "390,000원"],
+                    "최근 방문일": ["어제", "2일 전", "3일 전", "오늘", "1주일 전"]
+                })
+                st.table(top_customers)
+                
+                # 단골 대상 맞춤 마케팅
+                st.write("---")
+                st.subheader("🎁 단골 대상 맞춤 마케팅")
+                target = st.selectbox("마케팅 대상 선택", ["전체 고객", "3회 이상 방문 고객", "한 달간 미방문 고객"])
+                if st.button(f"📩 {target}에게 감사 문자/쿠폰 보내기"):
+                    st.success(f"✅ {target} 총 45명에게 감사 메시지 전송 신호를 보냈습니다.")
+                    st.info("점주님 폰의 'SMS Gateway'를 통해 순차 발송됩니다.")
         
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
@@ -1868,6 +2019,40 @@ if menu == "서비스 선택":
                             st.error("⚠️ 모든 정보를 입력해 주세요.")
                 
                 st.write("---")
+            
+            # AI 의류 감별사 (호기심 슝슝!)
+            with st.expander("📸 AI 의류 감별사 (호기심 슝슝!)", expanded=False):
+                st.write("보내실 옷이나 물건을 사진 찍어주세요!")
+                
+                def get_fun_ai_comment(item_type):
+                    import random
+                    comments = {
+                        "의류": ["👗 '이 셔츠, 어제 회식 때 삼겹살 냄새가 밴 것 같아요! 제가 향긋하게 바꿔드릴게요.'", 
+                                "👔 '주인님, 저 목깃이 너무 답답해요! AI의 손길로 숨통을 틔워주세요!'"],
+                        "이불": ["🛌 '와! 이 이불은 구름을 머금었나요? 더 푹신하게 만들어드릴게요.'", 
+                                "😴 '숙면 확률 200% 증가를 위해 AI가 특수 세탁 모드를 가동합니다!'"],
+                        "운동화": ["👟 '어이쿠! 이 친구 어제 산책 좀 했나본데요? 흙먼지를 털고 새 신발로 환생시켜줄게요.'", 
+                                  "🏃 '주인님의 발걸음이 가벼워지도록 제가 깃털처럼 가볍게 씻길게요!'"]
+                    }
+                    return random.choice(comments.get(item_type, ["✨ '주인님의 소중한 물건, AI가 정성껏 모시겠습니다!'"]))
+                
+                category = st.selectbox("어떤 물건을 맡기시나요?", ["의류", "이불", "운동화", "기타"], key="ai_item_category")
+                
+                uploaded_cloth = st.file_uploader("물건 사진을 올려주세요", type=['jpg', 'jpeg', 'png'], key="cloth_uploader")
+                
+                if uploaded_cloth:
+                    st.image(uploaded_cloth, width=250)
+                
+                if st.button("✨ AI에게 내 물건 보여주기 (분석)", key="ai_analyze_btn"):
+                    import time
+                    with st.spinner("AI가 물건의 관상을 보는 중..."):
+                        time.sleep(1.5)
+                    st.chat_message("assistant").write(get_fun_ai_comment(category))
+                    st.balloons()
+                    
+                    # 호기심 유발 버튼
+                    if st.button("✨ 내 옷이 새 옷이 될 확률 확인하기", key="new_cloth_prob"):
+                        st.write(f"🎉 축하합니다! AI 분석 결과 **99.8%** 확률로 광채가 날 예정입니다!")
             
             # 3. 사장님 회원가입 (하나로 크게)
             st.markdown("""
