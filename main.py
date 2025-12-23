@@ -2057,13 +2057,8 @@ if menu == "서비스 선택":
                     if st.button("✨ 내 옷이 새 옷이 될 확률 확인하기", key="new_cloth_prob"):
                         st.write(f"🎉 축하합니다! AI 분석 결과 **99.8%** 확률로 광채가 날 예정입니다!")
             
-            # 3. 사장님 회원가입
-            if st.button("👨‍💼 사장님 회원가입", key="btn_owner_signup", use_container_width=True):
-                st.session_state.selected_menu = "사장님 가입"
-                st.rerun()
-            
-            # 4. 무료체험
-            if st.button("🎁 지금 가입하면 한달간 무료체험", key="btn_free_trial", use_container_width=True):
+            # 3. 사장님 회원가입 (무료체험 통합)
+            if st.button("🎁 사장님 회원가입 - 지금 가입하면 한달 무료!", key="btn_owner_signup", use_container_width=True, type="primary"):
                 st.session_state.selected_menu = "사장님 가입"
                 st.rerun()
             
