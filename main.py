@@ -1523,10 +1523,18 @@ if menu == "서비스 선택":
                 ]
                 return random.choice(secrets)
             
+            # 동네탐정 비밀 첩보 (업그레이드)
+            spy_secrets = [
+                "🤫 **[특보]** 근처 아파트 단지에서 이번 주에 이사오는 가구가 10팀입니다! '신규 이사 세탁 할인' 문자를 날려보세요.",
+                "🔍 **[발견]** 3개월간 뜸했던 VIP '박지민' 고객님이 방금 앱 가격표를 훑어보고 가셨어요. 지금 쿠폰을 보내면 90% 확률로 방문합니다!",
+                "🔥 **[경보]** 내일 오후 2시, 태풍 전야처럼 택배가 몰릴 예정입니다. 오늘 미리 박스 테이프를 채워두세요!",
+                "💎 **[VIP]** 우리 동네 '세탁 큰손' TOP 3가 이번 주에 약속이라도 한 듯 방문을 안 하셨네요. 무슨 일이 있는 걸까요?"
+            ]
+            
             st.markdown(f"""
-            <div style="background-color: #1E1E1E; padding: 20px; border-radius: 15px; border: 2px solid #FFD700; color: #FFD700; margin-bottom: 20px;">
-                <h4 style="margin: 0; color: #FFD700;">🧐 AI 비서 '동네탐정'의 첩보</h4>
-                <p style="font-size: 1rem; color: white; margin-top: 10px; line-height: 1.5;">"{ai_secret_report()}"</p>
+            <div style="background-color: #1a1a1a; padding: 20px; border-radius: 15px; border: 2px solid #FFD700; margin-bottom: 20px;">
+                <h4 style="color: #FFD700; margin: 0 0 15px 0;">🕵️‍♂️ AI 동네탐정 '비밀 첩보'</h4>
+                <p style="font-size: 1rem; color: white; line-height: 1.6;">{random.choice(spy_secrets)}</p>
             </div>
             """, unsafe_allow_html=True)
             
@@ -1954,24 +1962,36 @@ if menu == "서비스 선택":
                         "연락처": "010-1234-5678"
                     }
                 
-                # AI 의류 감별사 (호기심 슝슝!)
-                st.subheader("📸 AI 의류 감별사 (호기심 슝슝!)")
-                uploaded_cloth = st.file_uploader("보내실 옷이나 물건을 사진 찍어주세요!", type=['jpg', 'png'], key="cloth_analyzer")
+                # AI 의류 기분 감별사 (재미 톡톡!)
+                import random
+                import time
+                
+                def get_fun_ai_comment(item_type):
+                    comments = {
+                        "의류": ["👗 '이 셔츠, 어제 회식 때 삼겹살 냄새가 밴 것 같아요! 제가 향긋하게 바꿔드릴게요.'", 
+                               "👔 '주인님, 저 목깃이 너무 답답해요! AI의 손길로 숨통을 틔워주세요!'"],
+                        "이불": ["🛌 '와! 이 이불은 구름을 머금었나요? 더 푹신하게 만들어드릴게요.'", 
+                               "😴 '숙면 확률 200% 증가를 위해 AI가 특수 세탁 모드를 가동합니다!'"],
+                        "운동화": ["👟 '어이쿠! 이 친구 어제 산책 좀 했나본데요? 흙먼지를 털고 새 신발로 환생시켜줄게요.'", 
+                                 "🏃 '주인님의 발걸음이 가벼워지도록 제가 깃털처럼 가볍게 씻길게요!'"],
+                        "기타": ["✨ '주인님의 소중한 물건, AI가 정성껏 모시겠습니다!'"]
+                    }
+                    return random.choice(comments.get(item_type, comments["기타"]))
+                
+                st.subheader("📸 AI 의류 기분 감별사")
+                category = st.selectbox("어떤 물건을 맡기시나요?", ["의류", "이불", "운동화", "기타"], key="item_category")
+                
+                uploaded_cloth = st.file_uploader("사진을 찍어 올려주시면 더 정확해요! (선택)", type=['jpg', 'png'], key="cloth_analyzer")
                 
                 if uploaded_cloth:
                     st.image(uploaded_cloth, width=250)
-                    with st.spinner("AI가 옷의 기분을 분석 중..."):
-                        import random
-                        fun_comments = [
-                            "🧸 '이 곰인형은 지금 주인이 그리워서 눈물을 흘리고 있네요. 깨끗하게 씻겨드릴게요!'",
-                            "👔 셔츠가 말하네요: '아이고~ 목때 때문에 숨을 못 쉬겠어요! 사장님께 살려달라고 전해줘요!'",
-                            "👟 '이 운동화는 어제 산길을 다녀왔군요? 진흙 향기가 예술입니다. 새 신으로 태어나게 해줄게요!'"
-                        ]
-                        st.info(random.choice(fun_comments))
-                        
-                        if st.button("✨ 내 옷이 새 옷이 될 확률 확인하기"):
-                            st.balloons()
-                            st.write(f"🎉 축하합니다! AI 분석 결과 **99.8%** 확률로 광채가 날 예정입니다!")
+                
+                if st.button("✨ AI에게 내 물건 보여주기 (분석)"):
+                    with st.spinner("AI가 물건의 관상을 보는 중..."):
+                        time.sleep(1.5)
+                        st.chat_message("assistant").write(get_fun_ai_comment(category))
+                        st.balloons()
+                        st.success(f"분석 완료! {category} 접수창으로 이동합니다.")
                 
                 st.write("---")
                 st.header("📦 스마트 AI 택배 비서")
