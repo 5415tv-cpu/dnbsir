@@ -1457,9 +1457,14 @@ if menu == "서비스 선택":
                 st.subheader("🔒 동네비서 보안 접속")
                 pw = st.text_input("접속 비밀번호를 입력하세요", type="password")
                 if st.form_submit_button("시스템 접속"):
-                    if pw == "super123":  # 본사 비밀번호
+                    # 본사 마스터 관리자 비밀번호 (강력한 비밀번호 적용)
+                    ADMIN_PASSWORD = "Aass12!!0"
+                    
+                    if pw == ADMIN_PASSWORD:  # 본사 비밀번호
                         st.session_state.user_role = "super"
+                        st.session_state.admin_auth = True
                         st.session_state.show_login = False
+                        st.success("✅ 본사 관리자님, 환영합니다!")
                         st.rerun()
                     elif pw == "1234":    # 가맹점주 비밀번호
                         st.session_state.user_role = "owner"
@@ -1472,6 +1477,19 @@ if menu == "서비스 선택":
         
         # CASE A: 슈퍼관리자 (본사 관제)
         if st.session_state.user_role == "super":
+            # 본사 마스터 관리자 인증 확인
+            if not st.session_state.get("admin_auth"):
+                st.info("🔓 본사 마스터 권한이 필요합니다.")
+                input_pwd = st.text_input("마스터 암호 입력", type="password", key="master_pwd")
+                if st.button("마스터 로그인", key="master_login_btn"):
+                    if input_pwd == "Aass12!!0":
+                        st.session_state.admin_auth = True
+                        st.success("✅ 본사 관리자님, 환영합니다!")
+                        st.rerun()
+                    else:
+                        st.error("❌ 비밀번호가 틀렸습니다. 다시 확인해 주세요.")
+                st.stop()
+            
             st.markdown("## 🌐 본사 통합 관제 대시보드")
             
             # 전사 지표
