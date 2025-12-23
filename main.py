@@ -1552,25 +1552,62 @@ if menu == "서비스 선택":
                 st.session_state.show_reserve_detail = not st.session_state.show_reserve_detail
                 st.rerun()
             
-            # 매장예약 상세 화면
+            # 매장예약 상세 화면 (대형 이미지 메뉴판)
             if st.session_state.show_reserve_detail:
                 st.write("---")
                 st.subheader("🛍️ 서비스 상품 선택")
+                st.caption("사진을 확인하고 아래 체크박스로 선택해 주세요.")
                 
-                # 상품 리스트 (멀티셀렉트로 선택 가능하게 구성)
-                items = {
-                    "세탁: 와이셔츠 (3,000원)": 3000,
-                    "세탁: 드라이클리닝 상의 (7,000원)": 7000,
-                    "수선: 바지 밑단 (5,000원)": 5000,
-                    "보관: 겨울 코트 1개월 (10,000원)": 10000
-                }
+                # 선택된 항목 저장용
+                if 'selected_services' not in st.session_state:
+                    st.session_state.selected_services = []
                 
-                selected_items = st.multiselect("원하시는 서비스를 모두 골라주세요", list(items.keys()))
-                
-                # 합계 금액 계산
-                total_price = sum([items[item] for item in selected_items])
-                if total_price > 0:
-                    st.info(f"선택하신 서비스 총 금액: {total_price:,}원")
+                # 가맹점주가 등록한 메뉴 데이터 사용
+                if 'menu_data' in st.session_state and st.session_state.menu_data:
+                    total_price = 0
+                    for i, item in enumerate(st.session_state.menu_data):
+                        # 가로로 꽉 차는 카드 스타일 컨테이너
+                        with st.container(border=True):
+                            # 사진 표시 (이미지가 있으면 표시, 없으면 플레이스홀더)
+                            if 'image' in item and item.get('image'):
+                                st.image(item['image'], use_container_width=True)
+                            else:
+                                st.image("https://via.placeholder.com/800x300.png?text=" + item['상품명'].replace(" ", "+"), use_container_width=True)
+                            
+                            # 상품 정보 및 선택 버튼
+                            col_name, col_price = st.columns([2, 1])
+                            with col_name:
+                                st.markdown(f"### {item['상품명']}")
+                            with col_price:
+                                st.markdown(f"### {item['가격']:,}원")
+                            
+                            # 선택 체크박스
+                            if st.checkbox(f"{item['상품명']} 선택하기", key=f"sel_{i}"):
+                                total_price += item['가격']
+                    
+                    if total_price > 0:
+                        st.success(f"🛒 선택하신 서비스 총 금액: **{total_price:,}원**")
+                else:
+                    # 기본 메뉴 (가맹점주가 설정하지 않은 경우)
+                    default_items = [
+                        {"상품명": "와이셔츠 세탁", "가격": 3000},
+                        {"상품명": "드라이클리닝(상의)", "가격": 7000},
+                        {"상품명": "바지 수선", "가격": 5000}
+                    ]
+                    total_price = 0
+                    for i, item in enumerate(default_items):
+                        with st.container(border=True):
+                            st.image(f"https://via.placeholder.com/800x300.png?text={item['상품명'].replace(' ', '+')}", use_container_width=True)
+                            col_name, col_price = st.columns([2, 1])
+                            with col_name:
+                                st.markdown(f"### {item['상품명']}")
+                            with col_price:
+                                st.markdown(f"### {item['가격']:,}원")
+                            if st.checkbox(f"{item['상품명']} 선택하기", key=f"default_sel_{i}"):
+                                total_price += item['가격']
+                    
+                    if total_price > 0:
+                        st.success(f"🛒 선택하신 서비스 총 금액: **{total_price:,}원**")
                 
                 st.write("---")
                 
