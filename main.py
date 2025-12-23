@@ -1710,10 +1710,57 @@ if menu == "서비스 선택":
                 <div class="action-btn">지금 접수하기 〉</div>
             </div>
             """, unsafe_allow_html=True)
+            # 택배 접수 상태 초기화
+            if 'show_delivery_detail' not in st.session_state:
+                st.session_state.show_delivery_detail = False
+            
             if st.button("📦 택배 접수하기", key="btn_delivery", use_container_width=True):
-                st.session_state.service_type = "delivery"
-                st.session_state.show_delivery_form = True
+                st.session_state.show_delivery_detail = not st.session_state.show_delivery_detail
                 st.rerun()
+            
+            # 택배 접수 상세 화면
+            if st.session_state.show_delivery_detail:
+                st.write("---")
+                st.subheader("📦 택배 접수 및 요금 안내")
+                
+                # 요금표 데이터
+                import pandas as pd
+                delivery_fee = [
+                    {"구분": "초소형 (2kg 이하)", "권역내": "3,200원", "권역외": "3,700원", "제주": "6,200원"},
+                    {"구분": "소형 (5kg 이하)", "권역내": "3,700원", "권역외": "4,200원", "제주": "6,700원"},
+                    {"구분": "중형 (15kg 이하)", "권역내": "4,200원", "권역외": "4,700원", "제주": "7,200원"},
+                    {"구분": "대형 (20kg 이하)", "권역내": "5,200원", "권역외": "5,700원", "제주": "8,200원"}
+                ]
+                df_fee = pd.DataFrame(delivery_fee)
+                
+                # 요금표 출력
+                st.markdown("#### 💰 전국 택배 요금표")
+                st.table(df_fee)
+                
+                # 접수 양식
+                with st.form("delivery_form"):
+                    st.markdown("#### 📝 접수 정보 입력")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        sender = st.text_input("보내시는 분 성함")
+                        s_phone = st.text_input("보내시는 분 연락처")
+                    with col2:
+                        receiver = st.text_input("받으시는 분 성함")
+                        r_phone = st.text_input("받으시는 분 연락처")
+                    
+                    address = st.text_input("받으시는 분 상세 주소")
+                    item_desc = st.selectbox("물품 종류", ["의류", "잡화", "도서", "가전", "기타"])
+                    
+                    submit_btn = st.form_submit_button("택배 접수 완료", use_container_width=True)
+                    
+                    if submit_btn:
+                        if sender and receiver and address:
+                            st.success(f"✅ {sender}님의 택배가 정상 접수되었습니다! 점주님 확인 후 운송장이 발급됩니다.")
+                            st.session_state.show_delivery_detail = False
+                        else:
+                            st.error("⚠️ 모든 정보를 정확히 입력해 주세요.")
+                
+                st.write("---")
             
             # 3. 사장님 회원가입 (하나로 크게)
             st.markdown("""
