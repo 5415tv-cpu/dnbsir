@@ -1492,6 +1492,9 @@ if menu == "서비스 선택":
             
             st.markdown("## 🌐 본사 통합 관제 대시보드")
             
+            import pandas as pd
+            import numpy as np
+            
             # 전사 지표
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("전체 가맹점", "24개", "신규 +2")
