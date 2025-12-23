@@ -1326,8 +1326,10 @@ def render_general_form(store, store_id):
 with st.sidebar:
     st.markdown("<h1 style='font-size: 2rem; margin-bottom: 1rem;'>🏘️ 동네비서</h1>", unsafe_allow_html=True)
     
-    # 메뉴 세션 상태 초기화
+    # 메뉴 옵션
     menu_options = ["서비스 선택", "사용요금", "사장님 가입", "이용 안내"]
+    
+    # 메뉴 세션 상태 초기화
     if "selected_menu" not in st.session_state:
         st.session_state.selected_menu = "서비스 선택"
     
@@ -1338,12 +1340,15 @@ with st.sidebar:
         "메뉴", 
         menu_options,
         index=current_index,
-        label_visibility="collapsed",
-        key="menu_radio"
+        label_visibility="collapsed"
     )
     
-    # 메뉴 변경 시 세션 상태 업데이트
-    st.session_state.selected_menu = menu
+    # 메뉴 선택이 변경되면 세션 상태 업데이트
+    if menu != st.session_state.selected_menu:
+        st.session_state.selected_menu = menu
+    
+    # 메뉴 변수를 세션 상태로 통일
+    menu = st.session_state.selected_menu
     
     st.markdown("---")
     
