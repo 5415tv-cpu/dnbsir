@@ -1509,17 +1509,53 @@ if menu == "서비스 선택":
                 # 전국 가맹점 지도 & 현황
                 st.subheader("🗺️ 전국 가맹점 실시간 현황")
                 
-                # 위도 경도 데이터를 활용한 지도 표시
-                map_data = pd.DataFrame({
-                    'lat': [37.167, 37.566, 35.179, 35.871, 37.456, 35.540],
-                    'lon': [128.985, 126.978, 129.075, 128.601, 126.705, 129.311],
-                    'store': ['태백 본점(본사)', '서울 강남점', '부산 해운대점', '대구 수성점', '인천 송도점', '울산 중구점'],
-                    'status': ['영업중', '준비중', '영업중', '영업중', '영업중', '점검중']
-                })
-                st.map(map_data)
+                # 가맹점 데이터
+                stores_data = [
+                    {'name': '태백 본점(본사)', 'lat': 37.167, 'lon': 128.985, 'status': '영업중', 'address': '강원도 태백시'},
+                    {'name': '서울 강남점', 'lat': 37.566, 'lon': 126.978, 'status': '준비중', 'address': '서울 강남구'},
+                    {'name': '부산 해운대점', 'lat': 35.179, 'lon': 129.075, 'status': '영업중', 'address': '부산 해운대구'},
+                    {'name': '대구 수성점', 'lat': 35.871, 'lon': 128.601, 'status': '영업중', 'address': '대구 수성구'},
+                    {'name': '인천 송도점', 'lat': 37.456, 'lon': 126.705, 'status': '영업중', 'address': '인천 연수구'},
+                    {'name': '울산 중구점', 'lat': 35.540, 'lon': 129.311, 'status': '점검중', 'address': '울산 중구'},
+                ]
+                
+                # 네이버 지도 임베드 (전국 지도)
+                st.markdown("#### 🗺️ 네이버 지도로 보기")
+                
+                # 네이버 지도 iframe 임베드
+                naver_map_html = """
+                <div style="width:100%; height:400px; border-radius:10px; overflow:hidden; border:1px solid #ddd;">
+                    <iframe 
+                        src="https://map.naver.com/p/search/동네비서%20가맹점" 
+                        width="100%" 
+                        height="400" 
+                        frameborder="0" 
+                        style="border:0;" 
+                        allowfullscreen>
+                    </iframe>
+                </div>
+                """
+                st.components.v1.html(naver_map_html, height=420)
                 
                 st.markdown("### 📋 가맹점 상세 현황")
-                st.dataframe(map_data[['store', 'status']], use_container_width=True)
+                
+                # 가맹점 카드 형태로 표시
+                for store in stores_data:
+                    status_color = "#28a745" if store['status'] == '영업중' else "#ffc107" if store['status'] == '준비중' else "#dc3545"
+                    naver_link = f"https://map.naver.com/p/search/{store['address']}"
+                    
+                    st.markdown(f"""
+                    <div style="background: white; border: 1px solid #eee; border-radius: 10px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <strong style="font-size: 1.1rem;">{store['name']}</strong>
+                            <div style="color: #666; font-size: 0.9rem;">{store['address']}</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="background: {status_color}; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem;">{store['status']}</span>
+                            <a href="{naver_link}" target="_blank" style="background: #03C75A; color: white; padding: 5px 12px; border-radius: 5px; text-decoration: none; font-size: 0.85rem;">📍 지도</a>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
             
             with t2:
                 # 실시간 통합 매출 정산
