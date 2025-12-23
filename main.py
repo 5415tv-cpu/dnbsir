@@ -1389,9 +1389,9 @@ if menu == "서비스 선택":
     )
     
     if show_service_selection:
-        # 상태 관리 변수 (로그인 여부 확인용)
-        if 'logged_in' not in st.session_state:
-            st.session_state.logged_in = False
+        # 상태 관리 변수 (권한별 로그인)
+        if 'user_role' not in st.session_state:
+            st.session_state.user_role = None  # None, 'super', 'owner' 중 하나
         if 'show_login' not in st.session_state:
             st.session_state.show_login = False
         
@@ -1400,9 +1400,9 @@ if menu == "서비스 선택":
         with col1:
             st.markdown('### 동네비서')
         with col2:
-            if st.session_state.logged_in:
-                if st.button("로그아웃", key="logout_btn"):
-                    st.session_state.logged_in = False
+            if st.session_state.user_role:
+                if st.button("🔓 로그아웃", key="logout_btn"):
+                    st.session_state.user_role = None
                     st.rerun()
             else:
                 if st.button("🔒 관리자", key="admin_btn"):
@@ -1412,72 +1412,90 @@ if menu == "서비스 선택":
         st.markdown("<div style='border-bottom: 1px solid #eee; margin-bottom: 20px;'></div>", unsafe_allow_html=True)
         
         # --- 로그인 입력창 (버튼 눌렀을 때만 등장) ---
-        if not st.session_state.logged_in and st.session_state.show_login:
+        if not st.session_state.user_role and st.session_state.show_login:
             with st.form("login_form"):
-                pw = st.text_input("관리자 비밀번호", type="password")
-                if st.form_submit_button("접속"):
-                    if pw == "1234":
-                        st.session_state.logged_in = True
+                st.subheader("🔒 동네비서 보안 접속")
+                pw = st.text_input("접속 비밀번호를 입력하세요", type="password")
+                if st.form_submit_button("시스템 접속"):
+                    if pw == "super123":  # 본사 비밀번호
+                        st.session_state.user_role = "super"
+                        st.session_state.show_login = False
+                        st.rerun()
+                    elif pw == "1234":    # 가맹점주 비밀번호
+                        st.session_state.user_role = "owner"
                         st.session_state.show_login = False
                         st.rerun()
                     else:
-                        st.error("비밀번호가 틀렸습니다.")
+                        st.error("잘못된 비밀번호입니다.")
         
         # --- 화면 전환 로직 ---
-        if st.session_state.logged_in:
-            # [A] 관리자 전용 페이지: 점주 대시보드
+        
+        # CASE A: 슈퍼관리자 (본사 관제)
+        if st.session_state.user_role == "super":
+            st.markdown("## 🌐 본사 통합 관제 대시보드")
             
-            # 1. 상단 헤더
-            st.markdown("""
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h1 style="margin:0;">👨‍💼 점주 센터</h1>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # 2. 핵심 지표 (오늘의 매장 성적)
-            st.markdown("### 📊 오늘 실시간 현황")
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.metric(label="신규 예약", value="3건", delta="12% ⬆️")
-            with c2:
-                st.metric(label="택배 접수", value="8건", delta="신규 2")
-            with c3:
-                st.metric(label="예상 수익", value="15.8만원", delta="목표달성")
+            # 전사 지표
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("전체 가맹점", "24개", "신규 +2")
+            c2.metric("총 이용자", "1,250명", "4% 증가")
+            c3.metric("금월 총 매출", "4,820만원", "전월비 12%↑")
+            c4.metric("서버 점유율", "22%", "정상")
             
             st.write("---")
+            t1, t2, t3 = st.tabs(["🏬 가맹점 관리", "💰 전사 매출 분석", "📢 공지 발송"])
             
-            # 3. 메인 작업 관리 (탭으로 깔끔하게 정리)
-            st.markdown("### 📝 예약 및 접수 관리")
-            tab1, tab2, tab3 = st.tabs(["🕒 예약 리스트", "📦 택배 현황", "👤 단골 관리"])
-            
-            with tab1:
+            with t1:
+                st.subheader("전국 가맹점 실시간 상태")
                 st.dataframe([
-                    {"시간": "10:00", "성함": "홍길동", "서비스": "와이셔츠", "상태": "대기"},
-                    {"시간": "11:30", "성함": "이순신", "서비스": "드라이", "상태": "완료"},
-                    {"시간": "14:00", "성함": "강감찬", "서비스": "바지수선", "상태": "진행중"}
+                    {"매장": "강남점", "점주": "김철수", "상태": "운영중", "당일접수": "12건"},
+                    {"매장": "태백점", "점주": "사장님", "상태": "운영중", "당일접수": "8건"},
+                    {"매장": "제주점", "점주": "이영희", "상태": "정지", "당일접수": "0건"}
                 ], use_container_width=True)
             
-            with tab2:
-                st.write("📦 **현재 보관 중인 택배:** 5건 (수거 대기 중)")
+            with t2:
+                st.subheader("전사 매출 현황")
+                st.info("이번 달 매출 분석 데이터가 표시됩니다.")
             
-            with tab3:
-                st.write("👤 **우수 고객:** 김사장님 외 12명")
+            with t3:
+                st.subheader("공지사항 발송")
+                notice = st.text_area("공지 내용을 입력하세요")
+                if st.button("전체 가맹점에 발송"):
+                    st.success("공지가 발송되었습니다!")
+        
+        # CASE B: 가맹점주 (매장 관리)
+        elif st.session_state.user_role == "owner":
+            st.markdown("## 👨‍💼 가맹점주 매장 관리")
+            
+            # 매장 지표
+            c1, c2, c3 = st.columns(3)
+            c1.metric("오늘의 예약", "3건", "대기 1")
+            c2.metric("택배 접수", "5건", "신규 2")
+            c3.metric("오늘 매출", "125,000원", "정상")
             
             st.write("---")
+            t1, t2, t3 = st.tabs(["🕒 예약 현황", "📦 택배 관리", "🤖 AI 점주비서"])
             
-            # 4. 하단 고정: AI 점주 비서 (접이식으로 깔끔하게)
-            with st.expander("🤖 AI 매니저에게 질문하기", expanded=True):
-                st.info("오늘 매출 분석이나 예약 요약을 요청해 보세요.")
+            with t1:
+                st.write("#### 실시간 방문 예정자")
+                st.dataframe([
+                    {"시간": "14:00", "고객": "박손님", "연락처": "010-***-****", "항목": "세탁"},
+                    {"시간": "16:30", "고객": "최고객", "연락처": "010-***-****", "항목": "수선"}
+                ], use_container_width=True)
+            
+            with t2:
+                st.write("📦 **현재 보관 중인 택배:** 5건 (수거 대기 중)")
+            
+            with t3:
+                st.write("#### AI 매니저와 대화")
                 if "admin_chat" not in st.session_state:
                     st.session_state.admin_chat = []
                 
-                # 간단한 채팅 UI
                 for m in st.session_state.admin_chat:
                     st.chat_message(m["role"]).write(m["content"])
                 
-                if p := st.chat_input("점주 전용 AI 비서"):
+                if p := st.chat_input("오늘 오후 예약 상황 분석해줘"):
                     st.session_state.admin_chat.append({"role": "user", "content": p})
-                    st.session_state.admin_chat.append({"role": "assistant", "content": f"사장님, 요청하신 '{p}' 내용을 분석한 결과 오늘 오후가 가장 붐빌 것으로 예상됩니다."})
+                    st.session_state.admin_chat.append({"role": "assistant", "content": f"사장님, '{p}' 분석 결과 오늘 오후가 가장 붐빌 것으로 예상됩니다."})
                     st.rerun()
         
         else:
