@@ -7,6 +7,20 @@ import streamlit as st
 import google.generativeai as genai
 from datetime import datetime
 import os
+import hashlib
+import re
+
+# ==========================================
+# 🔐 보안 시스템
+# ==========================================
+def hash_password(password):
+    """비밀번호를 복호화 불가능한 해시값으로 변환"""
+    return hashlib.sha256(str.encode(password)).hexdigest()
+
+def validate_phone(phone):
+    """전화번호 유효성 검사 (로젠 시스템 입력 전 차단)"""
+    pattern = re.compile(r'^010-\d{3,4}-\d{4}$')
+    return pattern.match(phone)
 
 # 커스텀 모듈 임포트
 from db_manager import (
@@ -1344,7 +1358,11 @@ with st.sidebar:
     st.session_state.company_intro = company_text
     
     st.markdown("---")
-    st.caption("관리자: admin.py")
+    
+    # 법적 고지 (앱 심사 필수)
+    st.markdown("### 📜 법적 고지")
+    st.caption("개인정보 처리방침 | 서비스 이용약관")
+    st.caption("© 2025 동네비서 All rights reserved.")
 
 # ==========================================
 # 🏠 서비스 선택 페이지 (첫 화면)
@@ -1666,6 +1684,15 @@ if menu == "서비스 선택":
                     st.success("✅ 자동 출력 모드가 활성화되었습니다. 주문 즉시 영수증이 출력됩니다.")
                 
                 st.write("---")
+                
+                # 보안 설정 섹션
+                with st.expander("🔐 보안 설정", expanded=False):
+                    st.subheader("민감 정보 관리")
+                    with st.container(border=True):
+                        logen_id_display = st.text_input("로젠 ID", value="********", disabled=True, key="secure_logen_id")
+                        st.text_input("API Password", value="********", type="password", disabled=True, key="secure_api_pw")
+                        if st.button("🔑 정보 수정하기"):
+                            st.warning("정보 수정을 위해 본인 인증이 필요합니다.")
                 
                 # 로젠택배 연동 설정
                 with st.expander("🚚 로젠택배 영업소 연동 설정", expanded=False):
