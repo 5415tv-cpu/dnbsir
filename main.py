@@ -1813,15 +1813,8 @@ if menu == "서비스 선택":
             if 'show_reserve_detail' not in st.session_state:
                 st.session_state.show_reserve_detail = False
             
-            # 1. 매장예약 카드
-            st.markdown("""
-            <div class="app-card">
-                <span class="card-icon" style="font-size: 3.5rem;">📅</span>
-                <h3>매장예약</h3>
-                <div class="action-btn">지금 예약하기 〉</div>
-            </div>
-            """, unsafe_allow_html=True)
-            if st.button("📅 매장 예약하기", key="btn_store", use_container_width=True):
+            # 1. 매장예약 버튼
+            if st.button("📅 매장 예약하기", key="btn_store", use_container_width=True, type="primary"):
                 st.session_state.show_reserve_detail = not st.session_state.show_reserve_detail
                 st.rerun()
             
@@ -1914,19 +1907,11 @@ if menu == "서비스 선택":
                 
                 st.write("---")
             
-            # 2. 택배접수 (딱 하나로 크게)
-            st.markdown("""
-            <div class="app-card">
-                <span class="card-icon" style="font-size: 3.5rem;">📦</span>
-                <h3>택배접수</h3>
-                <div class="action-btn">지금 접수하기 〉</div>
-            </div>
-            """, unsafe_allow_html=True)
-            # 택배 접수 상태 초기화
+            # 2. 택배접수 버튼
             if 'show_delivery_detail' not in st.session_state:
                 st.session_state.show_delivery_detail = False
             
-            if st.button("📦 택배 접수하기", key="btn_delivery", use_container_width=True):
+            if st.button("📦 택배 접수하기", key="btn_delivery", use_container_width=True, type="primary"):
                 st.session_state.show_delivery_detail = not st.session_state.show_delivery_detail
                 st.rerun()
             
