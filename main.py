@@ -1351,49 +1351,54 @@ if menu == "서비스 선택":
         # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # --- 중앙 주요 메뉴 (추천 서비스) ---
-        st.markdown("<h2 style='text-align:center; margin-bottom:20px;'>✨ 추천 서비스</h2>", unsafe_allow_html=True)
+        # --- 중앙 주요 메뉴 (서비스 바로가기) ---
+        st.markdown("<h2 style='text-align:center; margin-bottom:20px;'>✨ 서비스 바로가기</h2>", unsafe_allow_html=True)
         
-        # 1. 매장예약 카드
+        # 1번 카드: 매장예약 + 택배접수 (일반 고객용 통합)
         st.markdown("""
         <div class="app-card">
-            <span class="card-icon">📅</span>
-            <h2 style="margin:0;">매장 예약하기</h2>
-            <p style="color:#666;">기다림 없이 바로 이용하는 스마트 예약</p>
-            <div class="action-btn">지금 바로 예약 〉</div>
+            <span class="card-icon">📅 📦</span>
+            <h2 style="margin:0;">매장예약 & 택배접수</h2>
+            <p style="color:#666;">예약부터 택배까지 한 번에 해결하세요.</p>
+            <div class="action-btn">고객 서비스 이용하기 〉</div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("매장 예약", key="btn_store", use_container_width=True):
-            st.session_state.service_type = "store"
-            st.session_state.show_store_list = True
-            st.rerun()
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("매장 예약", key="btn_store", use_container_width=True):
+                st.session_state.service_type = "store"
+                st.session_state.show_store_list = True
+                st.rerun()
+        with col2:
+            if st.button("택배 접수", key="btn_delivery", use_container_width=True):
+                st.session_state.service_type = "delivery"
+                st.session_state.show_delivery_form = True
+                st.rerun()
         
         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
         
-        # 2. 택배접수 카드
+        # 2번 카드: 정산관리 + 공지사항 (매장 운영 통합)
         st.markdown("""
         <div class="app-card">
-            <span class="card-icon">📦</span>
-            <h2 style="margin:0;">택배 접수하기</h2>
-            <p style="color:#666;">무거운 짐도 집 앞에서 편하게 발송</p>
-            <div class="action-btn">접수 신청하기 〉</div>
+            <span class="card-icon">📊 📢</span>
+            <h2 style="margin:0;">매장 운영 & 소식</h2>
+            <p style="color:#666;">실시간 정산 내역과 새로운 소식을 확인하세요.</p>
+            <div class="action-btn">운영 관리하기 〉</div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("택배 접수", key="btn_delivery", use_container_width=True):
-            st.session_state.service_type = "delivery"
-            st.session_state.show_delivery_form = True
-            st.rerun()
         
-        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        st.markdown("---")
         
-        # 사장님 혜택
-        with st.expander("🎁 사장님 혜택"):
-            st.markdown("""
-✅ 수수료 0원  
-✅ AI 24시간 응대  
-✅ 자동 정산  
-✅ 단골 관리
-            """)
+        # 3번 카드: 사장님 전용 회원가입
+        st.markdown("""
+        <div class="app-card" style="border-color: #28a745; box-shadow: 0 6px 15px rgba(40, 167, 69, 0.15);">
+            <span class="card-icon" style="color: #28a745;">👨‍💼</span>
+            <h2 style="margin:0; color: #28a745;">사장님 전용 회원가입</h2>
+            <p style="color:#666;">동네비서 파트너가 되어 매장을 효율적으로 관리하세요.</p>
+            <div class="action-btn" style="background-color: #28a745;">파트너 신청하기 〉</div>
+        </div>
+        """, unsafe_allow_html=True)
         
         # 하단바 공간 확보
         st.markdown("<br><br><br>", unsafe_allow_html=True)
