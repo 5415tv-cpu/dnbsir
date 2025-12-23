@@ -1389,99 +1389,127 @@ if menu == "서비스 선택":
     )
     
     if show_service_selection:
-        # 로그인 상태 관리
-        if 'admin_mode' not in st.session_state:
-            st.session_state.admin_mode = False
+        # 상태 관리 변수 (로그인 여부 확인용)
+        if 'logged_in' not in st.session_state:
+            st.session_state.logged_in = False
+        if 'show_login' not in st.session_state:
+            st.session_state.show_login = False
         
-        # --- 상단 레이아웃 (버튼 클릭 기능 연결) ---
+        # --- 상단 레이아웃 ---
         col1, col2 = st.columns([3, 1])
         with col1:
-            st.markdown('<div style="font-size: 1.5rem; font-weight: bold; padding: 10px 0;">동네비서</div>', unsafe_allow_html=True)
+            st.markdown('### 동네비서')
         with col2:
-            if st.button("🔒 관리자", key="admin_btn"):
-                st.session_state.admin_mode = not st.session_state.admin_mode
-                st.rerun()
+            if st.session_state.logged_in:
+                if st.button("로그아웃", key="logout_btn"):
+                    st.session_state.logged_in = False
+                    st.rerun()
+            else:
+                if st.button("🔒 관리자", key="admin_btn"):
+                    st.session_state.show_login = True
+                    st.rerun()
         
         st.markdown("<div style='border-bottom: 1px solid #eee; margin-bottom: 20px;'></div>", unsafe_allow_html=True)
         
-        # 로그인 버튼을 눌렀을 때 나타날 화면
-        if st.session_state.admin_mode:
-            with st.form("admin_login"):
-                st.subheader("관리자 인증")
-                password = st.text_input("비밀번호를 입력하세요", type="password")
-                submit = st.form_submit_button("로그인")
-                if submit:
-                    if password == "1234":
-                        st.success("인증되었습니다. 관리 페이지로 이동합니다.")
+        # --- 로그인 입력창 (버튼 눌렀을 때만 등장) ---
+        if not st.session_state.logged_in and st.session_state.show_login:
+            with st.form("login_form"):
+                pw = st.text_input("관리자 비밀번호", type="password")
+                if st.form_submit_button("접속"):
+                    if pw == "1234":
+                        st.session_state.logged_in = True
+                        st.session_state.show_login = False
+                        st.rerun()
                     else:
                         st.error("비밀번호가 틀렸습니다.")
-            st.markdown("---")
         
-        # --- 중앙 주요 메뉴 (하나씩 크게 통합) ---
+        # --- 화면 전환 로직 ---
+        if st.session_state.logged_in:
+            # [A] 관리자 전용 페이지 내용
+            st.success("✅ 관리자 모드로 접속 중입니다.")
+            st.markdown("## 👨‍💼 매장 관리자 센터")
+            
+            tab1, tab2, tab3 = st.tabs(["예약 현황", "택배 관리", "회원 명부"])
+            
+            with tab1:
+                st.subheader("오늘의 예약")
+                st.write("- 홍길동 님 (14:00)")
+                st.info("새로운 예약이 2건 있습니다.")
+                
+            with tab2:
+                st.subheader("택배 접수 리스트")
+                st.write("- 접수번호 1002번: 처리중")
+                
+            with tab3:
+                st.subheader("신규 가입 사장님")
+                st.write("- 대박세탁소 사장님")
         
-        # 1. 매장예약 (딱 하나로 크게)
-        st.markdown("""
-        <div class="app-card">
-            <span class="card-icon" style="font-size: 3.5rem;">📅</span>
-            <h3>매장예약</h3>
-            <div class="action-btn">지금 예약하기 〉</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("매장 예약", key="btn_store", use_container_width=True):
-            st.session_state.service_type = "store"
-            st.session_state.show_store_list = True
-            st.rerun()
-        
-        # 2. 택배접수 (딱 하나로 크게)
-        st.markdown("""
-        <div class="app-card">
-            <span class="card-icon" style="font-size: 3.5rem;">📦</span>
-            <h3>택배접수</h3>
-            <div class="action-btn">지금 접수하기 〉</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("택배 접수", key="btn_delivery", use_container_width=True):
-            st.session_state.service_type = "delivery"
-            st.session_state.show_delivery_form = True
-            st.rerun()
-        
-        # 3. 사장님 회원가입 (하나로 크게)
-        st.markdown("""
-        <div class="app-card highlight-card">
-            <span class="card-icon">👨‍💼</span>
-            <h3>사장님 회원가입</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # 4. 무료체험 (하나로 크게)
-        st.markdown("""
-        <div class="app-card promo-card">
-            <span class="card-icon">🎁</span>
-            <h3>지금 가입하면 한달간 무료체험</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # 5. 고객게시판 (한 줄에 하나씩 크게)
-        st.markdown("""
-        <div class="app-card">
-            <h3>고객게시판</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # 6. 공지사항 (한 줄에 하나씩 크게)
-        st.markdown("""
-        <div class="app-card">
-            <h3>공지사항</h3>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # 마지막 슬로건
-        st.markdown("""
-        <div class="slogan">
-            기억하며, 연결하며,<br>
-            <b>24시간 함께 합니다</b>
-        </div>
-        """, unsafe_allow_html=True)
+        else:
+            # [B] 일반 고객용 메인 페이지 (기존 카드들)
+            
+            # 1. 매장예약 (딱 하나로 크게)
+            st.markdown("""
+            <div class="app-card">
+                <span class="card-icon" style="font-size: 3.5rem;">📅</span>
+                <h3>매장예약</h3>
+                <div class="action-btn">지금 예약하기 〉</div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("매장 예약", key="btn_store", use_container_width=True):
+                st.session_state.service_type = "store"
+                st.session_state.show_store_list = True
+                st.rerun()
+            
+            # 2. 택배접수 (딱 하나로 크게)
+            st.markdown("""
+            <div class="app-card">
+                <span class="card-icon" style="font-size: 3.5rem;">📦</span>
+                <h3>택배접수</h3>
+                <div class="action-btn">지금 접수하기 〉</div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button("택배 접수", key="btn_delivery", use_container_width=True):
+                st.session_state.service_type = "delivery"
+                st.session_state.show_delivery_form = True
+                st.rerun()
+            
+            # 3. 사장님 회원가입 (하나로 크게)
+            st.markdown("""
+            <div class="app-card highlight-card">
+                <span class="card-icon">👨‍💼</span>
+                <h3>사장님 회원가입</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 4. 무료체험 (하나로 크게)
+            st.markdown("""
+            <div class="app-card promo-card">
+                <span class="card-icon">🎁</span>
+                <h3>지금 가입하면 한달간 무료체험</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 5. 고객게시판 (한 줄에 하나씩 크게)
+            st.markdown("""
+            <div class="app-card">
+                <h3>고객게시판</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 6. 공지사항 (한 줄에 하나씩 크게)
+            st.markdown("""
+            <div class="app-card">
+                <h3>공지사항</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 마지막 슬로건
+            st.markdown("""
+            <div class="slogan">
+                기억하며, 연결하며,<br>
+                <b>24시간 함께 합니다</b>
+            </div>
+            """, unsafe_allow_html=True)
         
         # --- 하단 내비게이션 바 ---
         st.markdown("""
