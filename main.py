@@ -97,6 +97,25 @@ html, body, [class*="css"] {
     font-size: 0.9em;
 }
 
+/* 상단/하단 고정바 스타일 */
+.fixed-header, .fixed-footer {
+    position: fixed;
+    left: 0;
+    width: 100%;
+    background-color: #262730;
+    color: white;
+    padding: 12px 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+.fixed-header { top: 0; }
+.fixed-footer { bottom: 0; }
+.fixed-header a, .fixed-footer a {
+    color: white;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
 /* 버튼 스타일 */
 .stButton > button {
     width: 100% !important;
@@ -1296,52 +1315,77 @@ if menu == "서비스 선택":
     )
     
     if show_service_selection:
-        # 인사말 (20px Bold 타이틀)
+        # --- 상단 로그인 바 ---
         st.markdown("""
-        <div style="
-            text-align: center;
-            padding: 32px 16px;
-            margin-bottom: 24px;
-        ">
-            <p style="
-                color: #000;
-                font-size: 20px;
-                font-weight: 600;
-                margin: 0 0 8px 0;
-            ">똑똑한 동네비서</p>
-            <p style="
-                color: #888;
-                font-size: 14px;
-                margin: 0;
-            ">단골을 기억하고 비즈니스를 연결합니다</p>
+        <div class="fixed-header">
+            <div style="display:flex; justify-content:space-between; align-items:center; max-width:480px; margin:0 auto;">
+                <span style="font-weight:bold; font-size:1.2em;">동네비서</span>
+                <a href="#" style="color:white; text-decoration:none;">로그인</a>
+            </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # 서비스 선택 (가로 배치)
-        col1, col2 = st.columns(2, gap="small")
+        # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        
+        # --- 중앙 주요 메뉴 (카드형 디자인) ---
+        st.markdown("<h3 style='text-align:center; margin-bottom:20px;'>무엇을 도와드릴까요?</h3>", unsafe_allow_html=True)
+        
+        col1, col2 = st.columns(2)
         
         with col1:
+            st.markdown("""
+            <div class="app-card">
+                <h3>🏠 매장 예약</h3>
+                <p>예약, 주문 접수</p>
+            </div>
+            """, unsafe_allow_html=True)
             if st.button("매장 예약", key="btn_store", use_container_width=True):
                 st.session_state.service_type = "store"
                 st.session_state.show_store_list = True
                 st.rerun()
         
         with col2:
+            st.markdown("""
+            <div class="app-card">
+                <h3>📦 택배 접수</h3>
+                <p>로젠택배 연동</p>
+            </div>
+            """, unsafe_allow_html=True)
             if st.button("택배 접수", key="btn_delivery", use_container_width=True):
                 st.session_state.service_type = "delivery"
                 st.session_state.show_delivery_form = True
                 st.rerun()
         
-        st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         # 사장님 혜택
-        with st.expander("사장님 혜택"):
+        with st.expander("🎁 사장님 혜택"):
             st.markdown("""
-수수료 0원  
-AI 24시간 응대  
-자동 정산  
-단골 관리
+✅ 수수료 0원  
+✅ AI 24시간 응대  
+✅ 자동 정산  
+✅ 단골 관리
             """)
+        
+        # 최신 소식
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("<h4>최신 소식</h4>", unsafe_allow_html=True)
+        st.info("🎉 동네비서 앱이 새롭게 출시되었습니다!")
+        
+        # 하단바 공간 확보
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        
+        # --- 하단 내비게이션 바 ---
+        st.markdown("""
+        <div class="fixed-footer">
+            <div style="display:flex; justify-content:space-around; align-items:center; max-width:480px; margin:0 auto;">
+                <a href="#" style="color:white; text-decoration:none;">🏠 홈</a>
+                <a href="#" style="color:white; text-decoration:none;">📞 고객센터</a>
+                <a href="#" style="color:white; text-decoration:none;">👤 마이</a>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     # 서비스 타입에 따른 화면 표시
     if st.session_state.get("show_store_list"):
