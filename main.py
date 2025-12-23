@@ -1326,12 +1326,24 @@ def render_general_form(store, store_id):
 with st.sidebar:
     st.markdown("<h1 style='font-size: 2rem; margin-bottom: 1rem;'>🏘️ 동네비서</h1>", unsafe_allow_html=True)
     
+    # 메뉴 세션 상태 초기화
+    menu_options = ["서비스 선택", "사용요금", "사장님 가입", "이용 안내"]
+    if "selected_menu" not in st.session_state:
+        st.session_state.selected_menu = "서비스 선택"
+    
+    # 세션 상태에서 선택된 메뉴 인덱스 가져오기
+    current_index = menu_options.index(st.session_state.selected_menu) if st.session_state.selected_menu in menu_options else 0
+    
     menu = st.radio(
         "메뉴", 
-        ["서비스 선택", "사용요금", "사장님 가입", "이용 안내"],
-        index=0,
-        label_visibility="collapsed"
+        menu_options,
+        index=current_index,
+        label_visibility="collapsed",
+        key="menu_radio"
     )
+    
+    # 메뉴 변경 시 세션 상태 업데이트
+    st.session_state.selected_menu = menu
     
     st.markdown("---")
     
@@ -2046,10 +2058,14 @@ if menu == "서비스 선택":
                         st.write(f"🎉 축하합니다! AI 분석 결과 **99.8%** 확률로 광채가 날 예정입니다!")
             
             # 3. 사장님 회원가입
-            st.button("👨‍💼 사장님 회원가입", key="btn_owner_signup", use_container_width=True)
+            if st.button("👨‍💼 사장님 회원가입", key="btn_owner_signup", use_container_width=True):
+                st.session_state.selected_menu = "사장님 가입"
+                st.rerun()
             
             # 4. 무료체험
-            st.button("🎁 지금 가입하면 한달간 무료체험", key="btn_free_trial", use_container_width=True)
+            if st.button("🎁 지금 가입하면 한달간 무료체험", key="btn_free_trial", use_container_width=True):
+                st.session_state.selected_menu = "사장님 가입"
+                st.rerun()
             
             # 5. 고객게시판 & 공지사항 (가로 배치)
             col1, col2 = st.columns(2)
