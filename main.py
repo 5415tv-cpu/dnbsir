@@ -1389,18 +1389,15 @@ if menu == "서비스 선택":
     )
     
     if show_service_selection:
-        # --- 상단 로그인 바 ---
+        # --- 상단 레이아웃 (관리자 로그인 우측 배치) ---
         st.markdown("""
-        <div class="fixed-header">
-            <div style="display:flex; justify-content:space-between; align-items:center; max-width:480px; margin:0 auto;">
-                <span style="font-weight:bold; font-size:1.2em;">동네비서</span>
-                <a href="#" style="color:white; text-decoration:none;">로그인</a>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0px; margin-bottom: 20px; border-bottom: 1px solid #eee;">
+            <div style="font-size: 1.2rem; font-weight: bold; color: #333;">동네비서</div>
+            <div style="background-color: #f0f2f6; padding: 5px 15px; border-radius: 15px; border: 1px solid #ddd;">
+                <a href="#" style="text-decoration: none; color: #333; font-size: 0.9rem; font-weight: bold;">🔒 관리자 로그인</a>
             </div>
         </div>
         """, unsafe_allow_html=True)
-        
-        # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
-        st.markdown("<br><br>", unsafe_allow_html=True)
         
         # --- 중앙 주요 메뉴 (하나씩 크게 통합) ---
         
