@@ -118,11 +118,17 @@ html, body, [class*="css"] {
     font-size: 0.9em;
 }
 
-/* 아이콘 크기 및 색상 강조 */
+/* 아이콘 크기 및 색상 강조 - 통일 */
 .card-icon {
-    font-size: 3rem;
+    font-size: 2.5rem;
     margin-bottom: 10px;
     display: block;
+}
+
+/* 버튼 아이콘 크기 통일 */
+.stButton button {
+    font-size: 1.2rem !important;
+    padding: 1rem !important;
 }
 
 /* 눌러보세요 유도 문구 스타일 */
@@ -2039,35 +2045,18 @@ if menu == "서비스 선택":
                     if st.button("✨ 내 옷이 새 옷이 될 확률 확인하기", key="new_cloth_prob"):
                         st.write(f"🎉 축하합니다! AI 분석 결과 **99.8%** 확률로 광채가 날 예정입니다!")
             
-            # 3. 사장님 회원가입 (하나로 크게)
-            st.markdown("""
-            <div class="app-card highlight-card">
-                <span class="card-icon">👨‍💼</span>
-                <h3>사장님 회원가입</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            # 3. 사장님 회원가입
+            st.button("👨‍💼 사장님 회원가입", key="btn_owner_signup", use_container_width=True)
             
-            # 4. 무료체험 (하나로 크게)
-            st.markdown("""
-            <div class="app-card promo-card">
-                <span class="card-icon">🎁</span>
-                <h3>지금 가입하면 한달간 무료체험</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            # 4. 무료체험
+            st.button("🎁 지금 가입하면 한달간 무료체험", key="btn_free_trial", use_container_width=True)
             
-            # 5. 고객게시판 (한 줄에 하나씩 크게)
-            st.markdown("""
-            <div class="app-card">
-                <h3>고객게시판</h3>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # 6. 공지사항 (한 줄에 하나씩 크게)
-            st.markdown("""
-            <div class="app-card">
-                <h3>공지사항</h3>
-            </div>
-            """, unsafe_allow_html=True)
+            # 5. 고객게시판 & 공지사항 (가로 배치)
+            col1, col2 = st.columns(2)
+            with col1:
+                st.button("📋 고객게시판", key="btn_board", use_container_width=True)
+            with col2:
+                st.button("📢 공지사항", key="btn_notice", use_container_width=True)
             
             # 마지막 슬로건
             st.markdown("""
