@@ -1472,6 +1472,13 @@ if menu == "서비스 선택":
         elif st.session_state.user_role == "owner":
             st.markdown("## 👨‍💼 가맹점주 매장 관리")
             
+            # 블루투스 프린터 연결 상태 바
+            st.markdown("""
+                <div style="background-color: #007bff; padding: 15px; border-radius: 10px; color: white; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="font-weight: bold; font-size: 1.1rem;">🖨️ 블루투스 프린터 상태: <span style="color: #00ff00;">연결됨</span></div>
+                </div>
+            """, unsafe_allow_html=True)
+            
             # 매장 지표
             c1, c2, c3 = st.columns(3)
             c1.metric("오늘의 예약", "3건", "대기 1")
@@ -1479,7 +1486,7 @@ if menu == "서비스 선택":
             c3.metric("오늘 매출", "125,000원", "정상")
             
             st.write("---")
-            t1, t2, t3, t4 = st.tabs(["🕒 예약 현황", "🛠️ 상품 관리", "📦 택배 관리", "🤖 AI 점주비서"])
+            t1, t2, t3, t4, t5 = st.tabs(["🕒 예약 현황", "🛠️ 상품 관리", "📦 택배 관리", "🤖 AI 점주비서", "🖨️ QR/프린터"])
             
             with t1:
                 st.write("#### 실시간 방문 예정자")
@@ -1532,6 +1539,36 @@ if menu == "서비스 선택":
                     st.session_state.admin_chat.append({"role": "user", "content": p})
                     st.session_state.admin_chat.append({"role": "assistant", "content": f"사장님, '{p}' 분석 결과 오늘 오후가 가장 붐빌 것으로 예상됩니다."})
                     st.rerun()
+            
+            with t5:
+                st.subheader("🔗 우리 매장 QR코드 생성")
+                
+                # QR코드 생성
+                import qrcode
+                from io import BytesIO
+                
+                store_url = "https://dnbsir-mfqsjdzxndvfnvqr2g2vpp.streamlit.app"
+                qr = qrcode.make(store_url)
+                buf = BytesIO()
+                qr.save(buf, format="PNG")
+                byte_im = buf.getvalue()
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.image(byte_im, caption="매장 비치용 QR코드", width=200)
+                with col2:
+                    st.write("📢 **QR코드 사용 팁**")
+                    st.write("1. 이 QR코드를 인쇄해서 카운터에 붙이세요.")
+                    st.write("2. 손님이 스캔하면 바로 예약 화면으로 연결됩니다.")
+                    st.download_button(label="📥 QR코드 이미지 다운로드", data=byte_im, file_name="store_qr.png", mime="image/png")
+                    if st.button("🖨️ 즉시 인쇄하기"):
+                        st.info("프린터로 QR코드 데이터를 전송합니다...")
+                
+                st.write("---")
+                st.subheader("⚙️ 자동 출력 설정")
+                auto_print = st.toggle("신규 주문 시 자동 출력 모드", value=True)
+                if auto_print:
+                    st.success("✅ 자동 출력 모드가 활성화되었습니다. 주문 즉시 영수증이 출력됩니다.")
         
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
