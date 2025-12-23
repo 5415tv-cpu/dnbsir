@@ -77,15 +77,18 @@ html, body, [class*="css"] {
 /* 카드 스타일 */
 .app-card {
     background-color: #ffffff;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border: 2px solid #333333;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: all 0.2s ease;
 }
 .app-card:hover {
-    transform: translateY(-3px);
+    transform: translateY(-5px);
+    border-color: #007bff;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 .app-card h3 {
     color: #333333;
