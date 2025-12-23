@@ -1474,7 +1474,11 @@ if menu == "서비스 선택":
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
             
-            # 1. 매장예약 (딱 하나로 크게)
+            # 예약 상세 세션 상태 초기화
+            if 'show_reserve_detail' not in st.session_state:
+                st.session_state.show_reserve_detail = False
+            
+            # 1. 매장예약 카드
             st.markdown("""
             <div class="app-card">
                 <span class="card-icon" style="font-size: 3.5rem;">📅</span>
@@ -1482,10 +1486,61 @@ if menu == "서비스 선택":
                 <div class="action-btn">지금 예약하기 〉</div>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("매장 예약", key="btn_store", use_container_width=True):
-                st.session_state.service_type = "store"
-                st.session_state.show_store_list = True
+            if st.button("📅 매장 예약하기", key="btn_store", use_container_width=True):
+                st.session_state.show_reserve_detail = not st.session_state.show_reserve_detail
                 st.rerun()
+            
+            # 매장예약 상세 화면
+            if st.session_state.show_reserve_detail:
+                st.write("---")
+                st.subheader("🛍️ 서비스 상품 선택")
+                
+                # 상품 리스트 (멀티셀렉트로 선택 가능하게 구성)
+                items = {
+                    "세탁: 와이셔츠 (3,000원)": 3000,
+                    "세탁: 드라이클리닝 상의 (7,000원)": 7000,
+                    "수선: 바지 밑단 (5,000원)": 5000,
+                    "보관: 겨울 코트 1개월 (10,000원)": 10000
+                }
+                
+                selected_items = st.multiselect("원하시는 서비스를 모두 골라주세요", list(items.keys()))
+                
+                # 합계 금액 계산
+                total_price = sum([items[item] for item in selected_items])
+                if total_price > 0:
+                    st.info(f"선택하신 서비스 총 금액: {total_price:,}원")
+                
+                st.write("---")
+                
+                # AI 상담 비서 연결
+                st.subheader("🤖 무엇이든 물어보세요 (예약 비서)")
+                st.caption("서비스 종류나 가격이 고민되신다면 AI와 상담하세요!")
+                
+                if "user_chat" not in st.session_state:
+                    st.session_state.user_chat = []
+                
+                # 채팅창 인터페이스
+                chat_container = st.container(height=200)
+                for msg in st.session_state.user_chat:
+                    chat_container.chat_message(msg["role"]).write(msg["content"])
+                
+                if prompt := st.chat_input("예: 패딩 세탁도 되나요? 내일 아침 예약 가능한가요?"):
+                    st.session_state.user_chat.append({"role": "user", "content": prompt})
+                    chat_container.chat_message("user").write(prompt)
+                    
+                    # AI 답변 (실제 서비스 안내 로직 반영 가능)
+                    ai_reply = f"네, 손님! '{prompt}'에 대해 안내해 드립니다. 패딩 세탁은 현재 이벤트 중이며, 예약은 내일 오전 10시가 가장 한가합니다."
+                    st.session_state.user_chat.append({"role": "assistant", "content": ai_reply})
+                    chat_container.chat_message("assistant").write(ai_reply)
+                
+                # 최종 예약 버튼
+                if st.button("✅ 이대로 예약 확정하기", use_container_width=True):
+                    st.success("예약이 완료되었습니다! 가맹점주님이 확인 후 연락드립니다.")
+                    st.session_state.show_reserve_detail = False
+                    st.session_state.user_chat = []
+                    st.rerun()
+                
+                st.write("---")
             
             # 2. 택배접수 (딱 하나로 크게)
             st.markdown("""
@@ -1495,7 +1550,7 @@ if menu == "서비스 선택":
                 <div class="action-btn">지금 접수하기 〉</div>
             </div>
             """, unsafe_allow_html=True)
-            if st.button("택배 접수", key="btn_delivery", use_container_width=True):
+            if st.button("📦 택배 접수하기", key="btn_delivery", use_container_width=True):
                 st.session_state.service_type = "delivery"
                 st.session_state.show_delivery_form = True
                 st.rerun()
