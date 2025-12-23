@@ -7,20 +7,6 @@ import streamlit as st
 import google.generativeai as genai
 from datetime import datetime
 import os
-import hashlib
-import re
-
-# ==========================================
-# 🔐 보안 시스템
-# ==========================================
-def hash_password(password):
-    """비밀번호를 복호화 불가능한 해시값으로 변환"""
-    return hashlib.sha256(str.encode(password)).hexdigest()
-
-def validate_phone(phone):
-    """전화번호 유효성 검사 (로젠 시스템 입력 전 차단)"""
-    pattern = re.compile(r'^010-\d{3,4}-\d{4}$')
-    return pattern.match(phone)
 
 # 커스텀 모듈 임포트
 from db_manager import (
@@ -89,7 +75,7 @@ body {
     padding-left: 1rem;
     padding-bottom: 2rem;
     background-color: white;
-        border-radius: 10px;
+    border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -109,12 +95,12 @@ html, body, [class*="css"] {
 .app-card {
     background-color: #ffffff;
     border: 3px solid #007bff;
-        border-radius: 15px;
+    border-radius: 15px;
     padding: 25px;
     margin-bottom: 15px;
     box-shadow: 0 6px 15px rgba(0, 123, 255, 0.15);
     cursor: pointer;
-        text-align: center;
+    text-align: center;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .app-card:hover {
@@ -141,13 +127,13 @@ html, body, [class*="css"] {
 
 /* 눌러보세요 유도 문구 스타일 */
 .action-btn {
-        display: inline-block;
+    display: inline-block;
     margin-top: 10px;
     padding: 5px 15px;
     background-color: #007bff;
     color: white;
-        border-radius: 20px;
-        font-weight: bold;
+    border-radius: 20px;
+    font-weight: bold;
     font-size: 0.8rem;
 }
 
@@ -460,7 +446,7 @@ def show_benefits_section():
     
     # 혜택 내용 표시
     if st.session_state.show_benefits:
-st.markdown("""
+        st.markdown("""
         <div style="
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 25px;
@@ -475,8 +461,8 @@ st.markdown("""
                 동네비서와 함께하면 이런 점이 좋아요!
             </p>
         </div>
-""", unsafe_allow_html=True)
-
+        """, unsafe_allow_html=True)
+        
         # 장점 리스트
         benefits = [
             ("🤖", "AI 직원 24시간 근무", "밤낮없이 주문/예약 접수! 사장님은 편히 쉬세요."),
@@ -507,10 +493,10 @@ st.markdown("""
                 <div>
                     <div style="font-weight: 700; font-size: 1.15rem; color: #333; margin-bottom: 4px;">{title}</div>
                     <div style="color: #666; font-size: 0.95rem;">{desc}</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        
         st.markdown("---")
         
         # 가입 유도
@@ -527,8 +513,8 @@ st.markdown("""
                 가입비 무료, 설치비 무료!<br>
                 사이드바에서 <strong>'🆕 사장님 가입'</strong>을 클릭하세요.
             </p>
-</div>
-""", unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
 
 # ==========================================
 # 📦 주문 처리 공통 함수
@@ -1358,11 +1344,7 @@ with st.sidebar:
     st.session_state.company_intro = company_text
     
     st.markdown("---")
-    
-    # 법적 고지 (앱 심사 필수)
-    st.markdown("### 📜 법적 고지")
-    st.caption("개인정보 처리방침 | 서비스 이용약관")
-    st.caption("© 2025 동네비서 All rights reserved.")
+    st.caption("관리자: admin.py")
 
 # ==========================================
 # 🏠 서비스 선택 페이지 (첫 화면)
@@ -1411,10 +1393,10 @@ if menu == "서비스 선택":
             st.rerun()
         
         st.stop()
-
-# ==========================================
+    
+    # ==========================================
     # 🏠 일반 서비스 선택 화면
-# ==========================================
+    # ==========================================
     
     # 다른 화면이 활성화되지 않은 경우에만 서비스 선택 화면 표시
     show_service_selection = not (
@@ -1501,61 +1483,6 @@ if menu == "서비스 선택":
         elif st.session_state.user_role == "owner":
             st.markdown("## 👨‍💼 가맹점주 매장 관리")
             
-            # AI 비서 '동네지기' 브리핑 함수
-            import datetime
-            def get_ai_briefing(owner_name):
-                now = datetime.datetime.now()
-                briefings = [
-                    f"👋 안녕하세요, {owner_name} 사장님! 어제는 평일 평균보다 매출이 18% 높았습니다. 정말 고생 많으셨어요!",
-                    f"📈 사장님, 분석 결과 이번 주는 '운동화 세탁' 요청이 급증하고 있습니다. 관련 소모품을 미리 체크해보세요.",
-                    f"🕒 알림: 오늘은 오후 6시부터 8시 사이에 퇴근길 택배 접수가 몰릴 것으로 예상됩니다. 대비가 필요합니다!",
-                    f"👑 VIP 단골인 '김철수'님이 2주째 방문이 없으십니다. 오늘 '안부 문자' 한 통 어떠신가요?"
-                ]
-                return briefings[now.day % len(briefings)]
-            
-            # AI 환영 인사 및 브리핑 (강렬한 그라데이션 디자인)
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 15px; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 30px;">
-                <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                    <span style="font-size: 2rem; margin-right: 15px;">🤖</span>
-                    <h3 style="margin: 0; color: white; font-size: 1.3rem;">AI 비서 '동네지기' 보고</h3>
-                </div>
-                <p style="font-size: 1.1rem; line-height: 1.6; font-weight: 300; margin-bottom: 15px;">
-                    "{get_ai_briefing('사장')}"
-                </p>
-                <div style="display: flex; gap: 10px;">
-                    <span style="background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">#매출분석완료</span>
-                    <span style="background: rgba(255,255,255,0.2); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">#혼잡도예측중</span>
-                </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-            # AI 비서 '동네탐정' 첩보 (호기심 유발)
-            import random
-            def ai_secret_report():
-                secrets = [
-                    "🤫 사장님, 최근 3일간 옆 동네에서 이사 온 손님이 5명이나 됩니다. 소문이 났나 봐요!",
-                    "🔍 어머! 6개월간 안 오던 '잠자는 사자' 단골 3명이 방금 우리 앱을 구경하고 갔어요. 미끼를 던질 시간입니다!",
-                    "🔥 오늘 오후 3시, '빨래 대란'이 예상됩니다. 커피 미리 한 잔 마셔두세요. 제가 데이터로 봤거든요.",
-                    "💎 우리 동네 '세탁 큰손' TOP 3가 이번 주에 약속이라도 한 듯 방문을 안 하셨네요. 무슨 일이 있는 걸까요?"
-                ]
-                return random.choice(secrets)
-            
-            # 동네탐정 비밀 첩보 (업그레이드)
-            spy_secrets = [
-                "🤫 **[특보]** 근처 아파트 단지에서 이번 주에 이사오는 가구가 10팀입니다! '신규 이사 세탁 할인' 문자를 날려보세요.",
-                "🔍 **[발견]** 3개월간 뜸했던 VIP '박지민' 고객님이 방금 앱 가격표를 훑어보고 가셨어요. 지금 쿠폰을 보내면 90% 확률로 방문합니다!",
-                "🔥 **[경보]** 내일 오후 2시, 태풍 전야처럼 택배가 몰릴 예정입니다. 오늘 미리 박스 테이프를 채워두세요!",
-                "💎 **[VIP]** 우리 동네 '세탁 큰손' TOP 3가 이번 주에 약속이라도 한 듯 방문을 안 하셨네요. 무슨 일이 있는 걸까요?"
-            ]
-            
-            st.markdown(f"""
-            <div style="background-color: #1a1a1a; padding: 20px; border-radius: 15px; border: 2px solid #FFD700; margin-bottom: 20px;">
-                <h4 style="color: #FFD700; margin: 0 0 15px 0;">🕵️‍♂️ AI 동네탐정 '비밀 첩보'</h4>
-                <p style="font-size: 1rem; color: white; line-height: 1.6;">{random.choice(spy_secrets)}</p>
-            </div>
-            """, unsafe_allow_html=True)
-            
             # 블루투스 프린터 연결 상태 바
             st.markdown("""
                 <div style="background-color: #007bff; padding: 15px; border-radius: 10px; color: white; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -1570,7 +1497,7 @@ if menu == "서비스 선택":
             c3.metric("오늘 매출", "125,000원", "정상")
             
             st.write("---")
-            t1, t2, t3, t4, t5, t6 = st.tabs(["🕒 예약 현황", "🛠️ 상품 관리", "📦 택배 관리", "🤖 AI 점주비서", "🖨️ QR/프린터", "📈 경영분석"])
+            t1, t2, t3, t4, t5 = st.tabs(["🕒 예약 현황", "🛠️ 상품 관리", "📦 택배 관리", "🤖 AI 점주비서", "🖨️ QR/프린터"])
             
             # 카카오 알림톡 발송 함수
             def send_kakao_notification(phone, name, invoice_no):
@@ -1665,8 +1592,8 @@ if menu == "서비스 선택":
                 buf = BytesIO()
                 qr.save(buf, format="PNG")
                 byte_im = buf.getvalue()
-    
-    col1, col2 = st.columns(2)
+                
+                col1, col2 = st.columns(2)
                 with col1:
                     st.image(byte_im, caption="매장 비치용 QR코드", width=200)
                 with col2:
@@ -1685,22 +1612,13 @@ if menu == "서비스 선택":
                 
                 st.write("---")
                 
-                # 보안 설정 섹션
-                with st.expander("🔐 보안 설정", expanded=False):
-                    st.subheader("민감 정보 관리")
-                    with st.container(border=True):
-                        logen_id_display = st.text_input("로젠 ID", value="********", disabled=True, key="secure_logen_id")
-                        st.text_input("API Password", value="********", type="password", disabled=True, key="secure_api_pw")
-                        if st.button("🔑 정보 수정하기"):
-                            st.warning("정보 수정을 위해 본인 인증이 필요합니다.")
-                
                 # 로젠택배 연동 설정
                 with st.expander("🚚 로젠택배 영업소 연동 설정", expanded=False):
                     st.info("영업소 전용 API 정보를 입력하면, 손님의 접수 내역이 로젠 시스템으로 즉시 전송됩니다.")
                     
                     # 로젠택배 연동 정보 입력
                     col1, col2 = st.columns(2)
-    with col1:
+                    with col1:
                         logen_id = st.text_input("로젠 영업소 ID", placeholder="Logen ID 입력")
                         logen_cust_code = st.text_input("고객코드 (Customer Code)")
                     with col2:
@@ -1723,117 +1641,6 @@ if menu == "서비스 선택":
                     
                     if st.button("설정 저장"):
                         st.success("✅ 로젠택배 연동 설정이 저장되었습니다!")
-                
-                # 문자 연동 가이드
-                with st.expander("📲 내 폰으로 문자 자동 발송하는 방법 (필독)", expanded=False):
-        st.markdown("""
-                    ### **무제한 요금제라면 발송 비용이 0원!**
-                    아래 순서대로 한 번만 설정하면, 운송장 뽑을 때 문자가 자동으로 나갑니다.
-                    
-                    ---
-                    
-                    #### **1단계: 앱 설치**
-                    안드로이드 폰의 **Play 스토어**에서 **'SMS Gateway'** (또는 본사가 지정한 앱)를 설치하세요.
-                    
-                    #### **2단계: 연동 키 입력**
-                    앱 실행 후 설정창에 아래의 **점주 고유 API 키**를 복사해서 붙여넣으세요.
-                    """)
-                    
-                    # 점주별 고유 키 생성 (예시)
-                    st.code("DONGNE_BISU_TB_01_KEY", language="text")
-                    
-                    st.markdown("""
-                    #### **3단계: 권한 허용**
-                    앱에서 '문자 발송 권한'과 '배터리 최적화 제외'를 꼭 허용해 주세요. 
-                    (폰이 잠겨 있어도 문자가 나가야 하니까요!)
-                    
-                    ---
-                    **⚠️ 주의사항**
-                    * 반드시 **안드로이드** 폰만 가능합니다. (아이폰은 보안상 자동 발송 불가)
-                    * 하루에 너무 많은 양(대략 150건 이상)을 보내면 통신사에서 차단될 수 있으니 주의하세요.
-                    """)
-                    
-                    if st.button("✅ 설정 완료 및 테스트 문자 발송"):
-                        st.success("점주님 폰으로 테스트 신호를 보냈습니다. 문자가 오는지 확인하세요!")
-            
-            with t6:
-                import numpy as np
-                st.subheader("📈 동네비서 경영 대시보드")
-                
-                # 1. 핵심 지표 (Key Metrics)
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.metric("이번 달 매출", "4,250,000원", "12%")
-                with col2:
-                    st.metric("택배 접수 건수", "184건", "5%")
-                with col3:
-                    st.metric("신규 단골", "12명", "2명")
-                with col4:
-                    st.metric("예상 수익(순이익)", "1,200,000원", "8%")
-                
-                # 2. 매출 추이 그래프
-                st.write("---")
-                st.markdown("#### 📅 주간 매출 추이")
-                chart_data = pd.DataFrame(
-                    np.random.randn(7, 2) * [100000, 50000] + [500000, 200000],
-                    columns=['세탁 매출', '택배 수수료']
-                )
-                st.area_chart(chart_data)
-                
-                # 3. 단골 관리 (VIP 리스트)
-                st.write("---")
-                st.markdown("#### 👑 우리 가게 VIP 단골 TOP 5")
-                top_customers = pd.DataFrame({
-                    "고객명": ["김철수", "이영희", "박지민", "최동해", "정광호"],
-                    "누적 방문": ["42회", "38회", "25회", "21회", "18회"],
-                    "누적 결제액": ["850,000원", "720,000원", "550,000원", "480,000원", "390,000원"],
-                    "최근 방문일": ["어제", "2일 전", "3일 전", "오늘", "1주일 전"]
-                })
-                st.table(top_customers)
-                
-                # 단골 대상 맞춤 마케팅
-                st.write("---")
-                st.markdown("#### 🎁 단골 대상 맞춤 마케팅")
-                target = st.selectbox("마케팅 대상 선택", ["전체 고객", "3회 이상 방문 고객", "한 달간 미방문 고객"])
-                
-                if st.button(f"{target}에게 감사 문자/쿠폰 보내기"):
-                    st.success(f"✅ {target} 총 45명에게 감사 메시지 전송 신호를 보냈습니다.")
-                    st.info("점주님 폰의 'SMS Gateway'를 통해 순차 발송됩니다.")
-                
-                # 요일별/시간대별 붐비는 시간 분석 (AI 예측)
-                st.write("---")
-                st.markdown("#### 🎢 우리 가게 '핫플 지수' 롤러코스터")
-                st.caption("AI가 예측한 손님 몰림 현상! 가장 높을 때가 '대박 타임'입니다.")
-                
-                hours = [f"{h:02d}시" for h in range(9, 23, 2)]
-                days = ['월', '화', '수', '목', '금', '토', '일']
-                
-                busy_data = pd.DataFrame(
-                    np.array([
-                        [10, 15, 12, 18, 25, 40, 30],
-                        [30, 25, 35, 40, 50, 85, 70],
-                        [50, 45, 40, 55, 65, 95, 80],
-                        [40, 35, 45, 50, 70, 75, 60],
-                        [70, 65, 75, 85, 95, 60, 45],
-                        [90, 85, 80, 95, 100, 50, 40],
-                        [40, 30, 35, 45, 55, 30, 20]
-                    ]),
-                    index=hours, columns=days
-                )
-                
-                st.area_chart(busy_data)
-                st.caption("※ 수치가 높을수록 손님이 몰리는 시간대입니다. (AI 과거 데이터 분석 결과)")
-                
-                # 이달의 우수 단골 + 쿠폰 발송
-                st.write("---")
-                col_v1, col_v2 = st.columns([2, 1])
-                with col_v1:
-                    st.markdown("#### 👥 이달의 우수 단골")
-                    st.info("AI가 분석한 '방문 주기가 가장 규칙적인' 단골 명단입니다.")
-                with col_v2:
-                    if st.button("🚀 단골 전원에게 감사쿠폰 발송"):
-                        st.balloons()
-                        st.success("점주님 폰으로 발송 예약 완료!")
         
         else:
             # [B] 일반 고객용 메인 페이지 (기존 카드들)
@@ -1848,9 +1655,9 @@ if menu == "서비스 선택":
             <div style="background-color: #fff3cd; padding: 15px; border-radius: 10px; border: 1px solid #ffeeba; margin-bottom: 20px;">
                 <strong>📱 어플처럼 사용하고 싶으신가요?</strong><br>
                 <span style="font-size: 0.9rem;">브라우저 설정에서 <b>'홈 화면에 추가'</b>를 누르면 별도의 설치 없이 어플처럼 바로 접속할 수 있습니다!</span>
-        </div>
-        """, unsafe_allow_html=True)
-        
+            </div>
+            """, unsafe_allow_html=True)
+            
             # 예약 상세 세션 상태 초기화
             if 'show_reserve_detail' not in st.session_state:
                 st.session_state.show_reserve_detail = False
@@ -1865,8 +1672,8 @@ if menu == "서비스 선택":
             """, unsafe_allow_html=True)
             if st.button("📅 매장 예약하기", key="btn_store", use_container_width=True):
                 st.session_state.show_reserve_detail = not st.session_state.show_reserve_detail
-            st.rerun()
-    
+                st.rerun()
+            
             # 매장예약 상세 화면 (대형 이미지 메뉴판)
             if st.session_state.show_reserve_detail:
                 st.write("---")
@@ -1957,21 +1764,21 @@ if menu == "서비스 선택":
                 st.write("---")
             
             # 2. 택배접수 (딱 하나로 크게)
-        st.markdown("""
+            st.markdown("""
             <div class="app-card">
                 <span class="card-icon" style="font-size: 3.5rem;">📦</span>
                 <h3>택배접수</h3>
                 <div class="action-btn">지금 접수하기 〉</div>
-        </div>
-        """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
             # 택배 접수 상태 초기화
             if 'show_delivery_detail' not in st.session_state:
                 st.session_state.show_delivery_detail = False
-        
+            
             if st.button("📦 택배 접수하기", key="btn_delivery", use_container_width=True):
                 st.session_state.show_delivery_detail = not st.session_state.show_delivery_detail
-            st.rerun()
-    
+                st.rerun()
+            
             # 택배 접수 상세 화면
             if st.session_state.show_delivery_detail:
                 st.write("---")
@@ -1989,38 +1796,6 @@ if menu == "서비스 선택":
                         "연락처": "010-1234-5678"
                     }
                 
-                # AI 의류 기분 감별사 (재미 톡톡!)
-                import random
-                import time
-                
-                def get_fun_ai_comment(item_type):
-                    comments = {
-                        "의류": ["👗 '이 셔츠, 어제 회식 때 삼겹살 냄새가 밴 것 같아요! 제가 향긋하게 바꿔드릴게요.'", 
-                               "👔 '주인님, 저 목깃이 너무 답답해요! AI의 손길로 숨통을 틔워주세요!'"],
-                        "이불": ["🛌 '와! 이 이불은 구름을 머금었나요? 더 푹신하게 만들어드릴게요.'", 
-                               "😴 '숙면 확률 200% 증가를 위해 AI가 특수 세탁 모드를 가동합니다!'"],
-                        "운동화": ["👟 '어이쿠! 이 친구 어제 산책 좀 했나본데요? 흙먼지를 털고 새 신발로 환생시켜줄게요.'", 
-                                 "🏃 '주인님의 발걸음이 가벼워지도록 제가 깃털처럼 가볍게 씻길게요!'"],
-                        "기타": ["✨ '주인님의 소중한 물건, AI가 정성껏 모시겠습니다!'"]
-                    }
-                    return random.choice(comments.get(item_type, comments["기타"]))
-                
-                st.subheader("📸 AI 의류 기분 감별사")
-                category = st.selectbox("어떤 물건을 맡기시나요?", ["의류", "이불", "운동화", "기타"], key="item_category")
-                
-                uploaded_cloth = st.file_uploader("사진을 찍어 올려주시면 더 정확해요! (선택)", type=['jpg', 'png'], key="cloth_analyzer")
-                
-                if uploaded_cloth:
-                    st.image(uploaded_cloth, width=250)
-                
-                if st.button("✨ AI에게 내 물건 보여주기 (분석)"):
-                    with st.spinner("AI가 물건의 관상을 보는 중..."):
-                        time.sleep(1.5)
-                        st.chat_message("assistant").write(get_fun_ai_comment(category))
-                        st.balloons()
-                        st.success(f"분석 완료! {category} 접수창으로 이동합니다.")
-                
-                st.write("---")
                 st.header("📦 스마트 AI 택배 비서")
                 st.info("메모지를 사진 찍어 올리거나, AI와 대화로 접수하세요!")
                 
@@ -2221,25 +1996,25 @@ if menu == "서비스 선택":
             # STEP 1: 배송 정보 입력
             if st.session_state.delivery_step == 1:
                 st.markdown("**보내는 분**")
-            sender_col1, sender_col2 = st.columns(2)
-            with sender_col1:
+                sender_col1, sender_col2 = st.columns(2)
+                with sender_col1:
                     sender_name = st.text_input("이름 *", key="logen_sender_name")
                     sender_phone = st.text_input("연락처 *", key="logen_sender_phone", placeholder="010-0000-0000")
-            with sender_col2:
+                with sender_col2:
                     sender_address = st.text_input("주소 *", key="logen_sender_address", placeholder="서울시 강남구...")
                     sender_detail = st.text_input("상세주소", key="logen_sender_detail", placeholder="101동 1001호")
-            
-            st.markdown("---")
+                
+                st.markdown("---")
                 st.markdown("##### 📥 받는 분")
-            recv_col1, recv_col2 = st.columns(2)
-            with recv_col1:
+                recv_col1, recv_col2 = st.columns(2)
+                with recv_col1:
                     receiver_name = st.text_input("이름 *", key="logen_receiver_name")
                     receiver_phone = st.text_input("연락처 *", key="logen_receiver_phone", placeholder="010-0000-0000")
-            with recv_col2:
+                with recv_col2:
                     receiver_address = st.text_input("주소 *", key="logen_receiver_address", placeholder="서울시 강남구...")
                     receiver_detail = st.text_input("상세주소", key="logen_receiver_detail", placeholder="201동 2001호")
-            
-            st.markdown("---")
+                
+                st.markdown("---")
                 st.markdown("##### 📦 화물 정보")
                 pkg_col1, pkg_col2, pkg_col3 = st.columns(3)
                 with pkg_col1:
@@ -2388,7 +2163,7 @@ if menu == "서비스 선택":
                             
                             if error:
                                 st.error(f"❌ 접수 실패: {error}")
-                    else:
+                            else:
                                 # 구글 시트에 저장
                                 save_result = save_logen_reservation({
                                     'reservation_number': result.get('reservation_number'),
@@ -2442,7 +2217,7 @@ if menu == "서비스 선택":
                 with col3:
                     st.metric("🚚 배송 예정", delivery_est.get('estimated_text', '-'))
                 
-        st.markdown("---")
+                st.markdown("---")
                 st.info("""
                 📌 **안내사항**
                 - 예약번호를 메모해두세요
@@ -3162,7 +2937,7 @@ elif menu == "사장님 가입":
         
         # 관리 페이지 안내
         with st.expander("관리 페이지 안내"):
-        st.markdown(f"""
+            st.markdown(f"""
 아이디: **{store_id}**  
 비밀번호: 가입 시 설정한 비밀번호
 
@@ -3425,20 +3200,20 @@ elif menu == "🏠 매장 입장":
                 st.caption("메뉴나 주문에 대해 물어보세요! AI가 당신의 취향을 기억해요 🧠")
                 
                 # 메시지 초기화
-            if "messages" not in st.session_state:
-                st.session_state.messages = [
-                    {"role": "assistant", "content": "어서오세요! 주문 도와드릴까요? 🙋"}
-                ]
-            
-                # 메시지 표시
-            for msg in st.session_state.messages:
-                st.chat_message(msg["role"]).write(msg["content"])
-            
-                # 채팅 입력
-            if prompt := st.chat_input("메뉴 추천해줘, 이거 맛있어? 등"):
-                st.session_state.messages.append({"role": "user", "content": prompt})
-                st.chat_message("user").write(prompt)
+                if "messages" not in st.session_state:
+                    st.session_state.messages = [
+                        {"role": "assistant", "content": "어서오세요! 주문 도와드릴까요? 🙋"}
+                    ]
                 
+                # 메시지 표시
+                for msg in st.session_state.messages:
+                    st.chat_message(msg["role"]).write(msg["content"])
+                
+                # 채팅 입력
+                if prompt := st.chat_input("메뉴 추천해줘, 이거 맛있어? 등"):
+                    st.session_state.messages.append({"role": "user", "content": prompt})
+                    st.chat_message("user").write(prompt)
+                    
                     # 대화에서 고객 정보 추출 및 저장
                     if st.session_state.customer_phone:
                         st.session_state.customer_context.add_message("user", prompt, model)
@@ -3461,9 +3236,9 @@ elif menu == "🏠 매장 입장":
 4. 적절히 이모지를 사용해 친근하게 대화하세요
 
 고객 질문: {prompt}"""
-                    
-                    response = model.generate_content(full_prompt)
-                    bot_reply = response.text
+                        
+                        response = model.generate_content(full_prompt)
+                        bot_reply = response.text
                         
                         # 새로 추출된 정보가 있으면 알림
                         if st.session_state.customer_context.extracted_info:
@@ -3472,11 +3247,11 @@ elif menu == "🏠 매장 입장":
                                 # 정보가 저장됨 - 이미 bot_reply에 반영됨
                                 pass
                         
-                except Exception as e:
-                    bot_reply = "죄송합니다. 잠시 후 다시 시도해주세요. 🙏"
-                
-                st.session_state.messages.append({"role": "assistant", "content": bot_reply})
-                st.chat_message("assistant").write(bot_reply)
+                    except Exception as e:
+                        bot_reply = "죄송합니다. 잠시 후 다시 시도해주세요. 🙏"
+                    
+                    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+                    st.chat_message("assistant").write(bot_reply)
                 
                 # 대화 초기화 버튼
                 with st.expander("🔧 대화 관리"):
