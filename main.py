@@ -1402,21 +1402,40 @@ if menu == "서비스 선택":
         # 상단바 때문에 콘텐츠가 가려지지 않도록 빈 공간 추가
         st.markdown("<br><br>", unsafe_allow_html=True)
         
-        # --- 중앙 카드 배치 ---
+        # --- 중앙 주요 메뉴 (큼직한 통합 버튼) ---
+        st.markdown("<h2 style='text-align:center; margin-bottom:20px;'>✨ 주요 서비스</h2>", unsafe_allow_html=True)
         
-        # 매장예약 카드
-        st.markdown("""<div class="app-card"><span class="card-icon">📅</span><h3>매장예약</h3></div>""", unsafe_allow_html=True)
-        if st.button("매장 예약하기", key="btn_store", use_container_width=True):
+        # 1. 매장예약 (통합 및 대형화)
+        st.markdown("""
+        <div class="app-card" style="padding: 35px 20px;">
+            <span class="card-icon" style="font-size: 3.5rem;">📅</span>
+            <h3>매장 예약하기</h3>
+            <p style="font-size: 1.1rem; color: #666;">날짜와 시간을 선택해 간편하게 예약하세요</p>
+            <div class="action-btn" style="font-size: 1rem; padding: 10px 30px;">지금 바로 예약하기 〉</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("매장 예약", key="btn_store", use_container_width=True):
             st.session_state.service_type = "store"
             st.session_state.show_store_list = True
             st.rerun()
         
-        # 택배접수 카드
-        st.markdown("""<div class="app-card"><span class="card-icon">📦</span><h3>택배접수</h3></div>""", unsafe_allow_html=True)
-        if st.button("택배 접수하기", key="btn_delivery", use_container_width=True):
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+        
+        # 2. 택배접수 (통합 및 대형화)
+        st.markdown("""
+        <div class="app-card" style="padding: 35px 20px;">
+            <span class="card-icon" style="font-size: 3.5rem;">📦</span>
+            <h3>택배 접수하기</h3>
+            <p style="font-size: 1.1rem; color: #666;">번거로운 택배 접수를 한 번에 해결하세요</p>
+            <div class="action-btn" style="font-size: 1rem; padding: 10px 30px;">지금 바로 접수하기 〉</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("택배 접수", key="btn_delivery", use_container_width=True):
             st.session_state.service_type = "delivery"
             st.session_state.show_delivery_form = True
             st.rerun()
+        
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
         
         # 사장님 회원가입 카드 (초록색)
         st.markdown("""<div class="app-card highlight-card"><span class="card-icon">👨‍💼</span><h3>사장님 회원가입</h3></div>""", unsafe_allow_html=True)
