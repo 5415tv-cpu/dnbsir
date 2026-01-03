@@ -203,8 +203,8 @@ def get_pwa_css():
             .stButton button[kind="primary"] {
                 min-height: 65px !important;
                 font-size: 1.3rem !important;
-            }
-            
+        }
+        
             /* 컬럼 간격 조정 */
             [data-testid="column"] {
                 padding: 0 5px !important;

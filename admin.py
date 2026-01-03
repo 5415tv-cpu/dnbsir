@@ -47,341 +47,175 @@ st.set_page_config(
     layout="wide"
 )
 
-# CSS 스타일 - 인기 매장 관리 앱 UI/UX 반영
+# CSS 스타일 - 삼성 키오스크 스타일 (Universal Kiosk UI)
 st.markdown("""
 <style>
-    /* 기본 스타일 */
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1rem;
-        border-radius: 10px;
-        color: white;
-    }
-    .success-box {
-        background: #d4edda;
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #c3e6cb;
-    }
-    .warning-box {
-        background: #fff3cd;
-        padding: 1rem;
-        border-radius: 10px;
-        border: 1px solid #ffeeba;
-    }
-    .login-card {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        margin: 1rem 0;
-    }
-    .super-admin-badge {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: bold;
-    }
-    .store-badge {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        font-weight: bold;
-    }
-    .status-paid {
-        background: #28a745;
-        color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 10px;
-    }
-    .status-unpaid {
-        background: #dc3545;
-        color: white;
-        padding: 0.3rem 0.8rem;
-        border-radius: 10px;
-    }
-    .promo-banner-admin {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        color: white;
-        padding: 1.5rem;
-        border-radius: 15px;
-        text-align: center;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 15px rgba(17, 153, 142, 0.4);
-    }
-    .promo-banner-admin h2 {
-        margin: 0 0 0.5rem 0;
-        font-size: 1.6rem;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    }
-    .promo-banner-admin p {
-        margin: 0;
-        font-size: 1.1rem;
-        opacity: 0.95;
-    }
-    .promo-highlight {
-        display: inline-block;
-        background: #ffeaa7;
-        color: #2d3436;
-        padding: 0.4rem 1.2rem;
-        border-radius: 25px;
-        font-weight: bold;
-        margin-top: 0.8rem;
-        font-size: 0.95rem;
-        animation: bounce 1s infinite;
-    }
-    @keyframes bounce {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-5px); }
-    }
+/* 1. 기본 배경 및 폰트 */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-    /* ========================================
-    🔥 실시간 주문 카드 스타일 (배민/요기요/쿠팡이츠 참고)
-    ======================================== */
+html, body, [data-testid="stAppViewContainer"] {
+    background-color: #F8F9FA !important;
+    color: #1D3557 !important;
+    font-family: 'Pretendard', sans-serif !important;
+}
 
-    /* 주문 카드 기본 */
-    .order-card {
-        background: white;
-        border-radius: 16px;
-        padding: 0;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-        overflow: hidden;
-        transition: all 0.3s ease;
-        border: 1px solid #eee;
-    }
-    .order-card:hover {
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-        transform: translateY(-2px);
-    }
+/* 스트림릿 UI 완벽 제거 (모바일 포함) */
+header, footer, #MainMenu {visibility: hidden; display: none !important;}
+[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {display: none !important;}
+[data-testid="stStatusWidget"], #manage-app-button, .stDeployButton {display: none !important;}
+button[data-testid="stHeaderActionButton"] {display: none !important;}
+div[data-testid="stStatusWidget"] {display: none !important;}
+.viewerBadge_container__1QS1n {display: none !important;}
+.stAppDeployButton {display: none !important;}
 
-    /* 주문 카드 헤더 - 상태별 색상 */
-    .order-header {
-        padding: 14px 18px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    .order-header.waiting {
-        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
-    }
-    .order-header.cooking {
-        background: linear-gradient(135deg, #ffa502 0%, #ff7f50 100%);
-    }
-    .order-header.delivering {
-        background: linear-gradient(135deg, #3742fa 0%, #5f6caf 100%);
-    }
-    .order-header.completed {
-        background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
-    }
-    .order-header.cancelled {
-        background: linear-gradient(135deg, #a5b1c2 0%, #778ca3 100%);
-    }
+/* 서랍식 사이드바 (Kiosk Floating Drawer) 디자인 */
+[data-testid="stSidebar"] {
+    background-color: transparent !important;
+    min-width: 400px !important;
+}
 
-    .order-status-badge {
-        color: white;
-        font-weight: 700;
-        font-size: 1.1rem;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-    }
-    .order-time-badge {
-        background: rgba(255,255,255,0.25);
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
+[data-testid="stSidebar"] > div:first-child {
+    background-color: #FFFFFF !important;
+    margin: 20px !important;
+    border-radius: 40px !important;
+    height: calc(100vh - 40px) !important;
+    box-shadow: 25px 0 60px rgba(0,0,0,0.15) !important;
+    border: 1px solid #E9ECEF !important;
+    overflow: hidden !important;
+    position: relative !important;
+}
 
-    /* 주문 카드 본문 */
-    .order-body {
-        padding: 18px;
-    }
-    .order-id {
-        font-size: 0.85rem;
-        color: #999;
-        margin-bottom: 8px;
-    }
-    .order-content {
-        font-size: 1.15rem;
-        font-weight: 600;
-        color: #2d3436;
-        margin-bottom: 12px;
-        line-height: 1.5;
-        background: #f8f9fa;
-        padding: 12px;
-        border-radius: 10px;
-    }
-    .order-info-row {
-        display: flex;
-        align-items: center;
-        margin-bottom: 8px;
-        font-size: 0.95rem;
-        color: #636e72;
-    }
-    .order-info-row .icon {
-        width: 24px;
-        margin-right: 10px;
-        text-align: center;
-    }
-    .order-price {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #e17055;
-        margin-top: 15px;
-        text-align: right;
-    }
-    .order-price span {
-        font-size: 1rem;
-        font-weight: 400;
-        color: #999;
-    }
+/* 서랍 손잡이 (Drawer Handle) 시각화 */
+[data-testid="stSidebar"] > div:first-child::after {
+    content: "";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 60px;
+    background: #E9ECEF;
+    border-radius: 10px;
+}
 
-    /* 주문 카드 푸터 - 액션 버튼 */
-    .order-footer {
-        padding: 12px 18px;
-        background: #f8f9fa;
-        display: flex;
-        gap: 10px;
-        border-top: 1px solid #eee;
-    }
+/* 사이드바 내부 버튼 스타일 (서랍 아이템 느낌) */
+[data-testid="stSidebar"] .stButton > button {
+    height: 70px !important;
+    border-radius: 22px !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    margin-bottom: 12px !important;
+    text-align: left !important;
+    padding-left: 25px !important;
+    justify-content: flex-start !important;
+    background-color: #F8F9FA !important;
+    color: #1D3557 !important;
+    border: 2px solid transparent !important;
+    transition: all 0.2s ease !important;
+}
 
-    /* 신규 주문 깜빡임 효과 */
-    .order-card.new-order {
-        animation: newOrderPulse 1.5s ease-in-out infinite;
-        border: 2px solid #ff6b6b;
-    }
-    @keyframes newOrderPulse {
-        0%, 100% { box-shadow: 0 0 0 0 rgba(255,107,107,0.4); }
-        50% { box-shadow: 0 0 0 15px rgba(255,107,107,0); }
-    }
+[data-testid="stSidebar"] .stButton > button:hover {
+    background-color: #FFFFFF !important;
+    border-color: #1D3557 !important;
+    color: #1D3557 !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+    transform: translateX(5px) !important;
+}
 
-    /* 대시보드 통계 카드 */
-    .stats-card {
-        background: white;
-        border-radius: 16px;
-        padding: 20px;
-        text-align: center;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-        border: 1px solid #eee;
-    }
-    .stats-card .icon {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
-    }
-    .stats-card .value {
-        font-size: 2rem;
-        font-weight: 800;
-        color: #2d3436;
-    }
-    .stats-card .label {
-        font-size: 0.9rem;
-        color: #999;
-        margin-top: 5px;
-    }
-    .stats-card.urgent {
-        border-left: 4px solid #ff6b6b;
-    }
-    .stats-card.cooking {
-        border-left: 4px solid #ffa502;
-    }
-    .stats-card.revenue {
-        border-left: 4px solid #26de81;
-    }
+/* 2. 타이포그래피 */
+.stMarkdown p, .stMarkdown span, label, .stMetric {
+    color: #1D3557 !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+}
 
-    /* 필터 버튼 */
-    .filter-btn {
-        display: inline-block;
-        padding: 8px 20px;
-        border-radius: 25px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        border: 2px solid transparent;
-        margin-right: 8px;
-        margin-bottom: 8px;
-    }
-    .filter-btn.all { background: #dfe6e9; color: #2d3436; }
-    .filter-btn.all.active { background: #2d3436; color: white; }
-    .filter-btn.waiting { background: #ffebee; color: #ff6b6b; }
-    .filter-btn.waiting.active { background: #ff6b6b; color: white; }
-    .filter-btn.cooking { background: #fff3e0; color: #ffa502; }
-    .filter-btn.cooking.active { background: #ffa502; color: white; }
-    .filter-btn.delivering { background: #e3f2fd; color: #3742fa; }
-    .filter-btn.delivering.active { background: #3742fa; color: white; }
-    .filter-btn.completed { background: #e8f5e9; color: #26de81; }
-    .filter-btn.completed.active { background: #26de81; color: white; }
+h1, h2, h3 { font-weight: 900 !important; color: #1D3557 !important; }
 
-    /* 자동 새로고침 표시 */
-    .auto-refresh-badge {
-        display: inline-flex;
-        align-items: center;
-        background: #e8f5e9;
-        color: #26de81;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-    }
-    .auto-refresh-badge .dot {
-        width: 8px;
-        height: 8px;
-        background: #26de81;
-        border-radius: 50%;
-        margin-right: 8px;
-        animation: blink 1s infinite;
-    }
-    @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.3; }
-    }
+/* 3. 키오스크형 버튼 스타일 */
+.stButton>button, .stFormSubmitButton>button {
+    width: 100% !important;
+    height: 80px !important;
+    font-size: 24px !important;
+    font-weight: 900 !important;
+    background-color: #1D3557 !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 0px !important;
+    margin-bottom: 2px !important;
+    transition: all 0.2s ease !important;
+}
 
-    /* 빠른 액션 버튼 */
-    .quick-action-btn {
-        flex: 1;
-        padding: 12px;
-        border: none;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .quick-action-btn.accept {
-        background: linear-gradient(135deg, #26de81 0%, #20bf6b 100%);
-        color: white;
-    }
-    .quick-action-btn.next {
-        background: linear-gradient(135deg, #ffa502 0%, #ff7f50 100%);
-        color: white;
-    }
-    .quick-action-btn.call {
-        background: #e8f5e9;
-        color: #26de81;
-    }
-    .quick-action-btn:hover {
-        transform: scale(1.02);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    }
+.stButton>button:hover {
+    background-color: #0B1D33 !important;
+}
 
-    /* 경과 시간 표시 */
-    .elapsed-time {
-        display: inline-flex;
-        align-items: center;
-        font-size: 0.85rem;
-        color: #ff6b6b;
-        font-weight: 600;
-    }
-    .elapsed-time.warning { color: #ffa502; }
-    .elapsed-time.danger { color: #ff6b6b; animation: urgentPulse 0.5s infinite; }
-    @keyframes urgentPulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-    }
+/* 4. 관리자 카드 스타일 */
+.metric-card, .stats-card, .order-card, .login-card, .app-card {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 20px 0 !important;
+    margin-bottom: 25px !important;
+}
+
+/* 5. 입력창 스타일 */
+[data-testid="stTextInput"] > div[data-baseweb="input"],
+[data-testid="stSelectbox"] > div[data-baseweb="select"] {
+    border: 2px solid #E9ECEF !important;
+    border-radius: 18px !important;
+    padding: 10px !important;
+    background-color: #F8F9FA !important;
+}
+
+/* 탭 디자인 */
+.stTabs [data-baseweb="tab"] {
+    font-weight: 800 !important;
+    font-size: 18px !important;
+    padding: 15px 25px !important;
+}
 </style>
 """, unsafe_allow_html=True)
+
+# ==========================================
+# 🔐 세션 상태 초기화
+# ==========================================
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+if "user_type" not in st.session_state:
+    st.session_state.user_type = None  # "master" 또는 "store"
+if "store_id" not in st.session_state:
+    st.session_state.store_id = None
+if "store_info" not in st.session_state:
+    st.session_state.store_info = {}
+
+# = :::::::::::::::::::::::::::::::::::::: =
+# 🏰 키오스크 서랍식 메뉴 (Sidebar Drawer)
+# = :::::::::::::::::::::::::::::::::::::: =
+with st.sidebar:
+    # 로고 영역 (텍스트 중심의 묵직한 디자인)
+    st.markdown("""
+    <div style="text-align: center; padding: 60px 0 50px 0;">
+        <h1 style="font-size: 38px; margin-bottom: 0px; color: #0B1D33 !important; font-weight: 950; letter-spacing: 4px; text-indent: 4px;">동네비서ai본부</h1>
+        <div style="width: 80%; height: 2px; background: #0B1D33; margin: 30px auto; opacity: 0.3;"></div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.session_state.logged_in:
+        if st.session_state.user_type == "master":
+            st.markdown("### 👑 마스터 도구")
+            if st.button("🔧 시트 데이터 초기화", use_container_width=True):
+                if initialize_sheets(): st.success("초기화 완료")
+        else:
+            st.markdown(f"### 🏪 {st.session_state.store_info.get('name', '')}")
+            st.info("사장님 전용 관리 모드")
+
+        st.markdown("---")
+        if st.button("🚪 시스템 로그아웃", use_container_width=True):
+            st.session_state.logged_in = False; st.rerun()
+    else:
+        st.info("로그인이 필요합니다.")
+
+    st.markdown("---")
+    st.caption("© 2025 동네비서 AI Platform")
 
 # ==========================================
 # 🎁 홍보 문구 설정 (나중에 관리자가 수정 가능하도록)
@@ -402,56 +236,38 @@ st.markdown("""
     .ai-badge-container {
         display: flex;
         justify-content: center;
-        margin-bottom: 15px;
+        margin-bottom: 25px;
     }
     .ai-working-badge {
         display: inline-flex;
         align-items: center;
-        background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 100%);
-        color: #00ff88;
-        padding: 10px 24px;
-        border-radius: 30px;
-        font-weight: 700;
-        font-size: 1rem;
-        box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 255, 136, 0.1);
-        border: 1px solid rgba(0, 255, 136, 0.3);
-        animation: aiGlow 2s ease-in-out infinite;
+        background: #FFFFFF;
+        color: #1D3557;
+        padding: 12px 28px;
+        border-radius: 40px;
+        font-weight: 800;
+        font-size: 1.1rem;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        border: 2px solid #E9ECEF;
     }
     .ai-working-badge .ai-dot {
-        width: 10px;
-        height: 10px;
-        background: #00ff88;
+        width: 12px;
+        height: 12px;
+        background: #4CAF50;
         border-radius: 50%;
-        margin-right: 10px;
-        animation: aiPulse 1s ease-in-out infinite;
-        box-shadow: 0 0 10px #00ff88;
+        margin-right: 12px;
+        animation: aiPulse 1.5s ease-in-out infinite;
     }
     .ai-working-badge .ai-icon {
-        margin-right: 8px;
-        font-size: 1.2rem;
+        margin-right: 10px;
+        font-size: 1.3rem;
     }
     @keyframes aiPulse {
         0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.5; transform: scale(0.8); }
-    }
-    @keyframes aiGlow {
-        0%, 100% { box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 255, 136, 0.1); }
-        50% { box-shadow: 0 4px 25px rgba(0, 255, 136, 0.5), inset 0 0 30px rgba(0, 255, 136, 0.2); }
+        50% { opacity: 0.4; transform: scale(0.8); }
     }
 </style>
 """, unsafe_allow_html=True)
-
-# ==========================================
-# 🔐 세션 상태 초기화
-# ==========================================
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "user_type" not in st.session_state:
-    st.session_state.user_type = None  # "master" 또는 "store"
-if "store_id" not in st.session_state:
-    st.session_state.store_id = None
-if "store_info" not in st.session_state:
-    st.session_state.store_info = None
 
 # ==========================================
 # 🔐 로그인 화면
@@ -462,7 +278,7 @@ if not st.session_state.logged_in:
     <div class="ai-badge-container">
         <div class="ai-working-badge">
             <span class="ai-dot"></span>
-            <span class="ai-icon">🤖</span>
+            <span class="ai-icon">&#129302;</span>
             AI 직원 24시간 근무중
         </div>
     </div>
@@ -470,10 +286,15 @@ if not st.session_state.logged_in:
 
     # 🎁 홍보 배너 표시
     st.markdown(f"""
-    <div class="promo-banner-admin">
-        <h2>{PROMO_TITLE}</h2>
-        <p>{PROMO_SUBTITLE}</p>
-        <span class="promo-highlight">{PROMO_BADGE}</span>
+    <div style="background: linear-gradient(135deg, #1D3557 0%, #457B9D 100%);
+                padding: 40px; border-radius: 28px; text-align: center; color: white;
+                margin-bottom: 40px; box-shadow: 0 15px 35px rgba(29, 53, 87, 0.2);">
+        <h1 style="color: white !important; margin-bottom: 10px;">{PROMO_TITLE}</h1>
+        <p style="font-size: 20px; opacity: 0.9;">{PROMO_SUBTITLE}</p>
+        <div style="display: inline-block; background: rgba(255,255,255,0.2); 
+                    padding: 8px 24px; border-radius: 40px; margin-top: 15px; font-weight: 800;">
+            {PROMO_BADGE}
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -551,68 +372,15 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ==========================================
-# 🎛️ 로그인 후 - 사이드바
-# ==========================================
-with st.sidebar:
-    if st.session_state.user_type == "master":
-        st.markdown(
-    '<span class="super-admin-badge">👑 슈퍼 관리자</span>',
-    unsafe_allow_html=True)
-        st.markdown("### 🏢 마스터 계정")
-    else:
-        st.markdown(
-    '<span class="store-badge">🏪 가맹점</span>',
-    unsafe_allow_html=True)
-        store_name = st.session_state.store_info.get(
-            'name', st.session_state.store_id)
-        st.markdown(f"### 🏪 {store_name}")
-
-    st.markdown("---")
-
-    if st.button("🚪 로그아웃", use_container_width=True):
-        st.session_state.logged_in = False
-        st.session_state.user_type = None
-        st.session_state.store_id = None
-        st.session_state.store_info = None
-        st.rerun()
-
-    st.markdown("---")
-
-    # 마스터만 시트 초기화 가능
-    if st.session_state.user_type == "master":
-        if st.button("🔧 시트 초기화", use_container_width=True):
-            if initialize_sheets():
-                st.success("✅ 시트 초기화 완료!")
-            else:
-                st.error("❌ 초기화 실패")
-
-    # 📱 앱 설치 안내 (특히 가맹점 사장님용)
-    st.markdown("---")
-    with st.expander("📱 앱으로 설치하기"):
-        st.markdown("""
-        **홈 화면에 추가하면 앱처럼!**
-
-        📲 **아이폰**
-        Safari 공유(□↑) → 홈 화면에 추가
-
-        📲 **안드로이드**
-        메뉴(⋮) → 앱 설치
-
-        ---
-        ✅ 바로가기 아이콘 생성
-        ✅ 전체화면 모드 지원
-        ✅ 빠른 접속 가능
-        """)
-
-    st.caption("📊 데이터: Google Sheets")
-
-
-
-# ==========================================
 # 👑 슈퍼 관리자 전용 페이지
 # ==========================================
 if st.session_state.user_type == "master":
-    st.markdown("## 👑 슈퍼 관리자 대시보드")
+    st.markdown("""
+    <div class="app-card" style="background: linear-gradient(135deg, #1D3557 0%, #457B9D 100%); color: white; margin-bottom: 40px;">
+        <h1 style="color: white !important; margin: 0;">👑 슈퍼 관리자 대시보드</h1>
+        <p style="opacity: 0.9; margin-top: 10px;">전체 가맹점 및 시스템 통합 관리 모드입니다.</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # 탭 구성 - 슈퍼 관리자용
     tab1, tab2, tab3, tab4 = st.tabs([
@@ -888,10 +656,110 @@ else:
 
     st.markdown(f"## 🏪 {store_name} 관리 페이지")
 
+    # = :::::::::::::::::::::::::::::::::::::: =
+    # 🔗 내 가게 주문 링크 공유 섹션 (최상단 재배치)
+    # = :::::::::::::::::::::::::::::::::::::: =
+    try:
+        # 주문 링크 생성 (main.py로 이동, store 파라미터 포함)
+        base_url = st.secrets.get("APP_URL", "https://dnbsir.com")
+        order_link = f"{base_url}?store={store_id}"
+        
+        st.markdown(f"""
+        <div style="
+            background: #FFFFFF;
+            padding: 2.5rem;
+            border-radius: 28px;
+            margin: 1.5rem 0;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.04);
+            border: 2px solid #E9ECEF;
+        ">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                <div>
+                    <div style="font-size: 1.5rem; font-weight: 900; color: #1D3557; margin-bottom: 8px;">
+                        🔗 내 가게 주문 링크
+                    </div>
+                    <div style="font-size: 1rem; color: #6C757D;">
+                        손님에게 이 링크를 보내면 바로 우리 가게 주문 화면으로 이동합니다.
+                    </div>
+                </div>
+            </div>
+            <div style="
+                background: #F8F9FA;
+                padding: 18px 25px;
+                border-radius: 18px;
+                margin-top: 25px;
+                font-family: 'Pretendard', monospace;
+                font-size: 1rem;
+                color: #457B9D;
+                word-break: break-all;
+                border: 1px dashed #CED4DA;
+            ">
+                {order_link}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 복사 및 공유 버튼
+        col_copy1, col_copy2 = st.columns(2)
+        with col_copy1:
+            copy_js = f"""
+            <script>
+            function copyOrderLink() {{
+                navigator.clipboard.writeText("{order_link}").then(function() {{
+                    alert("✅ 주문 링크가 복사되었습니다!\\n\\n손님에게 카카오톡, 문자 등으로 공유하세요.");
+                }}, function(err) {{
+                    prompt("링크를 복사하세요:", "{order_link}");
+                }});
+            }}
+            </script>
+            <button onclick="copyOrderLink()" style="
+                width: 100%;
+                padding: 15px 20px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                color: white;
+                border: none;
+                border-radius: 15px;
+                cursor: pointer;
+                box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
+                transition: transform 0.2s, box-shadow 0.2s;
+            " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                📋 주문 링크 복사하기
+            </button>
+            """
+            st.components.v1.html(copy_js, height=60)
+        
+        with col_copy2:
+            st.markdown(f"""
+            <a href="https://sharer.kakao.com/talk/friends/picker/link?url={order_link}&text={store_name}" target="_blank" style="
+                display: block;
+                width: 100%;
+                padding: 15px 20px;
+                font-size: 1.1rem;
+                font-weight: 700;
+                background: #FEE500;
+                color: #3C1E1E;
+                border: none;
+                border-radius: 15px;
+                cursor: pointer;
+                box-shadow: 0 6px 20px rgba(254, 229, 0, 0.4);
+                text-align: center;
+                text-decoration: none;
+                box-sizing: border-box;
+            ">
+                💬 카카오톡으로 공유
+            </a>
+            """, unsafe_allow_html=True)
+    except Exception as e:
+        st.warning(f"⚠️ 주문 링크 생성 중 오류: {e}")
+
+    st.markdown("---")
+
     # ==========================================
     # 📊 상단 대시보드 - 핵심 정보 요약
     # ==========================================
-    st.markdown("---")
+    st.markdown("")
 
     # 만료일 및 결제 상태 가져오기
     current_expiry = store_info.get('expiry_date', '')
@@ -979,121 +847,9 @@ else:
         """, unsafe_allow_html=True)
 
     # ==========================================
-    # 🔗 내 가게 주문 링크 공유 섹션
+    # 📞 전화 후 자동 링크 발송 기능
     # ==========================================
     st.markdown("")
-    
-    # 현재 앱 URL 가져오기 (query params로 store_id 전달)
-    try:
-        # Streamlit Cloud 또는 ngrok URL 감지
-        import streamlit.components.v1 as components
-        
-        # 주문 링크 생성 (main.py로 이동, store 파라미터 포함)
-        # 실제 배포 시에는 도메인을 수정해야 함
-        base_url = st.secrets.get("APP_URL", "")
-        
-        if not base_url:
-            # 기본 로컬 URL (개발용)
-            base_url = "http://localhost:8501"
-        
-        order_link = f"{base_url}?store={store_id}"
-        
-        # 주문 링크 공유 박스
-        st.markdown(f"""
-        <div style="
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1.5rem;
-            border-radius: 20px;
-            margin: 1rem 0;
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-        ">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-                <div style="color: white;">
-                    <div style="font-size: 1.3rem; font-weight: 700; margin-bottom: 5px;">
-                        🔗 내 가게 주문 링크
-                    </div>
-                    <div style="font-size: 0.95rem; opacity: 0.9;">
-                        손님에게 이 링크를 보내면 바로 우리 가게 주문 화면으로 이동합니다!
-                    </div>
-                </div>
-            </div>
-            <div style="
-                background: rgba(255,255,255,0.15);
-                padding: 12px 15px;
-                border-radius: 12px;
-                margin-top: 15px;
-                font-family: monospace;
-                font-size: 0.9rem;
-                color: white;
-                word-break: break-all;
-            ">
-                {order_link}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # 복사 버튼
-        col_copy1, col_copy2 = st.columns(2)
-        with col_copy1:
-            # 클립보드 복사 JavaScript
-            copy_js = f"""
-            <script>
-            function copyOrderLink() {{
-                navigator.clipboard.writeText("{order_link}").then(function() {{
-                    alert("✅ 주문 링크가 복사되었습니다!\\n\\n손님에게 카카오톡, 문자 등으로 공유하세요.");
-                }}, function(err) {{
-                    prompt("링크를 복사하세요:", "{order_link}");
-                }});
-            }}
-            </script>
-            <button onclick="copyOrderLink()" style="
-                width: 100%;
-                padding: 15px 20px;
-                font-size: 1.1rem;
-                font-weight: 700;
-                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-                color: white;
-                border: none;
-                border-radius: 15px;
-                cursor: pointer;
-                box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
-                transition: transform 0.2s, box-shadow 0.2s;
-            " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
-                📋 주문 링크 복사하기
-            </button>
-            """
-            components.html(copy_js, height=60)
-        
-        with col_copy2:
-            # 카카오톡 공유 버튼 (URL scheme)
-            kakao_msg = f"🍽️ {store_name}에서 주문하세요!%0A%0A👉 {order_link}"
-            st.markdown(f"""
-            <a href="https://sharer.kakao.com/talk/friends/picker/link?url={order_link}&text={store_name}" target="_blank" style="
-                display: block;
-                width: 100%;
-                padding: 15px 20px;
-                font-size: 1.1rem;
-                font-weight: 700;
-                background: #FEE500;
-                color: #3C1E1E;
-                border: none;
-                border-radius: 15px;
-                cursor: pointer;
-                box-shadow: 0 6px 20px rgba(254, 229, 0, 0.4);
-                text-align: center;
-                text-decoration: none;
-                box-sizing: border-box;
-            ">
-                💬 카카오톡으로 공유
-            </a>
-            """, unsafe_allow_html=True)
-        
-        st.caption("💡 링크를 받은 손님은 로그인 없이 바로 주문할 수 있습니다.")
-        
-        # ==========================================
-        # 📞 전화 후 자동 링크 발송 기능
-        # ==========================================
-        st.markdown("")
         
         with st.expander("📞 전화 받고 자동 링크 발송", expanded=False):
             st.markdown("""
@@ -1714,6 +1470,77 @@ else:
         st.markdown("---")
 
         # ==========================================
+        # = :::::::::::::::::::::::::::::::::::::: =
+        # 💳 새 결제수단 등록 섹션
+        # = :::::::::::::::::::::::::::::::::::::: =
+        st.markdown("---")
+        st.markdown("### ➕ 새 결제수단 등록")
+        
+        if "reg_step" not in st.session_state:
+            st.session_state.reg_step = "select" # select -> account_detail
+
+        # ------------------------------------------
+        # [STEP 1] 결제 수단 선택 (카드 공사중 반영)
+        # ------------------------------------------
+        if st.session_state.reg_step == "select":
+            with st.container(border=True):
+                st.markdown("#### 💳 1단계: 결제 수단 선택")
+                st.caption("등록하실 결제 수단을 선택해 주세요.")
+                
+                col_sel1, col_sel2 = st.columns(2)
+                
+                with col_sel1:
+                    st.markdown("""
+                    <div style="padding: 20px; border: 2px solid #000; border-radius: 15px; text-align: center;">
+                        <div style="font-size: 2rem;">🏦</div>
+                        <div style="font-weight: bold; margin-top: 10px;">계좌 결제</div>
+                        <div style="font-size: 0.8rem; color: #666;">자동 이체 등록</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if st.button("계좌 등록하기", use_container_width=True):
+                        st.session_state.reg_step = "account_detail"
+                        st.rerun()
+                
+                with col_sel2:
+                    st.markdown("""
+                    <div style="padding: 20px; border: 2px solid #ddd; border-radius: 15px; text-align: center; background-color: #f9f9f9; position: relative;">
+                        <div style="position: absolute; top: 10px; right: 10px; background: #ff4b4b; color: white; padding: 2px 8px; border-radius: 5px; font-size: 0.7rem;">공사중</div>
+                        <div style="font-size: 2rem; opacity: 0.5;">💳</div>
+                        <div style="font-weight: bold; margin-top: 10px; color: #aaa;">신용카드</div>
+                        <div style="font-size: 0.8rem; color: #aaa;">정기 결제 등록</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.button("카드 등록 (준비중)", use_container_width=True, disabled=True)
+
+        # ------------------------------------------
+        # [STEP 2] 계좌 상세 정보 입력
+        # ------------------------------------------
+        elif st.session_state.reg_step == "account_detail":
+            with st.container(border=True):
+                st.markdown("#### 🏦 2단계: 계좌 정보 입력")
+                
+                acc_holder = st.text_input("예금주 성함", placeholder="실명 입력")
+                bank_name = st.selectbox("은행 선택", ["국민은행", "신한은행", "우리은행", "하나은행", "카카오뱅크", "토스뱅크"])
+                acc_num = st.text_input("계좌번호", placeholder="'-' 제외 입력")
+                st.caption("※ 매월 정기적으로 이용료가 자동 인출됩니다.")
+                
+                if st.button("💾 계좌 등록 완료", use_container_width=True, type="primary"):
+                    if acc_holder and acc_num:
+                        with st.spinner("금융기관에 계좌를 등록 중입니다..."):
+                            import time
+                            time.sleep(2)
+                            st.session_state.reg_step = "select" # 초기화
+                            st.success(f"🎉 {acc_holder} 사장님의 계좌가 성공적으로 등록되었습니다!")
+                            st.balloons()
+                    else:
+                        st.error("❌ 모든 정보를 입력해 주세요.")
+                
+                if st.button("⬅️ 뒤로가기", key="back_to_select"):
+                    st.session_state.reg_step = "select"
+                    st.rerun()
+
+        st.markdown("---")
+        
         # 💳 결제 방법 선택
         # ==========================================
         st.markdown("### 결제 방법 선택")
@@ -2087,55 +1914,55 @@ else:
                 else:
                     st.error("❌ 저장 실패")
 
-# ==========================================
+    # ==========================================
     # 📝 탭4: 메뉴 수정
-# ==========================================
+    # ==========================================
     with tab4:
         st.markdown("### 📝 우리 가게 메뉴 수정")
-    st.markdown("---")
+        st.markdown("---")
 
-    current_menu = store_info.get('menu_text', '')
+        current_menu = store_info.get('menu_text', '')
 
-    st.markdown("**현재 메뉴:**")
-    if current_menu:
-        st.text(current_menu)
-    else:
-        st.info("등록된 메뉴가 없습니다.")
+        st.markdown("**현재 메뉴:**")
+        if current_menu:
+            st.text(current_menu)
+        else:
+            st.info("등록된 메뉴가 없습니다.")
 
-    st.markdown("---")
+        st.markdown("---")
 
-    new_menu = st.text_area(
-        "메뉴 내용 수정",
-        value=current_menu,
-        height=300,
-        placeholder="메뉴명 - 가격\n예: 후라이드치킨 - 18000원"
-    )
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        new_info = st.text_area(
-            "영업정보 수정",
-            value=store_info.get('info', ''),
-            placeholder="영업시간: 11:00 ~ 22:00\n휴무일: 매주 월요일"
+        new_menu = st.text_area(
+            "메뉴 내용 수정",
+            value=current_menu,
+            height=300,
+            placeholder="메뉴명 - 가격\n예: 후라이드치킨 - 18000원"
         )
 
-    with col2:
-        new_phone = st.text_input(
+        col1, col2 = st.columns(2)
+
+        with col1:
+            new_info = st.text_area(
+                "영업정보 수정",
+                value=store_info.get('info', ''),
+                placeholder="영업시간: 11:00 ~ 22:00\n휴무일: 매주 월요일"
+            )
+
+        with col2:
+            new_phone = st.text_input(
                 "연락처 수정",
                 value=store_info.get('phone', '')
             )
 
-        if st.button("💾 메뉴/정보 저장", use_container_width=True, type="primary"):
-            store_info['menu_text'] = new_menu
-            store_info['info'] = new_info
-            store_info['phone'] = new_phone
+            if st.button("💾 메뉴/정보 저장", use_container_width=True, type="primary"):
+                store_info['menu_text'] = new_menu
+                store_info['info'] = new_info
+                store_info['phone'] = new_phone
 
-            if save_store(store_id, store_info):
-                st.session_state.store_info = store_info  # 세션 업데이트
-                st.success("✅ 메뉴 및 정보 저장 완료!")
-            else:
-                st.error("❌ 저장 실패")
+                if save_store(store_id, store_info):
+                    st.session_state.store_info = store_info  # 세션 업데이트
+                    st.success("✅ 메뉴 및 정보 저장 완료!")
+                else:
+                    st.error("❌ 저장 실패")
         
         # ==========================================
         # 🪑 테이블 설정 (식당/카페인 경우)
@@ -2374,6 +2201,16 @@ else:
 # 📌 푸터
 # ==========================================
 st.markdown("---")
+with st.sidebar:
+    st.markdown("---")
+    with st.expander("📱 모바일 동시 확인 QR"):
+        mobile_url = "https://dnbsir.com"
+        qr = qrcode.make(mobile_url)
+        buf = io.BytesIO()
+        qr.save(buf)
+        st.image(buf, width=150)
+        st.caption("폰으로 스캔해서 확인하세요")
+
 if st.session_state.user_type == "master":
     st.caption("👑 슈퍼 관리자 모드 | 전체 가맹점 관리 가능")
 else:

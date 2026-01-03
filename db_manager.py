@@ -201,33 +201,48 @@ def get_all_stores():
         # 데이터가 없는 경우 처리
         all_values = worksheet.get_all_values()
         if len(all_values) <= 1:  # 헤더만 있거나 빈 시트
+            # 데이터는 없는데 헤더 구조도 안 맞을 수 있으므로 강제 초기화 시도
+            initialize_sheets()
             return {}
         
-        records = worksheet.get_all_records()
+        header = all_values[0]
+        
+        # [중요] 헤더에 빈 문자열이나 중복이 있는지 체크하여 구조가 깨졌다면 자동 복구
+        if '' in header or len(header) != len(set(header)) or 'owner_name' not in header:
+            initialize_sheets()
+            # 초기화 후 다시 로드
+            all_values = worksheet.get_all_values()
+            header = all_values[0]
+            
+        data_rows = all_values[1:]
         
         stores = {}
-        for record in records:
+        for row in data_rows:
+            # 행 데이터와 헤더를 매핑하여 딕셔너리 생성
+            record = dict(zip(header, row))
             store_id = record.get('store_id', '')
             if store_id:
                 stores[store_id] = {
                     'password': record.get('password', ''),
                     'name': record.get('name', ''),
                     'phone': record.get('phone', ''),
+                    'owner_name': record.get('owner_name', ''),
                     'info': record.get('info', ''),
                     'menu_text': record.get('menu_text', ''),
                     'printer_ip': record.get('printer_ip', ''),
                     'img_files': record.get('img_files', ''),
-                    'status': record.get('status', '미납'),  # 가맹비납부여부
-                    # 정기 결제 관련 컬럼 (없으면 기본값)
+                    'status': record.get('status', '미납'),
                     'billing_key': str(record.get('billing_key', '')),
                     'expiry_date': str(record.get('expiry_date', '')),
                     'payment_status': str(record.get('payment_status', '미등록')),
                     'next_payment_date': str(record.get('next_payment_date', '')),
-                    # 업종 카테고리 (기본값: restaurant)
                     'category': str(record.get('category', 'restaurant')),
-                    # 테이블 정보
                     'table_count': record.get('table_count', 0),
-                    'seats_per_table': record.get('seats_per_table', 0)
+                    'seats_per_table': record.get('seats_per_table', 0),
+                    'printer_type': record.get('printer_type', '미사용'),
+                    'notification_mode': record.get('notification_mode', ''),
+                    'solapi_key': record.get('solapi_key', ''),
+                    'solapi_secret': record.get('solapi_secret', '')
                 }
         return stores
     except Exception as e:
@@ -273,27 +288,32 @@ def save_store(store_id, store_data, encrypt_password=True):
         
         row_data = [
             store_id,
-            password,  # 암호화된 비밀번호
-            store_data.get('name', ''),
-            store_data.get('phone', ''),
-            store_data.get('info', ''),
+            password,  # B
+            store_data.get('name', ''), # C
+            store_data.get('phone', ''), # D
+            store_data.get('owner_name', ''), # E (추가)
+            store_data.get('info', ''), # F
             store_data.get('menu_text', ''),
             store_data.get('printer_ip', ''),
             store_data.get('img_files', ''),
-            store_data.get('status', '미납'),  # 가맹비납부여부
-            # 정기 결제 관련 컬럼
-            store_data.get('billing_key', ''),  # 빌링키
-            store_data.get('expiry_date', ''),  # 만료일
-            store_data.get('payment_status', '미등록'),  # 결제상태
-            store_data.get('next_payment_date', ''),  # 다음결제일
-            store_data.get('category', 'restaurant'),  # 업종 카테고리
-            store_data.get('table_count', 0),  # 테이블 수
-            store_data.get('seats_per_table', 0)  # 테이블당 최대 착석 인원
+            store_data.get('status', '미납'),
+            store_data.get('billing_key', ''),
+            store_data.get('expiry_date', ''),
+            store_data.get('payment_status', '미등록'),
+            store_data.get('next_payment_date', ''),
+            store_data.get('category', 'restaurant'),
+            store_data.get('table_count', 0),
+            store_data.get('seats_per_table', 0),
+            store_data.get('printer_type', '미사용'),
+            store_data.get('notification_mode', ''),
+            store_data.get('solapi_key', ''),
+            store_data.get('solapi_secret', ''),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ]
         
         if row_index:
             # 기존 데이터 수정
-            worksheet.update(f'A{row_index}:P{row_index}', [row_data])
+            worksheet.update(f'A{row_index}:V{row_index}', [row_data])
         else:
             # 신규 데이터 추가
             worksheet.append_row(row_data)
@@ -345,6 +365,44 @@ def update_store_status(store_id, new_status):
         st.error(f"❌ 상태 업데이트 실패: {e}")
         return False
 
+
+def find_store_id(owner_name, phone):
+    """대표자 성함과 번호로 아이디 찾기"""
+    try:
+        spreadsheet = get_spreadsheet()
+        if spreadsheet is None: return None
+        worksheet = spreadsheet.worksheet(STORES_SHEET)
+        records = worksheet.get_all_records()
+        
+        # 숫자만 추출해서 비교
+        target_phone = ''.join(filter(str.isdigit, phone))
+        
+        for record in records:
+            db_phone = ''.join(filter(str.isdigit, str(record.get('phone', ''))))
+            if record.get('owner_name') == owner_name and db_phone == target_phone:
+                return record.get('store_id')
+        return None
+    except:
+        return None
+
+def find_store_password(store_id, phone):
+    """아이디와 번호로 비밀번호 찾기"""
+    try:
+        spreadsheet = get_spreadsheet()
+        if spreadsheet is None: return None
+        worksheet = spreadsheet.worksheet(STORES_SHEET)
+        records = worksheet.get_all_records()
+        
+        target_phone = ''.join(filter(str.isdigit, phone))
+        
+        for record in records:
+            db_phone = ''.join(filter(str.isdigit, str(record.get('phone', ''))))
+            if record.get('store_id') == store_id and db_phone == target_phone:
+                # 가입 시 저장한 원본 비밀번호 또는 안내 메시지 반환
+                return record.get('password', '')
+        return None
+    except:
+        return None
 
 def verify_store_login(store_id, password):
     """
@@ -1043,31 +1101,33 @@ def initialize_sheets():
         try:
             stores_ws = spreadsheet.worksheet(STORES_SHEET)
         except:
-            stores_ws = spreadsheet.add_worksheet(title=STORES_SHEET, rows=1000, cols=20)
+            stores_ws = spreadsheet.add_worksheet(title=STORES_SHEET, rows=1000, cols=22)
         
         stores_header = [
             'store_id',        # A: 가게 ID
             'password',        # B: 비밀번호
             'name',            # C: 가게명
             'phone',           # D: 연락처
-            'info',            # E: 영업정보
-            'menu_text',       # F: 메뉴
-            'printer_ip',      # G: 프린터 IP
-            'img_files',       # H: 이미지 파일
-            'status',          # I: 가맹비납부여부
-            'billing_key',     # J: 빌링키 (PG사 발급)
-            'expiry_date',     # K: 만료일
-            'payment_status',  # L: 결제상태 (미등록/정상/만료/실패)
-            'next_payment_date',  # M: 다음결제일
-            'category',        # N: 업종 카테고리
-            'table_count',     # O: 테이블 수
-            'seats_per_table', # P: 테이블당 최대 착석 인원
-            'logen_id',        # Q: 로젠택배 아이디
-            'logen_password',  # R: 로젠택배 비밀번호
-            'logen_sender_name',    # S: 로젠택배 발송인명
-            'logen_sender_address'  # T: 로젠택배 발송인 주소
+            'owner_name',      # E: 대표자 성함
+            'info',            # F: 매장 주소/정보
+            'menu_text',       # G: 메뉴
+            'printer_ip',      # H: 프린터 IP
+            'img_files',       # I: 이미지 파일
+            'status',          # J: 가맹비납부여부
+            'billing_key',     # K: 빌링키
+            'expiry_date',     # L: 만료일
+            'payment_status',  # M: 결제상태
+            'next_payment_date', # N: 다음결제일
+            'category',        # O: 업종 카테고리
+            'table_count',     # P: 테이블 수
+            'seats_per_table', # Q: 테이블당 최대 착석 인원
+            'printer_type',    # R: 프린터 종류
+            'notification_mode', # S: 알림 모드
+            'solapi_key',      # T: 솔라피 키
+            'solapi_secret',   # U: 솔라피 시크릿
+            'created_at'       # V: 생성일
         ]
-        stores_ws.update('A1:T1', [stores_header])
+        stores_ws.update('A1:V1', [stores_header])
         
         # orders 시트 헤더
         try:

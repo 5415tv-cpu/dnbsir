@@ -55,6 +55,10 @@ def send_sms(to_phone, message, config=None):
     if not to_phone:
         return False, "수신자 전화번호가 없습니다."
     
+    # 전화번호에서 숫자만 추출 (Solapi 권장 형식)
+    to_phone = ''.join(filter(str.isdigit, to_phone))
+    sender_phone = ''.join(filter(str.isdigit, sender_phone))
+    
     try:
         # HMAC 인증 헤더 생성
         date = datetime.datetime.now().astimezone().isoformat()
