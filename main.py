@@ -12,6 +12,23 @@ import sms_manager
 import db_manager
 import time
 import os
+import google.generativeai as genai
+
+# ==========================================
+# 🤖 AI 모델 설정 (Gemini)
+# ==========================================
+if "GOOGLE_API_KEY" in st.secrets:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    
+    # 텍스트 모델 (AI_VOICE용)
+    if "chat_model" not in st.session_state:
+        st.session_state.chat_model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # 멀티모달 모델 (AI_VISION용)
+    if "vision_model" not in st.session_state:
+        st.session_state.vision_model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    st.error("⚠️ GOOGLE_API_KEY가 설정되지 않았습니다. secrets.toml 파일을 확인해 주세요.")
 
 # ==========================================
 # 🎨 페이지 설정
@@ -494,13 +511,15 @@ if st.session_state.page == "HOME":
     st.markdown(f"""
     <div class="kiosk-header" style="padding: 50px 20px 30px 20px;">
         <h1 style="font-size: 38px !important; color: #FFFFFF !important; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">배달비에 힘들어 하는 자영업 사장님들과 함께 하는 동네비서AI본부</h1>
-        <div class="header-voice-box" style="padding: 35px 50px; margin-top: 30px; max-width: 1100px; background: rgba(255,255,255,0.9); border-radius: 25px; backdrop-filter: blur(5px);">
-            <div class="mic-icon" style="font-size: 45px;">🎙️</div>
-            <div class="voice-text-container">
-                <div class="voice-main-text" style="font-size: 36px; color: #111;">"택배 보내줘"라고 말씀해 보세요</div>
-                <div class="voice-sub-text" style="font-size: 20px; color: #888;">(이곳을 터치하면 AI 음성 대화가 시작됩니다)</div>
-            </div>
-        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 헤더 질문창을 클릭 가능한 버튼으로 변경
+    if st.button("🎙️ \"택배 보내줘\"라고 말씀해 보세요 (AI 음성 대화 시작)", key="header_ai_button", use_container_width=True):
+        navigate_to("AI_VOICE")
+    
+    st.markdown(f"""
+    <div class="kiosk-header" style="padding: 0; border: none;">
         <div class="time" style="font-size: 20px; color: #FFFFFF; opacity: 0.8; margin-top: 15px;">{now.strftime('%H:%M:%S')} (SYSTEM ACTIVE)</div>
     </div>
     """, unsafe_allow_html=True)
@@ -1540,15 +1559,40 @@ else:
                 response_text = ""
                 target_page = None
                 
-                if "택배" in v_text:
-                    response_text = "네 사장님! 택배 접수 화면으로 이동합니다."
-                    target_page = "DELIVERY"
-                elif "예약" in v_text:
-                    response_text = "네, 전체 예약 현황을 보여드릴게요."
-                    target_page = "RESERVE"
-                else:
-                    response_text = f"'{v_text}'라고 말씀하셨군요. 아직 학습 중인 기능입니다!"
+                try:
+                    # 실제 Gemini AI에게 물어보기
+                    if "chat_model" in st.session_state:
+                        prompt = f"""당신은 '동네비서 AI'의 최고 수준 비서입니다. 
+사장님이 다음과 같이 말씀하셨습니다: "{v_text}"
 
+사장님의 의도를 정확히 파악하여 전문적이고 친절하게 응답하세요.
+- 만약 사장님이 '택배', '배송', '운송장' 관련 업무를 원하시면 응답 마지막에 [MOVE:DELIVERY]를 포함하세요.
+- 만약 '예약', '일정', '예약자' 확인이나 관리를 원하시면 응답 마지막에 [MOVE:RESERVE]를 포함하세요.
+- 만약 '홈', '메인', '처음'으로 가고 싶어하시면 [MOVE:HOME]을 포함하세요.
+- 그 외의 질문에는 상황에 맞는 최선의 해결책을 제시하세요.
+
+응답은 한국어로 1~2문장으로 간결하고 전문적으로 작성하세요."""
+                        
+                        response = st.session_state.chat_model.generate_content(prompt)
+                        full_response = response.text
+                        
+                        # 이동 명령 추출
+                        if "[MOVE:DELIVERY]" in full_response:
+                            target_page = "DELIVERY"
+                            response_text = full_response.replace("[MOVE:DELIVERY]", "").strip()
+                        elif "[MOVE:RESERVE]" in full_response:
+                            target_page = "RESERVE"
+                            response_text = full_response.replace("[MOVE:RESERVE]", "").strip()
+                        elif "[MOVE:HOME]" in full_response:
+                            target_page = "HOME"
+                            response_text = full_response.replace("[MOVE:HOME]", "").strip()
+                        else:
+                            response_text = full_response.strip()
+                    else:
+                        response_text = "AI 모델이 설정되지 않았습니다."
+                except Exception as e:
+                    response_text = f"죄송합니다. AI 연결 중 오류가 발생했습니다: {str(e)}"
+                
                 st.write(response_text)
                 
                 # TTS 실행
@@ -1676,20 +1720,42 @@ else:
                     st.write("### 🔍 사진 분석 결과")
                     st.image(img_file, use_container_width=True)
                     
-                    # 분석 결과 시뮬레이션
-                    st.markdown("""
-                    <div style="background:#F0F7FF; padding:25px; border-radius:20px; border:2px solid #007AFF;">
-                        <h3 style="color:#007AFF; margin-top:0;">🔍 AI 분석 결과</h3>
-                        <p><b>분석 대상:</b> 손글씨 주소 및 운송장 인식됨</p>
-                        <hr>
-                        <p>✅ <b>인식 유형:</b> 텍스트 변환 (손글씨 → 디지털)</p>
-                        <p>✅ <b>받는 분:</b> 홍길동 (손글씨 분석)</p>
-                        <p>✅ <b>연락처:</b> 010-1234-5678</p>
-                        <p>✅ <b>주소:</b> 서울특별시 강남구 역삼동 123-45 (손글씨 분석)</p>
-                        <hr>
-                        <p style="font-size:14px; color:#666;">※ 삐뚤삐뚤한 손글씨도 정확하게 분석되었습니다. 접수하시겠습니까?</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # 실제 Gemini AI로 사진 분석
+                    with st.spinner("AI가 사진을 정밀 분석 중입니다..."):
+                        try:
+                            if "vision_model" in st.session_state:
+                                from PIL import Image
+                                img = Image.open(img_file)
+                                
+                                prompt = """당신은 세계 최고의 광학 문자 인식(OCR) 및 정보 추출 전문가입니다. 
+제시된 사진을 분석하여 다음 규칙에 따라 응답하세요:
+
+1. **상황 파악**: 사진이 '택배 운송장', '손글씨 주소', '식당 메뉴판', '영수증' 중 무엇인지 먼저 명시하세요.
+2. **정보 추출**: 
+   - [택배/주소의 경우]: 보낸사람/받는사람의 이름, 전화번호(010-XXXX-XXXX 형식), 주소를 정확히 추출하세요. 
+   - [메뉴판의 경우]: 메뉴 이름과 가격을 표 형태로 정리하세요.
+3. **손글씨 보정**: 흘려 쓴 글씨는 앞뒤 문맥(예: 도로명 주소 체계)을 고려하여 가장 정확한 단어로 교정하여 보여주세요.
+4. **결과 요약**: 사장님이 바로 복사해서 쓸 수 있도록 핵심 정보만 깔끔하게 출력하세요.
+
+반드시 한국어로, 친절하고 전문적으로 대답하세요."""
+                                
+                                response = st.session_state.vision_model.generate_content([prompt, img])
+                                analysis_result = response.text
+                                
+                                st.markdown(f"""
+                                <div style="background:#F0F7FF; padding:25px; border-radius:20px; border:2px solid #007AFF;">
+                                    <h3 style="color:#007AFF; margin-top:0;">🔍 AI 실시간 분석 결과</h3>
+                                    <div style="white-space: pre-wrap; line-height: 1.6; font-size: 16px;">
+                                        {analysis_result}
+                                    </div>
+                                    <hr>
+                                    <p style="font-size:14px; color:#666;">※ AI가 사진 속의 손글씨나 텍스트를 인식한 결과입니다. 정보가 정확한지 확인해 주세요.</p>
+                                </div>
+                                """, unsafe_allow_html=True)
+                            else:
+                                st.error("AI 모델이 설정되지 않았습니다.")
+                        except Exception as e:
+                            st.error(f"사진 분석 중 오류가 발생했습니다: {str(e)}")
                     
                     if st.button("✅ 이 정보로 즉시 접수하기", use_container_width=True, type="primary"):
                         st.success("사진 기반 자동 접수가 완료되었습니다!")
