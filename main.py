@@ -843,11 +843,12 @@ else:
                     st.warning(f"⚠️ 실제 문자 발송 대기 중: {sms_msg}")
                     st.caption("(시연용 API 키가 설정되지 않은 경우 시뮬레이션 화면만 표시됩니다.)")
 
+                msg_content_html = msg_content.replace('\n', '<br>')
                 st.markdown(f"""
                     <div style="background:#E3F2FD; padding:20px; border-radius:15px; border:2px solid #2196F3; margin-top:20px; margin-bottom:20px;">
                         <h4 style="margin-top:0; color:#1565C0;">📱 고객 휴대폰 알림 전송 완료</h4>
                         <p style="font-size:16px; color:#444;">
-                            <b>전송 문구:</b> {msg_content.replace('\n', '<br>')}<br>
+                            <b>전송 문구:</b> {msg_content_html}<br>
                         </p>
                         <p style="font-size:13px; color:#888; margin-bottom:0;">※ 고객은 웹 브라우저에서 즉시 확인 가능합니다. (정부 창업지원금 핵심 기술)</p>
                     </div>
