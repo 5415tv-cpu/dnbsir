@@ -1654,80 +1654,168 @@ else:
             """, height=350)
 
     elif page == "AI_VISION":
-        st.markdown('<div class="sub-title-area"><h1>📸 AI 사진 분석</h1><p>사진 한 장으로 간편하게 업무를 처리하세요.</p></div>', unsafe_allow_html=True)
-        
-        # 중앙 정렬을 위한 컬럼 배치 (중앙 집중형 레이아웃)
-        _, center_col, _ = st.columns([1, 8, 1])
-        
-        with center_col:
-            # 1. 통합 안내문 (중앙 상단 배치 및 한글 강조)
-            st.markdown("""
-            <div style="background: white; padding: 30px; border-radius: 25px; border: 2px solid #EEE; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; margin-bottom: 30px;">
-                <h2 style="color: #007AFF; font-size: 32px; font-weight: 900; margin-top: 0;">🔍 AI 사진 및 손글씨 분석</h2>
-                <p style="font-size: 20px; color: #444; line-height: 1.6; margin-bottom: 20px;">
-                    택배 운송장, <b>손글씨 주소</b>, 메뉴판 등을 찍어주세요.<br>
-                    AI가 <b>삐뚤삐뚤한 손글씨도 텍스트로 즉시 변환</b>하여 처리합니다.
-                </p>
-                <div style="background: #FFF5F5; padding: 20px; border-radius: 15px; border: 1px solid #FFE0E0;">
-                    <p style="color: #FF3B30; font-weight: 800; font-size: 18px; margin-bottom: 8px;">⚠️ 모바일 카메라가 작동하지 않을 때</p>
-                    <p style="font-size: 16px; color: #666; margin: 0;">
-                        1. 주소창의 <b>자물쇠(🔒)</b> 아이콘 터치 → <b>'카메라 권한 허용'</b><br>
-                        2. 화면을 아래로 당겨서 <b>페이지 새로고침</b><br>
-                        <span style="font-size:14px; opacity:0.8;">(아이폰은 설정 > Safari > 카메라 허용을 확인해 주세요)</span>
-                    </p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # 2. 카메라 촬영 영역 (가독성 극대화)
-            st.markdown("""
-            <div style="background: #F0F7FF; padding: 20px; border-radius: 20px; border: 2px dashed #007AFF; margin-bottom: 20px; text-align: center;">
-                <p style="font-size: 20px; font-weight: 800; color: #007AFF; margin: 0;">
-                    👇 아래 박스 안의 [Take Photo] 버튼을 눌러주세요!
-                </p>
-                <p style="font-size: 14px; color: #666; margin-top: 5px;">
-                    (카메라가 안 보인다면 화면 상단 '자물쇠' 아이콘을 눌러 권한을 허용해 주세요)
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown("""
-            <style>
-                /* 카메라 입력 창 스타일 강조 */
-                [data-testid="stCameraInput"] {
-                    border: 4px solid #007AFF !important;
-                    border-radius: 20px !important;
-                    box-shadow: 0 10px 30px rgba(0,122,255,0.2) !important;
-                }
-                /* 촬영 버튼(Take Photo)을 더 크게 강조 */
-                [data-testid="stCameraInput"] button {
-                    background-color: #007AFF !important;
-                    color: white !important;
-                    font-size: 20px !important;
-                    font-weight: 900 !important;
-                    height: 60px !important;
-                    border-radius: 10px !important;
-                    margin-top: 10px !important;
-                }
-            </style>
-            """, unsafe_allow_html=True)
+        # 0. AI_VISION 전용 스타일 (카메라 풀스크린 및 하이엔드 UI)
+        st.markdown("""
+        <style>
+            /* 전체 배경을 어둡게 하여 카메라에 집중 */
+            html, body, [data-testid="stAppViewContainer"] {
+                background: #000000 !important;
+                overflow: hidden !important;
+            }
             
-            img_file = st.camera_input("분석할 대상을 카메라 중앙에 맞춰주세요", label_visibility="collapsed")
+            /* 헤더 영역 커스텀 */
+            .vision-header {
+                text-align: center;
+                padding: 40px 20px;
+                background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 999;
+            }
+            .vision-header h1 {
+                color: #FFFFFF !important;
+                font-size: 28px !important;
+                font-weight: 950 !important;
+                margin-bottom: 5px !important;
+                text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+            }
+            .vision-header p {
+                color: rgba(255,255,255,0.7) !important;
+                font-size: 16px !important;
+            }
+
+            /* 카메라 입력창을 화면 전체로 확장 */
+            [data-testid="stCameraInput"] {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 100 !important;
+                background: #000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+            }
             
-            if img_file:
-                st.write("---")
-                with st.container(border=True):
-                    st.write("### 🔍 사진 분석 결과")
-                    st.image(img_file, use_container_width=True)
-                    
-                    # 실제 Gemini AI로 사진 분석
-                    with st.spinner("AI가 사진을 정밀 분석 중입니다..."):
-                        try:
-                            if "vision_model" in st.session_state:
-                                from PIL import Image
-                                img = Image.open(img_file)
-                                
-                                prompt = """당신은 세계 최고의 광학 문자 인식(OCR) 및 정보 추출 전문가입니다. 
+            /* 카메라 비디오 영역 풀스크린화 */
+            [data-testid="stCameraInput"] video {
+                object-fit: cover !important;
+                width: 100vw !important;
+                height: 100vh !important;
+            }
+            
+            /* 촬영 버튼 위치 및 스타일 마스터피스 */
+            [data-testid="stCameraInput"] button {
+                position: fixed !important;
+                bottom: 50px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                width: 90px !important;
+                height: 90px !important;
+                border-radius: 50% !important;
+                background-color: rgba(255,255,255,0.2) !important;
+                border: 5px solid #FFFFFF !important;
+                color: transparent !important; /* 글씨 숨기기 */
+                z-index: 1000 !important;
+                box-shadow: 0 0 20px rgba(255,255,255,0.3) !important;
+                transition: all 0.3s ease !important;
+            }
+            [data-testid="stCameraInput"] button:active {
+                transform: translateX(-50%) scale(0.9) !important;
+                background-color: rgba(255,255,255,0.5) !important;
+            }
+            
+            /* 촬영 버튼 안내 문구 추가 */
+            [data-testid="stCameraInput"]::after {
+                content: "원형 버튼을 눌러 촬영하세요";
+                position: fixed;
+                bottom: 150px;
+                left: 50%;
+                transform: translateX(-50%);
+                color: white;
+                font-weight: 700;
+                text-shadow: 0 2px 5px rgba(0,0,0,1);
+                z-index: 1000;
+                width: 100%;
+                text-align: center;
+                pointer-events: none;
+            }
+
+            /* 분석 결과 창 스타일 */
+            .analysis-overlay {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: rgba(255,255,255,0.95);
+                backdrop-filter: blur(20px);
+                border-radius: 30px 30px 0 0;
+                padding: 30px;
+                z-index: 2000;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+                animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            @keyframes slideUp {
+                from { transform: translateY(100%); }
+                to { transform: translateY(0); }
+            }
+            
+            /* 홈 버튼 (좌측 상단 고정) */
+            .back-home-btn {
+                position: fixed;
+                top: 40px;
+                left: 20px;
+                z-index: 1001;
+                background: rgba(255,255,255,0.2);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255,255,255,0.3);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 15px;
+                text-decoration: none;
+                font-weight: 700;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # 1. 헤더 (카메라 촬영 시에만 보임)
+        st.markdown("""
+        <div class="vision-header">
+            <h1>📸 AI VISION SCAN</h1>
+            <p>화면 중앙에 대상을 맞춰주세요</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # 2. 홈으로 돌아가기 버튼 (Streamlit 버튼으로 구현)
+        if st.button("🏠 홈으로", key="vision_back_home", type="secondary"):
+            st.session_state.page = "HOME"
+            st.rerun()
+
+        # 3. 카메라 입력 (풀스크린 적용)
+        img_file = st.camera_input("SCAN", label_visibility="collapsed")
+        
+        # 4. 분석 결과 표시 (팝업 레이어 스타일)
+        if img_file:
+            # 촬영된 이미지를 상단에 작게 표시
+            st.image(img_file, use_container_width=True, caption="촬영된 이미지")
+            
+            with st.container():
+                st.markdown('<div class="analysis-overlay">', unsafe_allow_html=True)
+                st.write("### 🔍 AI 정밀 분석 중...")
+                
+                # 실제 Gemini AI로 사진 분석
+                with st.spinner("AI가 내용을 읽고 있습니다..."):
+                    try:
+                        if "vision_model" in st.session_state:
+                            from PIL import Image
+                            img = Image.open(img_file)
+                            
+                            prompt = """당신은 세계 최고의 광학 문자 인식(OCR) 및 정보 추출 전문가입니다. 
 제시된 사진을 분석하여 다음 규칙에 따라 응답하세요:
 
 1. **상황 파악**: 사진이 '택배 운송장', '손글씨 주소', '식당 메뉴판', '영수증' 중 무엇인지 먼저 명시하세요.
@@ -1738,40 +1826,37 @@ else:
 4. **결과 요약**: 사장님이 바로 복사해서 쓸 수 있도록 핵심 정보만 깔끔하게 출력하세요.
 
 반드시 한국어로, 친절하고 전문적으로 대답하세요."""
-                                
-                                response = st.session_state.vision_model.generate_content([prompt, img])
-                                analysis_result = response.text
-                                
-                                st.markdown(f"""
-                                <div style="background:#F0F7FF; padding:25px; border-radius:20px; border:2px solid #007AFF;">
-                                    <h3 style="color:#007AFF; margin-top:0;">🔍 AI 실시간 분석 결과</h3>
-                                    <div style="white-space: pre-wrap; line-height: 1.6; font-size: 16px;">
-                                        {analysis_result}
-                                    </div>
-                                    <hr>
-                                    <p style="font-size:14px; color:#666;">※ AI가 사진 속의 손글씨나 텍스트를 인식한 결과입니다. 정보가 정확한지 확인해 주세요.</p>
+                            
+                            response = st.session_state.vision_model.generate_content([prompt, img])
+                            analysis_result = response.text
+                            
+                            st.markdown(f"""
+                            <div style="background:#F8F9FA; padding:20px; border-radius:15px; border-left:5px solid #007AFF; margin-bottom:20px;">
+                                <h4 style="color:#007AFF; margin-top:0;">📋 분석 리포트</h4>
+                                <div style="white-space: pre-wrap; line-height: 1.6; font-size: 16px; color:#333;">
+                                    {analysis_result}
                                 </div>
-                                """, unsafe_allow_html=True)
-                            else:
-                                st.error("AI 모델이 설정되지 않았습니다.")
-                        except Exception as e:
-                            st.error(f"사진 분석 중 오류가 발생했습니다: {str(e)}")
-                    
-                    if st.button("✅ 이 정보로 즉시 접수하기", use_container_width=True, type="primary"):
-                        st.success("사진 기반 자동 접수가 완료되었습니다!")
+                            </div>
+                            """, unsafe_allow_html=True)
+                        else:
+                            st.error("AI 모델 설정 오류")
+                    except Exception as e:
+                        st.error(f"분석 실패: {str(e)}")
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔄 다시 촬영", use_container_width=True):
+                        st.rerun()
+                with col2:
+                    if st.button("✅ 데이터 접수", use_container_width=True, type="primary"):
+                        st.success("성공적으로 접수되었습니다!")
                         st.balloons()
                         import time
                         time.sleep(2)
                         st.session_state.page = "HOME"
                         st.rerun()
-            else:
-                st.write("---")
-                st.markdown("""
-                <div style="text-align:center; padding:50px; color:#AAA;">
-                    <div style="font-size:80px; margin-bottom:20px;">📷</div>
-                    <p style="font-size:20px;">카메라로 사진을 찍어주시면<br>분석을 시작합니다.</p>
-                </div>
-                """, unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
 
     elif page == "CUSTOMER_MENU":
         st.markdown('<div class="sub-title-area"><h1>🍽️ 우리 매장 메뉴판</h1><p>원하시는 상품을 골라보세요.</p></div>', unsafe_allow_html=True)
