@@ -58,9 +58,9 @@ def inject_pwa_tags():
             { name: 'apple-mobile-web-app-capable', content: 'yes' },
             { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
             { name: 'apple-mobile-web-app-title', content: 'AI스토어' },
-            { name: 'theme-color', content: '#667eea' },
-            { name: 'msapplication-TileColor', content: '#667eea' },
-            { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' }
+            { name: 'theme-color', content: '#000000' },
+            { name: 'msapplication-TileColor', content: '#000000' },
+            { name: 'viewport', content: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover' }
         ];
         
         metaTags.forEach(tag => {

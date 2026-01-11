@@ -42,6 +42,7 @@ st.markdown("""
     .main .block-container {
         padding-top: 30px !important;
         max-width: 500px !important; 
+        margin: 0 auto !important; /* PC에서 중앙 정렬 */
     }
 
     /* 2. 상단 헤더 (이름, 시계, 날짜) */
