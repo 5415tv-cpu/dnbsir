@@ -1,24 +1,25 @@
 import streamlit as st
 from datetime import datetime
+import pwa_helper
 
-# ==========================================
-# 동네비서 PREMIUM KIOSK V2.0 (FINAL)
-# ==========================================
-
+# 1. 전문가급 페이지 설정
 st.set_page_config(page_title="동네비서", layout="centered")
+pwa_helper.inject_pwa_tags()
+st.markdown(pwa_helper.get_pwa_css(), unsafe_allow_html=True)
 
+# 2. 통합 프리미엄 키오스크 디자인
 now = datetime.now()
 time_str = now.strftime('%H:%M')
 date_str = now.strftime('%Y. %m. %d') + f" ({['월','화','수','목','금','토','일'][now.weekday()]})"
 
-# 동네비서 10개 핵심 메뉴 (고등학교 내용 완전 제거)
+# 메뉴 데이터 (동네비서 전용 10개 카드)
 menus = [
     {"title": "매장 예약", "icon": "📅", "color": "#E11E5A"},
     {"title": "택배 접수", "icon": "📦", "color": "#2E7D32"},
     {"title": "고객 관리", "icon": "👥", "color": "#1565C0"},
     {"title": "주문 장부", "icon": "📋", "color": "#EF6C00"},
     {"title": "AI 상담원", "icon": "🤖", "color": "#6A1B9A"},
-    {"title": "매출 통계", "icon": "📈", "color": "#AD1457"},
+    {"title": "매출 분석", "icon": "📈", "color": "#AD1457"},
     {"title": "문자 발송", "icon": "💬", "color": "#00838F"},
     {"title": "정산 내역", "icon": "💰", "color": "#455A64"},
     {"title": "공지 사항", "icon": "📢", "color": "#F9A825"},
@@ -33,7 +34,6 @@ cards_html = "".join([f"""
     </div>
 """ for m in menus])
 
-# 전체 레이아웃 (단일 Markdown으로 렌더링)
 st.markdown(f"""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -41,10 +41,11 @@ st.markdown(f"""
     html, body, .stApp {{
         background-color: #000000 !important;
         font-family: 'Pretendard', sans-serif !important;
+        color: white !important;
     }}
 
     .block-container {{
-        padding: 1.5rem 1rem !important;
+        padding: 1rem !important;
         max-width: 500px !important;
         margin: 0 auto !important;
     }}
@@ -53,12 +54,10 @@ st.markdown(f"""
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
-        padding: 10px 10px 30px 10px;
-        color: white;
+        padding: 20px 10px 30px 10px;
     }}
 
-    .brand {{ font-size: 28px; font-weight: 900; }}
-    .sub-brand {{ font-size: 14px; color: #888; margin-top: 5px; }}
+    .brand {{ font-size: 28px; font-weight: 900; color: white !important; }}
     .time-info {{ text-align: right; }}
     .time {{ font-size: 32px; font-weight: 700; line-height: 1; }}
     .date {{ font-size: 14px; color: #888; margin-top: 5px; }}
@@ -67,6 +66,7 @@ st.markdown(f"""
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
+        padding: 0 5px;
     }}
 
     .card {{
@@ -79,8 +79,10 @@ st.markdown(f"""
         text-align: center;
         box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         cursor: pointer;
+        transition: transform 0.1s ease;
     }}
 
+    .card:active {{ transform: scale(0.95); }}
     .card-icon {{ font-size: 38px; margin-bottom: 8px; }}
     .card-title {{ color: white !important; font-size: 18px; font-weight: 800; }}
 
@@ -104,17 +106,12 @@ st.markdown(f"""
     }}
 
     .notice {{ color: #121212; font-size: 14px; font-weight: 600; }}
-
-    /* Streamlit UI 제거 */
-    header, footer, [data-testid="stHeader"], [data-testid="stToolbar"] {{
-        display: none !important;
-    }}
 </style>
 
 <div class="kiosk-header">
     <div>
         <div class="brand">동네비서 😊</div>
-        <div class="sub-brand">AI 스마트 매장관리 시스템</div>
+        <div style="font-size:13px; color:#888;">AI 스마트 매장관리 시스템</div>
     </div>
     <div class="time-info">
         <div class="time">{time_str}</div>
@@ -127,7 +124,7 @@ st.markdown(f"""
 </div>
 
 <div class="footer-bar">
-    <span class="badge">NEW</span>
-    <span class="notice">동네비서 프리미엄 대시보드가 활성화되었습니다.</span>
+    <span class="badge">SYSTEM</span>
+    <span class="notice">동네비서 프리미엄 대시보드 활성화 완료</span>
 </div>
 """, unsafe_allow_html=True)
