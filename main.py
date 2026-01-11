@@ -1,278 +1,83 @@
-"""
-# 오늘고등학교 - 모바일 최적화 키오스크 스타일
-# Version: 1.0.2 (Force Update)
-"""
-
 import streamlit as st
-import streamlit.components.v1 as components
-from datetime import datetime
-import db_manager
-import time
-import pwa_helper
 
-# ==========================================
-# 🎨 페이지 설정 (모바일 standalone 최적화)
-# ==========================================
-st.set_page_config(
-    page_title="동네비서", 
-    page_icon="🏘️",
-    layout="centered", 
-    initial_sidebar_state="collapsed"
-)
-
-# PWA 설정
-pwa_helper.inject_pwa_tags()
-st.markdown(pwa_helper.get_pwa_css(), unsafe_allow_html=True)
-
-# ==========================================
-# 💎 키오스크 스타일 CSS
-# ==========================================
+# 1. 디자인 설정 (배경 제거, 개별 색상 카드)
 st.markdown("""
-<style>
-    /* 1. 글로벌 배경 - 깊은 검정색 */
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-    
-    html, body, [data-testid="stAppViewContainer"] {
-        background-color: #000000 !important;
-        background-image: none !important;
-        font-family: 'Pretendard', sans-serif !important;
-        color: #FFFFFF !important;
+    <style>
+    /* 전체 배경: 아주 진한 다크 그레이로 눈의 피로 최소화 */
+    .stApp {
+        background-color: #121212 !important;
     }
 
-    /* 상단 영역 조정 */
-    .main .block-container {
-        padding-top: 30px !important;
-        max-width: 500px !important; 
-        margin: 0 auto !important;
+    /* 그리드 컨테이너 (2열 고정) */
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        padding: 15px;
     }
 
-    /* 2. 상단 헤더 */
-    .top-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        padding: 0 15px;
-        margin-bottom: 20px;
-    }
-    .top-header .name {
-        font-size: 24px;
-        font-weight: 900;
-        color: #FFFFFF !important;
-    }
-    .top-header .sub-info {
-        font-size: 14px;
-        color: #AAAAAA;
-    }
-    .top-header .time-section {
-        text-align: right;
-    }
-    .top-header .time {
-        font-size: 26px;
-        font-weight: 700;
-        color: #FFFFFF !important;
-    }
-
-    /* 3. 메뉴 그리드 */
-    [data-testid="stHorizontalBlock"] {
-        gap: 10px !important;
-        margin-bottom: 10px !important;
-    }
-
-    /* 4. 카드 버튼 스타일 (백지 현상 방지) */
-    .stButton button {
-        width: 100% !important;
-        height: 140px !important;
-        border-radius: 20px !important;
-        border: none !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
-        padding: 10px !important;
-    }
-    
-    /* 버튼 텍스트 강제 노출 */
-    .stButton button p {
-        color: #FFFFFF !important;
-        font-size: 15px !important;
-        font-weight: 800 !important;
-        line-height: 1.3 !important;
-        margin-top: 5px !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        display: block !important;
-    }
-
-    /* 버튼 아이콘(이모지) 스타일 */
-    .btn-icon {
-        font-size: 32px;
-        margin-bottom: 5px;
-        display: block;
-    }
-
-    /* 버튼 개별 컬러 */
-    div.btn-1 button { background-color: #FFB300 !important; } /* 노랑 */
-    div.btn-2 button { background-color: #8E24AA !important; } /* 보라 */
-    div.btn-3 button { background-color: #00ACC1 !important; } /* 하늘 */
-    div.btn-4 button { background-color: #D81B60 !important; } /* 빨강 */
-    div.btn-5 button { background-color: #43A047 !important; } /* 초록 */
-    div.btn-6 button { background-color: #5C6BC0 !important; } /* 남색 */
-    div.btn-7 button { background-color: #FFA726 !important; } /* 주황 */
-    div.btn-8 button { background-color: #26A69A !important; } /* 청록 */
-    div.btn-9 button { background-color: #78909C !important; } /* 회색 */
-    div.btn-10 button { background-color: #66BB6A !important; } /* 연두 */
-
-    /* 중간 로고 */
-    .mid-logo-container {
-        text-align: center;
-        padding: 15px 0;
-        color: #FFFFFF;
-        font-weight: bold;
-        letter-spacing: 3px;
-        font-size: 14px;
-        opacity: 0.7;
-    }
-
-    /* 하단 알림바 */
-    .bottom-notice {
-        background: white;
-        border-radius: 50px;
-        padding: 8px 15px;
+    /* 기본 카드 공통 스타일 */
+    .menu-item {
+        border-radius: 15px;
+        aspect-ratio: 1.3 / 1; /* 터치하기 좋은 직사각형 */
         display: flex;
         align-items: center;
-        margin-top: 15px;
-    }
-    .bottom-notice .badge {
-        background: #FF0000;
-        color: white;
-        border-radius: 20px;
-        padding: 2px 10px;
-        font-weight: bold;
-        font-size: 12px;
-        margin-right: 10px;
-    }
-    .bottom-notice .text {
-        color: #333333;
-        font-size: 13px;
-        font-weight: 600;
+        justify-content: center;
+        text-align: center;
+        padding: 10px;
+        text-decoration: none;
+        transition: transform 0.1s ease;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
+    /* 터치 시 눌리는 효과 */
+    .menu-item:active {
+        transform: scale(0.92);
+        filter: brightness(1.2);
+    }
+
+    /* 카드 내 텍스트 스타일 */
+    .menu-text {
+        color: white !important;
+        font-size: 19px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        line-height: 1.2;
+    }
+
+    /* 상단 불필요한 여백 완전 제거 */
+    .block-container { padding: 1rem !important; }
+    header { visibility: hidden; }
+    
     /* 스트림릿 기본 요소 제거 */
-    [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stSidebar"] {
+    [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {
         display: none !important;
     }
-</style>
+    </style>
 """, unsafe_allow_html=True)
 
-# 🚀 네비게이션 로직
-if "page" not in st.session_state:
-    st.session_state.page = "HOME"
+# 2. 메뉴 데이터 (총 10장의 카드로 구성)
+menus = [
+    {"title": "매장 예약", "color": "#E11E5A"}, # 장미빛
+    {"title": "택배 접수", "color": "#2E7D32"}, # 초록
+    {"title": "경영 분석", "color": "#1565C0"}, # 파랑
+    {"title": "고객 게시판", "color": "#EF6C00"}, # 오렌지
+    {"title": "가맹 가입", "color": "#6A1B9A"}, # 보라
+    {"title": "관리자 모드", "color": "#455A64"}, # 회색
+    {"title": "정산 내역", "color": "#00838F"}, # 청록
+    {"title": "사용 방법", "color": "#AD1457"}, # 진분홍
+    {"title": "공지 사항", "color": "#F9A825"}, # 황금색
+    {"title": "서비스 안내", "color": "#37474F"}  # 어두운 청회색
+]
 
-def navigate_to(page_name):
-    st.session_state.page = page_name
-    st.rerun()
+# 3. 레이아웃 출력
+st.markdown('<div class="menu-grid">', unsafe_allow_html=True)
 
-def go_home():
-    st.session_state.page = "HOME"
-    st.rerun()
+for m in menus:
+    st.markdown(f'''
+        <a href="#" class="menu-item" style="background-color: {m['color']};">
+            <div class="menu-text">{m['title']}</div>
+        </a>
+    ''', unsafe_allow_html=True)
 
-# 🏠 [메인] 홈 화면
-if st.session_state.page == "HOME":
-    # 1. 상단 헤더
-    now = datetime.now()
-    st.markdown(f"""
-    <div class="top-header">
-        <div class="name-section">
-            <div class="name">동네비서 😊</div>
-            <div class="sub-info">소상공인을 위한 AI 스마트 비서</div>
-        </div>
-        <div class="time-section">
-            <div class="time">{now.strftime('%H : %M')}</div>
-            <div class="date">{now.strftime('%Y. %m. %d')} ({['월','화','수','목','금','토','일'][now.weekday()]})</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 2. 메뉴 그리드 (동네비서 전용 10개 카드)
-    
-    # 1행
-    r1_c1, r1_c2 = st.columns(2)
-    with r1_c1:
-        st.markdown('<div class="btn-1">', unsafe_allow_html=True)
-        if st.button("📅\n매장 예약"): navigate_to("RESERVE")
-        st.markdown('</div>', unsafe_allow_html=True)
-    with r1_c2:
-        st.markdown('<div class="btn-2">', unsafe_allow_html=True)
-        if st.button("📦\n택배 접수"): navigate_to("DELIVERY")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # 2행
-    r2_c1, r2_c2 = st.columns(2)
-    with r2_c1:
-        st.markdown('<div class="btn-3">', unsafe_allow_html=True)
-        if st.button("🤖\nAI 챗봇상담"): navigate_to("AI_CHAT")
-        st.markdown('</div>', unsafe_allow_html=True)
-    with r2_c2:
-        st.markdown('<div class="btn-4">', unsafe_allow_html=True)
-        if st.button("📋\n주문 장부"): navigate_to("ORDERS")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # 중간 로고 영역
-    st.markdown('<div class="mid-logo-container">KIOSK ONL:DO</div>', unsafe_allow_html=True)
-
-    # 3행
-    r3_c1, r3_c2 = st.columns(2)
-    with r3_c1:
-        st.markdown('<div class="btn-5">', unsafe_allow_html=True)
-        if st.button("👥\n고객 명부"): navigate_to("CUSTOMERS")
-        st.markdown('</div>', unsafe_allow_html=True)
-    with r3_c2:
-        st.markdown('<div class="btn-6">', unsafe_allow_html=True)
-        if st.button("💬\n문자 발송"): navigate_to("SMS")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # 4행
-    r4_c1, r4_c2 = st.columns(2)
-    with r4_c1:
-        st.markdown('<div class="btn-7">', unsafe_allow_html=True)
-        if st.button("📊\n매출 분석"): navigate_to("SALES")
-        st.markdown('</div>', unsafe_allow_html=True)
-    with r4_c2:
-        st.markdown('<div class="btn-8">', unsafe_allow_html=True)
-        if st.button("📢\n공지 사항"): navigate_to("NOTICE")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # 5행
-    r5_c1, r5_c2 = st.columns(2)
-    with r5_c1:
-        st.markdown('<div class="btn-9">', unsafe_allow_html=True)
-        if st.button("⚙️\n관리자 모드"): navigate_to("ADMIN")
-        st.markdown('</div>', unsafe_allow_html=True)
-    with r5_c2:
-        st.markdown('<div class="btn-10">', unsafe_allow_html=True)
-        if st.button("ℹ️\n서비스 안내"): navigate_to("INFO")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # 3. 하단 알림바
-    st.markdown("""
-    <div class="bottom-notice">
-        <span class="badge">New!</span>
-        <span class="text">동네비서 AI 시스템이 업그레이드 되었습니다!</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 3. 하단 알림바
-    st.markdown("""
-    <div class="bottom-notice">
-        <span class="badge">New!</span>
-        <span class="text">동네비서 시스템 업데이트 완료!</span>
-    </div>
-    """, unsafe_allow_html=True)
-
-# 📄 서브 페이지 로직
-else:
-    st.markdown('<div style="height: 120px;"></div>', unsafe_allow_html=True)
-    if st.button("🏠 홈 화면으로 돌아가기"): go_home()
-    st.write("---")
-    st.write(f"현재 {st.session_state.page} 페이지 준비 중입니다.")
+st.markdown('</div>', unsafe_allow_html=True)
