@@ -14,9 +14,9 @@ def inject_pwa_tags():
     <script>
         // PWA manifest 동적 생성
         const manifest = {
-            "name": "동네비서",
-            "short_name": "동네비서",
-            "description": "동네비서 - 똑똑한 AI 이웃",
+            "name": "오늘고등학교",
+            "short_name": "오늘고등학교",
+            "description": "오늘고등학교 - 똑똑한 AI 이웃",
             "start_url": window.location.origin,
             "display": "standalone",
             "background_color": "#667eea",

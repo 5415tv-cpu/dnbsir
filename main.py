@@ -13,7 +13,7 @@ import pwa_helper
 # 🎨 페이지 설정 (모바일 standalone 최적화)
 # ==========================================
 st.set_page_config(
-    page_title="동네비서", 
+    page_title="오늘고등학교", 
     page_icon="🏘️",
     layout="centered", 
     initial_sidebar_state="collapsed"
