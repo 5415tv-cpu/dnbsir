@@ -14,6 +14,8 @@ st.markdown("""
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
         padding: 15px;
+        max-width: 500px; /* PC에서 너무 넓어지지 않게 제한 */
+        margin: 0 auto;   /* 중앙 정렬 */
     }
 
     /* 기본 카드 공통 스타일 */
