@@ -43,7 +43,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 def is_bcrypt_hash(password: str) -> bool:
     """저장된 값이 bcrypt 해시인지 확인 (평문과 구분)"""
     # bcrypt 해시는 '$2b$', '$2a$', '$2y$'로 시작하고 60자
-    if not password:
+    if not password or not isinstance(password, str):
         return False
     return password.startswith(('$2b$', '$2a$', '$2y$')) and len(password) == 60
 
@@ -60,85 +60,86 @@ STORES_SHEET = 'stores'
 ORDERS_SHEET = 'orders'
 SETTINGS_SHEET = 'settings'
 CUSTOMERS_SHEET = 'customers'  # 고객 정보 시트
+INQUIRIES_SHEET = 'inquiries'  # 가맹 가입 문의 시트
 
 # ==========================================
-# 🏢 업종 카테고리 정의
+# 🏢 업종 카테고리 정의 (로고 삭제 버전)
 # ==========================================
 BUSINESS_CATEGORIES = {
-    'restaurant': {'name': '🍽️ 식당/음식점', 'description': '테이블 예약 및 배달 주문'},
-    'delivery': {'name': '📦 택배/물류', 'description': '택배 접수 및 배송 추적'},
-    'laundry': {'name': '👔 세탁/클리닝', 'description': '세탁물 접수 및 수거 예약'},
-    'retail': {'name': '🛒 일반판매', 'description': '상품 구매 및 배송'},
-    'service': {'name': '🔧 서비스/수리', 'description': '방문 서비스 예약'},
-    'beauty': {'name': '💇 미용/뷰티', 'description': '시술 예약'},
-    'farmer': {'name': '🌾 농어민', 'description': '농수산물 직거래 및 배송'},
-    'other': {'name': '📋 기타', 'description': '기타 업종'}
+    'restaurant': {'name': '식당/음식점', 'description': '테이블 예약 및 배달 주문'},
+    'delivery': {'name': '택배/물류', 'description': '택배 접수 및 배송 추적'},
+    'laundry': {'name': '세탁/클리닝', 'description': '세탁물 접수 및 수거 예약'},
+    'retail': {'name': '일반판매', 'description': '상품 구매 및 배송'},
+    'service': {'name': '서비스/수리', 'description': '방문 서비스 예약'},
+    'beauty': {'name': '미용/뷰티', 'description': '시술 예약'},
+    'farmer': {'name': '농어민', 'description': '농수산물 직거래 및 배송'},
+    'other': {'name': '기타', 'description': '기타 업종'}
 }
 
 # ==========================================
-# 🍽️ 식당 세부 카테고리
+# 식당 세부 카테고리
 # ==========================================
 RESTAURANT_SUBCATEGORIES = {
-    'korean': {'name': '🍚 한식', 'icon': '🍚', 'examples': '김치찌개, 불고기, 비빔밥'},
-    'chinese': {'name': '🥡 중식', 'icon': '🥡', 'examples': '짜장면, 짬뽕, 탕수육'},
-    'japanese': {'name': '🍣 일식', 'icon': '🍣', 'examples': '초밥, 라멘, 돈까스'},
-    'western': {'name': '🍝 양식', 'icon': '🍝', 'examples': '파스타, 스테이크, 피자'},
-    'chicken': {'name': '🍗 치킨', 'icon': '🍗', 'examples': '후라이드, 양념, 간장치킨'},
-    'pizza': {'name': '🍕 피자', 'icon': '🍕', 'examples': '페퍼로니, 콤비네이션'},
-    'burger': {'name': '🍔 버거/패스트푸드', 'icon': '🍔', 'examples': '햄버거, 감자튀김'},
-    'cafe': {'name': '☕ 카페/디저트', 'icon': '☕', 'examples': '커피, 케이크, 음료'},
-    'bakery': {'name': '🥐 베이커리', 'icon': '🥐', 'examples': '빵, 샌드위치, 과자'},
-    'snack': {'name': '🍜 분식', 'icon': '🍜', 'examples': '떡볶이, 김밥, 라면'},
-    'meat': {'name': '🥩 고기/구이', 'icon': '🥩', 'examples': '삼겹살, 갈비, 소고기'},
-    'seafood': {'name': '🦐 해산물', 'icon': '🦐', 'examples': '회, 조개구이, 해물탕'},
-    'asian': {'name': '🍜 아시안', 'icon': '🍜', 'examples': '베트남쌀국수, 태국요리'},
-    'other_food': {'name': '🍴 기타 음식', 'icon': '🍴', 'examples': '기타 음식점'}
+    'korean': {'name': '한식', 'icon': '', 'examples': '김치찌개, 불고기, 비빔밥'},
+    'chinese': {'name': '중식', 'icon': '', 'examples': '짜장면, 짬뽕, 탕수육'},
+    'japanese': {'name': '일식', 'icon': '', 'examples': '초밥, 라멘, 돈까스'},
+    'western': {'name': '양식', 'icon': '', 'examples': '파스타, 스테이크, 피자'},
+    'chicken': {'name': '치킨', 'icon': '', 'examples': '후라이드, 양념, 간장치킨'},
+    'pizza': {'name': '피자', 'icon': '', 'examples': '페퍼로니, 콤비네이션'},
+    'burger': {'name': '버거/패스트푸드', 'icon': '', 'examples': '햄버거, 감자튀김'},
+    'cafe': {'name': '카페/디저트', 'icon': '', 'examples': '커피, 케이크, 음료'},
+    'bakery': {'name': '베이커리', 'icon': '', 'examples': '빵, 샌드위치, 과자'},
+    'snack': {'name': '분식', 'icon': '', 'examples': '떡볶이, 김밥, 라면'},
+    'meat': {'name': '고기/구이', 'icon': '', 'examples': '삼겹살, 갈비, 소고기'},
+    'seafood': {'name': '해산물', 'icon': '', 'examples': '회, 조개구이, 해물탕'},
+    'asian': {'name': '아시안', 'icon': '', 'examples': '베트남쌀국수, 태국요리'},
+    'other_food': {'name': '기타 음식', 'icon': '', 'examples': '기타 음식점'}
 }
 
 # ==========================================
-# 📦 택배 세부 카테고리
+# 택배 세부 카테고리
 # ==========================================
 DELIVERY_SUBCATEGORIES = {
-    'parcel': {'name': '📦 일반택배', 'icon': '📦', 'examples': '소형택배, 등기'},
-    'quick': {'name': '🏃 퀵서비스', 'icon': '🏃', 'examples': '오토바이퀵, 당일배송'},
-    'freight': {'name': '🚛 화물/대형', 'icon': '🚛', 'examples': '가구, 가전, 대형화물'},
-    'food_delivery': {'name': '🛵 음식배달대행', 'icon': '🛵', 'examples': '배달대행, 라이더'}
+    'parcel': {'name': '일반택배', 'icon': '', 'examples': '소형택배, 등기'},
+    'quick': {'name': '퀵서비스', 'icon': '', 'examples': '오토바이퀵, 당일배송'},
+    'freight': {'name': '화물/대형', 'icon': '', 'examples': '가구, 가전, 대형화물'},
+    'food_delivery': {'name': '음식배달대행', 'icon': '', 'examples': '배달대행, 라이더'}
 }
 
 # ==========================================
-# 👔 세탁 세부 카테고리
+# 세탁 세부 카테고리
 # ==========================================
 LAUNDRY_SUBCATEGORIES = {
-    'general': {'name': '👔 일반세탁', 'icon': '👔', 'examples': '셔츠, 바지, 정장'},
-    'special': {'name': '✨ 특수세탁', 'icon': '✨', 'examples': '가죽, 모피, 웨딩드레스'},
-    'shoes': {'name': '👟 신발세탁', 'icon': '👟', 'examples': '운동화, 구두'},
-    'bedding': {'name': '🛏️ 이불/침구', 'icon': '🛏️', 'examples': '이불, 베개, 매트리스'}
+    'general': {'name': '일반세탁', 'icon': '', 'examples': '셔츠, 바지, 정장'},
+    'special': {'name': '특수세탁', 'icon': '', 'examples': '가죽, 모피, 웨딩드레스'},
+    'shoes': {'name': '신발세탁', 'icon': '', 'examples': '운동화, 구두'},
+    'bedding': {'name': '이불/침구', 'icon': '', 'examples': '이불, 베개, 매트리스'}
 }
 
 # ==========================================
-# 🛒 판매 세부 카테고리
+# 판매 세부 카테고리
 # ==========================================
 RETAIL_SUBCATEGORIES = {
-    'mart': {'name': '🏪 마트/편의점', 'icon': '🏪', 'examples': '식료품, 생필품'},
-    'flower': {'name': '💐 꽃집', 'icon': '💐', 'examples': '꽃다발, 화분, 화환'},
-    'pet': {'name': '🐕 반려동물', 'icon': '🐕', 'examples': '사료, 용품, 간식'},
-    'electronics': {'name': '📱 전자제품', 'icon': '📱', 'examples': '휴대폰, 컴퓨터, 가전'},
-    'fashion': {'name': '👗 패션/의류', 'icon': '👗', 'examples': '옷, 신발, 액세서리'},
-    'other_retail': {'name': '🛍️ 기타판매', 'icon': '🛍️', 'examples': '기타 상품'}
+    'mart': {'name': '마트/편의점', 'icon': '', 'examples': '식료품, 생필품'},
+    'flower': {'name': '꽃집', 'icon': '', 'examples': '꽃다발, 화분, 화환'},
+    'pet': {'name': '반려동물', 'icon': '', 'examples': '사료, 용품, 간식'},
+    'electronics': {'name': '전자제품', 'icon': '', 'examples': '휴대폰, 컴퓨터, 가전'},
+    'fashion': {'name': '패션/의류', 'icon': '', 'examples': '옷, 신발, 액세서리'},
+    'other_retail': {'name': '기타판매', 'icon': '', 'examples': '기타 상품'}
 }
 
 # ==========================================
-# 🌾 농어민 세부 카테고리
+# 농어민 세부 카테고리
 # ==========================================
 FARMER_SUBCATEGORIES = {
-    'rice': {'name': '🌾 쌀/잡곡', 'icon': '🌾', 'examples': '쌀, 현미, 잡곡, 콩'},
-    'vegetables': {'name': '🥬 채소류', 'icon': '🥬', 'examples': '배추, 무, 양파, 감자'},
-    'fruits': {'name': '🍎 과일류', 'icon': '🍎', 'examples': '사과, 배, 감귤, 포도'},
-    'fish': {'name': '🐟 수산물', 'icon': '🐟', 'examples': '생선, 조개, 해조류, 젓갈'},
-    'meat': {'name': '🥩 축산물', 'icon': '🥩', 'examples': '한우, 돼지고기, 닭고기, 계란'},
-    'processed': {'name': '🫙 가공식품', 'icon': '🫙', 'examples': '김치, 장류, 젓갈, 건어물'},
-    'organic': {'name': '🌱 친환경/유기농', 'icon': '🌱', 'examples': '유기농 채소, 무농약 과일'},
-    'other_farm': {'name': '🧺 기타 농수산물', 'icon': '🧺', 'examples': '기타 농수산물'}
+    'rice': {'name': '쌀/잡곡', 'icon': '', 'examples': '쌀, 현미, 잡곡, 콩'},
+    'vegetables': {'name': '채소류', 'icon': '', 'examples': '배추, 무, 양파, 감자'},
+    'fruits': {'name': '과일류', 'icon': '', 'examples': '사과, 배, 감귤, 포도'},
+    'fish': {'name': '수산물', 'icon': '', 'examples': '생선, 조개, 해조류, 젓갈'},
+    'meat': {'name': '축산물', 'icon': '', 'examples': '한우, 돼지고기, 닭고기, 계란'},
+    'processed': {'name': '가공식품', 'icon': '', 'examples': '김치, 장류, 젓갈, 건어물'},
+    'organic': {'name': '친환경/유기농', 'icon': '', 'examples': '유기농 채소, 무농약 과일'},
+    'other_farm': {'name': '기타 농수산물', 'icon': '', 'examples': '기타 농수산물'}
 }
 
 
@@ -154,7 +155,7 @@ def get_google_sheets_client():
         client = gspread.authorize(credentials)
         return client
     except Exception as e:
-        st.error(f"❌ Google Sheets 연결 실패: {e}")
+        st.error(f"Google Sheets 연결 실패: {e}")
         return None
 
 
@@ -169,7 +170,7 @@ def get_spreadsheet():
         spreadsheet = client.open_by_url(spreadsheet_url)
         return spreadsheet
     except Exception as e:
-        st.error(f"❌ 스프레드시트 접근 실패: {e}")
+        st.error(f"스프레드시트 접근 실패: {e}")
         return None
 
 
@@ -188,73 +189,106 @@ def get_all_stores():
         try:
             worksheet = spreadsheet.worksheet(STORES_SHEET)
         except gspread.exceptions.WorksheetNotFound:
-            # 시트가 없으면 자동 생성
-            worksheet = spreadsheet.add_worksheet(title=STORES_SHEET, rows=1000, cols=16)
+            # 시트가 없으면 자동 생성 (26개 컬럼으로 확장)
+            worksheet = spreadsheet.add_worksheet(title=STORES_SHEET, rows=1000, cols=30)
             stores_header = [
-                'store_id', 'password', 'name', 'phone', 'info', 'menu_text', 
-                'printer_ip', 'img_files', 'status', 'billing_key', 
-                'expiry_date', 'payment_status', 'next_payment_date', 'category'
+                'store_id', 'password', 'name', 'owner_name', 'phone', 'info', 'menu_text', 
+                'printer_ip', 'img_files', 'unused_1', 'unused_2', 'unused_3', 
+                'unused_4', 'unused_5', 'category', 'table_count', 'seats_per_table',
+                'logen_id', 'logen_password', 'logen_sender_name', 'logen_sender_address', 
+                'points', 'solapi_key', 'solapi_secret', 'printer_type', 'notification_mode'
             ]
-            worksheet.update('A1:N1', [stores_header])
+            worksheet.update('A1:Z1', [stores_header])
             return {}  # 새로 만들었으니 빈 딕셔너리 반환
         
         # 데이터가 없는 경우 처리
         all_values = worksheet.get_all_values()
         if len(all_values) <= 1:  # 헤더만 있거나 빈 시트
-            # 데이터는 없는데 헤더 구조도 안 맞을 수 있으므로 강제 초기화 시도
-            initialize_sheets()
             return {}
         
-        header = all_values[0]
-        
-        # [중요] 헤더에 빈 문자열이나 중복이 있는지 체크하여 구조가 깨졌다면 자동 복구
-        if '' in header or len(header) != len(set(header)) or 'owner_name' not in header:
-            initialize_sheets()
-            # 초기화 후 다시 로드
-            all_values = worksheet.get_all_values()
-            header = all_values[0]
-            
-        data_rows = all_values[1:]
+        records = worksheet.get_all_records()
         
         stores = {}
-        for row in data_rows:
-            # 행 데이터와 헤더를 매핑하여 딕셔너리 생성
-            record = dict(zip(header, row))
+        for record in records:
             store_id = record.get('store_id', '')
             if store_id:
                 stores[store_id] = {
                     'password': record.get('password', ''),
                     'name': record.get('name', ''),
-                    'phone': record.get('phone', ''),
                     'owner_name': record.get('owner_name', ''),
+                    'phone': record.get('phone', ''),
                     'info': record.get('info', ''),
                     'menu_text': record.get('menu_text', ''),
                     'printer_ip': record.get('printer_ip', ''),
                     'img_files': record.get('img_files', ''),
-                    'status': record.get('status', '미납'),
-                    'billing_key': str(record.get('billing_key', '')),
-                    'expiry_date': str(record.get('expiry_date', '')),
-                    'payment_status': str(record.get('payment_status', '미등록')),
-                    'next_payment_date': str(record.get('next_payment_date', '')),
                     'category': str(record.get('category', 'restaurant')),
                     'table_count': record.get('table_count', 0),
                     'seats_per_table': record.get('seats_per_table', 0),
-                    'printer_type': record.get('printer_type', '미사용'),
-                    'notification_mode': record.get('notification_mode', ''),
+                    'logen_id': record.get('logen_id', ''),
+                    'logen_password': record.get('logen_password', ''),
+                    'logen_sender_name': record.get('logen_sender_name', ''),
+                    'logen_sender_address': record.get('logen_sender_address', ''),
+                    'points': int(record.get('points', 0) or 0),
                     'solapi_key': record.get('solapi_key', ''),
-                    'solapi_secret': record.get('solapi_secret', '')
+                    'solapi_secret': record.get('solapi_secret', ''),
+                    'printer_type': record.get('printer_type', ''),
+                    'notification_mode': record.get('notification_mode', '')
                 }
         return stores
     except Exception as e:
-        st.error(f"❌ 가게 정보 조회 실패: {e}")
-        st.info("💡 사이드바의 '🔧 시트 초기화' 버튼을 눌러 시트를 초기화해주세요.")
+        st.error(f"가게 정보 조회 실패: {e}")
+        st.info("사이드바의 '시트 초기화' 버튼을 눌러 시트를 초기화해주세요.")
         return {}
 
 
 def get_store(store_id):
-    """특정 가게 정보 조회"""
-    stores = get_all_stores()
-    return stores.get(store_id)
+    """
+    특정 가게 정보 조회 (대규모 데이터 최적화 버전)
+    전체 시트를 읽지 않고 특정 아이디만 검색하여 성능 향상
+    """
+    try:
+        spreadsheet = get_spreadsheet()
+        if spreadsheet is None: return None
+        
+        worksheet = spreadsheet.worksheet(STORES_SHEET)
+        # 아이디가 있는 셀 찾기 (A열 고정 검색으로 속도 최적화)
+        try:
+            cell = worksheet.find(store_id, in_column=1)
+            if not cell: return None
+            
+            # 해당 행의 모든 데이터 가져오기
+            row_values = worksheet.row_values(cell.row)
+            # 헤더와 매핑 (Z열까지 26개 컬럼)
+            header = [
+                'store_id', 'password', 'name', 'owner_name', 'phone', 'info', 'menu_text', 
+                'printer_ip', 'img_files', 'unused_1', 'unused_2', 'unused_3', 
+                'unused_4', 'unused_5', 'category', 'table_count', 'seats_per_table',
+                'logen_id', 'logen_password', 'logen_sender_name', 'logen_sender_address', 
+                'points', 'solapi_key', 'solapi_secret', 'printer_type', 'notification_mode'
+            ]
+            
+            store_info = {}
+            for i, h in enumerate(header):
+                if i < len(row_values):
+                    val = row_values[i]
+                    if h == 'points':
+                        store_info[h] = int(val or 0)
+                    else:
+                        store_info[h] = val
+                else:
+                    store_info[h] = '' if h != 'points' else 0
+            
+            return store_info
+        except gspread.exceptions.CellNotFound:
+            return None
+    except Exception as e:
+        st.error(f"가게 조회 실패: {e}")
+        return None
+
+@st.cache_data(ttl=60) # 1분간 결과 캐싱 (대규모 접속 대비)
+def get_all_stores_cached():
+    """모든 가게 정보 조회 (캐싱 적용)"""
+    return get_all_stores()
 
 
 def save_store(store_id, store_data, encrypt_password=True):
@@ -288,39 +322,43 @@ def save_store(store_id, store_data, encrypt_password=True):
         
         row_data = [
             store_id,
-            password,  # B
-            store_data.get('name', ''), # C
-            store_data.get('phone', ''), # D
-            store_data.get('owner_name', ''), # E (추가)
-            store_data.get('info', ''), # F
+            password,  # 암호화된 비밀번호
+            store_data.get('name', ''),
+            store_data.get('owner_name', ''), # 대표자명 추가
+            store_data.get('phone', ''),
+            store_data.get('info', ''),
             store_data.get('menu_text', ''),
             store_data.get('printer_ip', ''),
             store_data.get('img_files', ''),
-            store_data.get('status', '미납'),
-            store_data.get('billing_key', ''),
-            store_data.get('expiry_date', ''),
-            store_data.get('payment_status', '미등록'),
-            store_data.get('next_payment_date', ''),
-            store_data.get('category', 'restaurant'),
-            store_data.get('table_count', 0),
-            store_data.get('seats_per_table', 0),
-            store_data.get('printer_type', '미사용'),
-            store_data.get('notification_mode', ''),
-            store_data.get('solapi_key', ''),
-            store_data.get('solapi_secret', ''),
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            '정상',    # status (고정)
+            '',        # billing_key (미사용)
+            '',        # expiry_date (미사용)
+            '정상',    # payment_status (고정)
+            '',        # next_payment_date (미사용)
+            store_data.get('category', 'restaurant'),  # 업종 카테고리
+            store_data.get('table_count', 0),  # 테이블 수
+            store_data.get('seats_per_table', 0),  # 테이블당 최대 착석 인원
+            store_data.get('logen_id', ''),  # 로젠택배 아이디
+            store_data.get('logen_password', ''),  # 로젠택배 비밀번호
+            store_data.get('logen_sender_name', ''),  # 로젠택배 발송인명
+            store_data.get('logen_sender_address', ''),  # 로젠택배 발송인 주소
+            store_data.get('points', 0),  # 포인트 잔액
+            store_data.get('solapi_key', ''), # 추가
+            store_data.get('solapi_secret', ''), # 추가
+            store_data.get('printer_type', ''), # 추가
+            store_data.get('notification_mode', '') # 추가
         ]
         
         if row_index:
             # 기존 데이터 수정
-            worksheet.update(f'A{row_index}:V{row_index}', [row_data])
+            worksheet.update(f'A{row_index}:Z{row_index}', [row_data])
         else:
             # 신규 데이터 추가
             worksheet.append_row(row_data)
         
         return True
     except Exception as e:
-        st.error(f"❌ 가게 정보 저장 실패: {e}")
+        st.error(f"가게 정보 저장 실패: {e}")
         return False
 
 
@@ -341,189 +379,97 @@ def delete_store(store_id):
         
         return False
     except Exception as e:
-        st.error(f"❌ 가게 삭제 실패: {e}")
+        st.error(f"가게 삭제 실패: {e}")
         return False
 
 
-def update_store_status(store_id, new_status):
-    """가맹비 납부 상태 업데이트"""
+def update_store_points(store_id, points_to_add):
+    """
+    가맹점 포인트 충전/차감 (최적화 버전)
+    """
     try:
         spreadsheet = get_spreadsheet()
-        if spreadsheet is None:
-            return False
+        if spreadsheet is None: return False
         
         worksheet = spreadsheet.worksheet(STORES_SHEET)
-        records = worksheet.get_all_records()
-        
-        for idx, record in enumerate(records):
-            if record.get('store_id') == store_id:
-                worksheet.update_cell(idx + 2, 9, new_status)  # 9번째 열이 status
-                return True
-        
-        return False
+        try:
+            cell = worksheet.find(store_id, in_column=1)
+            if not cell: return False
+            
+            # 현재 포인트 값 가져오기 (V열 = 22번째)
+            current_points = int(worksheet.cell(cell.row, 22).value or 0)
+            new_points = max(0, current_points + points_to_add)
+            
+            # 업데이트
+            worksheet.update_cell(cell.row, 22, new_points)
+            return True
+        except gspread.exceptions.CellNotFound:
+            return False
     except Exception as e:
-        st.error(f"❌ 상태 업데이트 실패: {e}")
+        st.error(f"포인트 업데이트 실패: {e}")
         return False
 
 
 def find_store_id(owner_name, phone):
-    """대표자 성함과 번호로 아이디 찾기"""
+    """대표자 성함과 휴대폰 번호로 아이디 찾기"""
     try:
-        spreadsheet = get_spreadsheet()
-        if spreadsheet is None: return None
-        worksheet = spreadsheet.worksheet(STORES_SHEET)
-        records = worksheet.get_all_records()
+        stores = get_all_stores()
+        # 전화번호에서 하이픈 제거 후 비교
+        target_phone = phone.replace('-', '').strip()
         
-        # 숫자만 추출해서 비교
-        target_phone = ''.join(filter(str.isdigit, phone))
-        
-        for record in records:
-            db_phone = ''.join(filter(str.isdigit, str(record.get('phone', ''))))
-            if record.get('owner_name') == owner_name and db_phone == target_phone:
-                return record.get('store_id')
+        for sid, sdata in stores.items():
+            store_phone = sdata.get('phone', '').replace('-', '').strip()
+            if sdata.get('owner_name') == owner_name and store_phone == target_phone:
+                return sid
         return None
-    except:
+    except Exception as e:
+        st.error(f"아이디 찾기 실패: {e}")
         return None
 
+
 def find_store_password(store_id, phone):
-    """아이디와 번호로 비밀번호 찾기"""
+    """아이디와 휴대폰 번호로 비밀번호 찾기 (데모용)"""
     try:
-        spreadsheet = get_spreadsheet()
-        if spreadsheet is None: return None
-        worksheet = spreadsheet.worksheet(STORES_SHEET)
-        records = worksheet.get_all_records()
+        store = get_store(store_id)
+        if not store:
+            return None
+            
+        # 전화번호 비교
+        target_phone = phone.replace('-', '').strip()
+        store_phone = store.get('phone', '').replace('-', '').strip()
         
-        target_phone = ''.join(filter(str.isdigit, phone))
-        
-        for record in records:
-            db_phone = ''.join(filter(str.isdigit, str(record.get('phone', ''))))
-            if record.get('store_id') == store_id and db_phone == target_phone:
-                # 가입 시 저장한 원본 비밀번호 또는 안내 메시지 반환
-                return record.get('password', '')
+        if store_phone == target_phone:
+            return store.get('password')
         return None
-    except:
+    except Exception as e:
+        st.error(f"비밀번호 찾기 실패: {e}")
         return None
+
 
 def verify_store_login(store_id, password):
     """
-    가맹점 로그인 검증
-    - bcrypt 해시된 비밀번호와 기존 평문 비밀번호 모두 지원
+    가맹점 로그인 검증 (대규모 처리 최적화)
     """
+    # get_all_stores 대신 핀포인트 get_store 사용
     store = get_store(store_id)
     if not store:
-        return None
+        return False, "존재하지 않는 아이디입니다. 신규 가입하여 1,000포인트 혜택을 받으세요!", None
     
-    stored_password = store.get('password', '')
+    stored_password = str(store.get('password', ''))
     
-    # 저장된 비밀번호가 bcrypt 해시인 경우
+    # 비밀번호 검증 (bcrypt 우선 처리)
     if is_bcrypt_hash(stored_password):
         if verify_password(password, stored_password):
-            return store
-    else:
-        # 기존 평문 비밀번호 (하위 호환성)
-        if stored_password == password:
-            return store
-    
-    return None
+            return True, "성공", store
+    elif stored_password == password:
+        return True, "성공", store
+        
+    return False, "비밀번호가 일치하지 않습니다.", None
 
 
 # ==========================================
 # 💳 정기 결제 관리 함수
 # ==========================================
-
-def update_billing_info(store_id, billing_key, expiry_date, payment_status, next_payment_date):
-    """가맹점 정기 결제 정보 업데이트"""
-    try:
-        spreadsheet = get_spreadsheet()
-        if spreadsheet is None:
-            return False
-        
-        worksheet = spreadsheet.worksheet(STORES_SHEET)
-        records = worksheet.get_all_records()
-        
-        for idx, record in enumerate(records):
-            if record.get('store_id') == store_id:
-                row = idx + 2  # 헤더 + 1-based index
-                # J~M 컬럼 업데이트 (billing_key, expiry_date, payment_status, next_payment_date)
-                worksheet.update(f'J{row}:M{row}', [[billing_key, expiry_date, payment_status, next_payment_date]])
-                return True
-        
-        return False
-    except Exception as e:
-        st.error(f"❌ 결제 정보 업데이트 실패: {e}")
-        return False
-
-
-def update_payment_status(store_id, payment_status):
-    """결제 상태만 업데이트"""
-    try:
-        spreadsheet = get_spreadsheet()
-        if spreadsheet is None:
-            return False
-        
-        worksheet = spreadsheet.worksheet(STORES_SHEET)
-        records = worksheet.get_all_records()
-        
-        for idx, record in enumerate(records):
-            if record.get('store_id') == store_id:
-                worksheet.update_cell(idx + 2, 12, payment_status)  # 12번째 열이 payment_status
-                return True
-        
-        return False
-    except Exception as e:
-        st.error(f"❌ 결제 상태 업데이트 실패: {e}")
-        return False
-
-
-def get_expiring_stores(days=7):
-    """만료 예정인 가맹점 조회 (N일 이내)"""
-    try:
-        stores = get_all_stores()
-        expiring = []
-        today = datetime.now()
-        
-        for store_id, info in stores.items():
-            expiry_str = info.get('expiry_date', '')
-            if expiry_str:
-                try:
-                    expiry_date = datetime.strptime(expiry_str, "%Y-%m-%d")
-                    days_left = (expiry_date - today).days
-                    if 0 <= days_left <= days:
-                        expiring.append({
-                            'store_id': store_id,
-                            'name': info.get('name', ''),
-                            'expiry_date': expiry_str,
-                            'days_left': days_left,
-                            'payment_status': info.get('payment_status', ''),
-                            'phone': info.get('phone', '')
-                        })
-                except:
-                    pass
-        
-        return sorted(expiring, key=lambda x: x['days_left'])
-    except Exception as e:
-        return []
-
-
-def get_failed_payment_stores():
-    """결제 실패 가맹점 조회"""
-    try:
-        stores = get_all_stores()
-        failed = []
-        
-        for store_id, info in stores.items():
-            if info.get('payment_status') == '실패':
-                failed.append({
-                    'store_id': store_id,
-                    'name': info.get('name', ''),
-                    'phone': info.get('phone', ''),
-                    'next_payment_date': info.get('next_payment_date', '')
-                })
-        
-        return failed
-    except Exception as e:
-        return []
-
 
 # ==========================================
 # 📦 주문 관리 함수
@@ -568,7 +514,7 @@ def save_order(order_data):
             **order_data
         }
     except Exception as e:
-        st.error(f"❌ 주문 저장 실패: {e}")
+        st.error(f"주문 저장 실패: {e}")
         return None
 
 
@@ -596,8 +542,8 @@ def save_delivery_order(order_data):
         row_data = [
             order_id,
             order_time,
-            'delivery',  # 택배 주문
-            '택배 접수',
+            order_data.get('store_id', 'delivery'), # 제공된 store_id 사용
+            order_data.get('store_name', '택배 접수'), # 제공된 store_name 사용
             delivery_content,
             order_data.get('receiver_address', ''),
             order_data.get('sender_phone', ''),
@@ -614,7 +560,7 @@ def save_delivery_order(order_data):
             **order_data
         }
     except Exception as e:
-        st.error(f"❌ 택배 주문 저장 실패: {e}")
+        st.error(f"택배 주문 저장 실패: {e}")
         return None
 
 
@@ -653,16 +599,16 @@ def save_logen_reservation(reservation_data):
         
         # 택배 예약 내용 구성
         delivery_content = f"""[로젠택배 예약]
-📦 예약번호: {order_id}
-📤 보내는 분: {sender.get('name', '')} ({sender.get('phone', '')})
-   주소: {sender.get('address', '')} {sender.get('detail_address', '')}
-📥 받는 분: {receiver.get('name', '')} ({receiver.get('phone', '')})
-   주소: {receiver.get('address', '')} {receiver.get('detail_address', '')}
-📋 화물: {package.get('type', '')} / {package.get('weight', '')}kg / {package.get('size', '')}
-   내용물: {package.get('contents', '')}
-📅 수거일: {reservation_data.get('pickup_date', '')}
-🚚 배송예정: {delivery_est.get('estimated_text', '')}
-💰 요금: {fee.get('total_fee', 0):,}원 ({fee.get('payment_type', '선불')})
+예약번호: {order_id}
+보내는 분: {sender.get('name', '')} ({sender.get('phone', '')})
+주소: {sender.get('address', '')} {sender.get('detail_address', '')}
+받는 분: {receiver.get('name', '')} ({receiver.get('phone', '')})
+주소: {receiver.get('address', '')} {receiver.get('detail_address', '')}
+화물: {package.get('type', '')} / {package.get('weight', '')}kg / {package.get('size', '')}
+내용물: {package.get('contents', '')}
+수거일: {reservation_data.get('pickup_date', '')}
+배송예정: {delivery_est.get('estimated_text', '')}
+요금: {fee.get('total_fee', 0):,}원 ({fee.get('payment_type', '선불')})
 """
         
         row_data = [
@@ -675,7 +621,7 @@ def save_logen_reservation(reservation_data):
             sender.get('phone', ''),
             str(fee.get('total_fee', '')),  # 요금
             reservation_data.get('memo', ''),
-            reservation_data.get('status', '접수완료')  # 처리상태
+            '접수완료'  # 처리상태
         ]
         
         worksheet.append_row(row_data)
@@ -687,13 +633,13 @@ def save_logen_reservation(reservation_data):
             **reservation_data
         }
     except Exception as e:
-        st.error(f"❌ 로젠택배 예약 저장 실패: {e}")
+        st.error(f"로젠택배 예약 저장 실패: {e}")
         return None
 
 
 def save_bulk_logen_reservations(reservations_result):
     """
-    대량 로젠택배 예약 저장
+    대량 로젠택배 예약 저장 (Batch 처리를 통한 성능 최적화)
     
     Args:
         reservations_result: process_bulk_reservations 함수의 반환값
@@ -707,7 +653,7 @@ def save_bulk_logen_reservations(reservations_result):
         batch_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         batch_id = f"BULK_{datetime.now().strftime('%Y%m%d%H%M%S')}"
         
-        saved_count = 0
+        rows_to_append = []
         
         for result in reservations_result.get('results', []):
             if result.get('success'):
@@ -723,16 +669,19 @@ def save_bulk_logen_reservations(reservations_result):
                     f"배치ID: {batch_id}",
                     '접수완료'
                 ]
-                worksheet.append_row(row_data)
-                saved_count += 1
+                rows_to_append.append(row_data)
+        
+        if rows_to_append:
+            # append_rows를 사용하여 한 번의 API 호출로 대량 데이터 저장 (속도 향상)
+            worksheet.append_rows(rows_to_append)
         
         return {
             'batch_id': batch_id,
-            'saved_count': saved_count,
+            'saved_count': len(rows_to_append),
             'batch_time': batch_time
         }
     except Exception as e:
-        st.error(f"❌ 대량 예약 저장 실패: {e}")
+        st.error(f"본사 서버(DB) 전송 실패: {e}")
         return None
 
 
@@ -761,7 +710,7 @@ def get_logen_reservations(limit=50):
         
         return logen_orders
     except Exception as e:
-        st.error(f"❌ 예약 조회 실패: {e}")
+        st.error(f"예약 조회 실패: {e}")
         return []
 
 
@@ -806,7 +755,7 @@ def save_table_reservation(store_id, reservation_data):
             **reservation_data
         }
     except Exception as e:
-        st.error(f"❌ 예약 저장 실패: {e}")
+        st.error(f"예약 저장 실패: {e}")
         return None
 
 
@@ -884,7 +833,7 @@ def get_orders_by_store(store_id):
         orders = [r for r in records if r.get('store_id') == store_id]
         return orders
     except Exception as e:
-        st.error(f"❌ 주문 조회 실패: {e}")
+        st.error(f"주문 조회 실패: {e}")
         return []
 
 
@@ -899,7 +848,7 @@ def get_all_orders():
         records = worksheet.get_all_records()
         return records
     except Exception as e:
-        st.error(f"❌ 주문 조회 실패: {e}")
+        st.error(f"주문 조회 실패: {e}")
         return []
 
 
@@ -920,7 +869,7 @@ def update_order_status(order_id, new_status):
         
         return False
     except Exception as e:
-        st.error(f"❌ 주문 상태 업데이트 실패: {e}")
+        st.error(f"주문 상태 업데이트 실패: {e}")
         return False
 
 
@@ -977,7 +926,7 @@ def save_settings(store_id, settings_data):
         
         return True
     except Exception as e:
-        st.error(f"❌ 설정 저장 실패: {e}")
+        st.error(f"설정 저장 실패: {e}")
         return False
 
 
@@ -1062,7 +1011,7 @@ def save_master_password(new_password: str) -> bool:
         
         return True
     except Exception as e:
-        st.error(f"❌ 마스터 비밀번호 저장 실패: {e}")
+        st.error(f"마스터 비밀번호 저장 실패: {e}")
         return False
 
 
@@ -1101,39 +1050,43 @@ def initialize_sheets():
         try:
             stores_ws = spreadsheet.worksheet(STORES_SHEET)
         except:
-            stores_ws = spreadsheet.add_worksheet(title=STORES_SHEET, rows=1000, cols=22)
+            stores_ws = spreadsheet.add_worksheet(title=STORES_SHEET, rows=1000, cols=30)
         
         stores_header = [
             'store_id',        # A: 가게 ID
             'password',        # B: 비밀번호
             'name',            # C: 가게명
-            'phone',           # D: 연락처
-            'owner_name',      # E: 대표자 성함
-            'info',            # F: 매장 주소/정보
+            'owner_name',      # D: 대표자명 (추가)
+            'phone',           # E: 연락처
+            'info',            # F: 영업정보
             'menu_text',       # G: 메뉴
             'printer_ip',      # H: 프린터 IP
             'img_files',       # I: 이미지 파일
-            'status',          # J: 가맹비납부여부
-            'billing_key',     # K: 빌링키
-            'expiry_date',     # L: 만료일
-            'payment_status',  # M: 결제상태
-            'next_payment_date', # N: 다음결제일
+            'unused_1',        # J: (이전 가맹비납부여부)
+            'unused_2',        # K: (이전 빌링키)
+            'unused_3',        # L: (이전 만료일)
+            'unused_4',        # M: (이전 결제상태)
+            'unused_5',        # N: (이전 다음결제일)
             'category',        # O: 업종 카테고리
             'table_count',     # P: 테이블 수
             'seats_per_table', # Q: 테이블당 최대 착석 인원
-            'printer_type',    # R: 프린터 종류
-            'notification_mode', # S: 알림 모드
-            'solapi_key',      # T: 솔라피 키
-            'solapi_secret',   # U: 솔라피 시크릿
-            'created_at'       # V: 생성일
+            'logen_id',        # R: 로젠택배 아이디
+            'logen_password',  # S: 로젠택배 비밀번호
+            'logen_sender_name',    # T: 로젠택배 발송인명
+            'logen_sender_address', # U: 로젠택배 발송인 주소
+            'points',          # V: 포인트 잔액
+            'solapi_key',      # W: 솔라피 API 키
+            'solapi_secret',   # X: 솔라피 시크릿
+            'printer_type',    # Y: 프린터 타입
+            'notification_mode'# Z: 알림 모드
         ]
-        stores_ws.update('A1:V1', [stores_header])
+        stores_ws.update('A1:Z1', [stores_header])
         
         # orders 시트 헤더
         try:
             orders_ws = spreadsheet.worksheet(ORDERS_SHEET)
         except:
-            orders_ws = spreadsheet.add_worksheet(title=ORDERS_SHEET, rows=10000, cols=12)
+            orders_ws = spreadsheet.add_worksheet(title=ORDERS_SHEET, rows=10000, cols=15)
         
         orders_header = ['order_id', 'order_time', 'store_id', 'store_name', 'order_content', 
                         'address', 'customer_phone', 'total_price', 'request', 'status']
@@ -1143,7 +1096,7 @@ def initialize_sheets():
         try:
             settings_ws = spreadsheet.worksheet(SETTINGS_SHEET)
         except:
-            settings_ws = spreadsheet.add_worksheet(title=SETTINGS_SHEET, rows=100, cols=6)
+            settings_ws = spreadsheet.add_worksheet(title=SETTINGS_SHEET, rows=100, cols=10)
         
         settings_header = ['store_id', 'printer_ip', 'printer_port', 'auto_print']
         settings_ws.update('A1:D1', [settings_header])
@@ -1152,7 +1105,7 @@ def initialize_sheets():
         try:
             customers_ws = spreadsheet.worksheet(CUSTOMERS_SHEET)
         except:
-            customers_ws = spreadsheet.add_worksheet(title=CUSTOMERS_SHEET, rows=10000, cols=12)
+            customers_ws = spreadsheet.add_worksheet(title=CUSTOMERS_SHEET, rows=10000, cols=15)
         
         customers_header = [
             'customer_id',      # A: 고객 ID (전화번호)
@@ -1170,10 +1123,110 @@ def initialize_sheets():
         ]
         customers_ws.update('A1:L1', [customers_header])
         
+        # inquiries 시트 헤더 (가맹 문의)
+        try:
+            inquiries_ws = spreadsheet.worksheet(INQUIRIES_SHEET)
+        except:
+            inquiries_ws = spreadsheet.add_worksheet(title=INQUIRIES_SHEET, rows=1000, cols=15)
+        
+        inquiries_header = [
+            'created_at',       # A: 신청일시
+            'name',             # B: 사장님 성함
+            'phone',            # C: 연락처
+            'business_type',    # D: 업종
+            'region',           # E: 희망 지역
+            'memo',             # F: 문의내용
+            'status',           # G: 처리상태 (대기/상담중/완료)
+            'notes',            # H: 본사 메모
+            'store_id',         # I: 희망 아이디
+            'password',         # J: 임시 비밀번호
+            'notification_type',# K: 알림 방식 선택
+            'detail_data'       # L: 상세 설정 데이터 (JSON)
+        ]
+        inquiries_ws.update('A1:L1', [inquiries_header])
+        
         return True
     except Exception as e:
-        st.error(f"❌ 시트 초기화 실패: {e}")
+        st.error(f"시트 초기화 실패: {e}")
         return False
+
+
+# ==========================================
+# 🤝 가맹 가입 문의 관리
+# ==========================================
+
+def save_inquiry(inquiry_data):
+    """
+    가맹 가입 문의 정보 저장
+    
+    Args:
+        inquiry_data: {
+            'name': '홍길동',
+            'phone': '010-1234-5678',
+            'business_type': 'restaurant',
+            'region': '서울 강남구',
+            'memo': '가맹비 문의드립니다.',
+            'store_id': 'hong123',
+            'password': 'password123'
+        }
+    """
+    try:
+        spreadsheet = get_spreadsheet()
+        if spreadsheet is None:
+            return False
+            
+        ws = spreadsheet.worksheet(INQUIRIES_SHEET)
+        
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 비밀번호 해싱 처리 (보안)
+        hashed_pw = hash_password(inquiry_data.get('password', ''))
+        
+        row = [
+            now,
+            inquiry_data.get('name', ''),
+            inquiry_data.get('phone', ''),
+            inquiry_data.get('business_type', ''),
+            inquiry_data.get('region', ''),
+            inquiry_data.get('memo', ''),
+            '대기',  # status
+            '',      # notes
+            inquiry_data.get('store_id', ''),
+            hashed_pw,
+            inquiry_data.get('notification_type', '알림톡'),
+            inquiry_data.get('detail_data', '{}')
+        ]
+        
+        ws.append_row(row)
+        return True
+    except Exception as e:
+        print(f"가맹 문의 저장 실패: {e}")
+        return False
+
+
+def verify_inquiry_login(store_id, password):
+    """
+    가맹 신청자의 임시 로그인 검증
+    """
+    try:
+        spreadsheet = get_spreadsheet()
+        if spreadsheet is None:
+            return False, "데이터베이스 연결 실패"
+            
+        ws = spreadsheet.worksheet(INQUIRIES_SHEET)
+        data = ws.get_all_records()
+        
+        for row in data:
+            if str(row.get('store_id')) == store_id:
+                hashed_pw = row.get('password')
+                if verify_password(password, hashed_pw):
+                    return True, row
+                else:
+                    return False, "비밀번호가 일치하지 않습니다."
+        
+        return False, "등록되지 않은 아이디입니다."
+    except Exception as e:
+        return False, f"로그인 중 오류 발생: {e}"
 
 
 # ==========================================
@@ -1182,47 +1235,44 @@ def initialize_sheets():
 
 def get_customer(customer_id, store_id=None):
     """
-    고객 정보 조회
-    
-    Args:
-        customer_id: 고객 ID (전화번호)
-        store_id: 가게 ID (선택, 특정 가게의 고객만 조회)
-    
-    Returns:
-        고객 정보 딕셔너리 또는 None
+    고객 정보 조회 (최적화 버전)
     """
     try:
         spreadsheet = get_spreadsheet()
-        if spreadsheet is None:
-            return None
+        if spreadsheet is None: return None
         
-        # customers 시트 가져오기 (없으면 생성)
+        worksheet = spreadsheet.worksheet(CUSTOMERS_SHEET)
         try:
-            worksheet = spreadsheet.worksheet(CUSTOMERS_SHEET)
-        except:
+            # 고객 ID(전화번호)가 있는 셀 찾기 (A열)
+            cell = worksheet.find(customer_id, in_column=1)
+            if not cell: return None
+            
+            # 해당 행의 모든 데이터 가져오기
+            row_values = worksheet.row_values(cell.row)
+            header = [
+                'customer_id', 'store_id', 'name', 'phone', 'address',
+                'preferences', 'notes', 'total_orders', 'last_visit',
+                'first_visit', 'created_at', 'updated_at'
+            ]
+            
+            customer = {}
+            for i, h in enumerate(header):
+                if i < len(row_values):
+                    val = row_values[i]
+                    if h == 'total_orders':
+                        customer[h] = int(val or 0)
+                    else:
+                        customer[h] = val
+                else:
+                    customer[h] = '' if h != 'total_orders' else 0
+            
+            # store_id 필터링 (선택 사항)
+            if store_id and customer.get('store_id') != store_id:
+                return None
+                
+            return customer
+        except gspread.exceptions.CellNotFound:
             return None
-        
-        records = worksheet.get_all_records()
-        
-        for record in records:
-            if record.get('customer_id') == customer_id:
-                if store_id is None or record.get('store_id') == store_id:
-                    return {
-                        'customer_id': record.get('customer_id', ''),
-                        'store_id': record.get('store_id', ''),
-                        'name': record.get('name', ''),
-                        'phone': record.get('phone', ''),
-                        'address': record.get('address', ''),
-                        'preferences': record.get('preferences', ''),
-                        'notes': record.get('notes', ''),
-                        'total_orders': int(record.get('total_orders', 0) or 0),
-                        'last_visit': record.get('last_visit', ''),
-                        'first_visit': record.get('first_visit', ''),
-                        'created_at': record.get('created_at', ''),
-                        'updated_at': record.get('updated_at', '')
-                    }
-        
-        return None
     except Exception as e:
         return None
 
@@ -1236,58 +1286,42 @@ def get_customer_by_phone(phone, store_id=None):
 
 def save_customer(customer_data):
     """
-    고객 정보 저장 (신규/수정)
-    
-    Args:
-        customer_data: {
-            'customer_id': 고객 ID (전화번호),
-            'store_id': 가게 ID,
-            'name': 이름,
-            'phone': 전화번호,
-            'address': 주소,
-            'preferences': 취향/선호사항,
-            'notes': 요청사항/메모
-        }
+    고객 정보 저장 (최적화 버전)
     """
     try:
         spreadsheet = get_spreadsheet()
-        if spreadsheet is None:
-            return False
+        if spreadsheet is None: return False
         
-        # customers 시트 가져오기 (없으면 생성)
-        try:
-            worksheet = spreadsheet.worksheet(CUSTOMERS_SHEET)
-        except:
-            worksheet = spreadsheet.add_worksheet(title=CUSTOMERS_SHEET, rows=10000, cols=12)
-            customers_header = [
-                'customer_id', 'store_id', 'name', 'phone', 'address',
-                'preferences', 'notes', 'total_orders', 'last_visit',
-                'first_visit', 'created_at', 'updated_at'
-            ]
-            worksheet.update('A1:L1', [customers_header])
+        worksheet = spreadsheet.worksheet(CUSTOMERS_SHEET)
         
         customer_id = customer_data.get('customer_id', '')
         if not customer_id:
-            # 전화번호를 customer_id로 사용
             customer_id = customer_data.get('phone', '').replace('-', '').replace(' ', '')
         
         store_id = customer_data.get('store_id', '')
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        # 기존 데이터 확인
-        records = worksheet.get_all_records()
+        # 기존 데이터 확인 (find 사용)
         row_index = None
         existing_data = None
         
-        for idx, record in enumerate(records):
-            if record.get('customer_id') == customer_id:
-                if store_id == '' or record.get('store_id') == store_id:
-                    row_index = idx + 2  # 헤더 + 1-based index
-                    existing_data = record
-                    break
+        try:
+            cell = worksheet.find(customer_id, in_column=1)
+            if cell:
+                row_index = cell.row
+                # 기존 데이터 읽기
+                row_values = worksheet.row_values(row_index)
+                header = [
+                    'customer_id', 'store_id', 'name', 'phone', 'address',
+                    'preferences', 'notes', 'total_orders', 'last_visit',
+                    'first_visit', 'created_at', 'updated_at'
+                ]
+                existing_data = {h: row_values[i] if i < len(row_values) else '' for i, h in enumerate(header)}
+        except gspread.exceptions.CellNotFound:
+            pass
         
         if existing_data:
-            # 기존 데이터 수정 (기존 값 유지하면서 새 값으로 업데이트)
+            # 기존 데이터 수정
             row_data = [
                 customer_id,
                 store_id or existing_data.get('store_id', ''),
@@ -1296,8 +1330,8 @@ def save_customer(customer_data):
                 customer_data.get('address') or existing_data.get('address', ''),
                 customer_data.get('preferences') or existing_data.get('preferences', ''),
                 customer_data.get('notes') or existing_data.get('notes', ''),
-                existing_data.get('total_orders', 0),  # 주문 횟수는 별도 함수로 증가
-                existing_data.get('last_visit', ''),   # 마지막 방문은 별도 함수로 업데이트
+                existing_data.get('total_orders', 0),
+                existing_data.get('last_visit', ''),
                 existing_data.get('first_visit', ''),
                 existing_data.get('created_at', ''),
                 now  # updated_at
@@ -1328,86 +1362,67 @@ def save_customer(customer_data):
 
 def update_customer_field(customer_id, field_name, field_value, store_id=None):
     """
-    고객의 특정 필드만 업데이트
-    
-    Args:
-        customer_id: 고객 ID
-        field_name: 필드명 ('name', 'address', 'preferences', 'notes' 등)
-        field_value: 새 값
-        store_id: 가게 ID (선택)
+    고객의 특정 필드만 업데이트 (최적화 버전)
     """
     try:
         spreadsheet = get_spreadsheet()
-        if spreadsheet is None:
-            return False
+        if spreadsheet is None: return False
         
         worksheet = spreadsheet.worksheet(CUSTOMERS_SHEET)
-        records = worksheet.get_all_records()
-        
-        # 필드 인덱스 매핑
-        field_map = {
-            'name': 3,           # C열
-            'phone': 4,          # D열
-            'address': 5,        # E열
-            'preferences': 6,    # F열
-            'notes': 7,          # G열
-            'total_orders': 8,   # H열
-            'last_visit': 9,     # I열
-        }
-        
-        col_index = field_map.get(field_name)
-        if not col_index:
+        try:
+            cell = worksheet.find(customer_id, in_column=1)
+            if not cell: return False
+            
+            row_index = cell.row
+            
+            # 필드 인덱스 매핑 (A=1, B=2, ...)
+            field_map = {
+                'name': 3, 'phone': 4, 'address': 5, 'preferences': 6,
+                'notes': 7, 'total_orders': 8, 'last_visit': 9
+            }
+            
+            col_index = field_map.get(field_name)
+            if not col_index: return False
+            
+            # 업데이트
+            worksheet.update_cell(row_index, col_index, field_value)
+            # updated_at (L열=12) 업데이트
+            worksheet.update_cell(row_index, 12, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            return True
+        except gspread.exceptions.CellNotFound:
             return False
-        
-        for idx, record in enumerate(records):
-            if record.get('customer_id') == customer_id:
-                if store_id is None or record.get('store_id') == store_id:
-                    row_index = idx + 2
-                    worksheet.update_cell(row_index, col_index, field_value)
-                    # updated_at 업데이트
-                    worksheet.update_cell(row_index, 12, datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                    return True
-        
-        return False
     except Exception as e:
         return False
 
 
 def increment_customer_order(customer_id, store_id=None):
     """
-    고객 주문 횟수 증가 및 마지막 방문일 업데이트
-    
-    Args:
-        customer_id: 고객 ID
-        store_id: 가게 ID
-    
-    Returns:
-        업데이트된 주문 횟수
+    고객 주문 횟수 증가 및 마지막 방문일 업데이트 (최적화 버전)
     """
     try:
         spreadsheet = get_spreadsheet()
-        if spreadsheet is None:
-            return 0
+        if spreadsheet is None: return 0
         
         worksheet = spreadsheet.worksheet(CUSTOMERS_SHEET)
-        records = worksheet.get_all_records()
-        
-        for idx, record in enumerate(records):
-            if record.get('customer_id') == customer_id:
-                if store_id is None or record.get('store_id') == store_id:
-                    row_index = idx + 2
-                    current_orders = int(record.get('total_orders', 0) or 0)
-                    new_orders = current_orders + 1
-                    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    
-                    # total_orders, last_visit, updated_at 업데이트
-                    worksheet.update_cell(row_index, 8, new_orders)      # H열: total_orders
-                    worksheet.update_cell(row_index, 9, now)             # I열: last_visit
-                    worksheet.update_cell(row_index, 12, now)            # L열: updated_at
-                    
-                    return new_orders
-        
-        return 0
+        try:
+            cell = worksheet.find(customer_id, in_column=1)
+            if not cell: return 0
+            
+            row_index = cell.row
+            
+            # 현재 주문 횟수 가져오기 (H열=8)
+            current_orders = int(worksheet.cell(row_index, 8).value or 0)
+            new_orders = current_orders + 1
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 업데이트 (H: total_orders, I: last_visit, L: updated_at)
+            worksheet.update_cell(row_index, 8, new_orders)
+            worksheet.update_cell(row_index, 9, now)
+            worksheet.update_cell(row_index, 12, now)
+            
+            return new_orders
+        except gspread.exceptions.CellNotFound:
+            return 0
     except Exception as e:
         return 0
 

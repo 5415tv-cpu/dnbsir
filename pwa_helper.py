@@ -148,78 +148,43 @@ def get_pwa_css():
         }
         
         /* ==========================================
-           📱 모바일 레이아웃 최적화
-           ========================================== */
-        @media (max-width: 768px) {
-            /* 컨테이너 패딩 */
-            .main .block-container {
-                padding-left: 0.8rem !important;
-                padding-right: 0.8rem !important;
-                padding-top: 1.5rem !important;
-                max-width: 100% !important;
-            }
-            
-            /* 사이드바 숨김 */
-            [data-testid="stSidebar"] {
-                display: none;
-            }
-            
-            /* 헤더 여백 조정 */
-            header[data-testid="stHeader"] {
-                display: none;
-            }
-            
-            /* 탭 버튼 크기 조정 */
-            .stTabs [data-baseweb="tab-list"] {
-                gap: 3px !important;
-            }
-            
-            .stTabs [data-baseweb="tab-list"] button {
-                font-size: 1rem !important;
-                padding: 12px 10px !important;
-                min-height: 50px !important;
-                font-weight: 600 !important;
-            }
-            
-            /* 입력 필드 크기 조정 - iOS 줌 방지 */
-            .stTextInput input, 
-            .stTextArea textarea,
-            .stSelectbox select,
-            .stNumberInput input {
-                font-size: 16px !important;
-                min-height: 50px !important;
-                padding: 12px !important;
-            }
-            
-            /* 버튼 터치 영역 확대 */
-            .stButton button {
-                min-height: 55px !important;
-                font-size: 1.1rem !important;
-                border-radius: 12px !important;
-                font-weight: 600 !important;
-            }
-            
-            /* Primary 버튼 더 크게 */
-            .stButton button[kind="primary"] {
-                min-height: 65px !important;
-                font-size: 1.3rem !important;
+       📱 모바일 레이아웃 최적화 (기본 적용)
+       ========================================== */
+    /* 컨테이너 패딩 최소화 */
+    .main .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 2rem !important;
+        max-width: 100% !important;
+    }
+    
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+            padding-top: 1rem !important;
         }
         
-            /* 컬럼 간격 조정 */
-            [data-testid="column"] {
-                padding: 0 5px !important;
-            }
-            
-            /* 마크다운 제목 크기 */
-            h1 { font-size: 1.8rem !important; }
-            h2 { font-size: 1.5rem !important; }
-            h3 { font-size: 1.3rem !important; }
-            
-            /* 구분선 */
-            hr {
-                margin: 1.5rem 0 !important;
-            }
+        /* 사이드바 및 헤더 완전 제거 */
+        [data-testid="stSidebar"], [data-testid="stHeader"], [data-testid="stToolbar"] {
+            display: none !important;
         }
+        
+        /* 입력 필드 크기 조정 - iOS 줌 방지 (16px 이상) */
+        .stTextInput input, 
+        .stTextArea textarea,
+        .stSelectbox select,
+        .stNumberInput input {
+            font-size: 16px !important;
+            min-height: 50px !important;
+        }
+        
+        /* 버튼 터치 영역 및 가독성 최적화 */
+        .stButton button {
+            width: 100% !important;
+            border-radius: 20px !important;
+        }
+    }
         
         /* ==========================================
            📱 iOS safe area 대응

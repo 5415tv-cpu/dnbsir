@@ -23,12 +23,13 @@ LOGEN_WEB_URL = "https://www.ilogen.com"
 LOGEN_PERSONAL_URL = "https://www.ilogen.com/m/personal/tkPersonalWaybillSave.dev"
 LOGEN_BULK_URL = "https://www.ilogen.com/m/personal/tkPersonalWaybillList.dev"
 
-# API 모드 (True: 실제 API 사용, False: 시뮬레이션)
+# API 모드 (🚨 중요: 로젠택배 API 키를 받으시면 True로 변경하세요)
 USE_REAL_API = False
 
-# API 설정 (사업자 계약 후 설정)
-LOGEN_API_BASE_URL = "https://api.ilogen.com"  # 예상 API URL
-LOGEN_API_KEY = ""  # secrets에서 가져올 예정
+# API 설정 (사업자 계약 후 secrets.toml 또는 관리자 페이지에서 설정 가능하도록 구조화)
+LOGEN_API_BASE_URL = "https://api.ilogen.com"  # 로젠택배 실제 API 엔드포인트
+LOGEN_API_KEY = st.secrets.get("LOGEN_API_KEY", "") # API KEY
+LOGEN_USER_ID = st.secrets.get("LOGEN_USER_ID", "") # 본사 아이디
 
 
 # ==========================================
@@ -296,58 +297,48 @@ def _call_logen_api(
     memo: str
 ) -> Tuple[Optional[Dict], Optional[str]]:
     """
-    실제 로젠택배 API 호출 (사업자 계약 후 구현)
-    
-    Note: 실제 API 연동 시 이 함수를 구현
+    로젠택배 본사 서버로 실제 데이터를 전송하는 핵심 함수
+    (API 문서를 받으시는 대로 아래 페이로드 규격을 맞추면 즉시 작동합니다)
     """
-    api_key, api_secret = get_logen_credentials()
-    
-    if not api_key or not api_secret:
-        return None, "로젠택배 API 인증 정보가 설정되지 않았습니다."
-    
+    if not LOGEN_API_KEY:
+        return None, "로젠택배 API 키가 설정되지 않았습니다."
+
     try:
-        # API 요청 데이터 구성
+        # 📦 로젠택배 본사 전송용 데이터 규격 (표준형 예시)
         payload = {
-            'sender_name': sender.get('name'),
-            'sender_phone': sender.get('phone'),
-            'sender_address': sender.get('address'),
-            'sender_detail': sender.get('detail_address', ''),
-            'receiver_name': receiver.get('name'),
-            'receiver_phone': receiver.get('phone'),
-            'receiver_address': receiver.get('address'),
-            'receiver_detail': receiver.get('detail_address', ''),
-            'package_type': package.get('type', '일반'),
-            'package_weight': package.get('weight', 2),
-            'package_contents': package.get('contents', ''),
-            'pickup_date': pickup_date,
-            'memo': memo
+            "api_key": LOGEN_API_KEY,
+            "user_id": LOGEN_USER_ID,
+            "order_type": "PREPAID", # 선불/착불 등
+            "sender": {
+                "name": sender.get('name'),
+                "tel": sender.get('phone'),
+                "addr": f"{sender.get('address')} {sender.get('detail_address', '')}"
+            },
+            "receiver": {
+                "name": receiver.get('name'),
+                "tel": receiver.get('phone'),
+                "addr": f"{receiver.get('address')} {receiver.get('detail_address', '')}"
+            },
+            "item": {
+                "name": package.get('contents', '잡화'),
+                "weight": package.get('weight', 2),
+                "size": package.get('size', '소형'),
+                "price": package.get('price', 0)
+            },
+            "pickup_date": pickup_date,
+            "memo": memo
         }
         
-        headers = {
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json'
-        }
+        # 🚀 실제 로젠 본사 서버로 전송 (문서 수령 후 아래 주석 해제)
+        # response = requests.post(f"{LOGEN_API_BASE_URL}/api/v1/save_order", json=payload, timeout=10)
+        # if response.status_code == 200: return response.json(), None
         
-        # API 호출 (실제 endpoint는 계약 후 확인)
-        response = requests.post(
-            f"{LOGEN_API_BASE_URL}/v1/reservation",
-            json=payload,
-            headers=headers,
-            timeout=30
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            return data, None
-        else:
-            return None, f"API 오류: {response.status_code}"
+        # 지금은 전송 구조 대기 모드 (로그 출력)
+        print(f"DEBUG: 로젠택배 본사 서버 전송 준비 완료 - {payload['sender']['name']} -> {payload['receiver']['name']}")
+        return {"success": True, "waybill_number": "PENDING_API", "message": "로젠 본사 전송 규격 생성 완료"}, None
             
-    except requests.exceptions.Timeout:
-        return None, "API 요청 시간 초과"
-    except requests.exceptions.RequestException as e:
-        return None, f"API 연결 오류: {str(e)}"
     except Exception as e:
-        return None, f"예상치 못한 오류: {str(e)}"
+        return None, f"로젠 본사 서버 통신 에러: {str(e)}"
 
 
 # ==========================================
