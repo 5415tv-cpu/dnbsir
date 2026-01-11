@@ -1,5 +1,6 @@
 """
-# 동네비서 - 모바일 최적화 키오스크 스타일
+# 오늘고등학교 - 모바일 최적화 키오스크 스타일
+# Version: 1.0.2 (Force Update)
 """
 
 import streamlit as st
@@ -114,12 +115,12 @@ st.markdown("""
         color: inherit !important;
     }
 
-    /* 5. 버튼 개별 컬러 (래퍼 클래스 방식) */
-    .yellow-btn .stButton button { background: #FFB300 !important; }
-    .purple-btn .stButton button { background: #8E24AA !important; }
-    .cyan-btn .stButton button { background: #00ACC1 !important; }
-    .red-btn .stButton button { background: #D81B60 !important; }
-    .green-btn .stButton button { background: #43A047 !important; }
+    /* 5. 버튼 개별 컬러 (래퍼 클래스 방식 - 더 강력한 선택자) */
+    div.yellow-btn button { background-color: #FFB300 !important; color: white !important; }
+    div.purple-btn button { background-color: #8E24AA !important; color: white !important; }
+    div.cyan-btn button { background-color: #00ACC1 !important; color: white !important; }
+    div.red-btn button { background-color: #D81B60 !important; color: white !important; }
+    div.green-btn button { background-color: #43A047 !important; color: white !important; }
 
     /* 6. 하단 알림바 스타일 */
     .bottom-notice {
