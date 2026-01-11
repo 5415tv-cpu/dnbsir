@@ -100,10 +100,7 @@ st.markdown("""
         justify-content: center !important;
         transition: transform 0.1s ease !important;
         box-shadow: 0 8px 20px rgba(0,0,0,0.5) !important;
-        
-        /* 글씨 스타일 */
-        font-weight: 900 !important;
-        text-align: center !important;
+        color: #FFFFFF !important;
         line-height: 1.2 !important;
         white-space: pre-wrap !important;
     }
@@ -116,34 +113,13 @@ st.markdown("""
         margin: 0 !important;
         color: inherit !important;
     }
-    /* 버튼 내의 큰 텍스트(강조) 스타일링을 위한 꼼수: p 태그 내의 줄바꿈 이후 텍스트 강조 */
-    /* 실제로는 버튼 텍스트 전체가 p 태그 안에 들어감 */
 
-    /* 5. 버튼 개별 컬러 강제 적용 (순서 기반) */
-    /* 첫 번째 행 왼쪽 (학과가이드) */
-    div[data-testid="stVerticalBlock"] > div:nth-child(2) [data-testid="column"]:nth-child(1) button {
-        background: #FFB300 !important; color: #FFFFFF !important;
-    }
-    
-    /* 첫 번째 행 오른쪽 (북가이드) */
-    div[data-testid="stVerticalBlock"] > div:nth-child(2) [data-testid="column"]:nth-child(2) button {
-        background: #8E24AA !important; color: #FFFFFF !important;
-    }
-
-    /* 두 번째 행 오른쪽 (진학가이드) */
-    div[data-testid="stVerticalBlock"] > div:nth-child(4) [data-testid="column"]:nth-child(2) button {
-        background: #00ACC1 !important; color: #FFFFFF !important;
-    }
-
-    /* 세 번째 행 왼쪽 (심리테스트) */
-    div[data-testid="stVerticalBlock"] > div:nth-child(5) [data-testid="column"]:nth-child(1) button {
-        background: #D81B60 !important; color: #FFFFFF !important;
-    }
-
-    /* 세 번째 행 오른쪽 (진로레터) */
-    div[data-testid="stVerticalBlock"] > div:nth-child(5) [data-testid="column"]:nth-child(2) button {
-        background: #43A047 !important; color: #FFFFFF !important;
-    }
+    /* 5. 버튼 개별 컬러 (래퍼 클래스 방식) */
+    .yellow-btn .stButton button { background: #FFB300 !important; }
+    .purple-btn .stButton button { background: #8E24AA !important; }
+    .cyan-btn .stButton button { background: #00ACC1 !important; }
+    .red-btn .stButton button { background: #D81B60 !important; }
+    .green-btn .stButton button { background: #43A047 !important; }
 
     /* 6. 하단 알림바 스타일 */
     .bottom-notice {
@@ -226,23 +202,33 @@ if st.session_state.page == "HOME":
     # 2. 메뉴 그리드 (1행)
     c1, c2 = st.columns(2)
     with c1:
+        st.markdown('<div class="yellow-btn">', unsafe_allow_html=True)
         if st.button("🎓\n\n학과의 모든 정보\n학과가이드"): navigate_to("DEPT")
+        st.markdown('</div>', unsafe_allow_html=True)
     with c2:
+        st.markdown('<div class="purple-btn">', unsafe_allow_html=True)
         if st.button("📚\n\n학교별 추천도서\n북가이드"): navigate_to("BOOK")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # 3 & 4. 중간 로고 및 진학가이드 (2행)
     c3, c4 = st.columns(2)
     with c3:
         st.markdown('<div class="mid-logo-container"><div class="mid-logo">KIOSK<br>ONL:DO</div></div>', unsafe_allow_html=True)
     with c4:
+        st.markdown('<div class="cyan-btn">', unsafe_allow_html=True)
         if st.button("🚀\n\n대입의 모든 정보\n진학가이드"): navigate_to("GUIDE")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # 5. 메뉴 그리드 (3행)
     c5, c6 = st.columns(2)
     with c5:
+        st.markdown('<div class="red-btn">', unsafe_allow_html=True)
         if st.button("☕\n\n어디로게 나를 말하는\n심리테스트"): navigate_to("TEST")
+        st.markdown('</div>', unsafe_allow_html=True)
     with c6:
+        st.markdown('<div class="green-btn">', unsafe_allow_html=True)
         if st.button("✉️\n\n교육연구들의 에너지있는\n진로레터"): navigate_to("LETTER")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # 6. 하단 알림바
     st.markdown("""
