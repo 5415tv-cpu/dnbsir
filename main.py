@@ -185,7 +185,7 @@ if st.session_state.page == "HOME":
     <div class="top-header">
         <div class="name-section">
             <div class="name">동네비서 😊</div>
-            <div class="sub-info">서울 잠원동 6℃ 흐림 ☁️</div>
+            <div class="sub-info">소상공인을 위한 AI 스마트 비서</div>
         </div>
         <div class="time-section">
             <div class="time">{now.strftime('%H : %M')}</div>
@@ -194,13 +194,13 @@ if st.session_state.page == "HOME":
     </div>
     """, unsafe_allow_html=True)
 
-    # 2. 메뉴 그리드 (10개 카드)
+    # 2. 메뉴 그리드 (동네비서 전용 10개 카드)
     
     # 1행
     r1_c1, r1_c2 = st.columns(2)
     with r1_c1:
         st.markdown('<div class="btn-1">', unsafe_allow_html=True)
-        if st.button("🏘️\n매장 예약"): navigate_to("RESERVE")
+        if st.button("📅\n매장 예약"): navigate_to("RESERVE")
         st.markdown('</div>', unsafe_allow_html=True)
     with r1_c2:
         st.markdown('<div class="btn-2">', unsafe_allow_html=True)
@@ -211,11 +211,11 @@ if st.session_state.page == "HOME":
     r2_c1, r2_c2 = st.columns(2)
     with r2_c1:
         st.markdown('<div class="btn-3">', unsafe_allow_html=True)
-        if st.button("🤖\nAI 분석"): navigate_to("AI_VISION")
+        if st.button("🤖\nAI 챗봇상담"): navigate_to("AI_CHAT")
         st.markdown('</div>', unsafe_allow_html=True)
     with r2_c2:
         st.markdown('<div class="btn-4">', unsafe_allow_html=True)
-        if st.button("🧠\n심리테스트"): navigate_to("TEST")
+        if st.button("📋\n주문 장부"): navigate_to("ORDERS")
         st.markdown('</div>', unsafe_allow_html=True)
 
     # 중간 로고 영역
@@ -225,34 +225,42 @@ if st.session_state.page == "HOME":
     r3_c1, r3_c2 = st.columns(2)
     with r3_c1:
         st.markdown('<div class="btn-5">', unsafe_allow_html=True)
-        if st.button("✉️\n진로레터"): navigate_to("LETTER")
+        if st.button("👥\n고객 명부"): navigate_to("CUSTOMERS")
         st.markdown('</div>', unsafe_allow_html=True)
     with r3_c2:
         st.markdown('<div class="btn-6">', unsafe_allow_html=True)
-        if st.button("👥\n고객 관리"): navigate_to("CUSTOMERS")
+        if st.button("💬\n문자 발송"): navigate_to("SMS")
         st.markdown('</div>', unsafe_allow_html=True)
 
     # 4행
     r4_c1, r4_c2 = st.columns(2)
     with r4_c1:
         st.markdown('<div class="btn-7">', unsafe_allow_html=True)
-        if st.button("📢\n공지사항"): navigate_to("NOTICE")
+        if st.button("📊\n매출 분석"): navigate_to("SALES")
         st.markdown('</div>', unsafe_allow_html=True)
     with r4_c2:
         st.markdown('<div class="btn-8">', unsafe_allow_html=True)
-        if st.button("📖\n이용 가이드"): navigate_to("GUIDE_DOC")
+        if st.button("📢\n공지 사항"): navigate_to("NOTICE")
         st.markdown('</div>', unsafe_allow_html=True)
 
     # 5행
     r5_c1, r5_c2 = st.columns(2)
     with r5_c1:
         st.markdown('<div class="btn-9">', unsafe_allow_html=True)
-        if st.button("⚙️\n관리자 설정"): navigate_to("ADMIN_CONFIG")
+        if st.button("⚙️\n관리자 모드"): navigate_to("ADMIN")
         st.markdown('</div>', unsafe_allow_html=True)
     with r5_c2:
         st.markdown('<div class="btn-10">', unsafe_allow_html=True)
-        if st.button("👤\n내 정보"): navigate_to("MY_INFO")
+        if st.button("ℹ️\n서비스 안내"): navigate_to("INFO")
         st.markdown('</div>', unsafe_allow_html=True)
+
+    # 3. 하단 알림바
+    st.markdown("""
+    <div class="bottom-notice">
+        <span class="badge">New!</span>
+        <span class="text">동네비서 AI 시스템이 업그레이드 되었습니다!</span>
+    </div>
+    """, unsafe_allow_html=True)
 
     # 3. 하단 알림바
     st.markdown("""
