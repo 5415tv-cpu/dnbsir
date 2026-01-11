@@ -14,7 +14,7 @@ import pwa_helper
 # 🎨 페이지 설정 (모바일 standalone 최적화)
 # ==========================================
 st.set_page_config(
-    page_title="오늘고등학교", 
+    page_title="동네비서", 
     page_icon="🏘️",
     layout="centered", 
     initial_sidebar_state="collapsed"
@@ -43,24 +43,21 @@ st.markdown("""
     .main .block-container {
         padding-top: 30px !important;
         max-width: 500px !important; 
-        margin: 0 auto !important; /* PC에서 중앙 정렬 */
+        margin: 0 auto !important;
     }
 
-    /* 2. 상단 헤더 (이름, 시계, 날짜) */
+    /* 2. 상단 헤더 */
     .top-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
         padding: 0 15px;
-        margin-bottom: 30px;
-    }
-    .top-header .name-section {
-        text-align: left;
+        margin-bottom: 20px;
     }
     .top-header .name {
         font-size: 24px;
         font-weight: 900;
-        margin-bottom: 5px;
+        color: #FFFFFF !important;
     }
     .top-header .sub-info {
         font-size: 14px;
@@ -72,96 +69,93 @@ st.markdown("""
     .top-header .time {
         font-size: 26px;
         font-weight: 700;
-        letter-spacing: 1px;
-    }
-    .top-header .date {
-        font-size: 14px;
-        color: #AAAAAA;
+        color: #FFFFFF !important;
     }
 
-    /* 3. 메뉴 그리드 시스템 */
+    /* 3. 메뉴 그리드 */
     [data-testid="stHorizontalBlock"] {
-        gap: 15px !important;
-        margin-bottom: 15px !important;
-    }
-    [data-testid="column"] {
-        padding: 0 !important;
+        gap: 10px !important;
+        margin-bottom: 10px !important;
     }
 
-    /* 4. 키오스크 카드 버튼 공통 스타일 */
-    div.stButton > button {
+    /* 4. 카드 버튼 스타일 (백지 현상 방지) */
+    .stButton button {
         width: 100% !important;
-        aspect-ratio: 1 / 1.1 !important; 
-        border-radius: 25px !important;
+        height: 140px !important;
+        border-radius: 20px !important;
         border: none !important;
-        padding: 20px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
         justify-content: center !important;
-        transition: transform 0.1s ease !important;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.5) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+        padding: 10px !important;
+    }
+    
+    /* 버튼 텍스트 강제 노출 */
+    .stButton button p {
         color: #FFFFFF !important;
-        line-height: 1.2 !important;
-        white-space: pre-wrap !important;
-    }
-    div.stButton > button:active {
-        transform: scale(0.96) !important;
-    }
-    div.stButton button p {
-        font-size: 16px !important;
-        font-weight: 500 !important;
-        margin: 0 !important;
-        color: inherit !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        line-height: 1.3 !important;
+        margin-top: 5px !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: block !important;
     }
 
-    /* 5. 버튼 개별 컬러 (래퍼 클래스 방식 - 더 강력한 선택자) */
-    div.yellow-btn button { background-color: #FFB300 !important; color: white !important; }
-    div.purple-btn button { background-color: #8E24AA !important; color: white !important; }
-    div.cyan-btn button { background-color: #00ACC1 !important; color: white !important; }
-    div.red-btn button { background-color: #D81B60 !important; color: white !important; }
-    div.green-btn button { background-color: #43A047 !important; color: white !important; }
+    /* 버튼 아이콘(이모지) 스타일 */
+    .btn-icon {
+        font-size: 32px;
+        margin-bottom: 5px;
+        display: block;
+    }
 
-    /* 6. 하단 알림바 스타일 */
+    /* 버튼 개별 컬러 */
+    div.btn-1 button { background-color: #FFB300 !important; } /* 노랑 */
+    div.btn-2 button { background-color: #8E24AA !important; } /* 보라 */
+    div.btn-3 button { background-color: #00ACC1 !important; } /* 하늘 */
+    div.btn-4 button { background-color: #D81B60 !important; } /* 빨강 */
+    div.btn-5 button { background-color: #43A047 !important; } /* 초록 */
+    div.btn-6 button { background-color: #5C6BC0 !important; } /* 남색 */
+    div.btn-7 button { background-color: #FFA726 !important; } /* 주황 */
+    div.btn-8 button { background-color: #26A69A !important; } /* 청록 */
+    div.btn-9 button { background-color: #78909C !important; } /* 회색 */
+    div.btn-10 button { background-color: #66BB6A !important; } /* 연두 */
+
+    /* 중간 로고 */
+    .mid-logo-container {
+        text-align: center;
+        padding: 15px 0;
+        color: #FFFFFF;
+        font-weight: bold;
+        letter-spacing: 3px;
+        font-size: 14px;
+        opacity: 0.7;
+    }
+
+    /* 하단 알림바 */
     .bottom-notice {
         background: white;
         border-radius: 50px;
-        padding: 10px 20px;
+        padding: 8px 15px;
         display: flex;
         align-items: center;
-        margin-top: 20px;
-        width: 100%;
+        margin-top: 15px;
     }
     .bottom-notice .badge {
         background: #FF0000;
         color: white;
         border-radius: 20px;
-        padding: 2px 12px;
+        padding: 2px 10px;
         font-weight: bold;
-        font-size: 14px;
-        margin-right: 15px;
+        font-size: 12px;
+        margin-right: 10px;
     }
     .bottom-notice .text {
         color: #333333;
+        font-size: 13px;
         font-weight: 600;
-        font-size: 15px;
-    }
-
-    /* 중간 로고 */
-    .mid-logo-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        aspect-ratio: 1 / 1.1;
-    }
-    .mid-logo {
-        text-align: center;
-        font-size: 16px;
-        font-weight: 700;
-        letter-spacing: 5px;
-        color: #FFFFFF;
-        opacity: 0.8;
     }
 
     /* 스트림릿 기본 요소 제거 */
@@ -190,7 +184,7 @@ if st.session_state.page == "HOME":
     st.markdown(f"""
     <div class="top-header">
         <div class="name-section">
-            <div class="name">오늘고등학교 😊</div>
+            <div class="name">동네비서 😊</div>
             <div class="sub-info">서울 잠원동 6℃ 흐림 ☁️</div>
         </div>
         <div class="time-section">
@@ -200,42 +194,71 @@ if st.session_state.page == "HOME":
     </div>
     """, unsafe_allow_html=True)
 
-    # 2. 메뉴 그리드 (1행)
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown('<div class="yellow-btn">', unsafe_allow_html=True)
-        if st.button("🎓\n\n학과의 모든 정보\n학과가이드"): navigate_to("DEPT")
+    # 2. 메뉴 그리드 (10개 카드)
+    
+    # 1행
+    r1_c1, r1_c2 = st.columns(2)
+    with r1_c1:
+        st.markdown('<div class="btn-1">', unsafe_allow_html=True)
+        if st.button("🏘️\n매장 예약"): navigate_to("RESERVE")
         st.markdown('</div>', unsafe_allow_html=True)
-    with c2:
-        st.markdown('<div class="purple-btn">', unsafe_allow_html=True)
-        if st.button("📚\n\n학교별 추천도서\n북가이드"): navigate_to("BOOK")
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # 3 & 4. 중간 로고 및 진학가이드 (2행)
-    c3, c4 = st.columns(2)
-    with c3:
-        st.markdown('<div class="mid-logo-container"><div class="mid-logo">KIOSK<br>ONL:DO</div></div>', unsafe_allow_html=True)
-    with c4:
-        st.markdown('<div class="cyan-btn">', unsafe_allow_html=True)
-        if st.button("🚀\n\n대입의 모든 정보\n진학가이드"): navigate_to("GUIDE")
+    with r1_c2:
+        st.markdown('<div class="btn-2">', unsafe_allow_html=True)
+        if st.button("📦\n택배 접수"): navigate_to("DELIVERY")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 5. 메뉴 그리드 (3행)
-    c5, c6 = st.columns(2)
-    with c5:
-        st.markdown('<div class="red-btn">', unsafe_allow_html=True)
-        if st.button("☕\n\n어디로게 나를 말하는\n심리테스트"): navigate_to("TEST")
+    # 2행
+    r2_c1, r2_c2 = st.columns(2)
+    with r2_c1:
+        st.markdown('<div class="btn-3">', unsafe_allow_html=True)
+        if st.button("🤖\nAI 분석"): navigate_to("AI_VISION")
         st.markdown('</div>', unsafe_allow_html=True)
-    with c6:
-        st.markdown('<div class="green-btn">', unsafe_allow_html=True)
-        if st.button("✉️\n\n교육연구들의 에너지있는\n진로레터"): navigate_to("LETTER")
+    with r2_c2:
+        st.markdown('<div class="btn-4">', unsafe_allow_html=True)
+        if st.button("🧠\n심리테스트"): navigate_to("TEST")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 6. 하단 알림바
+    # 중간 로고 영역
+    st.markdown('<div class="mid-logo-container">KIOSK ONL:DO</div>', unsafe_allow_html=True)
+
+    # 3행
+    r3_c1, r3_c2 = st.columns(2)
+    with r3_c1:
+        st.markdown('<div class="btn-5">', unsafe_allow_html=True)
+        if st.button("✉️\n진로레터"): navigate_to("LETTER")
+        st.markdown('</div>', unsafe_allow_html=True)
+    with r3_c2:
+        st.markdown('<div class="btn-6">', unsafe_allow_html=True)
+        if st.button("👥\n고객 관리"): navigate_to("CUSTOMERS")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # 4행
+    r4_c1, r4_c2 = st.columns(2)
+    with r4_c1:
+        st.markdown('<div class="btn-7">', unsafe_allow_html=True)
+        if st.button("📢\n공지사항"): navigate_to("NOTICE")
+        st.markdown('</div>', unsafe_allow_html=True)
+    with r4_c2:
+        st.markdown('<div class="btn-8">', unsafe_allow_html=True)
+        if st.button("📖\n이용 가이드"): navigate_to("GUIDE_DOC")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # 5행
+    r5_c1, r5_c2 = st.columns(2)
+    with r5_c1:
+        st.markdown('<div class="btn-9">', unsafe_allow_html=True)
+        if st.button("⚙️\n관리자 설정"): navigate_to("ADMIN_CONFIG")
+        st.markdown('</div>', unsafe_allow_html=True)
+    with r5_c2:
+        st.markdown('<div class="btn-10">', unsafe_allow_html=True)
+        if st.button("👤\n내 정보"): navigate_to("MY_INFO")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # 3. 하단 알림바
     st.markdown("""
     <div class="bottom-notice">
         <span class="badge">New!</span>
-        <span class="text">진학가이드 카테고리 업데이트!</span>
+        <span class="text">동네비서 시스템 업데이트 완료!</span>
     </div>
     """, unsafe_allow_html=True)
 
