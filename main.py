@@ -115,8 +115,8 @@ full_ui_html = f"""
 <div class="kiosk-wrapper">
     <div class="kiosk-header">
         <div>
-            <div class="brand">동네비서<span>.</span></div>
-            <div class="sub-title">Premium AI Store Management</div>
+            <div class="brand" style="color: #FF3B30 !important;">동네비서 KIOSK v2<span>.</span></div>
+            <div class="sub-title">전문가용 프리미엄 매장 관리 시스템</div>
         </div>
         <div class="time-info">
             <div class="time">{time_str}</div>

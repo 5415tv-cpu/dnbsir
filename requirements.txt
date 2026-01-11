@@ -3,7 +3,9 @@
 # ==========================================
 
 # 웹 프레임워크
+# Force Rebuild 2026-01-11
 streamlit>=1.28.0
+
 
 # AI 챗봇 (Google Gemini)
 google-generativeai>=0.3.0
