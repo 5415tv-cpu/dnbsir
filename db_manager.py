@@ -10,6 +10,8 @@ import pandas as pd
 from datetime import datetime
 import json
 import bcrypt
+import time
+import random
 
 # ==========================================
 # 🔐 비밀번호 암호화 유틸리티
@@ -61,6 +63,7 @@ ORDERS_SHEET = 'orders'
 SETTINGS_SHEET = 'settings'
 CUSTOMERS_SHEET = 'customers'  # 고객 정보 시트
 INQUIRIES_SHEET = 'inquiries'  # 가맹 가입 문의 시트
+PERFORMANCE_SHEET = 'performance'  # 동네비서 실적 시트
 
 # ==========================================
 # 🏢 업종 카테고리 정의 (로고 삭제 버전)
@@ -143,11 +146,14 @@ FARMER_SUBCATEGORIES = {
 }
 
 
+@st.cache_resource(ttl=3600) # 1시간 동안 클라이언트 유지
 def get_google_sheets_client():
-    """Google Sheets 클라이언트 생성"""
+    """Google Sheets 클라이언트 생성 (캐싱 적용)"""
     try:
-        # Streamlit secrets에서 서비스 계정 정보 가져오기
-        credentials_dict = st.secrets["gcp_service_account"]
+        credentials_dict = st.secrets.get("gcp_service_account")
+        if not credentials_dict:
+            st.error("Google Sheets 서비스 계정 설정이 없습니다. secrets.toml을 확인해주세요.")
+            return None
         credentials = Credentials.from_service_account_info(
             credentials_dict,
             scopes=SCOPES
@@ -155,23 +161,32 @@ def get_google_sheets_client():
         client = gspread.authorize(credentials)
         return client
     except Exception as e:
-        st.error(f"Google Sheets 연결 실패: {e}")
+        st.error(f"Google Sheets 인증 실패: {e}")
         return None
 
 
-def get_spreadsheet():
-    """스프레드시트 가져오기"""
-    try:
-        client = get_google_sheets_client()
-        if client is None:
+def get_spreadsheet(retries=3):
+    """스프레드시트 가져오기 (재시도 로직 포함)"""
+    for i in range(retries):
+        try:
+            client = get_google_sheets_client()
+            if client is None:
+                continue
+            
+            spreadsheet_url = st.secrets.get("spreadsheet_url", "")
+            if not spreadsheet_url:
+                st.error("spreadsheet_url 설정이 없습니다. secrets.toml을 확인해주세요.")
+                return None
+            spreadsheet = client.open_by_url(spreadsheet_url)
+            return spreadsheet
+        except Exception as e:
+            if "500" in str(e) or "Internal error" in str(e):
+                if i < retries - 1:
+                    wait_time = (i + 1) * 2 + random.random()
+                    time.sleep(wait_time)
+                    continue
+            st.error(f"스프레드시트 접근 실패: {e}")
             return None
-        
-        spreadsheet_url = st.secrets["spreadsheet_url"]
-        spreadsheet = client.open_by_url(spreadsheet_url)
-        return spreadsheet
-    except Exception as e:
-        st.error(f"스프레드시트 접근 실패: {e}")
-        return None
 
 
 # ==========================================
@@ -196,9 +211,10 @@ def get_all_stores():
                 'printer_ip', 'img_files', 'unused_1', 'unused_2', 'unused_3', 
                 'unused_4', 'unused_5', 'category', 'table_count', 'seats_per_table',
                 'logen_id', 'logen_password', 'logen_sender_name', 'logen_sender_address', 
-                'points', 'solapi_key', 'solapi_secret', 'printer_type', 'notification_mode'
+                'points', 'solapi_key', 'solapi_secret', 'printer_type', 'notification_mode',
+                'membership'
             ]
-            worksheet.update('A1:Z1', [stores_header])
+            worksheet.update('A1:AA1', [stores_header])
             return {}  # 새로 만들었으니 빈 딕셔너리 반환
         
         # 데이터가 없는 경우 처리
@@ -232,7 +248,8 @@ def get_all_stores():
                     'solapi_key': record.get('solapi_key', ''),
                     'solapi_secret': record.get('solapi_secret', ''),
                     'printer_type': record.get('printer_type', ''),
-                    'notification_mode': record.get('notification_mode', '')
+                    'notification_mode': record.get('notification_mode', ''),
+                    'membership': record.get('membership', '일반')
                 }
         return stores
     except Exception as e:
@@ -264,7 +281,8 @@ def get_store(store_id):
                 'printer_ip', 'img_files', 'unused_1', 'unused_2', 'unused_3', 
                 'unused_4', 'unused_5', 'category', 'table_count', 'seats_per_table',
                 'logen_id', 'logen_password', 'logen_sender_name', 'logen_sender_address', 
-                'points', 'solapi_key', 'solapi_secret', 'printer_type', 'notification_mode'
+                'points', 'solapi_key', 'solapi_secret', 'printer_type', 'notification_mode',
+                'membership'
             ]
             
             store_info = {}
@@ -346,12 +364,13 @@ def save_store(store_id, store_data, encrypt_password=True):
             store_data.get('solapi_key', ''), # 추가
             store_data.get('solapi_secret', ''), # 추가
             store_data.get('printer_type', ''), # 추가
-            store_data.get('notification_mode', '') # 추가
+            store_data.get('notification_mode', ''), # 추가
+            store_data.get('membership', '일반') # 추가 (기본값 일반)
         ]
         
         if row_index:
             # 기존 데이터 수정
-            worksheet.update(f'A{row_index}:Z{row_index}', [row_data])
+            worksheet.update(f'A{row_index}:AA{row_index}', [row_data])
         else:
             # 신규 데이터 추가
             worksheet.append_row(row_data)
@@ -1016,23 +1035,49 @@ def save_master_password(new_password: str) -> bool:
 
 
 def verify_master_password(password: str) -> bool:
-    """마스터 비밀번호 검증"""
+    """마스터 비밀번호 검증 (사용자 지정 마스터 계정 반영)"""
     stored_hash = get_master_password()
     
-    if stored_hash is None or stored_hash == '':
-        # 저장된 비밀번호가 없으면 기본값과 비교
-        try:
-            default_pw = st.secrets.get("ADMIN_PASSWORD", "admin1234")
-        except:
-            default_pw = "admin1234"
-        return password == default_pw
-    
-    # bcrypt 해시인 경우
-    if is_bcrypt_hash(stored_hash):
-        return verify_password(password, stored_hash)
-    else:
-        # 평문인 경우 (하위 호환성)
-        return password == stored_hash
+    # 1단계: 저장된 시트의 해시값과 비교
+    if stored_hash and is_bcrypt_hash(stored_hash):
+        if verify_password(password, stored_hash):
+            return True
+            
+    # 2단계: secrets.toml에 설정된 마스터 비밀번호와 비교
+    try:
+        master_pw = st.secrets.get("admin", {}).get("password", "Qqss12!!0")
+        if password == master_pw:
+            return True
+    except:
+        pass
+        
+    return False
+
+
+def save_performance(perf_data):
+    """동네비서 실적(성과) 및 수수료 저장"""
+    try:
+        spreadsheet = get_spreadsheet()
+        if spreadsheet is None: return False
+        
+        ws = spreadsheet.worksheet(PERFORMANCE_SHEET)
+        
+        row = [
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            perf_data.get('type', ''),
+            perf_data.get('store_name', ''),
+            perf_data.get('customer_name', ''),
+            perf_data.get('amount', 0),
+            perf_data.get('commission', 0), # 수수료 추가
+            perf_data.get('status', '완료'),
+            perf_data.get('details', '')
+        ]
+        
+        ws.append_row(row)
+        return True
+    except Exception as e:
+        print(f"실적 저장 실패: {e}")
+        return False
 
 
 # ==========================================
@@ -1078,9 +1123,10 @@ def initialize_sheets():
             'solapi_key',      # W: 솔라피 API 키
             'solapi_secret',   # X: 솔라피 시크릿
             'printer_type',    # Y: 프린터 타입
-            'notification_mode'# Z: 알림 모드
+            'notification_mode',# Z: 알림 모드
+            'membership'       # AA: 멤버십 등급 (일반/프리미엄)
         ]
-        stores_ws.update('A1:Z1', [stores_header])
+        stores_ws.update('A1:AA1', [stores_header])
         
         # orders 시트 헤더
         try:
@@ -1119,9 +1165,10 @@ def initialize_sheets():
             'last_visit',       # I: 마지막 이용일
             'first_visit',      # J: 첫 이용일
             'created_at',       # K: 생성일
-            'updated_at'        # L: 수정일
+            'updated_at',       # L: 수정일
+            'points'            # M: 포인트 (추가)
         ]
-        customers_ws.update('A1:L1', [customers_header])
+        customers_ws.update('A1:M1', [customers_header])
         
         # inquiries 시트 헤더 (가맹 문의)
         try:
@@ -1133,17 +1180,36 @@ def initialize_sheets():
             'created_at',       # A: 신청일시
             'name',             # B: 사장님 성함
             'phone',            # C: 연락처
-            'business_type',    # D: 업종
-            'region',           # E: 희망 지역
-            'memo',             # F: 문의내용
-            'status',           # G: 처리상태 (대기/상담중/완료)
-            'notes',            # H: 본사 메모
-            'store_id',         # I: 희망 아이디
-            'password',         # J: 임시 비밀번호
-            'notification_type',# K: 알림 방식 선택
-            'detail_data'       # L: 상세 설정 데이터 (JSON)
+            'kakao_id',         # D: 카톡 아이디
+            'business_type',    # E: 업종
+            'region',           # F: 희망 지역
+            'memo',             # G: 문의내용
+            'status',           # H: 처리상태 (대기/상담중/완료)
+            'notes',            # I: 본사 메모
+            'store_id',         # J: 희망 아이디
+            'password',         # K: 임시 비밀번호
+            'notification_type',# L: 알림 방식 선택
+            'detail_data'       # M: 상세 설정 데이터 (JSON)
         ]
-        inquiries_ws.update('A1:L1', [inquiries_header])
+        inquiries_ws.update('A1:M1', [inquiries_header])
+        
+        # performance 시트 헤더 (동네비서 실적)
+        try:
+            perf_ws = spreadsheet.worksheet(PERFORMANCE_SHEET)
+        except:
+            perf_ws = spreadsheet.add_worksheet(title=PERFORMANCE_SHEET, rows=10000, cols=10)
+        
+        perf_header = [
+            'timestamp',        # A: 발생 일시
+            'type',             # B: 유형 (택배/예약/기타)
+            'store_name',       # C: 가맹점명
+            'customer_name',    # D: 고객명
+            'amount',           # E: 매출 금액
+            'commission',       # F: 수수료 수익 (추가)
+            'status',           # G: 상태
+            'details'           # H: 상세 내용
+        ]
+        perf_ws.update('A1:H1', [perf_header])
         
         return True
     except Exception as e:
@@ -1186,6 +1252,7 @@ def save_inquiry(inquiry_data):
             now,
             inquiry_data.get('name', ''),
             inquiry_data.get('phone', ''),
+            inquiry_data.get('kakao_id', ''),
             inquiry_data.get('business_type', ''),
             inquiry_data.get('region', ''),
             inquiry_data.get('memo', ''),
@@ -1206,27 +1273,91 @@ def save_inquiry(inquiry_data):
 
 def verify_inquiry_login(store_id, password):
     """
-    가맹 신청자의 임시 로그인 검증
+    가맹 신청자의 임시 로그인 검증 (최적화 버전)
     """
     try:
         spreadsheet = get_spreadsheet()
         if spreadsheet is None:
-            return False, "데이터베이스 연결 실패"
+            return False, "데이터베이스 연결 실패", None
             
         ws = spreadsheet.worksheet(INQUIRIES_SHEET)
-        data = ws.get_all_records()
         
-        for row in data:
-            if str(row.get('store_id')) == store_id:
-                hashed_pw = row.get('password')
-                if verify_password(password, hashed_pw):
-                    return True, row
-                else:
-                    return False, "비밀번호가 일치하지 않습니다."
-        
-        return False, "등록되지 않은 아이디입니다."
+        # 아이디가 있는 셀 찾기 (J열 = 10번째)
+        try:
+            cell = ws.find(store_id, in_column=10)
+            if not cell:
+                return False, "등록되지 않은 아이디입니다.", None
+            
+            # 해당 행 데이터 가져오기
+            row_values = ws.row_values(cell.row)
+            header = [
+                'created_at', 'name', 'phone', 'kakao_id', 'business_type', 'region',
+                'memo', 'status', 'notes', 'store_id', 'password',
+                'notification_type', 'detail_data'
+            ]
+            
+            row = {h: row_values[i] if i < len(row_values) else '' for i, h in enumerate(header)}
+            
+            hashed_pw = row.get('password')
+            if verify_password(password, hashed_pw):
+                return True, "성공", row
+            else:
+                return False, "비밀번호가 일치하지 않습니다.", None
+                
+        except gspread.exceptions.CellNotFound:
+            return False, "등록되지 않은 아이디입니다.", None
+            
     except Exception as e:
-        return False, f"로그인 중 오류 발생: {e}"
+        return False, f"로그인 중 오류 발생: {e}", None
+
+
+def verify_master_login(master_id, password):
+    """
+    마스터 계정 로그인 검증
+    """
+    # 🛡️ 슈퍼관리자 임시 계정 정의
+    TEMP_ADMIN_ID = "admin777"
+    TEMP_ADMIN_PW = "pass777!"
+
+    # 1. 임시 슈퍼관리자 먼저 체크 (secrets.toml 의존성 없음)
+    if master_id == TEMP_ADMIN_ID:
+        if password == TEMP_ADMIN_PW:
+            return True, "성공", {
+                'store_id': master_id,
+                'name': '동네비서 본사 (슈퍼관리자)',
+                'owner_name': '관리자',
+                'phone': "010-3069-5810",
+                'points': 999999999,
+                'solapi_key': st.secrets.get("SOLAPI_API_KEY", ""),
+                'solapi_secret': st.secrets.get("SOLAPI_API_SECRET", ""),
+                'membership': '프리미엄',
+                'status': '정상'
+            }
+        else:
+            return False, "비밀번호가 일치하지 않습니다.", None
+
+    # 2. 기존 마스터 계정 체크 (secrets.toml 필요)
+    if master_id == "5415tv":
+        try:
+            master_pw = st.secrets.get("admin", {}).get("password", "Qqss12!!0")
+            if password == master_pw:
+                return True, "성공", {
+                    'store_id': master_id,
+                    'name': '동네비서 본사 (마스터)',
+                    'owner_name': '관리자',
+                    'phone': st.secrets.get("SENDER_PHONE", "010-3069-5810"),
+                    'points': 999999999,
+                    'solapi_key': st.secrets.get("SOLAPI_API_KEY", ""),
+                    'solapi_secret': st.secrets.get("SOLAPI_API_SECRET", ""),
+                    'membership': '프리미엄',
+                    'status': '정상'
+                }
+            else:
+                return False, "비밀번호가 일치하지 않습니다.", None
+        except:
+            return False, "마스터 비밀번호 설정 오류", None
+
+    return False, "마스터 아이디가 아닙니다.", None
 
 
 # ==========================================
@@ -1252,19 +1383,22 @@ def get_customer(customer_id, store_id=None):
             header = [
                 'customer_id', 'store_id', 'name', 'phone', 'address',
                 'preferences', 'notes', 'total_orders', 'last_visit',
-                'first_visit', 'created_at', 'updated_at'
+                'first_visit', 'created_at', 'updated_at', 'points'
             ]
             
             customer = {}
             for i, h in enumerate(header):
                 if i < len(row_values):
                     val = row_values[i]
-                    if h == 'total_orders':
-                        customer[h] = int(val or 0)
+                    if h == 'total_orders' or h == 'points':
+                        try:
+                            customer[h] = int(val or 0)
+                        except:
+                            customer[h] = 0
                     else:
                         customer[h] = val
                 else:
-                    customer[h] = '' if h != 'total_orders' else 0
+                    customer[h] = '' if h not in ['total_orders', 'points'] else 0
             
             # store_id 필터링 (선택 사항)
             if store_id and customer.get('store_id') != store_id:
@@ -1314,7 +1448,7 @@ def save_customer(customer_data):
                 header = [
                     'customer_id', 'store_id', 'name', 'phone', 'address',
                     'preferences', 'notes', 'total_orders', 'last_visit',
-                    'first_visit', 'created_at', 'updated_at'
+                    'first_visit', 'created_at', 'updated_at', 'points'
                 ]
                 existing_data = {h: row_values[i] if i < len(row_values) else '' for i, h in enumerate(header)}
         except gspread.exceptions.CellNotFound:
@@ -1334,9 +1468,10 @@ def save_customer(customer_data):
                 existing_data.get('last_visit', ''),
                 existing_data.get('first_visit', ''),
                 existing_data.get('created_at', ''),
-                now  # updated_at
+                now,  # updated_at
+                existing_data.get('points', 0)  # points
             ]
-            worksheet.update(f'A{row_index}:L{row_index}', [row_data])
+            worksheet.update(f'A{row_index}:M{row_index}', [row_data])
         else:
             # 신규 데이터 추가
             row_data = [
@@ -1351,7 +1486,8 @@ def save_customer(customer_data):
                 '',     # last_visit
                 now,    # first_visit
                 now,    # created_at
-                now     # updated_at
+                now,    # updated_at
+                customer_data.get('points', 0)  # points
             ]
             worksheet.append_row(row_data)
         
@@ -1421,6 +1557,43 @@ def increment_customer_order(customer_id, store_id=None):
             worksheet.update_cell(row_index, 12, now)
             
             return new_orders
+        except gspread.exceptions.CellNotFound:
+            return 0
+    except Exception as e:
+        return 0
+
+
+def update_customer_points(customer_id, points_to_add, store_id=None):
+    """
+    고객 포인트 적립/차감 (최적화 버전)
+    """
+    try:
+        spreadsheet = get_spreadsheet()
+        if spreadsheet is None: return 0
+        
+        worksheet = spreadsheet.worksheet(CUSTOMERS_SHEET)
+        try:
+            cell = worksheet.find(customer_id, in_column=1)
+            if not cell: return 0
+            
+            row_index = cell.row
+            
+            # 현재 포인트 가져오기 (M열=13)
+            current_points = 0
+            try:
+                val = worksheet.cell(row_index, 13).value
+                current_points = int(val or 0)
+            except:
+                current_points = 0
+                
+            new_points = max(0, current_points + points_to_add)
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            
+            # 업데이트 (M: points, L: updated_at)
+            worksheet.update_cell(row_index, 13, new_points)
+            worksheet.update_cell(row_index, 12, now)
+            
+            return new_points
         except gspread.exceptions.CellNotFound:
             return 0
     except Exception as e:

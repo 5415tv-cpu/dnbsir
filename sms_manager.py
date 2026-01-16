@@ -96,6 +96,68 @@ def send_sms(to_phone, message, config=None):
         return False, f"문자 발송 오류: {str(e)}"
 
 
+def send_alimtalk(to_phone, message, template_id=None, pf_id=None, variables=None):
+    """
+    알림톡 발송 (Solapi)
+    - template_id, pf_id가 없으면 SMS로 폴백
+    """
+    config = get_solapi_config()
+    api_key = config.get('api_key', '')
+    api_secret = config.get('api_secret', '')
+    sender_phone = config.get('sender_phone', '')
+
+    template_id = template_id or st.secrets.get("SOLAPI_TEMPLATE_ID", "")
+    pf_id = pf_id or st.secrets.get("SOLAPI_PF_ID", "")
+    variables = variables or {}
+
+    if not api_key or not api_secret or not sender_phone:
+        return False, "SMS/알림톡 API 설정이 완료되지 않았습니다."
+
+    if not template_id or not pf_id:
+        # 템플릿 정보가 없으면 문자로 대체
+        return send_sms(to_phone, message, config=config)
+
+    try:
+        date = datetime.datetime.now().astimezone().isoformat()
+        salt = str(uuid.uuid4().hex)
+        data = date + salt
+        signature = hmac.new(
+            api_secret.encode("utf-8"),
+            data.encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest()
+
+        header = f"HMAC-SHA256 apiKey={api_key}, date={date}, salt={salt}, signature={signature}"
+        url = "https://api.solapi.com/messages/v4/send"
+        headers = {
+            "Authorization": header,
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "message": {
+                "to": to_phone,
+                "from": sender_phone,
+                "text": message,
+                "kakaoOptions": {
+                    "pfId": pf_id,
+                    "templateId": template_id,
+                    "variables": variables
+                }
+            }
+        }
+
+        response = requests.post(url, headers=headers, json=payload, timeout=10)
+        if response.status_code == 200:
+            return True, "알림톡 발송 성공!"
+        return False, f"알림톡 발송 실패: {response.text}"
+    except requests.exceptions.Timeout:
+        return False, "네트워크 시간 초과. 잠시 후 다시 시도해주세요."
+    except requests.exceptions.ConnectionError:
+        return False, "네트워크 연결 오류. 인터넷 연결을 확인해주세요."
+    except Exception as e:
+        return False, f"알림톡 발송 오류: {str(e)}"
+
+
 def send_order_notification(store_phone, order_data):
     """
     주문 알림 문자 발송 (사장님에게)
@@ -182,4 +244,87 @@ def validate_phone_number(phone):
         return False, "휴대폰 번호를 입력해주세요. (01X-XXXX-XXXX)"
     
     return True, phone_digits
+
+
+def get_solapi_balance(config=None):
+    """
+    솔라피 계정 잔액 조회 (동기화용)
+    """
+    if config is None:
+        config = get_solapi_config()
+    
+    api_key = config.get('api_key', '')
+    api_secret = config.get('api_secret', '')
+    
+    if not api_key or not api_secret:
+        return None, "API 키가 설정되지 않았습니다."
+    
+    try:
+        # HMAC 인증 헤더 생성
+        date = datetime.datetime.now().astimezone().isoformat()
+        salt = str(uuid.uuid4().hex)
+        data = date + salt
+        signature = hmac.new(
+            api_secret.encode("utf-8"), 
+            data.encode("utf-8"), 
+            hashlib.sha256
+        ).hexdigest()
+        
+        header = f"HMAC-SHA256 apiKey={api_key}, date={date}, salt={salt}, signature={signature}"
+        
+        # 잔액 조회 API 호출 (v1 cash balance)
+        url = "https://api.solapi.com/cash/v1/balance"
+        headers = {
+            "Authorization": header, 
+            "Content-Type": "application/json"
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            res_data = response.json()
+            # balance: 잔액, point: 포인트
+            return {
+                'balance': res_data.get('balance', 0),
+                'point': res_data.get('point', 0),
+                'total': res_data.get('balance', 0) + res_data.get('point', 0)
+            }, "성공"
+        else:
+            return None, f"조회 실패: {response.text}"
+            
+    except Exception as e:
+        return None, f"오류: {str(e)}"
+
+# ==========================================
+# 📋 업종별 맞춤형 문자 양식 (Templates)
+# ==========================================
+def get_sms_templates(biz_type):
+    """업종별/길이별 맞춤형 문자 양식 반환"""
+    
+    # 1. 단문(SMS) 템플릿 - 공통 및 업종별
+    sms_templates = {
+        "공통: 일반 알림": "[{store_name}] 안내 말씀 드립니다.",
+        "공통: 감사 인사": "[{store_name}] 이용해 주셔서 감사합니다. 🙏",
+        "택배: 접수 완료": "[로젠택배 {store_name}] 고객님의 택배가 정상 접수되었습니다.",
+        "식당: 예약 확인": "[{store_name}] 예약이 정상 접수되었습니다. 곧 뵙겠습니다.",
+        "판매: 입고 알림": "[{store_name}] 주문하신 상품이 입고되었습니다. 방문 부탁드립니다."
+    }
+    
+    # 2. 장문(LMS) 템플릿 - 업종별/종류별 상세
+    lms_templates = {
+        "택배: 주문 안내(ARS)": "[로젠택배 {store_name}]\n안녕하세요, 고객님! 택배 보내실 물건이 있으신가요?\n\n전화 통화 없이 스마트폰 화면에서 바로 접수하고, 예상 요금 확인부터 송장 관리까지 한 번에 해결하세요!\n\n▶ 접수하기: https://dnbsir.com/?page=ARS\n\n언제나 빠르고 안전하게 배송하겠습니다.",
+        
+        "택배: 배송 지연 안내": "[로젠택배 {store_name}]\n항상 저희 지점을 이용해 주셔서 감사합니다.\n\n현재 폭설 및 물량 급증으로 인해 배송이 평소보다 1~2일 정도 지연될 예정입니다. 고객님의 소중한 물품이 안전하게 도착할 수 있도록 최선을 다하고 있으니 조금만 더 기다려 주시면 감사하겠습니다.\n\n불편을 드려 대단히 죄송합니다.",
+        
+        "식당: 신메뉴 출시": "[{store_name}] 특별 신메뉴 출시 안내!\n\n안녕하세요 사장님입니다. 이번 시즌을 맞아 정성껏 준비한 신메뉴가 드디어 출시되었습니다.\n\n[신메뉴 안내]\n- 메뉴명: {menu_info}\n- 특징: 산지 직송 신선한 재료 사용\n\n본 문자를 보여주시는 고객님께는 음료 1병 서비스를 드립니다. 꼭 방문해 주세요!",
+        
+        "판매: 시즌 할인 행사": "[{store_name}] 빅 세일(SALE) 안내\n\n단골 고객님들께만 드리는 특별 혜택!\n전 품목 최대 30% 할인 행사를 진행합니다.\n\n- 기간: 이번 주 금~일요일 (3일간)\n- 대상: 포인트 적립 회원 전체\n\n한정 수량으로 조기 품절될 수 있으니 서둘러 방문해 보세요. 감사합니다.",
+        
+        "농어민: 직거래 장터": "[{store_name}] 산지 직송 알림\n\n새벽에 갓 수확한 싱싱한 {item_name} 주문이 시작되었습니다!\n\n중간 유통 마진을 뺀 착한 가격으로 지금 바로 만나보세요.\n\n- 가격: {price}원 (무료배송)\n- 수량: 한정 50박스\n\n주문은 문자로 '주문'이라고 답장을 주시거나, 전화 주시면 빠르게 도와드리겠습니다."
+    }
+    
+    return {
+        "단문 (SMS)": sms_templates,
+        "장문 (LMS)": lms_templates
+    }
 
