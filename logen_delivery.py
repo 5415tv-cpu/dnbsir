@@ -28,8 +28,18 @@ USE_REAL_API = False
 
 # API 설정 (사업자 계약 후 secrets.toml 또는 관리자 페이지에서 설정 가능하도록 구조화)
 LOGEN_API_BASE_URL = "https://api.ilogen.com"  # 로젠택배 실제 API 엔드포인트
-LOGEN_API_KEY = st.secrets.get("LOGEN_API_KEY", "") # API KEY
-LOGEN_USER_ID = st.secrets.get("LOGEN_USER_ID", "") # 본사 아이디
+
+def _safe_secret(key: str, default: str = "") -> str:
+    try:
+        return st.secrets.get(key, default)
+    except Exception:
+        try:
+            return st.secrets[key]
+        except Exception:
+            return default
+
+LOGEN_API_KEY = _safe_secret("LOGEN_API_KEY", "")  # API KEY
+LOGEN_USER_ID = _safe_secret("LOGEN_USER_ID", "")  # 본사 아이디
 
 
 # ==========================================
@@ -42,7 +52,6 @@ WEIGHT_RATES = {
     '5kg': 4000,
     '10kg': 5000,
     '20kg': 6000,
-    '30kg': 8000,
 }
 
 # 크기별 추가 요금
@@ -117,12 +126,9 @@ def calculate_delivery_fee(
     elif weight_kg <= 10:
         base_fee = WEIGHT_RATES['10kg']
         weight_category = '10kg 이하'
-    elif weight_kg <= 20:
+    else:
         base_fee = WEIGHT_RATES['20kg']
         weight_category = '20kg 이하'
-    else:
-        base_fee = WEIGHT_RATES['30kg']
-        weight_category = '30kg 이하'
     
     # 크기 추가 요금
     size_fee = SIZE_SURCHARGE.get(size_category, 0)
@@ -519,10 +525,6 @@ def get_fee_table_html() -> str:
                     <td style="padding: 10px;">20kg 이하</td>
                     <td style="padding: 10px; text-align: right; font-weight: bold;">6,000원</td>
                 </tr>
-                <tr>
-                    <td style="padding: 10px;">30kg 이하</td>
-                    <td style="padding: 10px; text-align: right; font-weight: bold;">8,000원</td>
-                </tr>
             </tbody>
         </table>
         
@@ -537,7 +539,7 @@ def get_fee_table_html() -> str:
 
 def get_weight_options() -> List[str]:
     """무게 옵션 리스트"""
-    return ["2kg 이하", "5kg 이하", "10kg 이하", "20kg 이하", "30kg 이하"]
+    return ["2kg 이하", "5kg 이하", "10kg 이하", "20kg 이하"]
 
 
 def get_size_options() -> List[str]:
@@ -551,8 +553,7 @@ def parse_weight(weight_str: str) -> float:
         "2kg 이하": 2,
         "5kg 이하": 5,
         "10kg 이하": 10,
-        "20kg 이하": 20,
-        "30kg 이하": 30
+        "20kg 이하": 20
     }
     return weight_map.get(weight_str, 2)
 
