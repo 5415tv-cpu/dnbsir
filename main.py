@@ -18,6 +18,7 @@ import json
 import requests
 from uuid import uuid4
 from urllib.parse import urlencode
+from report_page import render_report  # 새로 만든 파일을 불러옵니다
 
 # ==========================================
 # 💎 동네비서 PREMIUM KIOSK - v2.2.0 (Sales Optimized)
@@ -390,7 +391,7 @@ def handle_kakao_callback():
             else:
                 st.info("카카오 계정에 전화번호가 없어 알림톡 발송을 생략했습니다.")
             st.query_params.clear()
-            st.session_state.page = "HOME"
+            st.session_state.page = "home"
             st.rerun()
         else:
             st.error("가입 처리 중 문제가 발생했습니다. 다시 시도해주세요.")
@@ -454,7 +455,7 @@ handle_persistent_login()
 handle_kakao_callback()
 st.markdown(printer_manager.get_bluetooth_printer_js(), unsafe_allow_html=True)
 
-if "page" not in st.session_state: st.session_state.page = "HOME"
+if "page" not in st.session_state: st.session_state.page = "home"
 if "selected_store" not in st.session_state: st.session_state.selected_store = None
 if "pending_payment" not in st.session_state: st.session_state.pending_payment = None
 if "bt_printer_connected" not in st.session_state: st.session_state.bt_printer_connected = False
@@ -472,7 +473,7 @@ def navigate_to(page_name):
     st.rerun()
 
 def go_home():
-    st.session_state.page = "HOME"
+    st.session_state.page = "home"
     st.session_state.selected_store = None
     st.session_state.pending_payment = None
     st.query_params.clear()
@@ -498,7 +499,7 @@ time_str = now.strftime('%H:%M:%S')
 date_str = now.strftime('%Y. %m. %d') + f" ({['월','화','수','목','금','토','일'][now.weekday()]})"
 
 # 🏠 [메인 화면]
-if st.session_state.page == "HOME":
+if st.session_state.page == "home":
     render_health_check()
     # 1. 멤버십 바 구성
     is_logged_in = st.session_state.logged_in_store is not None
@@ -1317,6 +1318,15 @@ elif st.session_state.page == "PREMIUM_ONLY":
     if st.button("⬅️ 메인으로 돌아가기"): go_home()
     st.markdown('<h1 style="color:#000000; font-weight:900;">💎 프리미엄 멤버십</h1>', unsafe_allow_html=True)
     st.info("프리미엄 회원 전용 공간입니다.")
+    if st.button("💎 프리미엄 리포트"):
+        st.session_state.page = "report"  # 페이지 상태만 변경
+
+# 📄 [서브 페이지] 프리미엄 리포트
+elif st.session_state.page == "report":
+    render_report()  # 리포트 화면 실행
+    if st.button("⬅️ 홈으로 돌아가기", use_container_width=True):
+        st.session_state.page = "home"
+        st.rerun()
 
 # 📄 [서브 페이지] 매장 관리
 elif st.session_state.page == "STORE_MGMT":
