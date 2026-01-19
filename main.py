@@ -782,14 +782,24 @@ date_str = now.strftime('%Y. %m. %d') + f" ({['월','화','수','목','금','토
 if st.session_state.page == "ADMIN":
     if not st.session_state.get("is_admin"):
         st.error("관리자 권한이 필요합니다.")
-        go_home()
-    render_admin_page()
+        st.info("로그인 후 관리자 권한이 있으면 자동으로 접근됩니다.")
+    else:
+        render_admin_page()
 
 # 🏠 [메인 화면]
 elif st.session_state.page == "home":
     render_health_check()
     # 1. 멤버십 바 구성
     is_logged_in = st.session_state.logged_in_store is not None
+    action_cols = st.columns(4)
+    if action_cols[0].button("로그인/회원가입", use_container_width=True):
+        navigate_to("JOIN")
+    if action_cols[1].button("AI 택배", use_container_width=True):
+        navigate_to("DELIVERY")
+    if action_cols[2].button("AI 매장비서", use_container_width=True):
+        navigate_to("AI_CHAT")
+    if action_cols[3].button("실시간 수익", use_container_width=True):
+        navigate_to("SETTLEMENT")
     if not is_logged_in:
         kakao_auth_url = get_kakao_auth_url()
         kakao_button_html = ""
@@ -1660,88 +1670,86 @@ elif st.session_state.page == "JOIN":
     login_tab, join_tab, find_tab = st.tabs(["🔐 로그인", "🧾 회원가입", "🔎 아이디/비밀번호 찾기"])
 
     with login_tab:
-        with st.form("login_form"):
-            login_id = st.text_input("아이디")
-            login_pw = st.text_input("비밀번호", type="password")
-            if st.form_submit_button("🚀 로그인"):
-                login_id = (login_id or "").strip()
-                login_pw = (login_pw or "").strip()
-                if login_id == "admin777" and login_pw == "pass777":
-                    st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
-                    st.session_state.store_id = login_id
+        login_id = st.text_input("아이디")
+        login_pw = st.text_input("비밀번호", type="password")
+        if st.button("🚀 로그인"):
+            login_id = (login_id or "").strip()
+            login_pw = (login_pw or "").strip()
+            if login_id == "admin777" and login_pw == "pass777":
+                st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
+                st.session_state.store_id = login_id
+                st.session_state.is_admin = True
+                st.session_state.page = "ADMIN"
+                st.rerun()
+            success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
+            if not success:
+                success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
+            if success:
+                st.session_state.logged_in_store = store_info
+                st.session_state.store_id = login_id
+                if login_id in ["admin777", "5415tv", "master"]:
                     st.session_state.is_admin = True
                     st.session_state.page = "ADMIN"
                     st.rerun()
-                success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
-                if not success:
-                    success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
-                if success:
-                    st.session_state.logged_in_store = store_info
-                    st.session_state.store_id = login_id
-                    if login_id in ["admin777", "5415tv", "master"]:
-                        st.session_state.is_admin = True
-                        st.session_state.page = "ADMIN"
-                        st.rerun()
-                    st.success(f"환영합니다, {store_info['name']} 사장님!")
-                    st.session_state.user_type = infer_user_type()
-                    go_home()
-                else:
-                    st.error(f"로그인 실패: {msg}")
+                st.success(f"환영합니다, {store_info['name']} 사장님!")
+                st.session_state.user_type = infer_user_type()
+                go_home()
+            else:
+                st.error(f"로그인 실패: {msg}")
 
     with join_tab:
-        with st.form("join_form"):
-            store_name = st.text_input("상호명")
-            owner_name = st.text_input("대표자명")
-            phone = st.text_input("연락처")
-            phone_070 = st.text_input("070 번호 (선택)")
-            kakao_id = st.text_input("카톡 아이디")
-            store_id = st.text_input("아이디")
-            password = st.text_input("비밀번호", type="password")
-            user_type = st.selectbox("사업자 유형", ["일반사업자", "택배사업자", "농어민"])
-            business_type = st.selectbox("업종", ["식당/음식점", "택배/물류", "카페/디저트", "미용/뷰티", "일반판매", "기타"])
-            region = st.text_input("지역(예: 서울 강남구)")
-            memo = st.text_area("추가 문의", height=90)
-            if st.form_submit_button("🚀 신청하기"):
-                if not owner_name or not phone or not store_id or not password:
-                    st.error("대표자명, 연락처, 아이디, 비밀번호는 필수입니다.")
+        store_name = st.text_input("상호명")
+        owner_name = st.text_input("대표자명")
+        phone = st.text_input("연락처")
+        phone_070 = st.text_input("070 번호 (선택)")
+        kakao_id = st.text_input("카톡 아이디")
+        store_id = st.text_input("아이디")
+        password = st.text_input("비밀번호", type="password")
+        user_type = st.selectbox("사업자 유형", ["일반사업자", "택배사업자", "농어민"])
+        business_type = st.selectbox("업종", ["식당/음식점", "택배/물류", "카페/디저트", "미용/뷰티", "일반판매", "기타"])
+        region = st.text_input("지역(예: 서울 강남구)")
+        memo = st.text_area("추가 문의", height=90)
+        if st.button("🚀 신청하기"):
+            if not owner_name or not phone or not store_id or not password:
+                st.error("대표자명, 연락처, 아이디, 비밀번호는 필수입니다.")
+            else:
+                detail_data = {
+                    "store_name": store_name,
+                    "owner_name": owner_name,
+                    "kakao_id": kakao_id,
+                    "user_type": user_type,
+                    "phone_070": phone_070
+                }
+                inquiry_data = {
+                    "name": owner_name,
+                    "phone": phone,
+                    "kakao_id": kakao_id,
+                    "business_type": business_type,
+                    "region": region,
+                    "memo": memo,
+                    "store_id": store_id,
+                    "password": password,
+                    "detail_data": json.dumps(detail_data, ensure_ascii=True)
+                }
+                saved = db_manager.save_inquiry(inquiry_data)
+                if saved:
+                    user_data = {
+                        "가입일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "아이디": store_id,
+                        "비밀번호": "암호화됨",
+                        "상호명": store_name,
+                        "사업자유형": user_type,
+                        "연락처": phone,
+                        "070번호": phone_070,
+                        "요금제상태": "무료"
+                    }
+                    db_manager.save_user_management(user_data)
+                    st.session_state.user_type = user_type
+                    st.success("가맹 신청이 완료되었습니다.")
+                    st.session_state.page = "signup_complete"
+                    st.rerun()
                 else:
-                    detail_data = {
-                        "store_name": store_name,
-                        "owner_name": owner_name,
-                        "kakao_id": kakao_id,
-                        "user_type": user_type,
-                        "phone_070": phone_070
-                    }
-                    inquiry_data = {
-                        "name": owner_name,
-                        "phone": phone,
-                        "kakao_id": kakao_id,
-                        "business_type": business_type,
-                        "region": region,
-                        "memo": memo,
-                        "store_id": store_id,
-                        "password": password,
-                        "detail_data": json.dumps(detail_data, ensure_ascii=True)
-                    }
-                    saved = db_manager.save_inquiry(inquiry_data)
-                    if saved:
-                        user_data = {
-                            "가입일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "아이디": store_id,
-                            "비밀번호": "암호화됨",
-                            "상호명": store_name,
-                            "사업자유형": user_type,
-                            "연락처": phone,
-                            "070번호": phone_070,
-                            "요금제상태": "무료"
-                        }
-                        db_manager.save_user_management(user_data)
-                        st.session_state.user_type = user_type
-                        st.success("가맹 신청이 완료되었습니다.")
-                        st.session_state.page = "signup_complete"
-                        st.rerun()
-                    else:
-                        st.error("가맹 신청 저장에 실패했습니다. 잠시 후 다시 시도해주세요.")
+                    st.error("가맹 신청 저장에 실패했습니다. 잠시 후 다시 시도해주세요.")
 
     with find_tab:
         st.markdown("### 아이디 찾기", unsafe_allow_html=True)
@@ -1862,33 +1870,32 @@ elif st.session_state.page in ["STORE_MGMT", "settings", "aicc_setup"]:
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
     st.markdown('<h1 style="color:#000000; font-weight:900;">🛠️ 매장 통합 관리</h1>', unsafe_allow_html=True)
     if st.session_state.logged_in_store is None:
-        with st.form("login_form"):
-            login_id = st.text_input("아이디")
-            login_pw = st.text_input("비밀번호", type="password")
-            if st.form_submit_button("🚀 로그인"):
-                login_id = (login_id or "").strip()
-                login_pw = (login_pw or "").strip()
-                if login_id == "admin777" and login_pw == "pass777":
-                    st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
-                    st.session_state.store_id = login_id
+        login_id = st.text_input("아이디")
+        login_pw = st.text_input("비밀번호", type="password")
+        if st.button("🚀 로그인"):
+            login_id = (login_id or "").strip()
+            login_pw = (login_pw or "").strip()
+            if login_id == "admin777" and login_pw == "pass777":
+                st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
+                st.session_state.store_id = login_id
+                st.session_state.is_admin = True
+                st.session_state.page = "ADMIN"
+                st.rerun()
+            success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
+            if not success:
+                success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
+            if success:
+                st.session_state.logged_in_store = store_info
+                st.session_state.store_id = login_id
+                if login_id in ["admin777", "5415tv", "master"]:
                     st.session_state.is_admin = True
                     st.session_state.page = "ADMIN"
                     st.rerun()
-                success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
-                if not success:
-                    success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
-                if success:
-                    st.session_state.logged_in_store = store_info
-                    st.session_state.store_id = login_id
-                    if login_id in ["admin777", "5415tv", "master"]:
-                        st.session_state.is_admin = True
-                        st.session_state.page = "ADMIN"
-                        st.rerun()
-                    st.success(f"환영합니다, {store_info['name']} 사장님!")
-                    st.session_state.user_type = infer_user_type()
-                    st.rerun()
-                else:
-                    st.error(f"로그인 실패: {msg}")
+                st.success(f"환영합니다, {store_info['name']} 사장님!")
+                st.session_state.user_type = infer_user_type()
+                st.rerun()
+            else:
+                st.error(f"로그인 실패: {msg}")
     else:
         st.write(f"환영합니다, {st.session_state.logged_in_store['name']} 사장님!")
         if st.button("🔓 로그아웃"):
