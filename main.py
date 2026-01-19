@@ -789,6 +789,30 @@ if st.session_state.page == "ADMIN":
 # 🏠 [메인 화면]
 elif st.session_state.page == "home":
     render_health_check()
+    ENABLE_RICH_HOME = False
+    if not ENABLE_RICH_HOME:
+        st.markdown("### 메인 홈")
+        st.write("기능 복구 모드입니다. 클릭/이동 우선.")
+        col_a, col_b, col_c, col_d = st.columns(4)
+        if col_a.button("로그인/회원가입", use_container_width=True):
+            navigate_to("JOIN")
+        if col_b.button("AI 택배", use_container_width=True):
+            navigate_to("DELIVERY")
+        if col_c.button("AI 매장비서", use_container_width=True):
+            navigate_to("AI_CHAT")
+        if col_d.button("실시간 수익", use_container_width=True):
+            navigate_to("SETTLEMENT")
+
+        st.divider()
+        st.markdown("### 기타 메뉴")
+        col_e, col_f, col_g = st.columns(3)
+        if col_e.button("매장 관리", use_container_width=True):
+            navigate_to("settings")
+        if col_f.button("프리미엄 리포트", use_container_width=True):
+            navigate_to("report")
+        if col_g.button("고객지원", use_container_width=True):
+            navigate_to("support")
+        st.stop()
     # 1. 멤버십 바 구성
     is_logged_in = st.session_state.logged_in_store is not None
     action_cols = st.columns(4)
@@ -1670,7 +1694,7 @@ elif st.session_state.page == "JOIN":
     login_tab, join_tab, find_tab = st.tabs(["🔐 로그인", "🧾 회원가입", "🔎 아이디/비밀번호 찾기"])
 
     with login_tab:
-        login_id = st.text_input("아이디")
+        login_id = st.text_input("아이디", key="login_id")
         login_pw = st.text_input("비밀번호", type="password")
         if st.button("🚀 로그인"):
             login_id = (login_id or "").strip()
@@ -1703,7 +1727,7 @@ elif st.session_state.page == "JOIN":
         phone = st.text_input("연락처")
         phone_070 = st.text_input("070 번호 (선택)")
         kakao_id = st.text_input("카톡 아이디")
-        store_id = st.text_input("아이디")
+        store_id = st.text_input("아이디", key="join_store_id")
         password = st.text_input("비밀번호", type="password")
         user_type = st.selectbox("사업자 유형", ["일반사업자", "택배사업자", "농어민"])
         business_type = st.selectbox("업종", ["식당/음식점", "택배/물류", "카페/디저트", "미용/뷰티", "일반판매", "기타"])
@@ -1870,7 +1894,7 @@ elif st.session_state.page in ["STORE_MGMT", "settings", "aicc_setup"]:
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
     st.markdown('<h1 style="color:#000000; font-weight:900;">🛠️ 매장 통합 관리</h1>', unsafe_allow_html=True)
     if st.session_state.logged_in_store is None:
-        login_id = st.text_input("아이디")
+        login_id = st.text_input("아이디", key="store_mgmt_login_id")
         login_pw = st.text_input("비밀번호", type="password")
         if st.button("🚀 로그인"):
             login_id = (login_id or "").strip()

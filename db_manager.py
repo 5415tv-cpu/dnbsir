@@ -12,6 +12,7 @@ import json
 import bcrypt
 import time
 import random
+import os
 
 # ==========================================
 # 🔐 비밀번호 암호화 유틸리티
@@ -169,14 +170,26 @@ FARMER_SUBCATEGORIES = {
 def get_google_sheets_client():
     """Google Sheets 클라이언트 생성 (캐싱 적용)"""
     try:
+        credentials = None
         credentials_dict = st.secrets.get("gcp_service_account")
-        if not credentials_dict:
-            st.error("Google Sheets 서비스 계정 설정이 없습니다. secrets.toml을 확인해주세요.")
+        if credentials_dict:
+            credentials = Credentials.from_service_account_info(
+                credentials_dict,
+                scopes=SCOPES
+            )
+        else:
+            file_path = st.secrets.get("gcp_service_account_file", "service_account.json")
+            env_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+            if env_path:
+                file_path = env_path
+            if os.path.exists(file_path):
+                credentials = Credentials.from_service_account_file(
+                    file_path,
+                    scopes=SCOPES
+                )
+        if credentials is None:
+            st.error("Google Sheets 서비스 계정 설정이 없습니다. secrets 또는 키 파일을 확인해주세요.")
             return None
-        credentials = Credentials.from_service_account_info(
-            credentials_dict,
-            scopes=SCOPES
-        )
         client = gspread.authorize(credentials)
         return client
     except Exception as e:
