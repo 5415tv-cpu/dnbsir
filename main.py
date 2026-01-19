@@ -41,6 +41,7 @@ st.markdown("""
     html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stHeader"], .main {
         background: #FFFFFF !important;
         font-family: 'Pretendard', sans-serif !important;
+        pointer-events: auto !important;
     }
 
     /* 2. 모든 텍스트 강제 검정색 고정 및 굵게 */
@@ -64,6 +65,11 @@ st.markdown("""
         padding: 22px 26px;
         margin-bottom: 18px;
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+    }
+    
+    a, button, [role="button"] {
+        pointer-events: auto !important;
+        cursor: pointer !important;
     }
 
     .glass-card {
@@ -886,8 +892,10 @@ elif st.session_state.page == "home":
         html, body {{
             background: #FFFFFF;
             font-family: 'Pretendard', sans-serif !important;
+            pointer-events: auto !important;
         }}
         a {{ color: #000000; text-decoration: none; }}
+        a, button, [role="button"] {{ pointer-events: auto !important; cursor: pointer !important; }}
         .glass-container {{
             background: #FFFFFF !important;
             border: 1px solid #000000;
@@ -1288,6 +1296,58 @@ elif st.session_state.page == "home":
             dotsEl.innerHTML = premiumSlides.map((_, i) => `<span class="premium-dot ${'{'}i === slideIndex ? 'active' : ''{'}'}"></span>`).join('');
         }};
 
+        const ensureClickable = () => {{
+            const root = document.documentElement;
+            const body = document.body;
+            if (root) root.style.pointerEvents = 'auto';
+            if (body) body.style.pointerEvents = 'auto';
+
+            const clickables = [
+                'a', 'button', 'input', 'select', 'textarea',
+                '.core-card', '.icon-item', '.membership-bar a', '.kakao-btn'
+            ];
+            clickables.forEach((sel) => {{
+                document.querySelectorAll(sel).forEach((el) => {{
+                    el.style.pointerEvents = 'auto';
+                    el.style.cursor = 'pointer';
+                    if (!el.style.position) el.style.position = 'relative';
+                    if (!el.style.zIndex) el.style.zIndex = '2';
+                }});
+            }});
+
+            const blockers = Array.from(document.querySelectorAll('div')).filter((el) => {{
+                if (el.id === 'premium-overlay') return false;
+                const style = window.getComputedStyle(el);
+                if (style.pointerEvents === 'none') return false;
+                if (!['fixed', 'absolute'].includes(style.position)) return false;
+                const rect = el.getBoundingClientRect();
+                if (rect.width < window.innerWidth * 0.9 || rect.height < window.innerHeight * 0.9) return false;
+                const z = parseInt(style.zIndex || '0', 10);
+                if (!Number.isFinite(z) || z < 10) return false;
+                return true;
+            }});
+
+            blockers.forEach((el) => {{
+                el.style.pointerEvents = 'none';
+            }});
+        }};
+
+        const attachClickDebug = () => {{
+            const debugId = 'dnbs-click-debug';
+            let box = document.getElementById(debugId);
+            if (!box) {{
+                box = document.createElement('div');
+                box.id = debugId;
+                box.style.cssText = 'position:fixed;bottom:10px;right:10px;z-index:10000;background:#111;color:#fff;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;opacity:0.8;';
+                box.textContent = 'click debug: ready';
+                document.body.appendChild(box);
+            }}
+            window.addEventListener('click', (e) => {{
+                const t = e.target;
+                const cls = t.className ? String(t.className).split(' ').slice(0, 3).join('.') : '';
+                box.textContent = 'click: ' + t.tagName.toLowerCase() + (t.id ? '#' + t.id : '') + (cls ? '.' + cls : '');
+            }}, true);
+        }};
         const neutralizeBlockers = () => {{
             const blockers = Array.from(document.querySelectorAll('div')).filter((el) => {{
                 if (el.id === 'premium-overlay') return false;
@@ -1346,6 +1406,9 @@ elif st.session_state.page == "home":
 
         neutralizeBlockers();
         setTimeout(neutralizeBlockers, 300);
+        ensureClickable();
+        setTimeout(ensureClickable, 300);
+        attachClickDebug();
     }})();
     </script>
     """)
