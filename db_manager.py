@@ -170,26 +170,29 @@ FARMER_SUBCATEGORIES = {
 def get_google_sheets_client():
     """Google Sheets 클라이언트 생성 (캐싱 적용)"""
     try:
-        credentials = None
-        credentials_dict = st.secrets.get("gcp_service_account")
-        if credentials_dict:
+        # 1) secrets.json 파일 우선
+        file_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "secrets.json")
+        if os.path.exists(file_path):
+            with open(file_path, "r", encoding="utf-8") as f:
+                raw = f.read()
+            if not raw.strip():
+                st.error("Google Sheets 키 파일이 비어 있습니다.")
+                return None
+            service_info = json.loads(raw)
+            credentials = Credentials.from_service_account_info(
+                service_info,
+                scopes=SCOPES
+            )
+        else:
+            # 2) secrets.toml의 gcp_service_account 사용
+            credentials_dict = st.secrets.get("gcp_service_account")
+            if not credentials_dict:
+                st.error("Google Sheets 서비스 계정 설정이 없습니다. secrets.json 또는 secrets.toml을 확인해주세요.")
+                return None
             credentials = Credentials.from_service_account_info(
                 credentials_dict,
                 scopes=SCOPES
             )
-        else:
-            file_path = st.secrets.get("gcp_service_account_file", "service_account.json")
-            env_path = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
-            if env_path:
-                file_path = env_path
-            if os.path.exists(file_path):
-                credentials = Credentials.from_service_account_file(
-                    file_path,
-                    scopes=SCOPES
-                )
-        if credentials is None:
-            st.error("Google Sheets 서비스 계정 설정이 없습니다. secrets 또는 키 파일을 확인해주세요.")
-            return None
         client = gspread.authorize(credentials)
         return client
     except Exception as e:

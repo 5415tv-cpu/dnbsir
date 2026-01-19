@@ -32,6 +32,10 @@ BUILD_VERSION = "20260116_SALES_PRO"
 # 1. 페이지 초기 설정 (Streamlit 규칙: 첫 호출이어야 함)
 st.set_page_config(page_title="동네비서 Premium", layout="centered")
 
+# 로그인 세션 방어 (새로고침 시 유지)
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
 # 🎨 글로벌 스타일 주입 (Transparent Glass + Bold Black Text)
 st.markdown("""
 <style>
@@ -1694,12 +1698,13 @@ elif st.session_state.page == "JOIN":
     login_tab, join_tab, find_tab = st.tabs(["🔐 로그인", "🧾 회원가입", "🔎 아이디/비밀번호 찾기"])
 
     with login_tab:
-        login_id = st.text_input("아이디", key="login_id")
-        login_pw = st.text_input("비밀번호", type="password")
+        login_id = st.text_input("아이디", key="final_admin_id")
+        login_pw = st.text_input("비밀번호", type="password", key="final_admin_pw")
         if st.button("🚀 로그인"):
             login_id = (login_id or "").strip()
             login_pw = (login_pw or "").strip()
             if login_id == "admin777" and login_pw == "pass777":
+                st.session_state.logged_in = True
                 st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
                 st.session_state.store_id = login_id
                 st.session_state.is_admin = True
@@ -1709,6 +1714,7 @@ elif st.session_state.page == "JOIN":
             if not success:
                 success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
             if success:
+                st.session_state.logged_in = True
                 st.session_state.logged_in_store = store_info
                 st.session_state.store_id = login_id
                 if login_id in ["admin777", "5415tv", "master"]:
@@ -1722,17 +1728,17 @@ elif st.session_state.page == "JOIN":
                 st.error(f"로그인 실패: {msg}")
 
     with join_tab:
-        store_name = st.text_input("상호명")
-        owner_name = st.text_input("대표자명")
-        phone = st.text_input("연락처")
-        phone_070 = st.text_input("070 번호 (선택)")
-        kakao_id = st.text_input("카톡 아이디")
+        store_name = st.text_input("상호명", key="join_store_name")
+        owner_name = st.text_input("대표자명", key="join_owner_name")
+        phone = st.text_input("연락처", key="join_phone")
+        phone_070 = st.text_input("070 번호 (선택)", key="join_phone_070")
+        kakao_id = st.text_input("카톡 아이디", key="join_kakao_id")
         store_id = st.text_input("아이디", key="join_store_id")
-        password = st.text_input("비밀번호", type="password")
+        password = st.text_input("비밀번호", type="password", key="join_password")
         user_type = st.selectbox("사업자 유형", ["일반사업자", "택배사업자", "농어민"])
         business_type = st.selectbox("업종", ["식당/음식점", "택배/물류", "카페/디저트", "미용/뷰티", "일반판매", "기타"])
-        region = st.text_input("지역(예: 서울 강남구)")
-        memo = st.text_area("추가 문의", height=90)
+        region = st.text_input("지역(예: 서울 강남구)", key="join_region")
+        memo = st.text_area("추가 문의", height=90, key="join_memo")
         if st.button("🚀 신청하기"):
             if not owner_name or not phone or not store_id or not password:
                 st.error("대표자명, 연락처, 아이디, 비밀번호는 필수입니다.")
@@ -1895,11 +1901,12 @@ elif st.session_state.page in ["STORE_MGMT", "settings", "aicc_setup"]:
     st.markdown('<h1 style="color:#000000; font-weight:900;">🛠️ 매장 통합 관리</h1>', unsafe_allow_html=True)
     if st.session_state.logged_in_store is None:
         login_id = st.text_input("아이디", key="store_mgmt_login_id")
-        login_pw = st.text_input("비밀번호", type="password")
+        login_pw = st.text_input("비밀번호", type="password", key="store_mgmt_login_pw")
         if st.button("🚀 로그인"):
             login_id = (login_id or "").strip()
             login_pw = (login_pw or "").strip()
             if login_id == "admin777" and login_pw == "pass777":
+                st.session_state.logged_in = True
                 st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
                 st.session_state.store_id = login_id
                 st.session_state.is_admin = True
@@ -1909,6 +1916,7 @@ elif st.session_state.page in ["STORE_MGMT", "settings", "aicc_setup"]:
             if not success:
                 success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
             if success:
+                st.session_state.logged_in = True
                 st.session_state.logged_in_store = store_info
                 st.session_state.store_id = login_id
                 if login_id in ["admin777", "5415tv", "master"]:
