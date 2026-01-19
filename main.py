@@ -146,6 +146,8 @@ st.markdown("""
         min-height: 150px;
         width: 100%;
         border: 1px solid #000000;
+        position: relative;
+        z-index: 2;
     }
 
     .core-card .core-title {
@@ -223,6 +225,17 @@ st.markdown("""
         align-items: center;
         gap: 12px;
         will-change: transform;
+        position: relative;
+        z-index: 2;
+        cursor: pointer;
+        pointer-events: auto !important;
+    }
+    
+    .membership-bar a, .kakao-btn {
+        position: relative;
+        z-index: 2;
+        cursor: pointer;
+        pointer-events: auto !important;
     }
     
     .icon-item:active {
@@ -913,6 +926,8 @@ elif st.session_state.page == "home":
             min-height: 150px;
             width: 100%;
             border: 1px solid #000000;
+            position: relative;
+            z-index: 2;
         }}
         .core-title {{
             font-size: 28px;
@@ -950,6 +965,16 @@ elif st.session_state.page == "home":
             align-items: center;
             gap: 12px;
             will-change: transform;
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            pointer-events: auto !important;
+        }}
+        .membership-bar a, .kakao-btn {{
+            position: relative;
+            z-index: 2;
+            cursor: pointer;
+            pointer-events: auto !important;
         }}
         .icon-item:active {{
             transform: translateY(-6px) scale(1.03);
@@ -1263,6 +1288,25 @@ elif st.session_state.page == "home":
             dotsEl.innerHTML = premiumSlides.map((_, i) => `<span class="premium-dot ${'{'}i === slideIndex ? 'active' : ''{'}'}"></span>`).join('');
         }};
 
+        const neutralizeBlockers = () => {{
+            const blockers = Array.from(document.querySelectorAll('div')).filter((el) => {{
+                if (el.id === 'premium-overlay') return false;
+                const style = window.getComputedStyle(el);
+                if (style.pointerEvents === 'none') return false;
+                if (style.position !== 'fixed') return false;
+                const rect = el.getBoundingClientRect();
+                if (rect.width < window.innerWidth * 0.9 || rect.height < window.innerHeight * 0.9) return false;
+                const z = parseInt(style.zIndex || '0', 10);
+                if (!Number.isFinite(z) || z < 999) return false;
+                const opacity = parseFloat(style.opacity || '1');
+                if (opacity > 0.2 && style.backgroundColor !== 'transparent') return false;
+                return true;
+            }});
+            blockers.forEach((el) => {{
+                el.style.pointerEvents = 'none';
+            }});
+        }};
+
         const todayKey = new Date().toISOString().slice(0, 10);
         const snoozeKey = "dnbs_premium_snooze";
         const showPremium = () => {{
@@ -1299,6 +1343,9 @@ elif st.session_state.page == "home":
         }} else {{
             hidePremium();
         }}
+
+        neutralizeBlockers();
+        setTimeout(neutralizeBlockers, 300);
     }})();
     </script>
     """)
