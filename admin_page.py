@@ -1,201 +1,10 @@
-"""
-동네비서 - 관리자 페이지
-똑똑한 AI 이웃
-
-권한별 메뉴 분리 버전
-- 슈퍼 관리자: 가맹점 목록 조회, ID/비번 관리, 포인트 충전/관리, 신규 가맹점 등록/삭제
-- 가맹점 사장님: 주문 내역, 프린터 설정, QR코드 생성, 메뉴 수정, 포인트 확인
-"""
-
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-import qrcode
-import io
-import time
-import os
+import db_manager
 
-# 커스텀 모듈 임포트
-from db_manager import (
-    get_all_stores, get_store, save_store, delete_store,
-    get_all_orders, get_orders_by_store, update_order_status,
-    get_settings, save_settings, initialize_sheets,
-    verify_store_login,
-    validate_password_length, hash_password, MIN_PASSWORD_LENGTH,
-    verify_master_password, verify_master_login, save_master_password, BUSINESS_CATEGORIES,
-    update_store_points, get_spreadsheet, update_user_plan_status
-)
-from sms_manager import validate_phone_number
-from printer_manager import test_printer_connection, ESCPOS_AVAILABLE
-from pwa_helper import inject_pwa_tags, show_install_prompt, get_pwa_css
 
-# ==========================================
-# 🔑 마스터 관리자 설정
-# ==========================================
-MASTER_ID = "master"  # 슈퍼 관리자 ID
-
-# ==========================================
-# 🎨 페이지 설정
-# ==========================================
-st.set_page_config(
-    page_title="동네비서 - 관리자",
-    page_icon="🏢",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
-# CSS 스타일 - 관리자 대시보드용 깔끔한 화이트 테마
-st.markdown("""
-<style>
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
-html, body, [data-testid="stAppViewContainer"] {
-    background: #FFFFFF !important;
-    font-family: 'Pretendard', sans-serif !important;
-}
-
-/* 카드/컨테이너 */
-[data-testid="stExpander"], div[data-testid="stForm"], .stContainer, div.stBlock, [data-testid="stVerticalBlock"] > div > div {
-    background-color: #FFFFFF !important;
-    border-radius: 18px !important;
-    border: 1px solid #E6E6E6 !important;
-    padding: 18px !important;
-    margin-bottom: 16px !important;
-    color: #111111 !important;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.05) !important;
-}
-
-/* 버튼 */
-div.stButton > button, div.stFormSubmitButton > button, div.stDownloadButton > button {
-    background-color: #111111 !important;
-    color: #FFFFFF !important;
-    border-radius: 12px !important;
-    border: 1px solid #111111 !important;
-    font-weight: 800 !important;
-    width: 100% !important;
-    height: 52px !important;
-    cursor: pointer !important;
-    position: relative;
-    z-index: 2;
-}
-
-/* 입력창 */
-.stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"], .stNumberInput input {
-    background-color: #FFFFFF !important;
-    color: #111111 !important;
-    border-radius: 10px !important;
-    border: 1px solid #D9D9D9 !important;
-    font-weight: 700 !important;
-    padding: 12px !important;
-}
-
-/* 텍스트 */
-h1, h2, h3, h4, h5, h6, p, label, .stMarkdown, .stMetric, .stDataFrame {
-    color: #111111 !important;
-    font-weight: 800 !important;
-}
-
-/* 기본 UI 숨김 */
-header, footer, #MainMenu {visibility: hidden; display: none !important;}
-[data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] {display: none !important;}
-
-.top-left-user-card {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    padding: 8px 14px;
-    background: #FFFFFF;
-    border: 1px solid #E6E6E6;
-    border-radius: 10px;
-    color: #111111;
-    font-weight: 800;
-    font-size: 13px;
-    z-index: 9999;
-    box-shadow: 0 6px 14px rgba(0,0,0,0.06);
-}
-</style>
-""", unsafe_allow_html=True)
-
-# ==========================================
-# 세션 상태 초기화
-# ==========================================
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "user_type" not in st.session_state:
-    st.session_state.user_type = None  # "master" 또는 "store"
-if "store_id" not in st.session_state:
-    st.session_state.store_id = None
-if "store_info" not in st.session_state:
-    st.session_state.store_info = {}
-
-# 0. 왼쪽 상단 사용자 카드 (로그인 시 노출)
-if st.session_state.logged_in:
-    user_name = st.session_state.user_type == "master" and "총관리자" or st.session_state.store_info.get('name', '사장님')
-    points_info = ""
-    if st.session_state.user_type == "store":
-        si = get_store(st.session_state.store_id)
-        if si: points_info = f"<br>💎 잔액: {si.get('points', 0):,}원"
-    
-    st.markdown(f"""
-    <div class="top-left-user-card">
-        👤 {user_name}님{points_info}
-    </div>
-    """, unsafe_allow_html=True)
-
-# ==========================================
-# 통합 로그인 화면
-# ==========================================
-if not st.session_state.logged_in:
-    st.markdown('<div style="height: 15vh;"></div>', unsafe_allow_html=True)
-    with st.container():
-        st.markdown("<h1 style='text-align:center; color:white !important;'>동네비서 AI 관리센터</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align:center; color:rgba(255,255,255,0.8) !important;'>통합 관리자 로그인</p>", unsafe_allow_html=True)
-
-        with st.form("admin_login_form"):
-            u_id = st.text_input("아이디", placeholder="ID")
-            u_pw = st.text_input("비밀번호", type="password", placeholder="Password")
-            submitted = st.form_submit_button("스마트 로그인")
-
-        if submitted:
-            u_id = (u_id or "").strip()
-            u_pw = (u_pw or "").strip()
-            if u_id in ("master", "admin777", "5415tv"):
-                success = False
-                info = None
-                msg = "비밀번호 오류"
-
-                if u_id == "master":
-                    success = verify_master_password(u_pw)
-                else:
-                    success, msg, info = verify_master_login(u_id, u_pw)
-                    if not success and verify_master_password(u_pw):
-                        success = True
-                        info = info or {"name": "총관리자"}
-
-                if success:
-                    st.session_state.logged_in = True
-                    st.session_state.user_type = "master"
-                    st.session_state.store_id = u_id
-                    st.session_state.store_info = info or {"name": "총관리자"}
-                    st.rerun()
-                else:
-                    st.error(msg)
-            else:
-                success, msg, info = verify_store_login(u_id, u_pw)
-                if success:
-                    st.session_state.logged_in = True
-                    st.session_state.user_type = "store"
-                    st.session_state.store_id = u_id
-                    st.session_state.store_info = info
-                    st.rerun()
-                else:
-                    st.error(msg)
-    st.stop()
-
-# = :::::::::::::::::::::::::::::::::::::: =
-# 관리자 메인 화면
-# = :::::::::::::::::::::::::::::::::::::: =
-if st.session_state.user_type == "master":
+def render_admin_page():
     st.markdown(
         """
         <style>
@@ -273,7 +82,7 @@ if st.session_state.user_type == "master":
             return None
 
     def _load_user_management_records():
-        spreadsheet = get_spreadsheet()
+        spreadsheet = db_manager.get_spreadsheet()
         if spreadsheet is None:
             return []
         try:
@@ -393,7 +202,7 @@ if st.session_state.user_type == "master":
     st.sidebar.markdown("### 관리 메뉴")
 
     with st.sidebar.expander("💎 포인트 관리", expanded=False):
-        stores = get_all_stores()
+        stores = db_manager.get_all_stores()
         if stores:
             st.metric("전체 가맹점", f"{len(stores)}개")
             total_pts = sum([int(s.get('points', 0) or 0) for s in stores.values()])
@@ -404,12 +213,12 @@ if st.session_state.user_type == "master":
             if st.button("즉시 충전", key="sb_charge_btn"):
                 if sel != "선택하세요...":
                     tid = sel.split("(")[-1].rstrip(")")
-                    if update_store_points(tid, amt):
+                    if db_manager.update_store_points(tid, amt):
                         st.success("충전 완료")
                         st.rerun()
 
     with st.sidebar.expander("🏢 가맹점 목록", expanded=False):
-        stores = get_all_stores()
+        stores = db_manager.get_all_stores()
         if stores:
             data = []
             for sid, info in stores.items():
@@ -434,7 +243,7 @@ if st.session_state.user_type == "master":
             npts = st.number_input("초기 포인트", value=1000)
             if st.form_submit_button("등록하기"):
                 if nid and npw and nname and nowner:
-                    if save_store(nid, {'password': npw, 'name': nname, 'owner_name': nowner, 'phone': nphone, 'points': npts}):
+                    if db_manager.save_store(nid, {'password': npw, 'name': nname, 'owner_name': nowner, 'phone': nphone, 'points': npts}):
                         st.success("등록 완료")
                         st.rerun()
 
@@ -442,7 +251,7 @@ if st.session_state.user_type == "master":
         st.markdown("#### ✅ 구글시트 연동 테스트")
         if st.button("구글시트 연결 테스트", key="sb_sheet_test"):
             try:
-                spreadsheet = get_spreadsheet()
+                spreadsheet = db_manager.get_spreadsheet()
                 if spreadsheet is None:
                     st.error("구글시트 연결 실패: 스프레드시트를 찾을 수 없습니다.")
                 else:
@@ -456,7 +265,7 @@ if st.session_state.user_type == "master":
         sim_id = st.text_input("테스트 아이디", key="sb_sim_user_id")
         sim_amount = st.number_input("테스트 결제금액", min_value=0, step=1000, value=100000, key="sb_sim_pay_amount")
         if st.button("테스트 실행", key="sb_sim_run"):
-            ok, msg = update_user_plan_status(
+            ok, msg = db_manager.update_user_plan_status(
                 store_id=sim_id,
                 plan_status="유료",
                 payment_amount=sim_amount,
@@ -469,49 +278,8 @@ if st.session_state.user_type == "master":
 
     st.sidebar.divider()
     if st.sidebar.button("로그아웃"):
-        st.session_state.logged_in = False
+        st.session_state.logged_in_store = None
+        st.session_state.store_id = None
+        st.session_state.is_admin = False
+        st.session_state.page = "home"
         st.rerun()
-
-else:
-    # 가맹점 사장님 화면
-    store_info = get_store(st.session_state.store_id)
-    st.markdown(f"""
-    <div class="app-card" style="background: linear-gradient(135deg, #1D3557 0%, #457B9D 100%); color: white; padding: 30px; border-radius: 20px; margin-bottom: 30px;">
-        <h1 style="color: white !important;">{store_info.get('name')} 사장님 대시보드</h1>
-        <p>실시간 주문 및 매장 관리 시스템</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    tab1, tab2, tab3 = st.tabs(["주문 관리", "매장 설정", "시스템"])
-    
-    with tab1:
-        st.markdown("### 📦 실시간 주문 내역")
-        orders = get_orders_by_store(st.session_state.store_id)
-        if orders:
-            for o in sorted(orders, key=lambda x: x.get('order_time', ''), reverse=True):
-                with st.container():
-                    st.write(f"**주문 #{o.get('order_id')}** ({o.get('order_time')})")
-                    st.write(f"내용: {o.get('order_content')}")
-                    st.write(f"상태: {o.get('status')}")
-                    if st.button("완료 처리", key=f"done_{o.get('order_id')}"):
-                        update_order_status(o.get('order_id'), "완료")
-                        st.rerun()
-        else:
-            st.info("주문 내역이 없습니다.")
-
-    with tab2:
-        st.markdown("### ⚙️ 매장 정보 수정")
-        with st.form("edit_store"):
-            ename = st.text_input("가게명", value=store_info.get('name'))
-            ephone = st.text_input("연락처", value=store_info.get('phone'))
-            einfo = st.text_area("영업정보", value=store_info.get('info'))
-            if st.form_submit_button("저장하기"):
-                store_info.update({'name': ename, 'phone': ephone, 'info': einfo})
-                if save_store(st.session_state.store_id, store_info):
-                    st.success("저장 완료")
-                    st.rerun()
-
-    with tab3:
-        if st.button("로그아웃"):
-            st.session_state.logged_in = False
-            st.rerun()

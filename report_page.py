@@ -1,41 +1,88 @@
 import streamlit as st
 import pandas as pd
+import db_manager
+
+
+def get_sheet_data(sheet_name):
+    """Streamlit Secrets를 이용해 구글 시트 데이터를 가져옵니다."""
+    try:
+        spreadsheet = db_manager.get_spreadsheet()
+        if spreadsheet is None:
+            return pd.DataFrame()
+        worksheet = spreadsheet.worksheet(sheet_name)
+        data = worksheet.get_all_records()
+        return pd.DataFrame(data)
+    except Exception as e:
+        st.error(f"데이터 연결 오류: {e}")
+        return pd.DataFrame()
 
 
 def render_report():
-    # 메인 디자인과 분리된 리포트 전용 스타일
-    st.markdown("""
-        <style>
-        .report-card {
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 15px;
-            border: 1px solid #D4AF37;
-            margin-bottom: 20px;
-        }
-        .gold-text { color: #D4AF37; font-weight: bold; }
-        </style>
+    user_type = st.session_state.get('user_type', '일반사업자')
+    
+    # 1. 유형별 데이터 로드
+    sheet_map = {
+        "일반사업자": "매장예약",
+        "택배사업자": "택배접수",
+        "농어민": "직거래장부"
+    }
+    df = get_sheet_data(sheet_map[user_type])
+
+    # 2. 리포트 헤더 디자인
+    st.markdown(f"""
+        <div style="background: rgba(255, 255, 255, 0.55); padding: 20px; border-radius: 30px; border: 1px solid rgba(255, 255, 255, 0.8);">
+            <h2 style="color: #000000; text-align: center;">💎 {user_type} 주간 분석 리포트</h2>
+        </div>
     """, unsafe_allow_html=True)
 
-    st.title("💎 프리미엄 경영 리포트")
-    st.write("지난 일주일간의 데이터를 AI가 분석한 결과입니다.")
+    # 3. 데이터가 있을 경우 지표 계산
+    if not df.empty:
+        col1, col2, col3 = st.columns(3)
+        total_count = len(df)
+        
+        if user_type == "일반사업자" and '매출액' in df.columns:
+            total_val = f"{df['매출액'].sum():,}원"
+        else:
+            total_val = f"{total_count}건"
+            
+        col1.metric("주간 총계", total_val, "데이터 기반")
+        col2.metric("전일 대비", "보통", "0%")
+        col3.metric("AI 기여도", "92%", "▲ 2%")
 
-    # [데이터 섹션]
-    col1, col2, col3 = st.columns(3)
-    col1.metric("주간 매출", "659만원", "▲12%")
-    col2.metric("택배 접수", "234건", "▲45건")
-    col3.metric("단골 재방문", "88%", "▲5%")
+        if '요일' in df.columns:
+            st.write("### 📈 요일별 추이")
+            st.line_chart(df.set_index('요일'))
+    else:
+        st.warning("아직 장부에 기록된 데이터가 없습니다. AI 비서가 업무를 시작하면 여기에 리포트가 생성됩니다.")
 
-    # [차트 섹션]
-    st.markdown('<div class="report-card">', unsafe_allow_html=True)
-    st.subheader("📊 요일별 매출 및 택배 현황")
-    chart_data = pd.DataFrame({
-        '요일': ['월', '화', '수', '목', '금', '토', '일'],
-        '매출(만원)': [85, 72, 98, 79, 125, 140, 60],
-        '택배(건)': [42, 38, 55, 31, 48, 15, 5]
-    })
-    st.line_chart(data=chart_data, x='요일')
-    st.markdown('</div>', unsafe_allow_html=True)
+    # 4. AI 맞춤 전략
+    with st.expander("🤖 AI 매출 향상 전략 확인하기", expanded=True):
+        if user_type == "일반사업자":
+            st.info("💡 주말 예약 고객에게 '선주문 링크'를 발송하여 노쇼를 방지하세요.")
+        elif user_type == "택배사업자":
+            st.info("💡 수요일 대량 접수 고객에게 전용 수수료 혜택 알림을 보내세요.")
+        else:
+            st.info("💡 제철 품목 구매 단골에게 '직거래 장터' 문자를 자동 발송하세요.")
+
+    if st.button("⬅️ 홈으로 돌아가기", use_container_width=True):
+        st.session_state.page = "home"
+        st.rerun()
+
+
+def render_premium_report(user_type):
+    st.title(f"💎 {user_type} 전용 경영 리포트")
+
+    if user_type == "일반사업자":
+        st.subheader("🍽️ 매장 예약 및 회전율 분석")
+        st.metric("AI 예약 전환율", "85%", "▲ 10%")
+
+    elif user_type == "택배사업자":
+        st.subheader("📦 물동량 및 배송 효율 분석")
+        st.metric("송장 자동 발행 건수", "1,240건", "▲ 210건")
+
+    elif user_type == "농어민":
+        st.subheader("🍎 농산물 직거래 판매 현황")
+        st.metric("단골 재구매율", "62%", "▲ 5%")
 
     # [AI 전략 섹션]
     st.markdown('<div class="report-card">', unsafe_allow_html=True)

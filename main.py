@@ -16,9 +16,13 @@ import streamlit.components.v1 as components
 import time
 import json
 import requests
+import base64
 from uuid import uuid4
 from urllib.parse import urlencode
 from report_page import render_report  # 새로 만든 파일을 불러옵니다
+from admin_page import render_admin_page
+from payment_page import render_payment_page
+from test_card_page import render_test_card_page
 
 # ==========================================
 # 💎 동네비서 PREMIUM KIOSK - v2.2.0 (Sales Optimized)
@@ -33,9 +37,9 @@ st.markdown("""
 <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     
-    /* 1. 전체 배경: 은은한 라이트 톤 */
+    /* 1. 전체 배경: 백색 */
     html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stHeader"], .main {
-        background: radial-gradient(circle at top, #FFFFFF 0%, #F4F7FF 55%, #EEF2FA 100%) !important;
+        background: #FFFFFF !important;
         font-family: 'Pretendard', sans-serif !important;
     }
 
@@ -46,32 +50,28 @@ st.markdown("""
         font-weight: 900 !important;
     }
     
-    /* 2-1. 어두운 버튼/배지용 흰색 텍스트 */
+    /* 2-1. 보조 클래스 (검정 텍스트 유지) */
     .force-white, .force-white * {
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
     }
 
-    /* 3. 투명 유리 카드 스타일 */
+    /* 3. 기본 카드 스타일 (화이트/블랙) */
     .glass-container {
-        background: rgba(255, 255, 255, 0.55) !important;
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.8);
+        background: #FFFFFF !important;
+        border: 1px solid #000000;
         border-radius: 30px;
         padding: 22px 26px;
         margin-bottom: 18px;
-        box-shadow: 0 18px 38px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     }
 
     .glass-card {
-        background: rgba(255, 255, 255, 0.55) !important;
-        backdrop-filter: blur(26px) saturate(180%);
-        -webkit-backdrop-filter: blur(26px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.9);
+        background: #FFFFFF !important;
+        border: 1px solid #000000;
         border-radius: 32px;
         padding: 28px 32px;
-        box-shadow: 0 22px 44px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         display: block;
         text-decoration: none;
@@ -80,8 +80,8 @@ st.markdown("""
     
     .glass-card:hover {
         transform: translateY(-5px);
-        background: rgba(255, 255, 255, 0.62) !important;
-        box-shadow: 0 26px 52px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+        background: #FFFFFF !important;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
     }
     
     .glass-card:active {
@@ -104,8 +104,9 @@ st.markdown("""
     }
 
     .level-badge {
-        background: rgba(0, 0, 0, 0.85);
-        color: #FFFFFF !important;
+        background: #FFFFFF;
+        color: #000000 !important;
+        border: 1px solid #000000;
         padding: 4px 12px;
         border-radius: 50px;
         font-size: 12px;
@@ -113,19 +114,20 @@ st.markdown("""
     }
 
     .level-badge.premium {
-        background: #7B2CF4;
-        color: #FFFFFF !important;
+        background: #FFFFFF;
+        color: #000000 !important;
+        border: 1px solid #000000;
     }
     
     .kakao-btn {
-        background: #FEE500;
-        color: #1E1E1E !important;
+        background: #FFFFFF;
+        color: #000000 !important;
         padding: 10px 16px;
         border-radius: 50px;
         font-weight: 900;
         font-size: 13px;
-        border: 1px solid rgba(0, 0, 0, 0.08);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        border: 1px solid #000000;
+        box-shadow: none;
     }
 
     .core-cards {
@@ -143,7 +145,7 @@ st.markdown("""
         gap: 18px;
         min-height: 150px;
         width: 100%;
-        border: 1px solid rgba(255, 255, 255, 0.85);
+        border: 1px solid #000000;
     }
 
     .core-card .core-title {
@@ -176,23 +178,23 @@ st.markdown("""
 
     /* 5. 버튼 스타일 */
     .stButton button, [data-testid="stForm"] button {
-        background-color: #000000 !important;
-        color: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
         border-radius: 50px !important;
         font-weight: 900 !important;
-        border: none !important;
+        border: 2px solid #000000 !important;
         padding: 12px 25px !important;
         font-size: 16px !important;
     }
     
     .stButton button *, [data-testid="stForm"] button * {
-        color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important;
+        color: #000000 !important;
+        -webkit-text-fill-color: #000000 !important;
     }
 
     .stButton button svg, [data-testid="stForm"] button svg {
-        fill: #FFFFFF !important;
-        color: #FFFFFF !important;
+        fill: #000000 !important;
+        color: #000000 !important;
     }
     
     /* 6. Streamlit 기본 UI 제거 */
@@ -214,8 +216,8 @@ st.markdown("""
         min-height: 96px;
         text-align: left;
         text-decoration: none;
-        border: 1px solid rgba(255, 255, 255, 0.75);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+        border: 1px solid #000000;
+        box-shadow: none;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
         display: flex;
         align-items: center;
@@ -226,11 +228,11 @@ st.markdown("""
     .icon-item:active {
         animation: card-bounce 0.25s ease-out;
         transform: translateY(-6px) scale(1.03);
-        box-shadow: 0 16px 30px rgba(0, 0, 0, 0.18);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
     }
     
     .icon-emoji { font-size: 28px; }
-    .icon-text { font-size: 15px; font-weight: 900; color: #FFFFFF; }
+    .icon-text { font-size: 15px; font-weight: 900; color: #000000; }
     
     @keyframes card-bounce {
         0% { transform: translateY(0) scale(1); }
@@ -383,6 +385,7 @@ def handle_kakao_callback():
 
         if store:
             st.session_state.logged_in_store = store
+            st.session_state.store_id = store_id
             welcome_msg = "동네비서 AI 가족이 되신 것을 환영합니다! 프리미엄 혜택을 확인해보세요"
             if phone:
                 ok, msg = sms_manager.send_alimtalk(phone, welcome_msg)
@@ -422,7 +425,7 @@ def handle_persistent_login():
         store_info = None
         if saved_id in ["5415tv", "admin777"]:
             if saved_id == "admin777":
-                success, msg, store_info = db_manager.verify_master_login(saved_id, "pass777!")
+                success, msg, store_info = db_manager.verify_master_login(saved_id, "pass777")
             else:
                 master_pw = st.secrets.get("admin", {}).get("password", "Qqss12!!0")
                 success, msg, store_info = db_manager.verify_master_login(saved_id, master_pw)
@@ -432,6 +435,10 @@ def handle_persistent_login():
         
         if success and store_info:
             st.session_state.logged_in_store = store_info
+            st.session_state.store_id = saved_id
+            if saved_id in ["admin777", "5415tv", "master"]:
+                st.session_state.is_admin = True
+                st.session_state.page = "ADMIN"
             st.markdown("<script>const url = new URL(window.location.href); url.searchParams.delete('pl'); window.history.replaceState({}, '', url.href);</script>", unsafe_allow_html=True)
             st.rerun()
 
@@ -456,17 +463,37 @@ handle_kakao_callback()
 st.markdown(printer_manager.get_bluetooth_printer_js(), unsafe_allow_html=True)
 
 if "page" not in st.session_state: st.session_state.page = "home"
+if "is_admin" not in st.session_state: st.session_state.is_admin = False
 if "selected_store" not in st.session_state: st.session_state.selected_store = None
 if "pending_payment" not in st.session_state: st.session_state.pending_payment = None
 if "bt_printer_connected" not in st.session_state: st.session_state.bt_printer_connected = False
 if "lock_sender" not in st.session_state: st.session_state.lock_sender = False
 if "fixed_sender" not in st.session_state: st.session_state.fixed_sender = {}
+if "lock_receiver" not in st.session_state: st.session_state.lock_receiver = False
+if "fixed_receiver" not in st.session_state: st.session_state.fixed_receiver = {}
 if "logged_in_store" not in st.session_state: st.session_state.logged_in_store = None
+if "store_id" not in st.session_state: st.session_state.store_id = None
 if "chat_history" not in st.session_state: st.session_state.chat_history = []
 if "logout_requested" not in st.session_state: st.session_state.logout_requested = False
 if "mgmt_tab_index" not in st.session_state: st.session_state.mgmt_tab_index = 0
+if "user_type" not in st.session_state: st.session_state.user_type = "일반사업자"
 
 if "page" in st.query_params: st.session_state.page = st.query_params["page"]
+
+def infer_user_type():
+    store = st.session_state.get("logged_in_store")
+    if store:
+        explicit = store.get("user_type")
+        if explicit:
+            return explicit
+        business_type = str(store.get("business_type", ""))
+        category = str(store.get("category", ""))
+        merged = f"{business_type} {category}"
+        if "택배" in merged or "delivery" in merged:
+            return "택배사업자"
+        if "농" in merged or "farmer" in merged:
+            return "농어민"
+    return st.session_state.get("user_type", "일반사업자")
 
 def navigate_to(page_name):
     st.session_state.page = page_name
@@ -478,6 +505,240 @@ def go_home():
     st.session_state.pending_payment = None
     st.query_params.clear()
     st.rerun()
+
+
+def render_home_button():
+    if st.button("⬅️ 홈으로 돌아가기", use_container_width=True):
+        go_home()
+
+
+def _render_address_listener():
+    components.html(
+        """
+        <script>
+        (function() {
+            if (window.__dnbsAddressListener) return;
+            window.__dnbsAddressListener = true;
+            window.addEventListener('message', function(event) {
+                if (!event || !event.data || event.data.type !== 'daum_address') return;
+                const key = event.data.key || '';
+                const address = event.data.address || '';
+                if (!key || !address) return;
+                const inputs = window.parent.document.querySelectorAll('input');
+                inputs.forEach((input) => {
+                    const label = input.closest('label');
+                    const labelText = label ? label.innerText : '';
+                    if (key === 'sender_address' && labelText.includes('보내는 분 주소')) {
+                        input.value = address;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    if (key === 'receiver_address' && labelText.includes('받는 분 주소')) {
+                        input.value = address;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                });
+                // 상세주소 입력으로 포커스 이동
+                inputs.forEach((input) => {
+                    const label = input.closest('label');
+                    const labelText = label ? label.innerText : '';
+                    if (key === 'sender_address' && labelText.includes('보내는 분 상세주소')) {
+                        input.focus();
+                    }
+                    if (key === 'receiver_address' && labelText.includes('받는 분 상세주소')) {
+                        input.focus();
+                    }
+                });
+            }, false);
+        })();
+        </script>
+        """,
+        height=0,
+    )
+
+
+def _create_toss_payment_link(amount, order_id, order_name, customer_name):
+    secret_key = st.secrets.get("TOSS_SECRET_KEY", "")
+    app_base_url = st.secrets.get("APP_BASE_URL", "")
+    if not secret_key or not app_base_url:
+        return None, "TOSS_SECRET_KEY 또는 APP_BASE_URL 설정이 없습니다."
+
+    auth = base64.b64encode(f"{secret_key}:".encode("utf-8")).decode("utf-8")
+    url = "https://api.tosspayments.com/v1/payments"
+    payload = {
+        "method": "CARD",
+        "amount": int(amount),
+        "orderId": str(order_id),
+        "orderName": order_name,
+        "customerName": customer_name,
+        "successUrl": f"{app_base_url}/?page=PAYMENT_SUCCESS",
+        "failUrl": f"{app_base_url}/?page=PAYMENT_FAIL"
+    }
+    headers = {
+        "Authorization": f"Basic {auth}",
+        "Content-Type": "application/json"
+    }
+    try:
+        res = requests.post(url, headers=headers, json=payload, timeout=10)
+        if res.status_code not in [200, 201]:
+            return None, f"토스 결제 링크 생성 실패: {res.text}"
+        data = res.json()
+        checkout_url = data.get("checkout", {}).get("url")
+        if not checkout_url:
+            return None, "결제 링크 URL을 받지 못했습니다."
+        return checkout_url, "OK"
+    except Exception as e:
+        return None, f"토스 결제 링크 생성 오류: {e}"
+
+
+def _confirm_toss_payment(payment_key, order_id, amount):
+    secret_key = st.secrets.get("TOSS_SECRET_KEY", "")
+    if not secret_key:
+        return False, "TOSS_SECRET_KEY 설정이 없습니다."
+    auth = base64.b64encode(f"{secret_key}:".encode("utf-8")).decode("utf-8")
+    url = "https://api.tosspayments.com/v1/payments/confirm"
+    headers = {
+        "Authorization": f"Basic {auth}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "paymentKey": payment_key,
+        "orderId": order_id,
+        "amount": int(amount)
+    }
+    try:
+        res = requests.post(url, headers=headers, json=payload, timeout=10)
+        if res.status_code != 200:
+            return False, f"결제 승인 실패: {res.text}"
+        return True, "OK"
+    except Exception as e:
+        return False, f"결제 승인 오류: {e}"
+
+def render_settlement():
+    st.markdown("""
+        <div class="glass-container" style="margin-bottom: 16px;">
+            <div style="font-size: 22px; font-weight: 900; color: #000000;">💰 실시간 수익 정산 센터</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # 1. 정산 요약 (유형별 마진 계산)
+    user_type = st.session_state.get('user_type', '일반사업자')
+    st.markdown("### 💵 이번 달 예상 수익", unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
+
+    def _safe_sum(series):
+        return pd.to_numeric(series.astype(str).str.replace(",", "").str.replace("원", ""), errors="coerce").fillna(0).sum()
+
+    if user_type == "일반사업자":
+        platform_fee = 33000
+    elif user_type == "택배사업자":
+        platform_fee = 11000
+    else:
+        platform_fee = 0
+
+    delivery_margin = 0
+    sms_margin = 0
+    ai_margin = 0
+
+    delivery_df = db_manager.get_business_data("택배사업자")
+    if not delivery_df.empty:
+        if "수수료(마진)" in delivery_df.columns:
+            delivery_margin = _safe_sum(delivery_df["수수료(마진)"])
+        elif "수수료" in delivery_df.columns:
+            delivery_margin = _safe_sum(delivery_df["수수료"])
+
+    perf_df = pd.DataFrame()
+    spreadsheet = db_manager.get_spreadsheet()
+    if spreadsheet is not None:
+        try:
+            perf_ws = spreadsheet.worksheet(db_manager.PERFORMANCE_SHEET)
+            perf_df = pd.DataFrame(perf_ws.get_all_records())
+        except Exception:
+            perf_df = pd.DataFrame()
+
+    if not perf_df.empty and "type" in perf_df.columns:
+        type_series = perf_df["type"].astype(str).str.lower()
+        if "commission" in perf_df.columns:
+            commission = perf_df["commission"]
+        else:
+            commission = perf_df.get("amount", pd.Series(dtype="object"))
+
+        sms_mask = type_series.str.contains("sms|문자|alimtalk|알림톡", regex=True)
+        ai_mask = type_series.str.contains("ai|상담|aicc", regex=True)
+        sms_margin = _safe_sum(commission[sms_mask])
+        ai_margin = _safe_sum(commission[ai_mask])
+
+    total_margin = platform_fee + delivery_margin + sms_margin + ai_margin
+    c1.metric("총 정산 금액", f"{total_margin:,.0f}원", "데이터 기반")
+    c2.metric("택배 수익", f"{delivery_margin:,.0f}원", "데이터 기반")
+    c3.metric("문자 수익", f"{sms_margin:,.0f}원", "데이터 기반")
+
+    # 2. 정산 상세 내역 (탭 구분)
+    tab1, tab2 = st.tabs(["정산 내역 확인", "계좌 설정"])
+
+    with tab1:
+        st.markdown("📅 **2026년 1월 정산 예정일: 2월 5일**", unsafe_allow_html=True)
+        data = {
+            '구분': ['구독료', '택배마진', '문자마진', 'AI상담수수료'],
+            '발생금액': [platform_fee, int(delivery_margin), int(sms_margin), int(ai_margin)],
+            '상태': ['대기중', '대기중', '대기중', '대기중']
+        }
+        st.table(pd.DataFrame(data))
+
+    with tab2:
+        st.info("정산받으실 계좌 정보를 입력해 주세요.")
+        st.text_input("은행명", value="농협")
+        st.text_input("계좌번호", value="302-XXXX-XXXX-XX")
+        st.text_input("예금주", value="홍길동")
+        if st.button("계좌 정보 저장"):
+            st.success("정산 계좌가 등록되었습니다.")
+
+    render_home_button()
+
+
+def render_payment():
+    st.markdown("""
+        <div class="glass-container" style="margin-bottom: 16px;">
+            <div style="font-size: 22px; font-weight: 900; color: #000000; text-align: center;">💳 서비스 구독 및 결제</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    user_type = st.session_state.get('user_type', '일반사업자')
+    st.markdown(f"### 📢 {user_type}님을 위한 맞춤 플랜", unsafe_allow_html=True)
+
+    if user_type == "일반사업자":
+        plan_name = "매장 올인원 비서"
+        price = "33,000원 / 월"
+        features = ["AI 전화 응대 무제한", "실시간 예약 관리", "주간 경영 리포트"]
+    elif user_type == "택배사업자":
+        plan_name = "물류 자동화 마스터"
+        price = "11,000원 / 월 (건당 수수료 별도)"
+        features = ["로젠 API 송장 출력", "AI 주소 자동 추출", "물동량 분석 리포트"]
+    else:
+        plan_name = "농가 상생 파트너"
+        price = "55,000원 / 충전식 (5000건)"
+        features = ["대량 단골 문자 할인", "AI 주문 장부 자동화", "직거래 관리 리포트"]
+
+    st.markdown(
+        f"""
+        <div class="glass-container" style="margin-bottom: 10px;">
+            <div style="font-size: 18px; font-weight: 900; color: #000000;">[{plan_name}]</div>
+            <div style="font-size: 14px; font-weight: 900; color: #000000; margin-top: 6px;">가격: {price}</div>
+            <div style="font-size: 13px; font-weight: 800; color: #000000; margin-top: 8px;">
+                주요기능: {", ".join(features)}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    pay_method = st.radio("결제 수단 선택", ["신용카드", "계좌이체", "카카오페이 / 토스페이"])
+
+    if st.button(f"{plan_name} 결제하기", use_container_width=True):
+        st.balloons()
+        st.success("결제 연동 API 호출 중... (토스 페이먼츠 테스트 모드)")
+
+    render_home_button()
+
 
 def render_health_check():
     """연결 상태 점검 (쿼리 파라미터로만 노출)"""
@@ -498,8 +759,15 @@ now = datetime.now()
 time_str = now.strftime('%H:%M:%S')
 date_str = now.strftime('%Y. %m. %d') + f" ({['월','화','수','목','금','토','일'][now.weekday()]})"
 
+# 🧑‍💼 [관리자 화면]
+if st.session_state.page == "ADMIN":
+    if not st.session_state.get("is_admin"):
+        st.error("관리자 권한이 필요합니다.")
+        go_home()
+    render_admin_page()
+
 # 🏠 [메인 화면]
-if st.session_state.page == "home":
+elif st.session_state.page == "home":
     render_health_check()
     # 1. 멤버십 바 구성
     is_logged_in = st.session_state.logged_in_store is not None
@@ -519,10 +787,10 @@ if st.session_state.page == "home":
                 <div style="font-size: 12px; font-weight: 800; color: #000000; opacity: 0.8;">로그인 후 일반/프리미엄 등급이 자동 표시됩니다</div>
             </div>
             <div class="membership-badges">
-                <span class="level-badge force-white">일반</span>
-                <span class="level-badge premium force-white">프리미엄</span>
+                <span class="level-badge">일반</span>
+                <span class="level-badge premium">프리미엄</span>
                 <a href="/?page=JOIN" target="_top" style="text-decoration: none;">
-                    <div class="force-white" style="background: #000000; color: white; padding: 10px 18px; border-radius: 50px; font-weight: 900; font-size: 14px;">로그인 / 회원가입</div>
+                    <div style="background: #FFFFFF; color: #000000; border: 2px solid #000000; padding: 10px 18px; border-radius: 50px; font-weight: 900; font-size: 14px;">로그인 / 회원가입</div>
                 </a>
                 {kakao_button_html}
             </div>
@@ -535,7 +803,7 @@ if st.session_state.page == "home":
         membership_html = f"""
         <div class="glass-container membership-bar">
             <div style="display: flex; align-items: center; gap: 12px;">
-                <div class="level-badge force-white {'premium' if level == '프리미엄' else ''}">{level} 멤버십</div>
+                <div class="level-badge {'premium' if level == '프리미엄' else ''}">{level} 멤버십</div>
                 <div style="font-size: 18px; font-weight: 900; color: #000000;">{store["name"]} 사장님</div>
             </div>
             <div class="membership-badges">
@@ -551,7 +819,7 @@ if st.session_state.page == "home":
     <div class="core-cards">
         <a href="/?page=DELIVERY" target="_top" class="glass-card core-card" onclick="window.top.location.href='/?page=DELIVERY'; return false;">
             <div>
-                <div class="force-white" style="background: #000000; color: white; display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-bottom: 10px;">인기 서비스</div>
+                <div style="background: #FFFFFF; color: #000000; border: 1px solid #000000; display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-bottom: 10px;">인기 서비스</div>
                 <div class="core-title">AI 택배</div>
                 <div class="core-desc">택배기사님 필수! 주소 입력 없이 음성으로 송장 즉시 출력</div>
             </div>
@@ -559,7 +827,7 @@ if st.session_state.page == "home":
         </a>
         <a href="/?page=AI_CHAT" target="_top" class="glass-card core-card" onclick="window.top.location.href='/?page=AI_CHAT'; return false;">
             <div>
-                <div class="force-white" style="background: #000000; color: white; display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-bottom: 10px;">AI 자동화</div>
+                <div style="background: #FFFFFF; color: #000000; border: 1px solid #000000; display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-bottom: 10px;">AI 자동화</div>
                 <div class="core-title">AI 매장비서</div>
                 <div class="core-desc">자영업 사장님 필수! 단골 관리부터 예약까지 AI가 24시간 응대</div>
             </div>
@@ -567,7 +835,7 @@ if st.session_state.page == "home":
         </a>
         <a href="/?page=SETTLEMENT" target="_top" class="glass-card core-card" onclick="window.top.location.href='/?page=SETTLEMENT'; return false;">
             <div>
-                <div class="force-white" style="background: #000000; color: white; display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-bottom: 10px;">정산 센터</div>
+                <div style="background: #FFFFFF; color: #000000; border: 1px solid #000000; display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-bottom: 10px;">정산 센터</div>
                 <div class="core-title">실시간 수익</div>
                 <div class="core-desc">투명한 정산! 오늘 번 순수익을 실시간으로 확인하세요</div>
             </div>
@@ -578,16 +846,15 @@ if st.session_state.page == "home":
 
     # 3. 하단 아이콘 버튼 그리드
     bottom_menus = [
-        {"title": "매장 예약", "icon": "📅", "target": "RESERVE", "color": "#F4A300"},
-        {"title": "매장 관리", "icon": "🛠️", "target": "STORE_MGMT", "color": "#6C5CE7"},
-        {"title": "택배 접수", "icon": "📦", "target": "DELIVERY", "color": "#2D3436"},
-        {"title": "AI 상담원", "icon": "🤖", "target": "AI_CHAT", "color": "#00B894"},
-        {"title": "매출 정산", "icon": "💰", "target": "SETTLEMENT", "color": "#2E86DE"},
-        {"title": "결제하기", "icon": "💳", "target": "PAYMENT", "color": "#00A8FF"},
-        {"title": "주문 장부", "icon": "📋", "target": "ORDERS", "color": "#E17055"},
-        {"title": "가맹 신청", "icon": "🤝", "target": "JOIN", "color": "#D63031"},
-        {"title": "공지 사항", "icon": "📢", "target": "NOTICE", "color": "#6C5CE7"},
-        {"title": "고객 센터", "icon": "📞", "target": "CONTACT", "color": "#00B894"}
+        {"title": "통합 예약/주문", "icon": "📅", "target": "reservation", "color": "#FFFFFF"},
+        {"title": "테스트카드", "icon": "🧪", "target": "test_card", "color": "#FFFFFF"},
+        {"title": "단골 문자 발송", "icon": "✉️", "target": "sms", "color": "#FFFFFF"},
+        {"title": "매장 기본 설정", "icon": "⚙️", "target": "settings", "color": "#FFFFFF"},
+        {"title": "AI 전화 응대 설정", "icon": "📞", "target": "aicc_setup", "color": "#FFFFFF"},
+        {"title": "프리미엄 리포트", "icon": "💎", "target": "report", "color": "#FFFFFF"},
+        {"title": "서비스 결제", "icon": "💳", "target": "PAYMENT", "color": "#FFFFFF"},
+        {"title": "수익 정산 센터", "icon": "💰", "target": "settlement", "color": "#FFFFFF"},
+        {"title": "고객지원 센터", "icon": "📢", "target": "support", "color": "#FFFFFF"}
     ]
     
     icon_grid_html = '<div class="icon-grid">'
@@ -596,6 +863,7 @@ if st.session_state.page == "home":
     icon_grid_html += '</div>'
 
     # 상단 멤버십 바 (iframe 밖에서 렌더링하여 링크 동작 보장)
+    membership_html = "\n".join([line.lstrip() for line in membership_html.splitlines()])
     st.markdown(membership_html, unsafe_allow_html=True)
 
     # 전체 레이아웃 결합
@@ -603,31 +871,27 @@ if st.session_state.page == "home":
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         html, body {{
-            background: transparent;
+            background: #FFFFFF;
             font-family: 'Pretendard', sans-serif !important;
         }}
         a {{ color: #000000; text-decoration: none; }}
         .glass-container {{
-            background: rgba(255, 255, 255, 0.55) !important;
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            background: #FFFFFF !important;
+            border: 1px solid #000000;
             border-radius: 30px;
             padding: 22px 26px;
             margin-bottom: 18px;
-            box-shadow: 0 18px 38px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
         }}
         .force-white, .force-white * {{
-            color: #FFFFFF !important;
+            color: #000000 !important;
         }}
         .glass-card {{
-            background: rgba(255, 255, 255, 0.55) !important;
-            backdrop-filter: blur(26px) saturate(180%);
-            -webkit-backdrop-filter: blur(26px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.9);
+            background: #FFFFFF !important;
+            border: 1px solid #000000;
             border-radius: 32px;
             padding: 28px 32px;
-            box-shadow: 0 22px 44px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             display: block;
             text-decoration: none;
@@ -635,8 +899,8 @@ if st.session_state.page == "home":
         }}
         .glass-card:hover {{
             transform: translateY(-5px);
-            background: rgba(255, 255, 255, 0.62) !important;
-            box-shadow: 0 26px 52px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+            background: #FFFFFF !important;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
         }}
         .glass-card:active {{
             animation: card-bounce 0.25s ease-out;
@@ -648,7 +912,7 @@ if st.session_state.page == "home":
             gap: 18px;
             min-height: 150px;
             width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.85);
+            border: 1px solid #000000;
         }}
         .core-title {{
             font-size: 28px;
@@ -679,8 +943,8 @@ if st.session_state.page == "home":
             min-height: 96px;
             text-align: left;
             text-decoration: none;
-            border: 1px solid rgba(255, 255, 255, 0.9);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+            border: 1px solid #000000;
+            box-shadow: none;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
             display: flex;
             align-items: center;
@@ -689,11 +953,11 @@ if st.session_state.page == "home":
         }}
         .icon-item:active {{
             transform: translateY(-6px) scale(1.03);
-            box-shadow: 0 16px 30px rgba(0, 0, 0, 0.18);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
             animation: card-bounce 0.25s ease-out;
         }}
         .icon-emoji {{ font-size: 28px; }}
-        .icon-text {{ font-size: 15px; font-weight: 900; color: #FFFFFF; }}
+        .icon-text {{ font-size: 15px; font-weight: 900; color: #000000; }}
         @keyframes card-bounce {{
             0% {{ transform: translateY(0) scale(1); }}
             55% {{ transform: translateY(-10px) scale(1.04); }}
@@ -742,11 +1006,16 @@ if st.session_state.page == "home":
             position: fixed;
             inset: 0;
             background: rgba(0, 0, 0, 0.45);
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
             z-index: 9999;
             padding: 16px;
+            pointer-events: none;
+        }}
+        .premium-overlay.active {{
+            display: flex;
+            pointer-events: auto;
         }}
         .premium-modal {{
             width: min(520px, 92vw);
@@ -794,8 +1063,9 @@ if st.session_state.page == "home":
         }}
         .premium-cta {{
             width: 100%;
-            background: #000000;
-            color: #FFFFFF !important;
+            background: #FFFFFF;
+            color: #000000 !important;
+            border: 2px solid #000000;
             border-radius: 999px;
             padding: 12px 16px;
             text-align: center;
@@ -890,13 +1160,13 @@ if st.session_state.page == "home":
         </div>
         {icon_grid_html}
 
-        <div style="margin-top: 35px; background: rgba(255,255,255,0.2); border-radius: 100px; padding: 12px 25px; display: flex; align-items: center; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
-            <span class="force-white" style="background: #000000; color: white; font-size: 12px; font-weight: 900; padding: 3px 12px; border-radius: 50px; margin-right: 15px;">SYSTEM</span>
+        <div style="margin-top: 35px; background: #FFFFFF; border-radius: 100px; padding: 12px 25px; display: flex; align-items: center; border: 1px solid #000000;">
+            <span style="background: #FFFFFF; color: #000000; border: 1px solid #000000; font-size: 12px; font-weight: 900; padding: 3px 12px; border-radius: 50px; margin-right: 15px;">SYSTEM</span>
             <span style="color: #000000; font-size: 14px; font-weight: 800;">동네비서 AI 시스템 최적화 완료</span>
         </div>
     </div>
 
-    <div id="premium-overlay" class="premium-overlay" style="display: none;">
+    <div id="premium-overlay" class="premium-overlay">
         <div class="premium-modal">
             <div class="premium-close" id="premium-close">✕</div>
             <div class="premium-badge" id="premium-tag">🚀 프리미엄 멤버십</div>
@@ -972,6 +1242,7 @@ if st.session_state.page == "home":
             }}
         ];
         const overlay = document.getElementById('premium-overlay');
+        const ENABLE_PREMIUM_OVERLAY = false;
         const titleEl = document.getElementById('premium-title');
         const headlineEl = document.getElementById('premium-headline');
         const descEl = document.getElementById('premium-desc');
@@ -995,33 +1266,39 @@ if st.session_state.page == "home":
         const todayKey = new Date().toISOString().slice(0, 10);
         const snoozeKey = "dnbs_premium_snooze";
         const showPremium = () => {{
+            if (!overlay) return;
             const snoozed = localStorage.getItem(snoozeKey);
             if (snoozed === todayKey) {{
-                overlay.style.display = 'none';
+                overlay.classList.remove('active');
                 return;
             }}
-            overlay.style.display = 'flex';
+            overlay.classList.add('active');
             renderSlide();
         }};
         const hidePremium = () => {{
-            overlay.style.display = 'none';
+            if (!overlay) return;
+            overlay.classList.remove('active');
         }};
 
-        prevBtn.addEventListener('click', () => {{
+        if (prevBtn) prevBtn.addEventListener('click', () => {{
             slideIndex = (slideIndex - 1 + premiumSlides.length) % premiumSlides.length;
             renderSlide();
         }});
-        nextBtn.addEventListener('click', () => {{
+        if (nextBtn) nextBtn.addEventListener('click', () => {{
             slideIndex = (slideIndex + 1) % premiumSlides.length;
             renderSlide();
         }});
-        closeBtn.addEventListener('click', hidePremium);
-        snoozeBtn.addEventListener('click', () => {{
+        if (closeBtn) closeBtn.addEventListener('click', hidePremium);
+        if (snoozeBtn) snoozeBtn.addEventListener('click', () => {{
             localStorage.setItem(snoozeKey, todayKey);
             hidePremium();
         }});
 
-        showPremium();
+        if (ENABLE_PREMIUM_OVERLAY) {{
+            showPremium();
+        }} else {{
+            hidePremium();
+        }}
     }})();
     </script>
     """)
@@ -1065,10 +1342,9 @@ if st.session_state.page == "home":
         navigate_to(target)
 
 # 📄 [서브 페이지] 서비스 신청 관리 (택배/예약 통합)
-elif st.session_state.page == "RESERVE" or st.session_state.page == "DELIVERY":
+elif st.session_state.page in ["RESERVE", "DELIVERY", "reservation", "delivery"]:
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
     if st.session_state.selected_store is None:
-        if st.button("⬅️ 메인으로 돌아가기"): go_home()
         page_title = "📦 택배 매장 검색" if st.session_state.page == "DELIVERY" else "📅 매장 예약 검색"
         st.markdown(f'<h1 style="color:#000000; font-weight:900;">{page_title}</h1>', unsafe_allow_html=True)
         search_query = st.text_input("🔍 가맹점 이름 또는 연락처로 검색", placeholder="가게 이름을 입력하세요...")
@@ -1116,20 +1392,40 @@ elif st.session_state.page == "RESERVE" or st.session_state.page == "DELIVERY":
                         }
                         saved = db_manager.save_table_reservation(store.get("store_id", ""), reservation_data)
                         if saved:
+                            ledger_data = {
+                                "일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "고객명": cust_name,
+                                "연락처": cust_phone,
+                                "메뉴/인원": f"{party_size}명 {request}".strip(),
+                                "예약시간": f"{reservation_date.strftime('%Y-%m-%d')} {reservation_time.strftime('%H:%M')}",
+                                "AI응대여부": "AI 접수",
+                                "결제금액": ""
+                            }
+                            db_manager.save_to_google_sheet("일반사업자", ledger_data)
                             st.success("예약이 접수되었습니다.")
                             go_home()
                         else:
                             st.error("예약 저장에 실패했습니다. 잠시 후 다시 시도해주세요.")
         else:
             st.markdown("### 📦 택배 발송 신청")
-            s_name = st.text_input("보내는 분 성함")
-            s_phone = st.text_input("보내는 분 연락처")
-            s_addr = st.text_input("보내는 분 주소")
-            s_addr_detail = st.text_input("보내는 분 상세주소")
-            r_name = st.text_input("받는 분 성함")
-            r_phone = st.text_input("받는 분 연락처")
-            r_addr = st.text_input("받는 분 주소")
-            r_addr_detail = st.text_input("받는 분 상세주소")
+            _render_address_listener()
+            st.session_state.lock_sender = st.checkbox("보내는 사람 정보 고정", value=st.session_state.lock_sender)
+            sender_defaults = st.session_state.fixed_sender if st.session_state.lock_sender else {}
+            s_name = st.text_input("보내는 분 성함", value=sender_defaults.get("name", ""))
+            s_phone = st.text_input("보내는 분 연락처", value=sender_defaults.get("phone", ""))
+            address_helper.daum_address_search(key="sender_address")
+            s_addr = st.text_input("보내는 분 주소", value=sender_defaults.get("address", ""))
+            s_addr_detail = st.text_input("보내는 분 상세주소", value=sender_defaults.get("detail_address", ""))
+            st.caption("주소 검색 후 표시된 주소를 복사해 붙여넣어 주세요. 상세주소까지 입력해주세요.")
+
+            st.session_state.lock_receiver = st.checkbox("받는 사람 정보 고정", value=st.session_state.lock_receiver)
+            receiver_defaults = st.session_state.fixed_receiver if st.session_state.lock_receiver else {}
+            r_name = st.text_input("받는 분 성함", value=receiver_defaults.get("name", ""))
+            r_phone = st.text_input("받는 분 연락처", value=receiver_defaults.get("phone", ""))
+            address_helper.daum_address_search(key="receiver_address")
+            r_addr = st.text_input("받는 분 주소", value=receiver_defaults.get("address", ""))
+            r_addr_detail = st.text_input("받는 분 상세주소", value=receiver_defaults.get("detail_address", ""))
+            st.caption("주소 검색 후 표시된 주소를 복사해 붙여넣어 주세요. 상세주소까지 입력해주세요.")
             item_name = st.text_input("물품명")
             item_count = st.number_input("수량", min_value=1, max_value=999, value=1)
             pickup_date = st.date_input("수거 희망일")
@@ -1137,10 +1433,29 @@ elif st.session_state.page == "RESERVE" or st.session_state.page == "DELIVERY":
             size_str = st.selectbox("크기", logen_delivery.get_size_options())
             use_logen = st.checkbox("로젠택배로 바로 예약하기", value=True)
             memo = st.text_area("요청사항", height=80)
+            fee_info = logen_delivery.calculate_delivery_fee(
+                logen_delivery.parse_weight(weight_str),
+                logen_delivery.parse_size(size_str)
+            )
+            st.info(f"예상 요금: {fee_info.get('total_fee', 0):,}원 (무게 {fee_info.get('weight_category')}, 크기 {fee_info.get('size_category')})")
             if st.button("🚀 택배 접수 완료"):
                 if not s_name or not s_phone or not r_name or not r_phone or not r_addr:
                     st.error("보내는 분/받는 분 정보와 주소를 입력해주세요.")
                 else:
+                    if st.session_state.lock_sender:
+                        st.session_state.fixed_sender = {
+                            "name": s_name,
+                            "phone": s_phone,
+                            "address": s_addr,
+                            "detail_address": s_addr_detail
+                        }
+                    if st.session_state.lock_receiver:
+                        st.session_state.fixed_receiver = {
+                            "name": r_name,
+                            "phone": r_phone,
+                            "address": r_addr,
+                            "detail_address": r_addr_detail
+                        }
                     if use_logen:
                         sender = {
                             "name": s_name,
@@ -1173,6 +1488,17 @@ elif st.session_state.page == "RESERVE" or st.session_state.page == "DELIVERY":
                             st.stop()
                         saved = db_manager.save_logen_reservation(result)
                         if saved:
+                            fee_data = result.get("fee", {}) if isinstance(result, dict) else {}
+                            ledger_data = {
+                                "접수일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "발송인명": sender.get("name", ""),
+                                "수령인명": receiver.get("name", ""),
+                                "수령인 주소(AI추출)": receiver.get("address", ""),
+                                "물품종류": package.get("contents", ""),
+                                "운송장번호(로젠발급)": result.get("reservation_number", ""),
+                                "수수료(마진)": str(fee_data.get("total_fee", ""))
+                            }
+                            db_manager.save_to_google_sheet("택배사업자", ledger_data)
                             st.success(f"로젠택배 예약 완료! 예약번호: {result.get('reservation_number')}")
                             if result.get("logen_web_url"):
                                 st.markdown(f"[로젠택배 예약 확인하기]({result.get('logen_web_url')})")
@@ -1195,22 +1521,31 @@ elif st.session_state.page == "RESERVE" or st.session_state.page == "DELIVERY":
                     }
                     saved = db_manager.save_delivery_order(order_data)
                     if saved:
+                        ledger_data = {
+                            "접수일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "발송인명": s_name,
+                            "수령인명": r_name,
+                            "수령인 주소(AI추출)": r_addr,
+                            "물품종류": item_name,
+                            "운송장번호(로젠발급)": "",
+                            "수수료(마진)": str(fee_info.get("total_fee", ""))
+                        }
+                        db_manager.save_to_google_sheet("택배사업자", ledger_data)
                         st.success("택배가 접수되었습니다.")
                         go_home()
                     else:
                         st.error("택배 접수 저장에 실패했습니다. 잠시 후 다시 시도해주세요.")
 
+    render_home_button()
+
 # 📄 [서브 페이지] 결제 시스템
 elif st.session_state.page == "PAYMENT":
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
-    if st.button("⬅️ 홈으로"): go_home()
-    st.markdown('<h1 style="color:#000000; font-weight:900;">💳 결제하기</h1>', unsafe_allow_html=True)
-    st.info("결제 기능 준비 중입니다.")
+    render_payment_page()
 
 # 📄 [서브 페이지] 가맹점 가입 신청
 elif st.session_state.page == "JOIN":
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
-    if st.button("⬅️ 메인으로 돌아가기"): go_home()
     st.markdown('<h1 style="color:#000000; font-weight:900;">🤝 가맹 가입 신청</h1>', unsafe_allow_html=True)
     login_tab, join_tab, find_tab = st.tabs(["🔐 로그인", "🧾 회원가입", "🔎 아이디/비밀번호 찾기"])
 
@@ -1219,12 +1554,26 @@ elif st.session_state.page == "JOIN":
             login_id = st.text_input("아이디")
             login_pw = st.text_input("비밀번호", type="password")
             if st.form_submit_button("🚀 로그인"):
+                login_id = (login_id or "").strip()
+                login_pw = (login_pw or "").strip()
+                if login_id == "admin777" and login_pw == "pass777":
+                    st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
+                    st.session_state.store_id = login_id
+                    st.session_state.is_admin = True
+                    st.session_state.page = "ADMIN"
+                    st.rerun()
                 success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
                 if not success:
                     success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
                 if success:
-                    st.success(f"환영합니다, {store_info['name']} 사장님!")
                     st.session_state.logged_in_store = store_info
+                    st.session_state.store_id = login_id
+                    if login_id in ["admin777", "5415tv", "master"]:
+                        st.session_state.is_admin = True
+                        st.session_state.page = "ADMIN"
+                        st.rerun()
+                    st.success(f"환영합니다, {store_info['name']} 사장님!")
+                    st.session_state.user_type = infer_user_type()
                     go_home()
                 else:
                     st.error(f"로그인 실패: {msg}")
@@ -1234,9 +1583,11 @@ elif st.session_state.page == "JOIN":
             store_name = st.text_input("상호명")
             owner_name = st.text_input("대표자명")
             phone = st.text_input("연락처")
+            phone_070 = st.text_input("070 번호 (선택)")
             kakao_id = st.text_input("카톡 아이디")
             store_id = st.text_input("아이디")
             password = st.text_input("비밀번호", type="password")
+            user_type = st.selectbox("사업자 유형", ["일반사업자", "택배사업자", "농어민"])
             business_type = st.selectbox("업종", ["식당/음식점", "택배/물류", "카페/디저트", "미용/뷰티", "일반판매", "기타"])
             region = st.text_input("지역(예: 서울 강남구)")
             memo = st.text_area("추가 문의", height=90)
@@ -1247,7 +1598,9 @@ elif st.session_state.page == "JOIN":
                     detail_data = {
                         "store_name": store_name,
                         "owner_name": owner_name,
-                        "kakao_id": kakao_id
+                        "kakao_id": kakao_id,
+                        "user_type": user_type,
+                        "phone_070": phone_070
                     }
                     inquiry_data = {
                         "name": owner_name,
@@ -1262,8 +1615,21 @@ elif st.session_state.page == "JOIN":
                     }
                     saved = db_manager.save_inquiry(inquiry_data)
                     if saved:
+                        user_data = {
+                            "가입일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "아이디": store_id,
+                            "비밀번호": "암호화됨",
+                            "상호명": store_name,
+                            "사업자유형": user_type,
+                            "연락처": phone,
+                            "070번호": phone_070,
+                            "요금제상태": "무료"
+                        }
+                        db_manager.save_user_management(user_data)
+                        st.session_state.user_type = user_type
                         st.success("가맹 신청이 완료되었습니다.")
-                        go_home()
+                        st.session_state.page = "signup_complete"
+                        st.rerun()
                     else:
                         st.error("가맹 신청 저장에 실패했습니다. 잠시 후 다시 시도해주세요.")
 
@@ -1312,38 +1678,104 @@ elif st.session_state.page == "JOIN":
                                 else:
                                     st.error("비밀번호 재설정에 실패했습니다. 잠시 후 다시 시도해주세요.")
 
+    render_home_button()
+
 # 📄 [서브 페이지] 프리미엄 멤버십 포털
 elif st.session_state.page == "PREMIUM_ONLY":
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
-    if st.button("⬅️ 메인으로 돌아가기"): go_home()
     st.markdown('<h1 style="color:#000000; font-weight:900;">💎 프리미엄 멤버십</h1>', unsafe_allow_html=True)
     st.info("프리미엄 회원 전용 공간입니다.")
     if st.button("💎 프리미엄 리포트"):
         st.session_state.page = "report"  # 페이지 상태만 변경
+    render_home_button()
 
 # 📄 [서브 페이지] 프리미엄 리포트
 elif st.session_state.page == "report":
     render_report()  # 리포트 화면 실행
-    if st.button("⬅️ 홈으로 돌아가기", use_container_width=True):
-        st.session_state.page = "home"
-        st.rerun()
+    render_home_button()
+elif st.session_state.page == "test_card":
+    render_test_card_page()
+elif st.session_state.page == "PAYMENT_SUCCESS":
+    st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
+    st.markdown('<h1 style="color:#000000; font-weight:900;">✅ 결제 완료</h1>', unsafe_allow_html=True)
+    payment_key = st.query_params.get("paymentKey", "")
+    order_id = st.query_params.get("orderId", "")
+    amount = st.query_params.get("amount", 0)
+    if payment_key and order_id and amount:
+        ok, msg = _confirm_toss_payment(payment_key, order_id, amount)
+        if ok:
+            ok2, msg2 = db_manager.update_farmer_payment_status(order_id, status="결제완료")
+            if ok2:
+                st.success("결제가 완료되었습니다. 직거래장부에 [결제완료]가 표시되었습니다.")
+            else:
+                st.warning(f"결제는 완료됐으나 장부 업데이트 실패: {msg2}")
+        else:
+            st.error(msg)
+    else:
+        st.info("결제 결과 정보를 확인할 수 없습니다.")
+    render_home_button()
+elif st.session_state.page == "PAYMENT_FAIL":
+    st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
+    st.markdown('<h1 style="color:#000000; font-weight:900;">❌ 결제 실패</h1>', unsafe_allow_html=True)
+    st.error("결제가 실패했습니다. 다시 시도해주세요.")
+    render_home_button()
+
+# 📄 [서브 페이지] 유형별 치트키 안내
+elif st.session_state.page == "cheat_sheet":
+    st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
+    st.markdown('<h1 style="color:#000000; font-weight:900;">💡 유형별 핵심 치트키</h1>', unsafe_allow_html=True)
+
+    cheat_rows = [
+        {"구분": "일반사업자", "핵심 기능 (치트키)": "AI 실시간 예약 확정", "점주가 얻는 이득": "바쁜 점심시간에 전화 안 받아도 예약 손님이 쌓임"},
+        {"구분": "택배사업자", "핵심 기능 (치트키)": "음성 주소 추출 & 송장 출력", "점주가 얻는 이득": "운송장 주소 타이핑하는 시간 90% 단축"},
+        {"구분": "농어민", "핵심 기능 (치트키)": "직거래 주문 자동 장부", "점주가 얻는 이득": "전화/카톡으로 흩어진 주문을 AI가 엑셀로 자동 정리"}
+    ]
+    st.table(pd.DataFrame(cheat_rows))
+    render_home_button()
+
+# 📄 [서브 페이지] 회원가입 완료 후 안내
+elif st.session_state.page == "signup_complete":
+    st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
+    st.markdown('<h1 style="color:#000000; font-weight:900;">✅ 가입 완료 안내</h1>', unsafe_allow_html=True)
+    st.info("회원가입이 정상 완료되었습니다. 아래 과금 방식 가이드를 확인해주세요.")
+
+    fee_rows = [
+        {"유형": "일반사업자", "타겟 및 특징": "음식점, 카페 등 매장 고객", "추천 과금 방식": "월 구독료 중심 (예: 월 3.3만원 / AI응대 무제한)"},
+        {"유형": "택배사업자", "타겟 및 특징": "수거/배송 위주 대량 접수", "추천 과금 방식": "건당 수수료 중심 (예: 접수 건당 100원 / 기본료 낮음)"},
+        {"유형": "농어민", "타겟 및 특징": "계절별 판매, 직거래 위주", "추천 과금 방식": "시즌권/충전식 (예: 문자 5,000건 패키지 / 수확기만 이용)"}
+    ]
+    st.table(pd.DataFrame(fee_rows))
+    render_home_button()
 
 # 📄 [서브 페이지] 매장 관리
-elif st.session_state.page == "STORE_MGMT":
+elif st.session_state.page in ["STORE_MGMT", "settings", "aicc_setup"]:
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
-    if st.button("⬅️ 메인으로 돌아가기"): go_home()
     st.markdown('<h1 style="color:#000000; font-weight:900;">🛠️ 매장 통합 관리</h1>', unsafe_allow_html=True)
     if st.session_state.logged_in_store is None:
         with st.form("login_form"):
             login_id = st.text_input("아이디")
             login_pw = st.text_input("비밀번호", type="password")
             if st.form_submit_button("🚀 로그인"):
+                login_id = (login_id or "").strip()
+                login_pw = (login_pw or "").strip()
+                if login_id == "admin777" and login_pw == "pass777":
+                    st.session_state.logged_in_store = {"name": "동네비서 본사 (슈퍼관리자)"}
+                    st.session_state.store_id = login_id
+                    st.session_state.is_admin = True
+                    st.session_state.page = "ADMIN"
+                    st.rerun()
                 success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
                 if not success:
                     success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
                 if success:
-                    st.success(f"환영합니다, {store_info['name']} 사장님!")
                     st.session_state.logged_in_store = store_info
+                    st.session_state.store_id = login_id
+                    if login_id in ["admin777", "5415tv", "master"]:
+                        st.session_state.is_admin = True
+                        st.session_state.page = "ADMIN"
+                        st.rerun()
+                    st.success(f"환영합니다, {store_info['name']} 사장님!")
+                    st.session_state.user_type = infer_user_type()
                     st.rerun()
                 else:
                     st.error(f"로그인 실패: {msg}")
@@ -1352,11 +1784,11 @@ elif st.session_state.page == "STORE_MGMT":
         if st.button("🔓 로그아웃"):
             st.session_state.logout_requested = True
             st.rerun()
+    render_home_button()
 
 # 🤖 [서브 페이지] AI 상담원
 elif st.session_state.page == "AI_CHAT":
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
-    if st.button("⬅️ 메인으로 돌아가기"): go_home()
     st.markdown('<h1 style="color:#000000; font-weight:900;">🤖 AI 지능형 상담원</h1>', unsafe_allow_html=True)
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
@@ -1521,8 +1953,68 @@ elif st.session_state.page == "AI_CHAT":
             reply = ai_manager.get_ai_response(user_input, st.session_state.chat_history)
         st.session_state.chat_history.append({"role": "assistant", "content": reply})
         st.rerun()
+    render_home_button()
 
+elif st.session_state.page in ["sms", "settlement", "support"]:
+    st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
+    if st.session_state.page == "settlement":
+        render_settlement()
+    elif st.session_state.page == "sms":
+        st.markdown('<h1 style="color:#000000; font-weight:900;">✉️ 단골 문자 발송</h1>', unsafe_allow_html=True)
+        st.markdown("### 💳 결제 요청 알림톡 보내기", unsafe_allow_html=True)
+        with st.form("payment_request_form"):
+            customer_name = st.text_input("고객명")
+            customer_phone = st.text_input("고객 연락처")
+            item_name = st.text_input("품목")
+            quantity = st.number_input("수량", min_value=1, max_value=999, value=1)
+            amount = st.number_input("결제 금액", min_value=0, step=1000, value=10000)
+            address = st.text_input("배송지 주소")
+            memo = st.text_area("요청사항", height=80)
+            if st.form_submit_button("💳 결제 요청 알림톡 발송"):
+                if not customer_name or not customer_phone or not amount:
+                    st.error("고객명, 연락처, 결제 금액은 필수입니다.")
+                else:
+                    order_id = f"pay_{datetime.now().strftime('%Y%m%d%H%M%S')}_{uuid4().hex[:6]}"
+                    checkout_url, msg = _create_toss_payment_link(
+                        amount=amount,
+                        order_id=order_id,
+                        order_name=f"{item_name or '직거래 결제'}",
+                        customer_name=customer_name
+                    )
+                    if not checkout_url:
+                        st.error(msg)
+                        st.stop()
+
+                    ledger_data = {
+                        "주문일시": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "품목": item_name,
+                        "수량": int(quantity),
+                        "주문금액": int(amount),
+                        "입금확인여부": "결제요청",
+                        "배송지주소": address,
+                        "결제주문번호": order_id,
+                        "고객문의사항": memo
+                    }
+                    db_manager.save_to_google_sheet("농어민", ledger_data)
+
+                    message = f"""[결제 요청]
+{customer_name}님 결제 요청입니다.
+결제금액: {int(amount):,}원
+결제링크: {checkout_url}"""
+                    ok, send_msg = sms_manager.send_alimtalk(customer_phone, message)
+                    if ok:
+                        st.success("결제 요청 알림톡 발송 완료")
+                    else:
+                        st.warning(f"알림톡 발송 실패: {send_msg}")
+        render_home_button()
+    else:
+        title_map = {
+            "support": "📢 고객지원 센터"
+        }
+        st.markdown(f'<h1 style="color:#000000; font-weight:900;">{title_map.get(st.session_state.page, "기능 준비 중")}</h1>', unsafe_allow_html=True)
+        st.info("기능 준비 중입니다.")
+        render_home_button()
 else:
     st.markdown('<div style="padding-top: 20px;"></div>', unsafe_allow_html=True)
-    if st.button("⬅️ 메인으로 돌아가기"): go_home()
     st.header(f"✨ {st.session_state.page} 기능 준비 중")
+    render_home_button()
