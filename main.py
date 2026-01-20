@@ -1,275 +1,351 @@
+"""Local entrypoint: delegate to start_app.py."""
+
+import start_app  # noqa: F401
+"""Local entrypoint: delegate to start_app.py."""
+
+import start_app  # noqa: F401
+"""Local entrypoint: delegate to app.py."""
+
+import app  # noqa: F401
+"""Local entrypoint: delegate to app.py."""
+
+import app  # noqa: F401
 import streamlit as st
-import textwrap
-from datetime import datetime
-import pwa_helper
-import printer_manager
 import db_manager
-import logen_delivery
-import address_helper
-import sms_manager
-import qrcode
-import io
-import pandas as pd
-from PIL import Image
-import ai_manager
-import streamlit.components.v1 as components
-import time
-import json
-import requests
-import base64
-from uuid import uuid4
-from urllib.parse import urlencode
-from report_page import render_report  # 새로 만든 파일을 불러옵니다
-from admin_page import render_admin_page
-from payment_page import render_payment_page
-from test_card_page import render_test_card_page
 
-# ==========================================
-# 💎 동네비서 PREMIUM KIOSK - v2.2.0 (Sales Optimized)
-# ==========================================
-BUILD_VERSION = "20260116_SALES_PRO"
+from pages.home import render_home
+from pages.delivery import render_delivery
+from pages.assistant import render_assistant
+from pages.local_trade import render_local_trade
 
-# 1. 페이지 초기 설정 (Streamlit 규칙: 첫 호출이어야 함)
-st.set_page_config(page_title="동네비서 Premium", layout="centered")
 
-# 로그인 세션 방어 (새로고침 시 유지)
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+def init_session_state():
+    st.session_state.setdefault("logged_in", False)
+    st.session_state.setdefault("is_admin", False)
+    st.session_state.setdefault("page", "home")
+    st.session_state.setdefault("store_id", None)
+    st.session_state.setdefault("store_info", None)
 
-# 🎨 글로벌 스타일 주입 (Transparent Glass + Bold Black Text)
-st.markdown("""
-<style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-    
-    /* 1. 전체 배경: 백색 */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"], [data-testid="stHeader"], .main {
-        background: #FFFFFF !important;
-        font-family: 'Pretendard', sans-serif !important;
-        pointer-events: auto !important;
-    }
 
-    /* 2. 모든 텍스트 강제 검정색 고정 및 굵게 */
-    div, p, span, label, h1, h2, h3, h4, h5, h6, .stMarkdown p, .stText p, a {
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-        font-weight: 900 !important;
-    }
-    
-    /* 2-1. 보조 클래스 (검정 텍스트 유지) */
-    .force-white, .force-white * {
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-    }
+def set_page(page_name: str) -> None:
+    st.session_state.page = page_name
 
-    /* 3. 기본 카드 스타일 (화이트/블랙) */
-    .glass-container {
-        background: #FFFFFF !important;
-        border: 1px solid #000000;
-        border-radius: 30px;
-        padding: 22px 26px;
-        margin-bottom: 18px;
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
-    }
-    
-    a, button, [role="button"] {
-        pointer-events: auto !important;
-        cursor: pointer !important;
+
+def render_login():
+    st.title("로그인")
+    login_id = st.text_input("아이디", key="final_admin_id")
+    login_pw = st.text_input("비밀번호", type="password", key="final_admin_pw")
+
+    if st.button("로그인", use_container_width=True):
+        login_id = (login_id or "").strip()
+        login_pw = (login_pw or "").strip()
+
+        if not login_id or not login_pw:
+            st.error("아이디와 비밀번호를 입력해주세요.")
+            return
+
+        if login_id == "admin777" and login_pw == "pass777":
+            st.session_state.logged_in = True
+            st.session_state.is_admin = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = {"name": "동네비서 본사 (슈퍼관리자)"}
+            set_page("home")
+            st.rerun()
+
+        success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
+        if not success:
+            success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
+
+        if success:
+            st.session_state.logged_in = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = store_info
+            st.session_state.is_admin = login_id in ["admin777", "5415tv", "master"]
+            set_page("home")
+            st.rerun()
+        else:
+            st.error(f"로그인 실패: {msg}")
+
+
+def render_router():
+    page = st.session_state.page
+
+    routes = {
+        "home": render_home,
+        "delivery": render_delivery,
+        "assistant": render_assistant,
+        "local_trade": render_local_trade,
     }
 
-    .glass-card {
-        background: #FFFFFF !important;
-        border: 1px solid #000000;
-        border-radius: 32px;
-        padding: 28px 32px;
-        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        display: block;
-        text-decoration: none;
-        margin-bottom: 15px;
-    }
-    
-    .glass-card:hover {
-        transform: translateY(-5px);
-        background: #FFFFFF !important;
-        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
-    }
-    
-    .glass-card:active {
-        animation: card-bounce 0.25s ease-out;
+    render_fn = routes.get(page, render_home)
+    render_fn(set_page=set_page)
+
+
+def main():
+    st.set_page_config(page_title="동네비서", layout="wide")
+    init_session_state()
+
+    if not st.session_state.logged_in:
+        render_login()
+        return
+
+    render_router()
+
+
+if __name__ == "__main__":
+    main()
+import streamlit as st
+import db_manager
+
+from pages.home import render_home
+from pages.delivery import render_delivery
+from pages.assistant import render_assistant
+from pages.local_trade import render_local_trade
+
+
+def init_session_state():
+    st.session_state.setdefault("logged_in", False)
+    st.session_state.setdefault("is_admin", False)
+    st.session_state.setdefault("page", "home")
+    st.session_state.setdefault("store_id", None)
+    st.session_state.setdefault("store_info", None)
+
+
+def set_page(page_name: str) -> None:
+    st.session_state.page = page_name
+
+
+def render_login():
+    st.title("로그인")
+    login_id = st.text_input("아이디", key="final_admin_id")
+    login_pw = st.text_input("비밀번호", type="password", key="final_admin_pw")
+
+    if st.button("로그인", use_container_width=True):
+        login_id = (login_id or "").strip()
+        login_pw = (login_pw or "").strip()
+
+        if not login_id or not login_pw:
+            st.error("아이디와 비밀번호를 입력해주세요.")
+            return
+
+        if login_id == "admin777" and login_pw == "pass777":
+            st.session_state.logged_in = True
+            st.session_state.is_admin = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = {"name": "동네비서 본사 (슈퍼관리자)"}
+            set_page("home")
+            st.rerun()
+
+        success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
+        if not success:
+            success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
+
+        if success:
+            st.session_state.logged_in = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = store_info
+            st.session_state.is_admin = login_id in ["admin777", "5415tv", "master"]
+            set_page("home")
+            st.rerun()
+        else:
+            st.error(f"로그인 실패: {msg}")
+
+
+def render_router():
+    page = st.session_state.page
+
+    routes = {
+        "home": render_home,
+        "delivery": render_delivery,
+        "assistant": render_assistant,
+        "local_trade": render_local_trade,
     }
 
-    .membership-bar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        min-height: 86px;
+    render_fn = routes.get(page, render_home)
+    render_fn(set_page=set_page)
+
+
+def main():
+    st.set_page_config(page_title="동네비서", layout="wide")
+    init_session_state()
+
+    if not st.session_state.logged_in:
+        render_login()
+        return
+
+    render_router()
+
+
+if __name__ == "__main__":
+    main()
+import streamlit as st
+import db_manager
+
+from pages.home import render_home
+from pages.delivery import render_delivery
+from pages.assistant import render_assistant
+from pages.local_trade import render_local_trade
+
+
+def init_session_state():
+    st.session_state.setdefault("logged_in", False)
+    st.session_state.setdefault("is_admin", False)
+    st.session_state.setdefault("page", "home")
+    st.session_state.setdefault("store_id", None)
+    st.session_state.setdefault("store_info", None)
+
+
+def set_page(page_name: str) -> None:
+    st.session_state.page = page_name
+
+
+def render_login():
+    st.title("로그인")
+    login_id = st.text_input("아이디", key="final_admin_id")
+    login_pw = st.text_input("비밀번호", type="password", key="final_admin_pw")
+
+    if st.button("로그인", use_container_width=True):
+        login_id = (login_id or "").strip()
+        login_pw = (login_pw or "").strip()
+
+        if not login_id or not login_pw:
+            st.error("아이디와 비밀번호를 입력해주세요.")
+            return
+
+        if login_id == "admin777" and login_pw == "pass777":
+            st.session_state.logged_in = True
+            st.session_state.is_admin = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = {"name": "동네비서 본사 (슈퍼관리자)"}
+            set_page("home")
+            st.rerun()
+
+        success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
+        if not success:
+            success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
+
+        if success:
+            st.session_state.logged_in = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = store_info
+            st.session_state.is_admin = login_id in ["admin777", "5415tv", "master"]
+            set_page("home")
+            st.rerun()
+        else:
+            st.error(f"로그인 실패: {msg}")
+
+
+def render_router():
+    page = st.session_state.page
+
+    routes = {
+        "home": render_home,
+        "delivery": render_delivery,
+        "assistant": render_assistant,
+        "local_trade": render_local_trade,
     }
 
-    .membership-badges {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
+    render_fn = routes.get(page, render_home)
+    render_fn(set_page=set_page)
+
+
+def main():
+    st.set_page_config(page_title="동네비서", layout="wide")
+    init_session_state()
+
+    if not st.session_state.logged_in:
+        render_login()
+        return
+
+    render_router()
+
+
+if __name__ == "__main__":
+    main()
+import streamlit as st
+import db_manager
+
+from pages.home import render_home
+from pages.delivery import render_delivery
+from pages.assistant import render_assistant
+from pages.local_trade import render_local_trade
+
+
+def init_session_state():
+    st.session_state.setdefault("logged_in", False)
+    st.session_state.setdefault("is_admin", False)
+    st.session_state.setdefault("page", "home")
+    st.session_state.setdefault("store_id", None)
+    st.session_state.setdefault("store_info", None)
+
+
+def set_page(page_name: str) -> None:
+    st.session_state.page = page_name
+
+
+def render_login():
+    st.title("로그인")
+    login_id = st.text_input("아이디", key="final_admin_id")
+    login_pw = st.text_input("비밀번호", type="password", key="final_admin_pw")
+
+    if st.button("로그인", use_container_width=True):
+        login_id = (login_id or "").strip()
+        login_pw = (login_pw or "").strip()
+
+        if not login_id or not login_pw:
+            st.error("아이디와 비밀번호를 입력해주세요.")
+            return
+
+        if login_id == "admin777" and login_pw == "pass777":
+            st.session_state.logged_in = True
+            st.session_state.is_admin = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = {"name": "동네비서 본사 (슈퍼관리자)"}
+            set_page("home")
+            st.rerun()
+
+        success, msg, store_info = db_manager.verify_store_login(login_id, login_pw)
+        if not success:
+            success, msg, store_info = db_manager.verify_master_login(login_id, login_pw)
+
+        if success:
+            st.session_state.logged_in = True
+            st.session_state.store_id = login_id
+            st.session_state.store_info = store_info
+            st.session_state.is_admin = login_id in ["admin777", "5415tv", "master"]
+            set_page("home")
+            st.rerun()
+        else:
+            st.error(f"로그인 실패: {msg}")
+
+
+def render_router():
+    page = st.session_state.page
+
+    routes = {
+        "home": render_home,
+        "delivery": render_delivery,
+        "assistant": render_assistant,
+        "local_trade": render_local_trade,
     }
 
-    .level-badge {
-        background: #FFFFFF;
-        color: #000000 !important;
-        border: 1px solid #000000;
-        padding: 4px 12px;
-        border-radius: 50px;
-        font-size: 12px;
-        font-weight: 900;
-    }
+    render_fn = routes.get(page, render_home)
+    render_fn(set_page=set_page)
 
-    .level-badge.premium {
-        background: #FFFFFF;
-        color: #000000 !important;
-        border: 1px solid #000000;
-    }
-    
-    .kakao-btn {
-        background: #FFFFFF;
-        color: #000000 !important;
-        padding: 10px 16px;
-        border-radius: 50px;
-        font-weight: 900;
-        font-size: 13px;
-        border: 1px solid #000000;
-        box-shadow: none;
-    }
 
-    .core-cards {
-        margin: 10px auto 26px;
-        max-width: 880px;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-    }
+def main():
+    st.set_page_config(page_title="동네비서", layout="wide")
+    init_session_state()
 
-    .core-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        min-height: 150px;
-        width: 100%;
-        border: 1px solid #000000;
-        position: relative;
-        z-index: 2;
-    }
+    if not st.session_state.logged_in:
+        render_login()
+        return
 
-    .core-card .core-title {
-        font-size: 28px;
-        font-weight: 900;
-        color: #000000;
-        margin-bottom: 8px;
-        letter-spacing: -0.5px;
-    }
+    render_router()
 
-    .core-card .core-desc {
-        font-size: 15px;
-        font-weight: 900;
-        color: #000000;
-        line-height: 1.45;
-    }
 
-    .core-icon {
-        font-size: 58px;
-        flex-shrink: 0;
-    }
-
-    /* 4. 입력창 스타일 */
-    input, textarea, [data-baseweb="input"], [data-baseweb="textarea"] {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        color: #000000 !important;
-        border: 2px solid #000000 !important;
-        border-radius: 12px !important;
-    }
-
-    /* 5. 버튼 스타일 */
-    .stButton button, [data-testid="stForm"] button {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border-radius: 50px !important;
-        font-weight: 900 !important;
-        border: 2px solid #000000 !important;
-        padding: 12px 25px !important;
-        font-size: 16px !important;
-    }
-    
-    .stButton button *, [data-testid="stForm"] button * {
-        color: #000000 !important;
-        -webkit-text-fill-color: #000000 !important;
-    }
-
-    .stButton button svg, [data-testid="stForm"] button svg {
-        fill: #000000 !important;
-        color: #000000 !important;
-    }
-    
-    /* 6. Streamlit 기본 UI 제거 */
-    header, footer, [data-testid="stHeader"], [data-testid="stToolbar"] {
-        display: none !important;
-    }
-
-    /* 7. 하단 아이콘 그리드 (컬러 카드 + 튀어나오는 터치 효과) */
-    .icon-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 14px;
-        padding: 10px 0;
-    }
-    
-    .icon-item {
-        border-radius: 16px;
-        padding: 18px 12px;
-        min-height: 96px;
-        text-align: left;
-        text-decoration: none;
-        border: 1px solid #000000;
-        box-shadow: none;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        will-change: transform;
-        position: relative;
-        z-index: 2;
-        cursor: pointer;
-        pointer-events: auto !important;
-    }
-    
-    .membership-bar a, .kakao-btn {
-        position: relative;
-        z-index: 2;
-        cursor: pointer;
-        pointer-events: auto !important;
-    }
-    
-    .icon-item:active {
-        animation: card-bounce 0.25s ease-out;
-        transform: translateY(-6px) scale(1.03);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
-    }
-    
-    .icon-emoji { font-size: 28px; }
-    .icon-text { font-size: 15px; font-weight: 900; color: #000000; }
-    
-    @keyframes card-bounce {
-        0% { transform: translateY(0) scale(1); }
-        55% { transform: translateY(-10px) scale(1.04); }
-        100% { transform: translateY(-4px) scale(1.02); }
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# PWA 메타 주입
-pwa_helper.inject_pwa_tags()
-
-# 📌 모바일 캐시 갱신 (빌드 버전 변경 시 강제 새로고침)
-def inject_cache_bust(build_version: str):
+if __name__ == "__main__":
+    main()
     components.html(f"""
     <script>
     (function() {{
