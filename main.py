@@ -4,6 +4,9 @@ import start_app  # noqa: F401
 """Local entrypoint: delegate to start_app.py."""
 
 import start_app  # noqa: F401
+"""Local entrypoint: delegate to start_app.py."""
+
+import start_app  # noqa: F401
 """Local entrypoint: delegate to app.py."""
 
 import app  # noqa: F401
