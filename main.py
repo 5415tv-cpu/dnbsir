@@ -1,19 +1,18 @@
+import start_app
+
+start_app.main()
+import start_app
+
+start_app.main()
 """Local entrypoint: delegate to start_app.py."""
 
 import start_app  # noqa: F401
-"""Local entrypoint: delegate to start_app.py."""
-
-import start_app  # noqa: F401
-"""Local entrypoint: delegate to start_app.py."""
-
-import start_app  # noqa: F401
-"""Local entrypoint: delegate to app.py."""
-
-import app  # noqa: F401
-"""Local entrypoint: delegate to app.py."""
-
-import app  # noqa: F401
 import streamlit as st
+import start_app
+
+start_app.main()
+st.stop()
+
 import db_manager
 
 from pages.home import render_home

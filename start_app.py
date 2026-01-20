@@ -71,10 +71,10 @@ def render_home():
             _set_page("support")
 
 
-def render_placeholder(title: str):
+def render_placeholder(title: str, page_key: str):
     st.title(title)
     st.info("해당 페이지는 준비 중입니다.")
-    if st.button("홈으로", use_container_width=True):
+    if st.button("홈으로", use_container_width=True, key=f"back_{page_key}"):
         _set_page("home")
 
 
@@ -93,7 +93,7 @@ def render_router():
         "support": "고객지원",
         "store_mgmt": "매장 관리",
     }
-    render_placeholder(titles.get(page, "페이지"))
+    render_placeholder(titles.get(page, "페이지"), page_key=page)
 
 
 def main():
