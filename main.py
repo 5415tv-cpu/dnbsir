@@ -4,6 +4,9 @@ start_app.main()
 import start_app
 
 start_app.main()
+import start_app
+
+start_app.main()
 """Local entrypoint: delegate to start_app.py."""
 
 import start_app  # noqa: F401
