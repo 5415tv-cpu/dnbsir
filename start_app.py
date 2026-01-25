@@ -1,105 +1,92 @@
 import streamlit as st
+import db_manager as db
+from ui.auth import render_login_page
+from ui.dashboard import render_member_dashboard
+from ui.onboarding import render_onboarding
+from ui.camera_ocr import render_camera_ocr
 
-
-def _init_state():
-    st.session_state.setdefault("page", "home")
-
-
-def _set_page(name: str) -> None:
-    st.session_state.page = name
-
-
-def render_home():
-    st.markdown(
-        """
-        <style>
-        .section-title {
-            font-size: 22px;
-            font-weight: 900;
-            margin-bottom: 4px;
-        }
-        .section-subtitle {
-            font-size: 13px;
-            opacity: 0.7;
-            margin-bottom: 16px;
-        }
-        .stButton > button {
-            border-radius: 16px !important;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12) !important;
-            font-weight: 900 !important;
-        }
-        button[data-testid="baseButton-primary"] {
-            height: 110px !important;
-            font-size: 20px !important;
-            box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16) !important;
-        }
-        button[data-testid="baseButton-secondary"] {
-            height: 56px !important;
-            font-size: 13px !important;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08) !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.markdown('<div class="section-title">동네비서 통합 대시보드</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-subtitle">핵심 서비스와 부가 메뉴를 빠르게 이동하세요.</div>', unsafe_allow_html=True)
-
-    st.markdown("### 핵심 서비스")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        if st.button("🚚 AI 택배", use_container_width=True, key="card_delivery", type="primary"):
-            _set_page("delivery")
-    with col2:
-        if st.button("🤖 AI 매장비서", use_container_width=True, key="card_assistant", type="primary"):
-            _set_page("assistant")
-    with col3:
-        if st.button("💰 실시간 수익", use_container_width=True, key="card_settlement", type="primary"):
-            _set_page("settlement")
-
-    st.markdown("### 기타 메뉴")
-    col4, col5, col6 = st.columns(3)
-    with col4:
-        if st.button("⚙️ 매장 관리", use_container_width=True, key="menu_store_mgmt", type="secondary"):
-            _set_page("store_mgmt")
-    with col5:
-        if st.button("💎 프리미엄 리포트", use_container_width=True, key="menu_report", type="secondary"):
-            _set_page("report")
-    with col6:
-        if st.button("📢 고객지원", use_container_width=True, key="menu_support", type="secondary"):
-            _set_page("support")
-
-
-def render_placeholder(title: str, page_key: str):
-    st.title(title)
-    st.info("해당 페이지는 준비 중입니다.")
-    if st.button("홈으로", use_container_width=True, key=f"back_{page_key}"):
-        _set_page("home")
-
-
-def render_router():
-    page = st.session_state.page
-    if page == "home":
-        render_home()
-        return
-
-    titles = {
-        "delivery": "AI 택배",
-        "assistant": "AI 매장비서",
-        "local_trade": "로컬 직거래",
-        "report": "프리미엄 리포트",
-        "settlement": "정산 센터",
-        "support": "고객지원",
-        "store_mgmt": "매장 관리",
-    }
-    render_placeholder(titles.get(page, "페이지"), page_key=page)
-
+# Page Config
+st.set_page_config(
+    page_title="동네비서",
+    page_icon="🏪",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
 
 def main():
-    st.set_page_config(page_title="동네비서", layout="wide")
-    _init_state()
-    render_router()
+    # Session State Init
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    if "page" not in st.session_state:
+        st.session_state.page = "home"
+
+    # 🔄 Auto-login Check (Persist Login)
+    if not st.session_state.logged_in:
+        # Check query params for persisted session
+        try:
+            params = st.query_params
+            user_id = params.get("user_id")
+            if user_id:
+                # Try to fetch user info to validate
+                # Adapting to db_manager which uses sqlite
+                # We need a function to get user by ID.
+                # Assuming recover_user_session helps or we fetch directly.
+                # Quick fix: fetch from user_management table/sheet wrapper
+                user_info = db.get_user_by_id(user_id) 
+                if user_info:
+                    st.session_state.logged_in = True
+                    st.session_state.store_id = user_id
+                    st.session_state.assistant_member_name = user_info.get("name", "")
+                    st.session_state.assistant_member_phone = user_id
+                    
+                    # Tier Mapping
+                    t_label = user_info.get("tier", "일반 등급")
+                    t_map = {"일반 등급": "general", "프리미엄": "premium", "마스터": "master"}
+                    st.session_state.assistant_tier_key = t_map.get(t_label, "general")
+                    st.session_state.assistant_member_tier = t_label
+                    # Rerun to refresh state
+                    st.rerun()
+        except Exception:
+            pass # Fail silently if query params invalid
+            
+    # Routing Logic (Strict Separation)
+    if not st.session_state.logged_in:
+        # Case 1: Not Logged In
+        render_login_page()
+    
+    else:
+        # Case 2: Logged In -> Check Onboarding
+        # We check if store info exists in DB
+        if not st.session_state.get("is_admin"):
+            store_info = db.get_store(st.session_state.store_id)
+            if not store_info:
+                render_onboarding()
+                return # Stop here
+
+        # Case 3: Onboarding Done -> Dashboard
+        if st.session_state.get("is_admin"):
+            render_admin_dashboard()
+        else:
+            # Member Pages
+            page = st.session_state.page
+            if page == "member_dashboard" or page == "home":
+                render_member_dashboard()
+            elif page == "camera_ocr":
+                render_camera_ocr()
+            elif page == "delivery":
+                st.markdown("### 📦 택배 접수")
+                if st.button("🔙 뒤로가기"):
+                     st.session_state.page = "member_dashboard"
+                     st.rerun()
+                st.info("준비 중인 기능입니다.")
+            elif page == "ledger":
+                st.markdown("### 📓 장부 관리")
+                if st.button("🔙 뒤로가기"):
+                     st.session_state.page = "member_dashboard"
+                     st.rerun()
+                st.info("준비 중인 기능입니다.")
+            else:
+                 render_member_dashboard()
 
 
 if __name__ == "__main__":
