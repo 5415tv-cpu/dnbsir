@@ -1,56 +1,24 @@
-# 🚀 동네비서(dnbsir.com) 배포 가이드
+# 🚚 동네비서 프로젝트 배포 가이드 (v1.2.0)
 
-코드 업데이트가 GitHub에 완료되었습니다!
-이제 Streamlit Cloud에 연결하고 도메인을 설정하기만 하면 됩니다.
+본 문서는 강원도 태백 현장 업무를 지원하는 AI 에이전트 '동네비서'의 정석 배포 절차를 정의합니다.
+미국 서버 배포 가이드 및 로컬 테스트 완료
+## 1. 인프라 환경
+* **운영 서버**: Google Cloud Run
+* **서버 위치(Region)**: `us-central1` (미국 아이오와)
+* **로컬 테스트**: `http://127.0.0.1:8080` (확인 완료)
 
-## 1단계: Streamlit Cloud 앱 생성
-1. [share.streamlit.io](https://share.streamlit.io/) 접속 및 로그인.
-2. 오른쪽 상단 **[New app]** 버튼 클릭.
-3. **Use existing repo** 선택.
-4. 설정값 입력:
-   - **Repository**: `5415tv-cpu/dnbsir`
-   - **Branch**: `main`
-   - **Main file path**: `main.py`
-5. **[Deploy!]** 버튼 클릭.
+## 2. 배포 전 체크리스트 (정확성 검증)
+* [x] 메인 앱 실행 포트: `8080` 설정 확인
+* [x] `Dockerfile`: 구글 클라우드용 빌드 파일 존재 확인
+* [x] `requirements.txt`: 필수 라이브러리(fastapi, uvicorn 등) 포함 확인
+* [x] Streamlit Cloud 관련 설정 제거 완료
 
-## 2단계: Secrets(비밀키) 설정 (필수!)
-앱이 실행되려다가 에러가 날 수 있습니다. DB 비밀번호 등 보안 키를 클라우드에 알려줘야 합니다.
+## 3. 배포 절차 (GitHub -> Google Cloud)
+1. 로컬에서 코드 수정 및 테스트 완료 (`Application startup complete` 확인)
+2. GitHub 저장소에 `push` 실행
+3. Google Cloud Console에서 자동으로 빌드 및 배포 트리거 작동
+4. 최종 접속 주소: `https://api.dnbsir.com/docs`
 
-1. 배포 중인 앱 우측 하단 **[Manage app]** 클릭 (또는 대시보드에서 앱 옆의 `...` > Settings).
-2. **Secrets** 탭 클릭.
-3. 아래 내용을 복사해서 붙여넣고 **[Save]** 하세요.
-
-```toml
-# 앱 접속 주소
-APP_URL = "https://dnbsir.com"
-ADMIN_PASSWORD = "1234"
-
-# Naver OCR (할당받은 키 입력)
-naver_ocr_url = ""
-naver_ocr_secret = ""
-
-# 기타 API 키 (필요시 채워넣으세요)
-GOOGLE_API_KEY = "" 
-```
-
-## 3단계: 도메인 연결 (dnbsir.com)
-1. 앱 대시보드에서 앱 옆의 `...` 클릭 > **Settings**.
-2. **General** 탭 > **Custom domain** 섹션.
-3. `dnbsir.com` 입력 후 엔터.
-4. 화면에 **"Please set up a CNAME record..."** 라는 안내가 뜹니다.
-5. 보여주는 `Target` 주소(예: `ingress.streamlit.io` 등)를 복사하세요.
-
-## 4단계: DNS 설정 (도메인 구입처)
-1. 가비아, 후이즈, GoDaddy 등 도메인을 산 사이트에 접속.
-2. **DNS 관리(DNS 설정)** 메뉴로 이동.
-3. **레코드 추가**:
-   - **타입**: `CNAME`
-   - **호스트(이름)**: `www` (또는 `@` 루트 도메인 지원 여부 확인)
-   - **값(타겟)**: 아까 복사한 Streamlit Target 주소.
-   - **TTL**: 3600 (기본값)
-4. 저장 후 약 30분~1시간 기다리면 연결됩니다!
-
----
-**주의사항**
-- **데이터 초기화**: 무료 클라우드(Community Cloud)는 앱이 절전 모드에 들어가거나 재부팅되면 **SQLite 데이터(회원가입 정보)가 초기화**될 수 있습니다. 
-- 영구 저장이 필요하면 Google Sheets 모드를 다시 활성화하거나 별도의 호스팅 DB가 필요합니다.
+## 4. 주의사항
+* 서버가 미국에 있으므로 한국 시간대 설정(`TZ=Asia/Seoul`)을 환경 변수에 추가할 것.
+* 모든 보안 키는 Google Cloud '보안 비밀 관리자'를 통해 관리할 것.

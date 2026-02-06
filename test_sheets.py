@@ -6,8 +6,8 @@ import json
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 
 # secrets.toml에서 읽기
-import toml
-secrets = toml.load('.streamlit/secrets.toml')
+import config
+secrets = config.load_secrets()
 
 creds_dict = dict(secrets['gcp_service_account'])
 

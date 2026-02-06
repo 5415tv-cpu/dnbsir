@@ -3,7 +3,7 @@
 - 기존 Google Sheets 기반 코드와 호환성을 유지하면서
 - 실제 데이터는 SQLite(db_sqlite.py)에 저장합니다.
 """
-import db_sqlite as db
+from db_backend import db
 import pandas as pd
 
 # ==========================================
@@ -27,6 +27,13 @@ def get_business_data(user_type):
         return db.get_all_users()
     return pd.DataFrame()
 
+def get_user_by_id(user_id):
+    """유저 ID(전화번호)로 정보 조회"""
+    return db.get_user(user_id)
+
+def delete_user_data(user_id):
+    return db.delete_user(user_id)
+
 def get_all_topups():
     """충전 요청 목록"""
     return db.get_pending_topups()
@@ -46,6 +53,62 @@ def get_store(store_id):
     """가게 정보 조회"""
     return db.get_store(store_id)
 
+
+def get_all_stores():
+    return db.get_all_stores()
+
+
+# ==========================================
+# Wallet / Virtual Number
+# ==========================================
+
+def get_wallet_balance(store_id):
+    return db.get_wallet_balance(store_id)
+
+
+def update_wallet_balance(store_id, new_balance):
+    return db.update_wallet_balance(store_id, new_balance)
+
+
+def save_virtual_number(virtual_number, store_id, label="", status="active"):
+    return db.save_virtual_number(virtual_number, store_id, label, status)
+
+
+def get_store_id_by_virtual_number(virtual_number):
+    return db.get_store_id_by_virtual_number(virtual_number)
+
+
+def get_all_virtual_numbers():
+    return db.get_all_virtual_numbers()
+
+
+# ==========================================
+# Courier / Rider (Normalized Entities)
+# ==========================================
+
+def save_courier(data):
+    return db.save_courier(data)
+
+
+def get_courier(courier_id):
+    return db.get_courier(courier_id)
+
+
+def get_all_couriers():
+    return db.get_all_couriers()
+
+
+def save_rider(data):
+    return db.save_rider(data)
+
+
+def get_rider(rider_id):
+    return db.get_rider(rider_id)
+
+
+def get_all_riders():
+    return db.get_all_riders()
+
 # ==========================================
 # Wallet / Logs Interface
 # ==========================================
@@ -56,9 +119,89 @@ def append_wallet_log(store_id, change_type, amount, balance_after, memo="", rel
 def append_topup_request(store_id, amount, depositor):
     return db.request_topup(store_id, amount, depositor)
 
+
+def get_wallet_logs(store_id=None, limit=200):
+    return db.get_wallet_logs(store_id, limit)
+
 def append_message_log(store_id, receiver, length, cost, status="성공", channel="biztalk"):
-    # db_sqlite에 message log 구현이 필요하면 추가. 현재는 간소화.
+    # Legacy wrapper compatibility
+    db.log_sms(store_id, receiver, channel, f"Length: {length}, Cost: {cost}", status, "")
     return True
+
+def log_sms(store_id, phone, category, message, status, response=""):
+    """SMS 로그 저장 Wrapper"""
+    db.log_sms(store_id, phone, category, message, status, response)
+
+def get_sms_logs(store_id=None, limit=50):
+    """SMS 로그 조회 Wrapper"""
+    return db.get_sms_logs(store_id, limit)
+
+# ==========================================
+# Product & Reservation Wrappers
+# ==========================================
+
+def save_product_info(store_id, data):
+    data['store_id'] = store_id
+    return db.save_product(data)
+
+def get_store_products(store_id):
+    return db.get_products(store_id)
+
+def delete_store_product(product_id):
+    return db.delete_product(product_id)
+
+def save_reservation_record(store_id, data):
+    data['store_id'] = store_id
+    return db.save_reservation(data)
+
+def get_store_reservations(store_id):
+    return db.get_reservations(store_id)
+
+def save_store_setting(store_id, key, value):
+    return db.save_setting(store_id, key, value)
+
+def get_store_settings(store_id):
+    return db.get_all_settings(store_id)
+
+def update_reservation_state(res_id, status):
+    return db.update_reservation_status(res_id, status)
+
+def save_unified_order(store_id, data):
+    data['store_id'] = store_id
+    return db.save_order(data)
+
+def get_store_orders(store_id, days=30):
+    return db.get_orders(store_id, days)
+
+def get_platform_orders(days=30):
+    return db.get_all_orders_admin(days)
+
+def get_vip_stats(store_id, phone):
+    return db.get_customer_stats(store_id, phone)
+
+def get_store_tables(store_id):
+    return db.get_store_tables(store_id)
+
+def save_store_tables(store_id, tables_data):
+    return db.save_store_tables(store_id, tables_data)
+
+def save_store_ledger(data):
+    return db.save_ledger_record(data)
+
+def get_store_ledger(store_id, month=None):
+    return db.get_ledger_records(store_id, month)
+
+def delete_store_ledger(record_id):
+    return db.delete_ledger_record(record_id)
+
+def save_store_delivery(data):
+    return db.save_delivery(data)
+
+def get_store_deliveries(store_id):
+    return db.get_store_deliveries(store_id)
+
+
+
 
 # ==========================================
 # Legacy / Unused Placeholders

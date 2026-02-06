@@ -1,4 +1,4 @@
-import streamlit as st
+import config
 import requests
 import uuid
 import time
@@ -11,8 +11,8 @@ def call_naver_ocr(image_bytes):
     Returns: dict with {name, phone, address, items} or None
     """
     # 1. Check Secrets
-    api_url = st.secrets.get("naver_ocr_url")
-    secret_key = st.secrets.get("naver_ocr_secret")
+    api_url = config.get_secret("naver_ocr_url")
+    secret_key = config.get_secret("naver_ocr_secret")
     
     # 2. Mock Mode if keys missing
     if not api_url or not secret_key:
@@ -44,11 +44,11 @@ def call_naver_ocr(image_bytes):
             result = response.json()
             return _parse_ocr_result(result)
         else:
-            st.error(f"OCR Error: {response.status_code}")
+            print(f"OCR Error: {response.status_code}")
             return None
             
     except Exception as e:
-        st.error(f"OCR Exception: {e}")
+        print(f"OCR Exception: {e}")
         return None
 
 def _get_mock_data():

@@ -1,9 +1,5 @@
-"""가게 정보 직접 조회 테스트"""
-import toml
-import gspread
-from google.oauth2.service_account import Credentials
-
-secrets = toml.load('.streamlit/secrets.toml')
+import config
+secrets = config.load_secrets()
 creds = Credentials.from_service_account_info(
     dict(secrets['gcp_service_account']), 
     scopes=['https://www.googleapis.com/auth/spreadsheets']

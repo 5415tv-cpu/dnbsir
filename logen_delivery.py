@@ -8,7 +8,7 @@ Note: 현재는 시뮬레이션 모드로 작동하며,
       실제 로젠택배 API 계약 후 연동 가능하도록 구조화됨
 """
 
-import streamlit as st
+import config
 from datetime import datetime, timedelta
 import json
 import requests
@@ -30,13 +30,7 @@ USE_REAL_API = False
 LOGEN_API_BASE_URL = "https://api.ilogen.com"  # 로젠택배 실제 API 엔드포인트
 
 def _safe_secret(key: str, default: str = "") -> str:
-    try:
-        return st.secrets.get(key, default)
-    except Exception:
-        try:
-            return st.secrets[key]
-        except Exception:
-            return default
+    return config.get_secret(key, default)
 
 LOGEN_API_KEY = _safe_secret("LOGEN_API_KEY", "")  # API KEY
 LOGEN_USER_ID = _safe_secret("LOGEN_USER_ID", "")  # 본사 아이디
@@ -81,12 +75,9 @@ ADDITIONAL_SERVICES = {
 
 def get_logen_credentials() -> Tuple[str, str]:
     """로젠택배 API 인증 정보 가져오기"""
-    try:
-        api_key = st.secrets.get("LOGEN_API_KEY", "")
-        api_secret = st.secrets.get("LOGEN_API_SECRET", "")
-        return api_key, api_secret
-    except Exception:
-        return "", ""
+    api_key = config.get_secret("LOGEN_API_KEY", "")
+    api_secret = config.get_secret("LOGEN_API_SECRET", "")
+    return api_key, api_secret
 
 
 # ==========================================

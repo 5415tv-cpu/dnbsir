@@ -1,10 +1,10 @@
-import streamlit as st
+import config
 import google.generativeai as genai
 
 def get_gemini_client(model_name='gemini-flash-latest'):
     """Gemini API 클라이언트 초기화 (기본값: flash 모델)"""
     try:
-        api_key = st.secrets.get("GOOGLE_API_KEY")
+        api_key = config.get_secret("GOOGLE_API_KEY")
         if not api_key:
             return None
         genai.configure(api_key=api_key)

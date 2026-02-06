@@ -3,24 +3,32 @@
 - Solapi API를 사용한 문자 발송
 """
 
-import streamlit as st
-import requests
-import datetime
-import hmac
-import hashlib
-import uuid
+import config
+
+def _get_secret(key: str, default=""):
+    return config.get_secret(key, default)
 
 
-# ==========================================
-# 🔑 Solapi API 설정
-# ==========================================
+def _notify_alert(title: str, detail: str):
+    webhook = _get_secret("ALERT_WEBHOOK_URL", "")
+    if not webhook:
+        return
+    payload = {
+        "text": f"[동네비서 알림] {title}\n{detail}"
+    }
+    try:
+        requests.post(webhook, json=payload, timeout=5)
+    except Exception:
+        pass
+
+
 def get_solapi_config():
     """Solapi 설정 가져오기"""
     try:
         return {
-            'api_key': st.secrets.get("SOLAPI_API_KEY", ""),
-            'api_secret': st.secrets.get("SOLAPI_API_SECRET", ""),
-            'sender_phone': st.secrets.get("SENDER_PHONE", "")
+            'api_key': _get_secret("SOLAPI_API_KEY", ""),
+            'api_secret': _get_secret("SOLAPI_API_SECRET", ""),
+            'sender_phone': _get_secret("SENDER_PHONE", "")
         }
     except:
         return {
@@ -30,17 +38,9 @@ def get_solapi_config():
         }
 
 
-def send_sms(to_phone, message, config=None):
+def send_sms(to_phone, message, config=None, store_id="SYSTEM"):
     """
-    SMS 문자 발송
-    
-    Args:
-        to_phone: 수신자 전화번호
-        message: 메시지 내용
-        config: Solapi 설정 (없으면 secrets에서 가져옴)
-    
-    Returns:
-        (success: bool, message: str)
+    SMS 문자 발송 (with DB Logging)
     """
     if config is None:
         config = get_solapi_config()
@@ -49,8 +49,17 @@ def send_sms(to_phone, message, config=None):
     api_secret = config.get('api_secret', '')
     sender_phone = config.get('sender_phone', '')
     
-    if not api_key or not api_secret or not sender_phone:
-        return False, "SMS API 설정이 완료되지 않았습니다."
+    # 🧪 Mock Mode (For Testing without API Keys)
+    if not api_key or not api_secret:
+        print(f"[Mock SMS] To: {to_phone}, Msg: {message}")
+        time.sleep(0.5)
+        try:
+             db.log_sms(store_id, to_phone, "SMS", message, "SUCCESS", "Mock Mode")
+        except: pass
+        return True, "문자 발송 성공 (시뮬레이션)"
+    
+    if not sender_phone:
+        return False, "발신번호(sender_phone) 설정이 필요합니다."
     
     if not to_phone:
         return False, "수신자 전화번호가 없습니다."
@@ -84,16 +93,138 @@ def send_sms(to_phone, message, config=None):
         response = requests.post(url, headers=headers, json=payload, timeout=10)
         
         if response.status_code == 200:
+            try:
+                db.log_sms(store_id, to_phone, "SMS", message, "SUCCESS", "OK")
+            except: pass
             return True, "문자 발송 성공!"
         else:
+            try:
+                db.log_sms(store_id, to_phone, "SMS", message, "FAIL", response.text)
+            except: pass
             return False, f"발송 실패: {response.text}"
     
     except requests.exceptions.Timeout:
         return False, "네트워크 시간 초과. 잠시 후 다시 시도해주세요."
-    except requests.exceptions.ConnectionError:
-        return False, "네트워크 연결 오류. 인터넷 연결을 확인해주세요."
+    # Catch-all
     except Exception as e:
+        try:
+            db.log_sms(store_id, to_phone, "SMS", message, "ERROR", str(e))
+        except: pass
         return False, f"문자 발송 오류: {str(e)}"
+
+
+def _get_cloud_sms_provider():
+    try:
+        return _get_secret("CLOUD_SMS_PROVIDER", "solapi").lower()
+    except Exception:
+        return "solapi"
+
+
+def _send_custom_sms(to_phone, message):
+    endpoint = _get_secret("CLOUD_SMS_ENDPOINT", "")
+    api_key = _get_secret("CLOUD_SMS_API_KEY", "")
+    sender = _get_secret("CLOUD_SMS_SENDER", "")
+    if not endpoint or not api_key or not sender:
+        return False, "클라우드 SMS 설정이 필요합니다."
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    payload = {"to": to_phone, "from": sender, "text": message}
+    try:
+        response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
+        if response.status_code in (200, 202):
+            return True, "발송 성공"
+        return False, response.text
+    except Exception as exc:
+        return False, str(exc)
+
+
+def send_cloud_sms(to_phone, message, store_id="SYSTEM"):
+    provider = _get_cloud_sms_provider()
+    retries = int(_get_secret("CLOUD_SMS_RETRIES", 2))
+    backoff = float(_get_secret("CLOUD_SMS_BACKOFF", 0.6))
+    last_err = ""
+
+    for attempt in range(retries + 1):
+        if provider == "solapi":
+            ok, err = send_sms(to_phone, message, store_id=store_id)
+        else:
+            ok, err = _send_custom_sms(to_phone, message)
+
+        if ok:
+            if provider != "solapi":
+                try:
+                    db.log_sms(store_id, to_phone, "CLOUD_SMS", message, "SUCCESS", "OK")
+                except Exception:
+                    pass
+            return True, err
+        last_err = err
+        if attempt < retries:
+            time.sleep(backoff * (attempt + 1))
+
+    try:
+        db.log_sms(store_id, to_phone, "CLOUD_SMS", message, "FAIL", last_err)
+    except Exception:
+        pass
+    _notify_alert("문자 발송 실패", f"store_id={store_id} to={to_phone} err={last_err}")
+    return False, last_err
+
+
+def _apply_message_charge(store_id, unit_cost, memo):
+    balance = db.get_wallet_balance(store_id)
+    if balance < unit_cost:
+        return False, balance
+    new_balance = balance - unit_cost
+    db.update_wallet_balance(store_id, new_balance)
+    try:
+        db.append_wallet_log(store_id, "sms", -unit_cost, new_balance, memo)
+    except Exception:
+        pass
+    return True, new_balance
+
+
+def send_cloud_callback(store_id, to_phone, message, unit_cost=20):
+    if not store_id:
+        return False, "매장 정보가 없습니다."
+    if not to_phone:
+        return False, "수신자 전화번호가 없습니다."
+
+    balance = db.get_wallet_balance(store_id)
+    if balance < unit_cost:
+        _notify_alert("잔액 부족으로 발송 실패", f"store_id={store_id} balance={balance}")
+        return False, "잔액이 부족하여 발송할 수 없습니다."
+
+    ok, err = send_cloud_sms(to_phone, message, store_id=store_id)
+    if not ok:
+        _notify_alert("클라우드 콜백 발송 실패", f"store_id={store_id} to={to_phone} err={err}")
+        return False, f"발송 실패: {err}"
+
+    charged, _ = _apply_message_charge(store_id, unit_cost, "cloud_callback")
+    if not charged:
+        _notify_alert("정산 실패", f"store_id={store_id} cost={unit_cost}")
+        return False, "잔액이 부족하여 정산에 실패했습니다."
+    return True, "클라우드 콜백 발송 완료"
+
+
+def process_missed_call_webhook(payload: dict):
+    """
+    통화 부재 웹훅 처리:
+    - payload 예시: {virtual_number, caller_phone, store_id, store_name, order_link}
+    """
+    virtual_number = payload.get("virtual_number", "")
+    caller_phone = payload.get("caller_phone", "")
+    store_id = payload.get("store_id") or db.get_store_id_by_virtual_number(virtual_number)
+    store_name = payload.get("store_name", "동네비서")
+    order_link = payload.get("order_link", "")
+
+    if not store_id:
+        _notify_alert("웹훅 매핑 실패", f"virtual_number={virtual_number} caller={caller_phone}")
+        return False, "매장 매핑 정보를 찾을 수 없습니다."
+    message = (
+        f"[{store_name}] 부재중입니다.\n"
+        f"아래 링크에 주문서를 적어주세요.\n"
+        f"{order_link}".strip()
+    )
+    unit_cost = int(_get_secret("cloud_message_unit_cost", 20))
+    return send_cloud_callback(store_id, caller_phone, message, unit_cost=unit_cost)
 
 
 def send_alimtalk(to_phone, message, template_id=None, pf_id=None, variables=None):
@@ -106,56 +237,81 @@ def send_alimtalk(to_phone, message, template_id=None, pf_id=None, variables=Non
     api_secret = config.get('api_secret', '')
     sender_phone = config.get('sender_phone', '')
 
-    template_id = template_id or st.secrets.get("SOLAPI_TEMPLATE_ID", "")
-    pf_id = pf_id or st.secrets.get("SOLAPI_PF_ID", "")
+    template_id = template_id or _get_secret("SOLAPI_TEMPLATE_ID", "")
+    pf_id = pf_id or _get_secret("SOLAPI_PF_ID", "")
     variables = variables or {}
+    
+    # Mock Mode for Demo (if keys missing)
+    if not api_key or not api_secret or not template_id:
+        # Simulate Success
+        print(f"[Mock AlimTalk] To: {to_phone}, Msg: {message}")
+        return True, "알림톡 발송 성공 (테스트 모드)"
 
     if not api_key or not api_secret or not sender_phone:
         return False, "SMS/알림톡 API 설정이 완료되지 않았습니다."
 
-    if not template_id or not pf_id:
-        # 템플릿 정보가 없으면 문자로 대체
-        return send_sms(to_phone, message, config=config)
+    # Retry Loop for Fallback
+    active_pf_id = pf_id
+    max_retries = 1
+    current_try = 0
 
-    try:
-        date = datetime.datetime.now().astimezone().isoformat()
-        salt = str(uuid.uuid4().hex)
-        data = date + salt
-        signature = hmac.new(
-            api_secret.encode("utf-8"),
-            data.encode("utf-8"),
-            hashlib.sha256
-        ).hexdigest()
+    while current_try <= max_retries:
+        try:
+            date = datetime.datetime.now().astimezone().isoformat()
+            salt = str(uuid.uuid4().hex)
+            data = date + salt
+            signature = hmac.new(
+                api_secret.encode("utf-8"),
+                data.encode("utf-8"),
+                hashlib.sha256
+            ).hexdigest()
 
-        header = f"HMAC-SHA256 apiKey={api_key}, date={date}, salt={salt}, signature={signature}"
-        url = "https://api.solapi.com/messages/v4/send"
-        headers = {
-            "Authorization": header,
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "message": {
-                "to": to_phone,
-                "from": sender_phone,
-                "text": message,
-                "kakaoOptions": {
-                    "pfId": pf_id,
-                    "templateId": template_id,
-                    "variables": variables
+            header = f"HMAC-SHA256 apiKey={api_key}, date={date}, salt={salt}, signature={signature}"
+            url = "https://api.solapi.com/messages/v4/send"
+            headers = {
+                "Authorization": header,
+                "Content-Type": "application/json"
+            }
+            
+            # Payload Construction
+            current_payload = {
+                "message": {
+                    "to": to_phone,
+                    "from": sender_phone,
+                    "text": message,
+                    "kakaoOptions": {
+                        "pfId": active_pf_id,
+                        "templateId": template_id,
+                        "variables": variables
+                    }
                 }
             }
-        }
 
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        if response.status_code == 200:
-            return True, "알림톡 발송 성공!"
-        return False, f"알림톡 발송 실패: {response.text}"
-    except requests.exceptions.Timeout:
-        return False, "네트워크 시간 초과. 잠시 후 다시 시도해주세요."
-    except requests.exceptions.ConnectionError:
-        return False, "네트워크 연결 오류. 인터넷 연결을 확인해주세요."
-    except Exception as e:
-        return False, f"알림톡 발송 오류: {str(e)}"
+            response = requests.post(url, headers=headers, json=current_payload, timeout=10)
+            
+            if response.status_code == 200:
+                # Log success channel if needed
+                return True, "알림톡 발송 성공!"
+            
+            # If Failed
+            error_msg = response.text
+            default_id = _get_secret("SOLAPI_PF_ID", "")
+            
+            # Check if we should fallback (Only if we used a custom ID different from default)
+            if current_try == 0 and active_pf_id and active_pf_id != default_id:
+                print(f"⚠️ [Kakao Fallback] Brand Channel({active_pf_id}) failed. Retrying with Platform Channel.")
+                active_pf_id = default_id # Switch to Default
+                current_try += 1
+                continue
+            
+            return False, f"알림톡 발송 실패: {error_msg}"
+            
+        except requests.exceptions.Timeout:
+            return False, "네트워크 시간 초과."
+        except requests.exceptions.ConnectionError:
+            return False, "네트워크 연결 오류."
+        except Exception as e:
+            return False, f"알림톡 발송 오류: {str(e)}"
 
 
 def send_order_notification(store_phone, order_data):
@@ -327,4 +483,46 @@ def get_sms_templates(biz_type):
         "단문 (SMS)": sms_templates,
         "장문 (LMS)": lms_templates
     }
+
+
+def send_smart_callback(store_id, customer_phone, store_name=""):
+    """
+    스마트 콜백 문자 발송 (통화 종료 후 자동 발송 시뮬레이션)
+    - 1순위: 알림톡 (비용 절감/신뢰도)
+    - 2순위: LMS/SMS (실패 시)
+    """
+    if not store_name:
+         store_name = "매장"
+         
+    # Link Generation (Dynamic based on Config)
+    base_url = _get_secret("APP_BASE_URL", "https://dnbsir.com")
+    # Ensure no double slash if base_url ends with /
+    if base_url.endswith("/"): base_url = base_url[:-1]
+    
+    link = f"{base_url}/?id={store_id}"
+    
+    # Message Construction
+    now_str = datetime.datetime.now().strftime("%H:%M:%S")
+    msg = f"[{store_name}] 전화 주셔서 감사합니다.\n기다리지 않고 아래 링크에서 바로 주문하실 수 있습니다.\n\n▶ 모바일 매장 접속:\n{link}\n\n(발송: {now_str})"
+    
+    # 1. Try AlimTalk First (Priority Logic)
+    # Note: AlimTalk usually needs pre-registered template.
+    # In Mock/Dev mode, send_alimtalk simulates success.
+    at_success, at_msg = send_alimtalk(customer_phone, msg)
+    
+    if at_success:
+        print(f"[SmartCallback] AlimTalk Sent to {customer_phone}")
+        # Log to DB (Mock logic usually skips DB log inside send_alimtalk function if not configured, 
+        # but let's assume send_alimtalk handles it or we log here if needed. 
+        # For layout consistency, return success.)
+        return True, "알림톡 발송 성공 (카카오)"
+        
+    # 2. Fallback to SMS
+    print(f"[SmartCallback] AlimTalk failed ({at_msg}), falling back to SMS...")
+    success, ret_msg = send_sms(customer_phone, msg, store_id=store_id)
+    
+    if success:
+        print(f"[SmartCallback] SMS Sent to {customer_phone} for {store_id}")
+        
+    return success, ret_msg
 

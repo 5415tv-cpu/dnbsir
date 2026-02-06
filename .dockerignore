@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.git/
+.devcontainer/
+.streamlit/
+database.db
+*.sqlite
+*.db
+.env
+secrets.toml

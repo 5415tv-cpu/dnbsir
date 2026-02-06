@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="header">
+    <div class="brand">동네비서</div>
+    <div class="header-actions">
+        <!-- Optional: Login or Menu button -->
+        <a href="/admin" style="font-size: 14px; text-decoration: none; color: #007AFF;">사장님 로그인</a>
+    </div>
+</header>
+
+<main style="padding-top: 20px;">
+    <div class="text-center" style="margin-bottom: 30px;">
+        <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px;">우리 동네<br>숨은 맛집 찾기</h1>
+        <p style="color: #86868b;">앱 설치 없이 간편하게 주문하세요</p>
+    </div>
+
+    <!-- Search Bar -->
+    <div style="padding: 0 20px; margin-bottom: 30px;">
+        <div style="position: relative;">
+            <input type="text" placeholder="어떤 가게를 찾으세요?"
+                style="width: 100%; padding: 16px 20px; border-radius: 12px; border: 1px solid #e0e0e0; font-size: 16px; background: #f9f9f9; outline: none;">
+            <button
+                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); border: none; background: none; font-size: 20px;">🔍</button>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div
+        style="padding: 0 20px; overflow-x: auto; white-space: nowrap; margin-bottom: 30px; -webkit-overflow-scrolling: touch; padding-bottom: 10px;">
+        <button class="btn-secondary"
+            style="width: auto; padding: 10px 20px; margin-right: 10px; display: inline-block;">전체</button>
+        <button class="btn-secondary"
+            style="width: auto; padding: 10px 20px; margin-right: 10px; display: inline-block;">🍽️ 맛집</button>
+        <button class="btn-secondary"
+            style="width: auto; padding: 10px 20px; margin-right: 10px; display: inline-block;">☕ 카페</button>
+        <button class="btn-secondary"
+            style="width: auto; padding: 10px 20px; margin-right: 10px; display: inline-block;">💅 뷰티</button>
+    </div>
+
+    <!-- Store List (Mock Data for Now) -->
+    <div class="store-list">
+        <h2 style="padding: 0 20px; font-size: 20px; margin-bottom: 16px;">추천 가게</h2>
+
+        <!-- Store Card 1 -->
+        <div class="card" style="margin-top: 0;">
+            <div style="display: flex; gap: 16px;">
+                <div style="width: 80px; height: 80px; background-color: #eee; border-radius: 12px;"></div>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 18px; margin-bottom: 4px;">맛있는 파스타</h3>
+                    <p style="font-size: 14px; color: #86868b; margin-bottom: 8px;">이탈리안 · 1.2km</p>
+                    <div style="display: flex; gap: 4px;">
+                        <span
+                            style="font-size: 12px; background: #e3f2fd; color: #007AFF; padding: 4px 8px; border-radius: 4px;">배달가능</span>
+                        <span
+                            style="font-size: 12px; background: #fff3e0; color: #ff9800; padding: 4px 8px; border-radius: 4px;">쿠폰</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Card 2 -->
+        <div class="card" style="margin-top: 0;">
+            <div style="display: flex; gap: 16px;">
+                <div style="width: 80px; height: 80px; background-color: #eee; border-radius: 12px;"></div>
+                <div style="flex: 1;">
+                    <h3 style="font-size: 18px; margin-bottom: 4px;">카페 릴렉스</h3>
+                    <p style="font-size: 14px; color: #86868b; margin-bottom: 8px;">카페/디저트 · 0.5km</p>
+                    <div style="display: flex; gap: 4px;">
+                        <span
+                            style="font-size: 12px; background: #e3f2fd; color: #007AFF; padding: 4px 8px; border-radius: 4px;">테이크아웃</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+    <a href="/" class="nav-item active">
+        <span class="nav-icon">🏠</span>
+        <span>홈</span>
+    </a>
+    <a href="#" class="nav-item">
+        <span class="nav-icon">📍</span>
+        <span>내 주변</span>
+    </a>
+    <a href="#" class="nav-item">
+        <span class="nav-icon">📄</span>
+        <span>주문내역</span>
+    </a>
+    <a href="#" class="nav-item">
+        <span class="nav-icon">👤</span>
+        <span>마이</span>
+    </a>
+</nav>
+{% endblock %}

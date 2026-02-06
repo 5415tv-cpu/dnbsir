@@ -2,37 +2,33 @@
 # 동네비서 - 배포용 의존성 목록
 # ==========================================
 
-# 웹 프레임워크
-streamlit>=1.28.0
+# Web Framework (FastAPI)
+fastapi>=0.110.0
+uvicorn>=0.27.0
+python-multipart
+functions-framework>=3.5.0
+jinja2>=3.1.0
 
-# AI 챗봇 (Google Gemini)
+# HTTP Requests
+requests>=2.31.0
+
+# AI/LLM (Google Gemini)
 google-generativeai>=0.3.0
 
-# Google Sheets 데이터베이스
+# Database (Google Sheets & SQL)
 gspread>=5.12.0
 google-auth>=2.23.0
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
 
-# QR코드 생성
-qrcode[pil]>=7.4.0
-
-# 데이터 처리
+# Data Processing
 pandas>=2.0.0
 numpy>=1.24.0
 openpyxl>=3.1.0
 
-# 이미지 처리
+# Utilities
+qrcode[pil]>=7.4.0
 pillow>=10.0.0
-
-# HTTP 요청 (SMS, 토스페이먼츠)
-requests>=2.31.0
-
-# 비밀번호 암호화
 bcrypt>=4.0.0
-
-# 설정 파일 파싱
 toml>=0.10.0
-
-# 정기 결제 스케줄러 (선택)
 schedule>=1.2.0
-
-# Rebuild Trigger: 2026-01-11 19:53

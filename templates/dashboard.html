@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="header">
+    <div class="brand">{{ store.name }}</div>
+    <div class="header-actions">
+        <a href="/logout" style="font-size: 14px; text-decoration: none; color: #ff3b30;">로그아웃</a>
+    </div>
+</header>
+
+<main style="padding: 20px;">
+    <!-- Welcome Card -->
+    <div class="card"
+        style="margin: 0 0 20px 0; background: linear-gradient(135deg, #007AFF 0%, #0055b3 100%); color: white; border: none;">
+        <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">{{ store.name }} 사장님, 환영합니다!</h2>
+        <p style="opacity: 0.9; margin-bottom: 20px;">오늘도 힘찬 하루 되세요 💪</p>
+        <div style="display: flex; gap: 20px;">
+            <div>
+                <div style="font-size: 12px; opacity: 0.8;">오늘 주문</div>
+                <div style="font-size: 24px; font-weight: bold;">0건</div>
+            </div>
+            <div>
+                <div style="font-size: 12px; opacity: 0.8;">예상 매출</div>
+                <div style="font-size: 24px; font-weight: bold;">0원</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">바로가기</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
+        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
+            <span style="font-size: 24px; margin-bottom: 8px;">📋</span>
+            <span>주문 접수</span>
+        </button>
+        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
+            <span style="font-size: 24px; margin-bottom: 8px;">🍽️</span>
+            <span>메뉴 관리</span>
+        </button>
+        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
+            <span style="font-size: 24px; margin-bottom: 8px;">📊</span>
+            <span>매출 분석</span>
+        </button>
+        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
+            <span style="font-size: 24px; margin-bottom: 8px;">⚙️</span>
+            <span>가게 설정</span>
+        </button>
+    </div>
+</main>
+{% endblock %}
+
+{% block bottom_nav %}
+<nav class="bottom-nav">
+    <a href="/admin/dashboard" class="nav-item active">
+        <span class="nav-icon">📊</span>
+        <span>대시보드</span>
+    </a>
+    <a href="#" class="nav-item">
+        <span class="nav-icon">📦</span>
+        <span>주문관리</span>
+    </a>
+    <a href="#" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span>설정</span>
+    </a>
+</nav>
+{% endblock %}
