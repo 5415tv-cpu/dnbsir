@@ -1,27 +1,69 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>{% block title %}동네비서{% endblock %}</title>
-    
+
     <!-- CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
     {% block head %}{% endblock %}
 </head>
-<body>
-    <div class="app-container">
-        {% block content %}{% endblock %}
-    </div>
 
-    <!-- Bottom Navigation (Optional, can be overridden) -->
-    {% block bottom_nav %}{% endblock %}
+<body>
+    <div
+        style="background-color: #E0E0E0; min-height: 100vh; font-family: 'Pretendard', sans-serif; padding-bottom: 70px;">
+
+        <!-- Sticky Header -->
+        <header
+            style="background: #1A1A1A; color: #fff; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100;">
+            <h2 style="margin: 0; font-weight: 900; font-size: 1.2rem; letter-spacing: 1px;">똑똑한 동네비서</h2>
+        </header>
+
+        <div style="padding: 20px;">
+            {% block page_header %}
+            <!-- Default Page Header (Can be overridden) -->
+            <div style="background: #fff; border: 3px solid #1A1A1A; padding: 20px; margin-bottom: 20px;">
+                <div style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">{% block current_menu %}현재 메뉴{%
+                    endblock %}</div>
+                <div style="font-size: 1.5rem; font-weight: 900;">{% block menu_title %}타이틀{% endblock %}</div>
+            </div>
+            {% endblock %}
+
+            <!-- Main Content -->
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav
+            style="position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 4px solid #1A1A1A; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100;">
+            <a href="/admin/dashboard" style="text-decoration: none; color: #1a1a1a; text-align: center;">
+                <div style="font-size: 1.2rem;">🏠</div>
+                <div style="font-weight: 900; font-size: 0.8rem;">홈</div>
+            </a>
+            <a href="/market" style="text-decoration: none; color: #1a1a1a; text-align: center;">
+                <div style="font-size: 1.2rem;">🛒</div>
+                <div style="font-weight: 900; font-size: 0.8rem;">마켓</div>
+            </a>
+            <a href="/admin/farm/orders" style="text-decoration: none; color: #1a1a1a; text-align: center;">
+                <div style="font-size: 1.2rem;">📅</div>
+                <div style="font-weight: 900; font-size: 0.8rem;">예약</div>
+            </a>
+            <a href="/admin/tax" style="text-decoration: none; color: #1a1a1a; text-align: center;">
+                <div style="font-size: 1.2rem;">📒</div>
+                <div style="font-weight: 900; font-size: 0.8rem;">장부</div>
+            </a>
+        </nav>
+    </div>
 
     <!-- Scripts -->
     <script src="/static/js/app.js"></script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

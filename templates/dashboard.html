@@ -1,94 +1,52 @@
 {% extends "base.html" %}
 
+{% block current_menu %}운영자 모드{% endblock %}
+{% block menu_title %}관리자 대시보드{% endblock %}
+
 {% block content %}
-<header class="header">
-    <div class="brand">
-        {{ store.name }}
-        <span
-            style="background-color: #1a1a1a; color: #d4af37; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; vertical-align: middle; margin-left: 5px;">[운영자
-            모드]</span>
+<!-- Margin Card -->
+<div
+    style="border: 4px solid #1A1A1A; background: #fff; padding: 20px; margin-bottom: 20px; box-shadow: 5px 5px 0px #1a1a1a;">
+    <div style="font-size: 0.95rem; font-weight: 800; color: #555; margin-bottom: 5px;">오늘의 마진(10%) 수익</div>
+    <div style="font-size: 2.2rem; font-weight: 900; color: #1A1A1A; letter-spacing: -1px;">
+        {{ "{:,}".format(stats.margin) }} 원
     </div>
-    <div class="header-actions">
-        <a href="/logout" style="font-size: 14px; text-decoration: none; color: #ff3b30;">로그아웃</a>
+    <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">
+        매출: {{ "{:,}".format(stats.revenue) }}원
     </div>
-</header>
+</div>
 
-<main style="padding: 20px;">
-    <!-- Welcome Card -->
-    <div class="card"
-        style="margin: 0 0 20px 0; background: linear-gradient(135deg, #007AFF 0%, #0055b3 100%); color: white; border: none;">
-        <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">{{ store.name }} 사장님, 환영합니다!</h2>
-        <p style="opacity: 0.9; margin-bottom: 20px;">오늘도 힘찬 하루 되세요 💪</p>
-        <div style="display: flex; gap: 20px;">
-            <div>
-                <div style="font-size: 12px; opacity: 0.8;">오늘 주문</div>
-                <div style="font-size: 24px; font-weight: bold;">0건</div>
-            </div>
-            <div>
-                <div style="font-size: 12px; opacity: 0.8;">예상 매출</div>
-                <div style="font-size: 24px; font-weight: bold;">0원</div>
-            </div>
+<!-- Quick Actions -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+    <a href="/courier" style="text-decoration: none; color: inherit;">
+        <div
+            style="border: 3px solid #1A1A1A; background: #fff; padding: 20px; text-align: center; height: 100%; box-sizing: border-box; box-shadow: 4px 4px 0px #ccc; transition: transform 0.1s;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">📦</div>
+            <div style="font-weight: 900; font-size: 1.1rem;">로젠 접수</div>
         </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <h3 style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">바로가기</h3>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px;">
-        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
-            <span style="font-size: 24px; margin-bottom: 8px;">📋</span>
-            <span>주문 접수</span>
-        </button>
-        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
-            <span style="font-size: 24px; margin-bottom: 8px;">🍽️</span>
-            <span>메뉴 관리</span>
-        </button>
-        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
-            <span style="font-size: 24px; margin-bottom: 8px;">📊</span>
-            <span>매출 분석</span>
-        </button>
-        <button class="btn btn-secondary" style="flex-direction: column; padding: 20px;">
-            <span style="font-size: 24px; margin-bottom: 8px;">⚙️</span>
-            <span>가게 설정</span>
-        </button>
-    </div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
-        <a href="/admin/calculator"
-            style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center; text-decoration: none; color: #1a1a1a; font-weight: 800; font-size: 0.9rem;">
-            💰 수익 계산기
-        </a>
-        <a href="/admin/expenses"
-            style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center; text-decoration: none; color: #1a1a1a; font-weight: 800; font-size: 0.9rem;">
-            💳 비용 자동 기장
-        </a>
-    </div>
-
-    <!-- Farm Menu -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-        <a href="/admin/farm/orders"
-            style="background: #27ae60; color: #fff; padding: 15px; border: none; text-align: center; text-decoration: none; font-weight: 900; border-radius: 5px; font-size: 0.9rem;">
-            🚜 농가 주문 통합
-        </a>
-        <a href="/admin/tax"
-            style="background: #1a1a1a; color: #fff; padding: 15px; border: none; text-align: center; text-decoration: none; font-weight: 900; border-radius: 5px; font-size: 0.9rem;">
-            📉 세금 관리 비서
-        </a>
-    </div>
-</main>
-{% endblock %}
-
-{% block bottom_nav %}
-<nav class="bottom-nav">
-    <a href="/admin/dashboard" class="nav-item active">
-        <span class="nav-icon">📊</span>
-        <span>대시보드</span>
     </a>
-    <a href="#" class="nav-item">
-        <span class="nav-icon">📦</span>
-        <span>주문관리</span>
+    <a href="/admin/tax" style="text-decoration: none; color: inherit;">
+        <div
+            style="border: 3px solid #1A1A1A; background: #1A1A1A; color: #fff; padding: 20px; text-align: center; height: 100%; box-sizing: border-box; box-shadow: 4px 4px 0px #555; transition: transform 0.1s;">
+            <div style="font-size: 2rem; margin-bottom: 10px;">💰</div>
+            <div style="font-weight: 900; font-size: 1.1rem;">세무 센터</div>
+        </div>
     </a>
-    <a href="#" class="nav-item">
-        <span class="nav-icon">⚙️</span>
-        <span>설정</span>
+</div>
+
+<!-- Secondary Actions -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+    <a href="/admin/farm/orders" style="text-decoration: none; color: inherit;">
+        <div
+            style="border: 3px solid #1A1A1A; background: #27ae60; color: #fff; padding: 15px; text-align: center; font-weight: 900; box-shadow: 3px 3px 0px #1e8449;">
+            🚜 농가 주문
+        </div>
     </a>
-</nav>
+    <a href="/admin/expenses" style="text-decoration: none; color: inherit;">
+        <div
+            style="border: 3px solid #1A1A1A; background: #fff; color: #1a1a1a; padding: 15px; text-align: center; font-weight: 900; box-shadow: 3px 3px 0px #ccc;">
+            💳 비용 기장
+        </div>
+    </a>
+</div>
 {% endblock %}

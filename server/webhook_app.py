@@ -8,6 +8,7 @@ import typing
 
 import sms_manager as sms
 import db_manager as db
+import pydantic
 
 app = FastAPI()
 
@@ -61,7 +62,9 @@ async def dashboard(request: Request):
     if not store:
         return RedirectResponse(url="/admin")
         
-    return templates.TemplateResponse("dashboard.html", {"request": request, "store": store})
+    stats = db.get_today_stats(store_id)
+    
+    return templates.TemplateResponse("dashboard.html", {"request": request, "store": store, "stats": stats})
 
 # 5. 로그아웃
 @app.get("/logout")
@@ -465,7 +468,7 @@ async def market_page(request: Request):
     products = db.get_all_products()
     return templates.TemplateResponse("market.html", {"request": request, "products": products})
 
-class MarketOrderRequest(pydantic.BaseModel):
+class MarketOrderRequest(BaseModel):
     product_id: int
     name: str
     phone: str
@@ -611,7 +614,7 @@ async def register_card_auth(request: Request):
 async def card_register_page(request: Request):
     return templates.TemplateResponse("card_register.html", {"request": request})
 
-class CardRegisterRequest(pydantic.BaseModel):
+class CardRegisterRequest(BaseModel):
     card_number: str
     expiry: str
     pwd_2digit: str

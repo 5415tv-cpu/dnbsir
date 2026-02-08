@@ -1301,6 +1301,19 @@ def save_product(store_id, name, price, image_path):
     finally:
         conn.close()
 
+def get_all_products():
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT * FROM products")
+        rows = c.fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Product Fetch Error: {e}")
+        return []
+    finally:
+        conn.close()
+
 def init_expenses_db():
     conn = get_connection()
     c = conn.cursor()
@@ -1606,5 +1619,26 @@ def get_integrated_ledger(store_id):
     except Exception as e:
         print(f"Ledger Error: {e}")
         return []
+    finally:
+        conn.close()
+
+def get_today_stats(store_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        today = datetime.now().strftime("%Y-%m-%d")
+        c.execute("SELECT SUM(price * quantity) as revenue FROM orders WHERE store_id = ? AND created_at LIKE ?", (store_id, f"{today}%"))
+        row = c.fetchone()
+        revenue = row['revenue'] if row and row['revenue'] else 0
+        
+        margin = int(revenue * 0.1) # 10% Margin
+        
+        return {
+            "revenue": revenue,
+            "margin": margin
+        }
+    except Exception as e:
+        print(f"Stats Error: {e}")
+        return {"revenue": 0, "margin": 0}
     finally:
         conn.close()
