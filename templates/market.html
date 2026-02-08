@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>똑똑한 동네 장터 (Beta)</title>
+</head>
+
+<body style="margin: 0;">
+    <main
+        style="background-color: #e0e0e0; min-height: 100vh; padding-bottom: 50px; font-family: sans-serif; color: #1a1a1a;">
+
+        <header style="background: #1a1a1a; color: #fff; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 1.5rem; font-weight: 900;">🛒 똑똑한 동네 장터</h1>
+            <p style="margin: 5px 0 0; font-size: 0.8rem; color: #ccc;">우리 이웃 농어민이 직접 보내드립니다</p>
+        </header>
+
+        <div style="padding: 15px; max-width: 600px; margin: 0 auto;">
+
+            {% for product in products %}
+            <div
+                style="background: #fff; border: 3px solid #1a1a1a; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+                <div style="width: 100%; height: 250px; background: #ddd; position: relative;">
+                    <img src="/{{ product.image_path }}" loading="lazy"
+                        onerror="this.src='https://images.unsplash.com/photo-1594136976553-6250785f8661?q=80&w=500'"
+                        alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div
+                        style="position: absolute; bottom: 10px; left: 10px; background: rgba(26,26,26,0.8); color: #fff; padding: 5px 10px; font-size: 0.8rem; font-weight: 800;">
+                        {{ product.store_id }} 님
+                    </div>
+                </div>
+
+                <div style="padding: 20px;">
+                    <div style="font-size: 1.3rem; font-weight: 900; margin-bottom: 5px;">{{ product.name }}</div>
+                    <div style="font-size: 0.9rem; color: #555; margin-bottom: 15px;">지금 막 수확했습니다. 아삭하고 달콤한 고랭지 배추의 진수!
+                    </div>
+                    <div style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">남은 수량: <span
+                            style="font-weight: bold; color: #d32f2f;">{{ product.inventory }}</span>개</div>
+
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #1a1a1a; padding-top: 15px;">
+                        <div style="font-size: 1.5rem; font-weight: 900; color: #d32f2f;">{{
+                            "{:,}".format(product.price) }}원</div>
+                        {% if product.inventory > 0 %}
+                        <button
+                            onclick="openOrderModal({{ product.product_id }}, '{{ product.name }}', {{ product.price }})"
+                            style="background: #1a1a1a; color: #fff; border: none; padding: 12px 25px; font-weight: 900; border-radius: 5px; cursor: pointer;">
+                            바로 구매하기
+                        </button>
+                        {% else %}
+                        <button disabled
+                            style="background: #ccc; color: #fff; border: none; padding: 12px 25px; font-weight: 900; border-radius: 5px; cursor: not-allowed;">
+                            품절
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 50px; color: #666;">
+                현재 판매중인 상품이 없습니다. 🚜
+            </div>
+            {% endfor %}
+
+        </div>
+    </main>
+
+    <!-- Order Modal -->
+    <div id="orderModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+        <div
+            style="background: #fff; width: 90%; max-width: 400px; padding: 25px; border-radius: 10px; position: relative; border: 3px solid #1a1a1a;">
+            <button onclick="closeModal()"
+                style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
+
+            <h3 style="margin-top: 0; font-weight: 900; text-align: center;">🛒 주문하기</h3>
+            <div id="modalProdName" style="text-align: center; margin-bottom: 20px; font-weight: bold;"></div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 900;">주문자 성함</label>
+                <input type="text" id="orderName" style="width: 100%; padding: 10px; border: 2px solid #1a1a1a;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 900;">연락처</label>
+                <input type="tel" id="orderPhone" placeholder="010-1234-5678"
+                    style="width: 100%; padding: 10px; border: 2px solid #1a1a1a;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 900;">배송지 주소 (도로명)</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="orderAddress" readonly
+                        style="flex: 1; padding: 10px; border: 2px solid #1a1a1a; background: #f5f5f5;">
+                    <button onclick="searchAddress()"
+                        style="padding: 10px; background: #555; color: #fff; border: none; font-weight: 900; cursor: pointer;">검색</button>
+                </div>
+            </div>
+
+            <button onclick="submitOrder()"
+                style="width: 100%; background: #27ae60; color: #fff; border: none; padding: 15px; font-size: 1.1rem; font-weight: 900; border-radius: 5px; cursor: pointer;">
+                결제 및 주문완료
+            </button>
+        </div>
+    </div>
+
+    <!-- Daum Postcode Script -->
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <div id="layer" style="display:none;position:fixed;overflow:hidden;z-index:99999;-webkit-overflow-scrolling:touch;">
+        <img src="//t1.daumcdn.net/postcode/resource/images/close.png" id="btnCloseLayer"
+            style="cursor:pointer;position:absolute;right:-3px;top:-3px;z-index:1" onclick="closeDaumPostcode()"
+            alt="닫기 버튼">
+    </div>
+
+    <script>
+        let selectedProductId = null;
+
+        function openOrderModal(id, name, price) {
+            selectedProductId = id;
+            document.getElementById('modalProdName').innerText = name + " / " + price.toLocaleString() + "원";
+            document.getElementById('orderModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('orderModal').style.display = 'none';
+        }
+
+        // Daum Postcode Logic
+        var element_layer = document.getElementById('layer');
+
+        function closeDaumPostcode() {
+            element_layer.style.display = 'none';
+        }
+
+        function searchAddress() {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    var addr = data.address; // Final Address
+                    var extraAddr = '';
+
+                    if (data.addressType === 'R') {
+                        if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+                            extraAddr += data.bname;
+                        }
+                        if (data.buildingName !== '' && data.apartment === 'Y') {
+                            extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                        }
+                        if (extraAddr !== '') {
+                            extraAddr = ' (' + extraAddr + ')';
+                        }
+                    }
+
+                    document.getElementById('orderAddress').value = addr + extraAddr;
+                    element_layer.style.display = 'none';
+                },
+                width: '100%',
+                height: '100%',
+                maxSuggestItems: 5
+            }).embed(element_layer);
+
+            element_layer.style.display = 'block';
+            initLayerPosition();
+        }
+
+        function initLayerPosition() {
+            var width = 300;
+            var height = 400;
+            var borderWidth = 5;
+
+            element_layer.style.width = width + 'px';
+            element_layer.style.height = height + 'px';
+            element_layer.style.border = borderWidth + 'px solid';
+            element_layer.style.left = (((window.innerWidth || document.documentElement.clientWidth) - width) / 2 - borderWidth) + 'px';
+            element_layer.style.top = (((window.innerHeight || document.documentElement.clientHeight) - height) / 2 - borderWidth) + 'px';
+        }
+
+        async function submitOrder() {
+            const name = document.getElementById('orderName').value;
+            const phone = document.getElementById('orderPhone').value;
+            const address = document.getElementById('orderAddress').value;
+
+            if (!name || !phone || !address) {
+                alert("모든 정보를 입력해주세요.");
+                return;
+            }
+
+            if (!confirm("주문하시겠습니까? (테스트 주문)")) return;
+
+            try {
+                const res = await fetch('/api/market/order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        product_id: selectedProductId,
+                        name: name,
+                        phone: phone,
+                        address: address
+                    })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert("주문이 완료되었습니다!");
+                    location.reload();
+                } else {
+                    alert("주문 실패: " + data.error);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("통신 오류가 발생했습니다.");
+            }
+        }
+    </script>
+</body>
+
+</html>

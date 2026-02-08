@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>간편 택배 접수 - 동네비서</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+    <main style="background-color: #e0e0e0; min-height: 100vh; padding: 15px; font-weight: 800; color: #1a1a1a;">
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <button
+                style="flex: 1; background: #1a1a1a; color: #fff; padding: 15px; border: none; font-weight: 900; border-radius: 5px; cursor: pointer;">🤖
+                AI 접수 도우미</button>
+            <button
+                style="flex: 1; background: #fff; color: #1a1a1a; padding: 15px; border: 2px solid #1a1a1a; font-weight: 900; border-radius: 5px; cursor: pointer;">📊
+                엑셀 대량접수</button>
+        </div>
+
+        <section
+            style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; border-radius: 5px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0; font-weight: 900;">1. 보내는 분</h3>
+                <button onclick="unlock('sender')"
+                    style="background: #ccc; border: 1px solid #1a1a1a; padding: 5px 10px; font-size: 0.8rem; font-weight: 900; cursor: pointer;">🔓
+                    잠금해제</button>
+            </div>
+            <input id="sender_name" type="text" value="홍길동" readonly
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; margin-bottom: 10px; background: #f9f9f9; font-weight: 700; box-sizing: border-box;">
+            <input id="sender_addr" type="text" value="강원도 태백시..." readonly
+                style="width: 100%; padding: 12px; border: 1px solid #ddd; background: #f9f9f9; font-weight: 700; box-sizing: border-box;">
+        </section>
+
+        <section
+            style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; border-radius: 5px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3 style="margin: 0; font-weight: 900;">2. 받는 분</h3>
+                <button onclick="unlock('receiver')"
+                    style="background: #ccc; border: 1px solid #1a1a1a; padding: 5px 10px; font-size: 0.8rem; font-weight: 900; cursor: pointer;">🔓
+                    잠금해제</button>
+            </div>
+            <input id="receiver_name" type="text" placeholder="이름"
+                style="width: 100%; padding: 12px; border: 1px solid #1a1a1a; margin-bottom: 10px; font-weight: 700; box-sizing: border-box;">
+            <input id="receiver_addr" type="text" placeholder="주소 찾기"
+                style="width: 100%; padding: 12px; border: 1px solid #1a1a1a; font-weight: 700; box-sizing: border-box;">
+        </section>
+
+        <section style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; border-radius: 5px;">
+            <h3 style="margin-bottom: 15px; font-weight: 900;">3. 결제 방식 선택</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                <label style="border: 2px solid #1a1a1a; padding: 10px; text-align: center; cursor: pointer;"><input
+                        type="radio" name="pay" checked> 현금</label>
+                <label style="border: 2px solid #1a1a1a; padding: 10px; text-align: center; cursor: pointer;"><input
+                        type="radio" name="pay"> 카드</label>
+                <label style="border: 2px solid #1a1a1a; padding: 10px; text-align: center; cursor: pointer;"><input
+                        type="radio" name="pay"> 페이</label>
+            </div>
+            <button
+                style="width: 100%; background: #1a1a1a; color: #fff; padding: 20px; font-size: 1.2rem; font-weight: 900; border: none; margin-top: 20px; cursor: pointer; border-radius: 5px;">운송장
+                출력 및 예약완료</button>
+        </section>
+    </main>
+
+    <script>
+        function unlock(type) {
+            if (type === 'sender') {
+                const nameEl = document.getElementById('sender_name');
+                const addrEl = document.getElementById('sender_addr');
+                nameEl.readOnly = false;
+                nameEl.style.background = '#fff';
+                nameEl.style.border = '1px solid #1a1a1a';
+                addrEl.readOnly = false;
+                addrEl.style.background = '#fff';
+                addrEl.style.border = '1px solid #1a1a1a';
+            } else {
+                const nameEl = document.getElementById('receiver_name');
+                const addrEl = document.getElementById('receiver_addr');
+                nameEl.readOnly = false;
+                nameEl.style.background = '#fff';
+
+            }
+        }
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}부재중 자동응대 설정 - 동네비서{% endblock %}
+
+{% block content %}
+<div
+    style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a; max-width: 500px; margin: 20px auto;">
+    <h3 style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">💬 카카오 알림톡 비서
+        설정</h3>
+
+    <div style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; margin: 20px 0; text-align: center;">
+        <div style="font-size: 0.9rem; margin-bottom: 5px;">현재 알림톡 적립금</div>
+        <div style="font-size: 2rem; font-weight: 900; color: #1a1a1a;"><span id="walletBalance">0</span> 원</div>
+        <button onclick="topUp()"
+            style="margin-top: 15px; width: 100%; background: #fee500; color: #1a1a1a; border: none; padding: 12px; font-weight: 900; border-radius: 5px; cursor: pointer;">⚡
+            즉시 충전하기</button>
+    </div>
+
+    <!-- Preview -->
+    <div
+        style="background: #f9f9f9; padding: 15px; border: 1px solid #ccc; border-radius: 10px; font-size: 0.9rem; line-height: 1.5; margin-bottom: 20px;">
+        <div style="color: #555; font-size: 0.8rem; margin-bottom: 5px;">[알림톡 발송 예시]</div>
+        <strong>[똑똑한 동네비서]</strong><br>
+        <span id="previewText">안녕하세요, 사장님! 전화를 받지 못해 죄송합니다..</span><br><br>
+        ▶ 로젠택배 예약하기: dnbsir.com/order/driver<br>
+        <div
+            style="text-align: center; background: #fff; border: 1px solid #ddd; padding: 8px; margin-top: 10px; border-radius: 5px;">
+            예약 바로가기</div>
+    </div>
+
+    <!-- Settings Input -->
+    <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 10px;">자동 발송 문구 수정</label>
+        <textarea id="replyMsg" oninput="updatePreview()"
+            style="width: 100%; height: 80px; border: 1px solid #ccc; font-weight: 700; padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+        <span>부재중 전화 시 즉시 발송</span>
+        <input type="checkbox" id="checkMissed" style="transform: scale(1.5);">
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0;">
+        <span>통화 종료 후 자동 발송</span>
+        <input type="checkbox" id="checkEnd" style="transform: scale(1.5);">
+    </div>
+
+    <!-- Auto Refill Section -->
+    <div
+        style="background-color: #f0f0f0; padding: 15px; border: 2px solid #1a1a1a; margin-top: 20px; border-radius: 5px;">
+        <h4 style="margin-top: 0; font-weight: 900;">⚙️ 자동 충전(Auto-Refill) 설정</h4>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <span>자동 충전 기능 활성화</span>
+            <input type="checkbox" id="autoRefillCheck" style="width: 20px; height: 20px; accent-color: #1a1a1a;">
+        </div>
+
+        <div style="font-size: 0.9rem; line-height: 1.6;">
+            잔액이 <span style="color: #d32f2f; font-weight: bold;">1,000원</span> 미만일 때<br>
+            <select id="autoRefillAmount"
+                style="width: 100%; padding: 8px; border: 1px solid #1a1a1a; font-weight: 900; margin: 5px 0;">
+                <option value="30000">30,000원 (+3% 적립)</option>
+                <option value="50000">50,000원 (+5% 적립)</option>
+                <option value="100000">100,000원 (+10% 적립)</option>
+            </select>
+            으로 자동 결제합니다.
+        </div>
+        <div style="font-size: 0.8rem; color: #555; margin-top: 10px;">연결된 결제 수단: 삼성카드(****-1234)</div>
+    </div>
+
+    <button onclick="saveSettings()"
+        style="width: 100%; background: #1a1a1a; color: #fff; padding: 15px; margin-top: 20px; font-size: 1.1rem; font-weight: 900; border: none; border-radius: 5px; cursor: pointer;">
+        설정 저장하기
+    </button>
+
+    <a href="/admin/dashboard"
+        style="display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #1a1a1a; font-weight: 900;">🔙
+        대시보드로 돌아가기</a>
+</div>
+
+<!-- Top-up Modal -->
+<div id="topUpModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; justify-content: center; align-items: center;">
+    <div
+        style="background: #fff; width: 90%; max-width: 480px; padding: 25px; border-radius: 10px; position: relative; border: 3px solid #1a1a1a;">
+        <button onclick="closeModal()"
+            style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
+
+        <h3 style="margin-top: 0; font-weight: 900; text-align: center;">💳 알림톡 포인트 충전</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+            <button onclick="setAmt(30000)"
+                style="background: #fff; border: 2px solid #1a1a1a; padding: 15px; font-weight: 900; cursor: pointer;">3만원
+                (+3%)</button>
+            <button onclick="setAmt(50000)"
+                style="background: #fff; border: 2px solid #1a1a1a; padding: 15px; font-weight: 900; cursor: pointer;">5만원
+                (+5%)</button>
+            <button onclick="setAmt(100000)"
+                style="background: #1a1a1a; color: #fff; border: none; padding: 15px; font-weight: 900; cursor: pointer;">10만원
+                (+10%)</button>
+            <button onclick="setAmt(0)"
+                style="background: #fff; border: 2px solid #1a1a1a; padding: 15px; font-weight: 900; cursor: pointer;">직접
+                입력</button>
+        </div>
+
+        <div
+            style="background: #f5f5f5; padding: 20px; border: 2px solid #1a1a1a; text-align: center; border-radius: 5px;">
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">최종 적립 예정 포인트</div>
+            <div id="displayTotal" style="font-size: 2rem; font-weight: 900;">0 P</div>
+            <div id="displayBonus" style="font-size: 1rem; color: #d32f2f; margin-top: 5px;">(보너스 0 P 포함)</div>
+        </div>
+
+        <button onclick="processKakaoPay()"
+            style="width: 100%; margin-top: 20px; background: #fee500; color: #1a1a1a; border: none; padding: 20px; font-size: 1.2rem; font-weight: 900; border-radius: 5px; cursor: pointer;">
+            카카오페이로 충전하기
+        </button>
+    </div>
+</div>
+
+<script>
+    let currentAmount = 0; // Variable to store the selected amount
+
+    function topUp() {
+        document.getElementById('topUpModal').style.display = 'flex';
+        setAmt(30000); // Default
+    }
+
+    function closeModal() {
+        document.getElementById('topUpModal').style.display = 'none';
+    }
+
+    function setAmt(amt) {
+        if (amt === 0) {
+            const input = prompt("충전할 금액을 입력해주세요 (원 단위)");
+            if (!input || isNaN(input)) return;
+            currentAmount = parseInt(input);
+        } else {
+            currentAmount = amt;
+        }
+        updateCalculation();
+    }
+
+    function updateCalculation() {
+        let bonusRate = 0;
+        if (currentAmount >= 100000) bonusRate = 0.10;
+        else if (currentAmount >= 50000) bonusRate = 0.05;
+        else if (currentAmount >= 30000) bonusRate = 0.03;
+
+        const bonus = Math.round(currentAmount * bonusRate);
+        const total = currentAmount + bonus;
+
+        document.getElementById('displayTotal').innerText = total.toLocaleString() + " P";
+        document.getElementById('displayBonus').innerText = "(보너스 " + bonus.toLocaleString() + " P 포함)";
+    }
+
+    async function processKakaoPay() {
+        if (currentAmount <= 0) {
+            alert("금액을 선택해주세요.");
+            return;
+        }
+
+        if (!confirm(currentAmount.toLocaleString() + "원을 충전하시겠습니까?")) return;
+
+        try {
+            const res = await fetch('/api/admin/wallet/charge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: currentAmount,
+                    memo: "카카오페이 충전"
+                })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                alert("충전이 완료되었습니다! (보너스 " + data.bonus_applied + "P 적용)");
+                document.getElementById('walletBalance').innerText = data.new_balance.toLocaleString();
+                closeModal();
+            } else {
+                alert("충전 실패: " + (data.error || "알 수 없는 오류"));
+            }
+        } catch (e) {
+            console.error(e);
+            alert("통신 오류가 발생했습니다.");
+        }
+    }
+
+    function updatePreview() {
+        const msg = document.getElementById('replyMsg').value;
+        document.getElementById('previewText').innerText = msg;
+    }
+
+    async function loadSettings() {
+        try {
+            const res = await fetch('/api/admin/auto-reply/settings');
+            const data = await res.json();
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            document.getElementById('walletBalance').innerText = data.wallet_balance.toLocaleString();
+            document.getElementById('replyMsg').value = data.auto_reply_msg || "안녕하세요, 사장님! 전화를 받지 못해 죄송합니다.";
+            document.getElementById('checkMissed').checked = data.auto_reply_missed == 1;
+            document.getElementById('checkEnd').checked = data.auto_reply_end == 1;
+
+            // Auto Refill
+            document.getElementById('autoRefillCheck').checked = data.auto_refill_on == 1;
+            if (data.auto_refill_amount) {
+                document.getElementById('autoRefillAmount').value = data.auto_refill_amount;
+            } else {
+                document.getElementById('autoRefillAmount').value = "50000"; // Default
+            }
+
+
+            updatePreview(); // Init preview
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function saveSettings() {
+        const msg = document.getElementById('replyMsg').value;
+        const missed = document.getElementById('checkMissed').checked ? 1 : 0;
+        const end = document.getElementById('checkEnd').checked ? 1 : 0;
+
+        // Auto Refill
+        const refillOn = document.getElementById('autoRefillCheck').checked ? 1 : 0;
+        const refillAmt = parseInt(document.getElementById('autoRefillAmount').value);
+
+        try {
+            const res = await fetch('/api/admin/auto-reply/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    auto_reply_msg: msg,
+                    auto_reply_missed: missed,
+                    auto_reply_end: end,
+                    auto_refill_on: refillOn,
+                    auto_refill_amount: refillAmt
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                alert("설정이 저장되었습니다.");
+            } else {
+                alert("저장 실패: " + (data.error || "Unknown"));
+            }
+        } catch (e) {
+            console.error(e);
+            alert("저장 중 오류가 발생했습니다.");
+        }
+    }
+
+    window.onload = loadSettings;
+</script>
+{% endblock %}

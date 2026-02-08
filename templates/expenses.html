@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>사업용 카드 자동 기장 센터</title>
+</head>
+
+<body style="margin: 0; font-family: sans-serif; background-color: #e0e0e0; padding: 20px;">
+
+    <header
+        style="background: #1a1a1a; color: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+        <h1 style="margin: 0; font-size: 1.2rem; font-weight: 900;">💳 사업용 카드 자동 기장 센터</h1>
+        <a href="/admin/dashboard" style="color: #fff; text-decoration: none; font-size: 0.9rem;">🔙 돌아가기</a>
+    </header>
+
+    <div style="background-color: #e0e0e0; padding: 5px; max-width: 600px; margin: 0 auto;">
+
+        <div
+            style="background-color: #fff; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a;">
+
+            <h3 style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">💳 카드
+                연결 현황</h3>
+
+            <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin: 20px 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>연결된 카드: 삼성카드(4567)</span>
+                    <span style="color: #27ae60; font-size: 0.8rem;">● 실시간 연동 중</span>
+                </div>
+                <button onclick="location.href='/admin/cards/register'"
+                    style="margin-top: 10px; width: 100%; padding: 10px; background: #f0f0f0; border: 1px solid #1a1a1a; font-weight: 900; cursor: pointer;">+
+                    새 카드 등록하기</button>
+            </div>
+
+            <div style="background: #1a1a1a; color: #fff; padding: 20px; border-radius: 5px;">
+                <div
+                    style="font-size: 0.9rem; color: #ccc; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                    <span>2026년 2월 자동 기장 현황</span>
+                    <span style="font-size: 0.8rem; cursor: pointer;">🔄 새로고침</span>
+                </div>
+
+                <div id="expenseList">
+                    <!-- JS will populate this -->
+                    <div style="text-align: center; color: #777;">불러오는 중...</div>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; font-weight: 900; border-top: 1px solid #555; margin-top: 10px; padding-top: 10px; color: #ffeb3b;">
+                    <span>총 인정 경비 합계</span>
+                    <span id="totalExpense">0 원</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function fetchExpenses() {
+            try {
+                const res = await fetch('/api/admin/expenses');
+                const data = await res.json();
+
+                const listEl = document.getElementById('expenseList');
+                listEl.innerHTML = '';
+
+                let total = 0;
+
+                data.forEach(item => {
+                    total += item.amount;
+
+                    const div = document.createElement('div');
+                    div.style.display = 'flex';
+                    div.style.justifyContent = 'space-between';
+                    div.style.marginBottom = '5px';
+                    div.innerHTML = `
+                        <span>${item.category} <small style="color:#aaa; font-weight:normal;">(${item.date.substring(5)})</small></span>
+                        <span>${item.amount.toLocaleString()} 원</span>
+                    `;
+                    listEl.appendChild(div);
+                });
+
+                document.getElementById('totalExpense').innerText = total.toLocaleString() + " 원";
+
+            } catch (e) {
+                console.error("Failed to fetch expenses", e);
+                document.getElementById('expenseList').innerHTML = '<div style="color:red">데이터 로드 실패</div>';
+            }
+        }
+
+        // Load on start
+        fetchExpenses();
+    </script>
+</body>
+
+</html>

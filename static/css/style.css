@@ -1,126 +1,34 @@
-/* Mobile First Reset */
-* {
-    box_sizing: border_box;
-    margin: 0;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
+/* 사장님의 디자인 철학을 이 한 곳에 모두 담습니다 */
+:root {
+    --bg-color: #e0e0e0;
+    /* 옅은 회색 바탕 */
+    --text-color: #1a1a1a;
+    /* 짙은 검정 텍스트 */
+    --point-color: #ffffff;
+    /* 흰색 (카드 배경) */
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #f5f5f7;
-    color: #1d1d1f;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-weight: 800;
+    /* 전체 텍스트 굵게 */
+    margin: 0;
+    font-family: -apple-system, sans-serif;
 }
 
-/* App Container */
-.app-container {
-    max-width: 600px;
-    margin: 0 auto;
-    min-height: 100vh;
-    background-color: white;
-    position: relative;
-    padding-bottom: 80px; /* Space for bottom nav */
-    box-shadow: 0 0 20px rgba(0,0,0,0.05);
-}
-
-/* Utilities */
-.hidden { display: none !important; }
-.text-center { text-align: center; }
-.text-primary { color: #007AFF; }
-.bg-primary { background-color: #007AFF; }
-
-/* Components */
-.header {
-    padding: 16px 20px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    border-bottom: 1px solid #ebedf0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.brand {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1d1d1f;
-}
-
-.card {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    margin: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    border: 1px solid #f0f0f0;
-}
-
-.btn {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
+/* 공통 버튼 디자인 */
+.main-btn {
+    background: var(--text-color);
+    color: white;
+    padding: 18px;
+    border-radius: 5px;
+    font-weight: 900;
     width: 100%;
-    padding: 14px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
     border: none;
     cursor: pointer;
-    transition: transform 0.1s;
-    text-decoration: none;
 }
 
-.btn:active {
-    transform: scale(0.98);
-}
-
-.btn-primary {
-    background-color: #007AFF;
-    color: white;
-}
-
-.btn-secondary {
-    background-color: #f5f5f7;
-    color: #1d1d1f;
-}
-
-/* Bottom Nav */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: white;
-    border-top: 1px solid #ebedf0;
-    display: flex;
-    justify-content: space-around;
-    padding: 10px 0;
-    padding-bottom: env(safe-area-inset-bottom, 10px);
-    z-index: 100;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    color: #8e8e93;
-    text-decoration: none;
-    font-size: 10px;
-    font-weight: 500;
-}
-
-.nav-item.active {
-    color: #007AFF;
-}
-
-.nav-icon {
-    font-size: 24px;
-    margin-bottom: 2px;
+.main-btn:hover {
+    opacity: 0.9;
 }

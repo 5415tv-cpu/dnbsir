@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}농산물 판매 등록 - 동네비서{% endblock %}
+
+{% block content %}
+<div
+    style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a; max-width: 500px; margin: 20px auto;">
+    <h3 style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">🍏 농산물 판매 등록
+    </h3>
+
+    <form id="productForm" onsubmit="event.preventDefault(); registerProduct();">
+        <div style="margin: 20px 0;">
+            <label style="display: block; margin-bottom: 5px;">판매 품목명</label>
+            <input type="text" id="prodName" placeholder="예: 태백 고랭지 배추 10kg" required
+                style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; font-weight: 900; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px;">판매 가격 (원)</label>
+            <input type="number" id="prodPrice" placeholder="예: 35000" required
+                style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; font-weight: 900; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 5px;">상품 사진</label>
+            <div onclick="document.getElementById('prodImage').click()"
+                style="width: 100%; height: 150px; background: #fff; border: 2px dashed #1a1a1a; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-direction: column;">
+                <span id="previewText">📷 사진 올리기 (터치)</span>
+                <img id="imagePreview" style="display: none; max-width: 100%; max-height: 100%; object-fit: cover;">
+            </div>
+            <input type="file" id="prodImage" accept="image/*" style="display: none;" onchange="previewImage(this)">
+        </div>
+
+        <div
+            style="background: #1a1a1a; color: #fff; padding: 15px; border-radius: 5px; font-size: 0.9rem; line-height: 1.6; margin-bottom: 20px;">
+            📢 **안내사항**<br>
+            1. 고객에게 알림톡을 보내면 바로 결제가 가능합니다.<br>
+            2. 결제 완료 시 사장님의 계좌로 자동 입금됩니다.<br>
+            3. 알림톡 발송을 위해 **포인트 충전**이 필요합니다.
+        </div>
+
+        <button type="submit"
+            style="width: 100%; background: #27ae60; color: #fff; border: none; padding: 18px; font-size: 1.1rem; font-weight: 900; border-radius: 5px; cursor: pointer;">
+            판매 시작 및 고객 알림 보내기
+        </button>
+    </form>
+
+    <a href="/admin/dashboard"
+        style="display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #1a1a1a; font-weight: 900;">🔙
+        대시보드로 돌아가기</a>
+</div>
+
+<script>
+    function previewImage(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+                document.getElementById('previewText').style.display = 'none';
+            }
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function registerProduct() {
+        const name = document.getElementById('prodName').value;
+        const price = document.getElementById('prodPrice').value;
+        const imageInput = document.getElementById('prodImage');
+
+        if (!name || !price) {
+            alert("품목명과 가격을 입력해주세요.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('price', price);
+        if (imageInput.files[0]) {
+            formData.append('image', imageInput.files[0]);
+        }
+
+        if (!confirm("판매를 등록하고 알림톡을 발송하시겠습니까?\n(알림톡 발송 비용이 차감됩니다)")) return;
+
+        try {
+            const res = await fetch('/api/admin/products', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                alert("상품이 등록되었으며, 고객들에게 알림톡 발송이 시작되었습니다!");
+                window.location.href = "/admin/dashboard";
+            } else {
+                alert("등록 실패: " + (data.error || "Unknown error"));
+            }
+        } catch (e) {
+            console.error(e);
+            alert("전송 중 오류가 발생했습니다.");
+        }
+    }
+</script>
+{% endblock %}

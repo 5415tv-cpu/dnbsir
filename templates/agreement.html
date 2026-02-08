@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>서비스 이용 동의 - 동네비서</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+    <div class="consent-container" style="background-color: #e0e0e0; padding: 25px; font-weight: 800;">
+        <h2 style="color: #1a1a1a; font-size: 1.5rem; font-weight: 900;">[필수] 서비스 이용 및<br>개인정보 제공 동의서</h2>
+
+        <div
+            style="background: #fff; height: 300px; overflow-y: scroll; padding: 15px; border: 2px solid #1a1a1a; margin: 20px 0; font-size: 0.9rem;">
+            제1조 (목적)... <br>
+            본 서비스는 소상공인과 농어민의 수익 증대와 편의를 위해...
+        </div>
+
+        <label style="display: block; margin-bottom: 20px;">
+            <input type="checkbox" id="consentCheck" style="transform: scale(1.5);"> 위의 모든 내용을 확인하였으며 서명합니다.
+        </label>
+
+        <input type="text" id="userName" placeholder="성명을 입력하세요"
+            style="width: 100%; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 15px; font-weight: 900;">
+
+        <button onclick="submitSignature()" class="main-btn">동의 및 서명 완료</button>
+    </div>
+
+    <script>
+        function submitSignature() {
+            const isChecked = document.getElementById('consentCheck').checked;
+            const name = document.getElementById('userName').value;
+
+            if (!isChecked) {
+                alert('서비스 이용에 동의해주세요.');
+                return;
+            }
+            if (!name) {
+                alert('성명을 입력해주세요.');
+                return;
+            }
+
+            alert(name + '님, 서명이 완료되었습니다.\n서비스 가입 절차를 진행합니다.');
+            // 추후 서버로 데이터 전송 로직 추가 필요
+            // window.location.href = '/signup-complete'; 
+        }
+    </script>
+
+</body>
+
+</html>

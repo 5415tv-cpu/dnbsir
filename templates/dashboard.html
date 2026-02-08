@@ -2,7 +2,12 @@
 
 {% block content %}
 <header class="header">
-    <div class="brand">{{ store.name }}</div>
+    <div class="brand">
+        {{ store.name }}
+        <span
+            style="background-color: #1a1a1a; color: #d4af37; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; vertical-align: middle; margin-left: 5px;">[운영자
+            모드]</span>
+    </div>
     <div class="header-actions">
         <a href="/logout" style="font-size: 14px; text-decoration: none; color: #ff3b30;">로그아웃</a>
     </div>
@@ -45,6 +50,28 @@
             <span style="font-size: 24px; margin-bottom: 8px;">⚙️</span>
             <span>가게 설정</span>
         </button>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;">
+        <a href="/admin/calculator"
+            style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center; text-decoration: none; color: #1a1a1a; font-weight: 800; font-size: 0.9rem;">
+            💰 수익 계산기
+        </a>
+        <a href="/admin/expenses"
+            style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center; text-decoration: none; color: #1a1a1a; font-weight: 800; font-size: 0.9rem;">
+            💳 비용 자동 기장
+        </a>
+    </div>
+
+    <!-- Farm Menu -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+        <a href="/admin/farm/orders"
+            style="background: #27ae60; color: #fff; padding: 15px; border: none; text-align: center; text-decoration: none; font-weight: 900; border-radius: 5px; font-size: 0.9rem;">
+            🚜 농가 주문 통합
+        </a>
+        <a href="/admin/tax"
+            style="background: #1a1a1a; color: #fff; padding: 15px; border: none; text-align: center; text-decoration: none; font-weight: 900; border-radius: 5px; font-size: 0.9rem;">
+            📉 세금 관리 비서
+        </a>
     </div>
 </main>
 {% endblock %}

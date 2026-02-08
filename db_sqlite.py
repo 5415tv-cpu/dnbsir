@@ -233,11 +233,19 @@ def init_db():
     try:
         c.execute("ALTER TABLE orders ADD COLUMN rider_id TEXT")
     except: pass
+    try:
+        c.execute("ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'CARD'")
+    except: pass
     
     # Kakao Biz Customization
     try:
         c.execute("ALTER TABLE stores ADD COLUMN kakao_biz_key TEXT")
     except: pass
+
+    # ... (rest of init_db)
+
+
+    # ... (rest of init_db)
     try:
         c.execute("ALTER TABLE stores ADD COLUMN use_custom_kakao INTEGER DEFAULT 0")
     except: pass
@@ -248,6 +256,25 @@ def init_db():
     except: pass
     try:
         c.execute("ALTER TABLE stores ADD COLUMN smart_callback_text TEXT")
+    except: pass
+    
+    # Auto Reply Settings
+    try:
+        c.execute("ALTER TABLE stores ADD COLUMN auto_reply_msg TEXT")
+    except: pass
+    try:
+        c.execute("ALTER TABLE stores ADD COLUMN auto_reply_missed INTEGER DEFAULT 1")
+    except: pass
+    try:
+        c.execute("ALTER TABLE stores ADD COLUMN auto_reply_end INTEGER DEFAULT 0")
+    except: pass
+    
+    # Auto Refill Settings
+    try:
+        c.execute("ALTER TABLE stores ADD COLUMN auto_refill_on INTEGER DEFAULT 0")
+    except: pass
+    try:
+        c.execute("ALTER TABLE stores ADD COLUMN auto_refill_amount INTEGER DEFAULT 50000")
     except: pass
 
     # Virtual Number Mapping (050)
@@ -331,8 +358,8 @@ def save_order(data):
         net = amount - fee
         
         c.execute('''
-            INSERT INTO orders (store_id, type, item_name, amount, fee_amount, net_amount, settlement_status, customer_phone, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO orders (store_id, type, item_name, amount, fee_amount, net_amount, settlement_status, customer_phone, payment_method, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             store_id,
             data.get('type'),
@@ -342,6 +369,7 @@ def save_order(data):
             net,
             'pending',
             data.get('customer_phone'),
+            data.get('payment_method', 'CARD'),
             datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         ))
         conn.commit()
@@ -547,6 +575,27 @@ def save_user(user_data):
         return True
     except Exception as e:
         print(f"DB Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def update_store_auto_reply(store_id, msg, missed, end, refill_on=0, refill_amount=50000):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            UPDATE stores 
+            SET auto_reply_msg = ?, 
+                auto_reply_missed = ?, 
+                auto_reply_end = ?,
+                auto_refill_on = ?,
+                auto_refill_amount = ?
+            WHERE store_id = ?
+        ''', (msg, missed, end, refill_on, refill_amount, store_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Auto Reply Update Error: {e}")
         return False
     finally:
         conn.close()
@@ -1190,6 +1239,372 @@ def get_all_riders():
     c = conn.cursor()
     c.execute("SELECT * FROM riders ORDER BY created_at DESC")
     rows = c.fetchall()
+
     conn.close()
     return [dict(r) for r in rows]
 
+def get_order_by_id(order_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT * FROM orders WHERE id = ?", (order_id,))
+        row = c.fetchone()
+        return dict(row) if row else None
+    finally:
+        conn.close()
+
+def update_order_tracking(order_id, tracking_number):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Try adding column if not present
+        try:
+            c.execute("ALTER TABLE orders ADD COLUMN tracking_code TEXT")
+        except: pass
+        
+        c.execute("UPDATE orders SET tracking_code = ? WHERE id = ?", (str(tracking_number), order_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Tracking Update Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def update_order_payment_method(order_id, method):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("UPDATE orders SET payment_method = ? WHERE id = ?", (method, order_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Payment Method Update Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def save_product(store_id, name, price, image_path):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            INSERT INTO products (store_id, name, price, image_path, created_at, inventory)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (store_id, name, price, image_path, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), 100)) # Default 100
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Product Save Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def init_expenses_db():
+    conn = get_connection()
+    c = conn.cursor()
+    # Expenses Table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            store_id TEXT,
+            card_name TEXT,
+            category TEXT,
+            amount INTEGER,
+            date TEXT,
+            approval_no TEXT,
+            created_at TEXT
+        )
+    ''')
+    
+    # Idempotency: Add approval_no column if not exists
+    try:
+        c.execute("ALTER TABLE expenses ADD COLUMN approval_no TEXT")
+    except: pass
+    
+    # Idempotency: Unique Index
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_expenses_approval ON expenses(approval_no)")
+
+    # MFA Token Table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS card_auth_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            store_id TEXT,
+            card_name TEXT,
+            token TEXT,
+            expires_at TEXT,
+            proxy_ip TEXT,
+            created_at TEXT
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+
+init_expenses_db()
+
+def save_expense(store_id, card_name, category, amount, date, approval_no=None):
+    # Check Lock
+    if is_date_locked(store_id, date):
+        print(f"Expense Save Blocked: Date {date} is locked.")
+        return False
+
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Generate approval_no if missing (for mock data)
+        if not approval_no:
+            import hashlib
+            raw = f"{store_id}{card_name}{category}{amount}{date}"
+            approval_no = hashlib.md5(raw.encode()).hexdigest()[:10]
+
+        c.execute('''
+            INSERT INTO expenses (store_id, card_name, category, amount, date, approval_no, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (store_id, card_name, category, amount, date, approval_no, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        print(f"Skipping Duplicate Expense: {approval_no}")
+        return True # Treat as success (Idempotency)
+    except Exception as e:
+        print(f"Expense Save Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+# Ledger Lock Functions
+def init_lock_table():
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS ledger_locks (
+                store_id TEXT,
+                locked_until TEXT,
+                created_at TEXT,
+                PRIMARY KEY (store_id)
+            )
+        ''') 
+        conn.commit()
+    except Exception as e:
+        print(f"Lock Table Init Error: {e}")
+    finally:
+        conn.close()
+
+def get_ledger_lock_date(store_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        init_lock_table() # Ensure table exists
+        c.execute("SELECT locked_until FROM ledger_locks WHERE store_id = ?", (store_id,))
+        row = c.fetchone()
+        if row:
+            return row[0]
+        return None
+    except Exception:
+        return None
+    finally:
+        conn.close()
+
+def lock_ledger(store_id, date):
+    # Lock data up to this date (Inclusive)
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        init_lock_table()
+        # Only update if new date is later than existing lock
+        current_lock = get_ledger_lock_date(store_id)
+        if current_lock and current_lock >= date:
+            return True # Already locked
+            
+        c.execute("INSERT OR REPLACE INTO ledger_locks (store_id, locked_until, created_at) VALUES (?, ?, ?)", 
+                  (store_id, date, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Lock Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def is_date_locked(store_id, date):
+    # date format: YYYY-MM-DD
+    if not date: return False
+    locked_until = get_ledger_lock_date(store_id)
+    if not locked_until:
+        return False
+    return date <= locked_until
+
+def save_order(store_id, product_id, product_name, price, quantity, buyer_name, buyer_phone, buyer_address):
+    # Check Lock
+    today = datetime.now().strftime("%Y-%m-%d")
+    if is_date_locked(store_id, today):
+        print(f"Order Save Blocked: Date {today} is locked.")
+        return False
+        
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            INSERT INTO orders (store_id, product_id, product_name, price, quantity, buyer_name, buyer_phone, buyer_address, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (store_id, product_id, product_name, price, quantity, buyer_name, buyer_phone, buyer_address, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Order Save Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_tax_stats(store_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # 1. Total Revenue
+        c.execute("SELECT SUM(price * quantity) as total_revenue FROM orders WHERE store_id = ?", (store_id,))
+        row = c.fetchone()
+        total_revenue = row['total_revenue'] if row and row['total_revenue'] else 0
+        
+        # 2. Expense Rate (33.47% as per user request example)
+        expense_rate = 0.3347
+        recognized_expenses = int(total_revenue * expense_rate)
+        
+        # 3. Tax Base
+        # Basic Deduction: 1,500,000
+        basic_deduction = 1500000
+        tax_base = total_revenue - recognized_expenses - basic_deduction
+        if tax_base < 0: tax_base = 0
+        
+        # 4. Tax (6%)
+        predicted_tax = int(tax_base * 0.06)
+        
+        return {
+            "total_revenue": total_revenue,
+            "recognized_expenses": recognized_expenses,
+            "predicted_tax": predicted_tax
+        }
+    finally:
+        conn.close()
+
+def get_product_detail(product_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT * FROM products WHERE product_id = ?", (product_id,))
+        row = c.fetchone()
+        if row:
+            return dict(row)
+        return None
+    finally:
+        conn.close()
+
+def save_expense(store_id, card_name, category, amount, date, approval_no=None):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Generate approval_no if missing (for mock data)
+        if not approval_no:
+            import hashlib
+            raw = f"{store_id}{card_name}{category}{amount}{date}"
+            approval_no = hashlib.md5(raw.encode()).hexdigest()[:10]
+
+        c.execute('''
+            INSERT INTO expenses (store_id, card_name, category, amount, date, approval_no, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (store_id, card_name, category, amount, date, approval_no, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        print(f"Skipping Duplicate Expense: {approval_no}")
+        return True # Treat as success (Idempotency)
+    except Exception as e:
+        print(f"Expense Save Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_monthly_expenses(store_id, month=None):
+    # month format: "YYYY-MM"
+    if not month:
+        month = datetime.now().strftime("%Y-%m")
+        
+    conn = get_connection()
+    try:
+        query = "SELECT * FROM expenses WHERE store_id = ? AND date LIKE ?"
+        df = pd.read_sql(query, conn, params=(store_id, f"{month}%"))
+        return df
+    except Exception:
+        return pd.DataFrame()
+    finally:
+        conn.close()
+
+def get_integrated_ledger(store_id):
+    conn = get_connection()
+    try:
+        # 1. Get Expenses (Purchase)
+        expenses_query = """
+            SELECT 
+                date, 
+                '매입' as type, 
+                category, 
+                card_name as client, 
+                amount as total,
+                '법인카드' as note
+            FROM expenses 
+            WHERE store_id = ?
+        """
+        
+        # 2. Get Sales (Orders)
+        orders_query = """
+            SELECT 
+                substr(created_at, 1, 10) as date, 
+                '매출' as type, 
+                '배송매출' as category, 
+                buyer_name as client, 
+                (price * quantity) as total,
+                '카드결제' as note
+            FROM orders 
+            WHERE store_id = ?
+        """
+        
+        df_expenses = pd.read_sql(expenses_query, conn, params=(store_id,))
+        df_orders = pd.read_sql(orders_query, conn, params=(store_id,))
+        
+        # Merge
+        df_all = pd.concat([df_expenses, df_orders], ignore_index=True)
+        
+        if df_all.empty:
+            return []
+            
+        # Sort by Date
+        df_all['date'] = pd.to_datetime(df_all['date'])
+        df_all = df_all.sort_values(by='date')
+        
+        # Process Columns (Supply Value, VAT)
+        results = []
+        for idx, row in df_all.iterrows():
+            total = int(row['total'])
+            supply_value = int(total / 1.1)
+            vat = total - supply_value
+            
+            results.append({
+                "date": row['date'].strftime("%m-%d"),
+                "type": row['type'],
+                "category": row['category'],
+                "client": row['client'],
+                "supply_value": supply_value,
+                "vat": vat,
+                "total": total,
+                "note": row['note']
+            })
+            
+        return results
+
+    except Exception as e:
+        print(f"Ledger Error: {e}")
+        return []
+    finally:
+        conn.close()

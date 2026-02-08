@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}수익 계산기 - 동네비서{% endblock %}
+
+{% block content %}
+<div
+    style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a; max-width: 450px; margin: 20px auto;">
+    <h3 style="margin-top: 0; font-size: 1.4rem; font-weight: 900;">🎯 정밀 수익 계산기</h3>
+
+    <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">결제 수단 선택</label>
+        <select id="methodSelect" onchange="calcPrecise()"
+            style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; font-weight: 900;">
+            <option value="0.00">현금 (0%)</option>
+            <option value="0.03" selected>신용카드 (3%)</option>
+            <option value="0.037">간편페이 (3.7%)</option>
+            <option value="0.015">계좌이체 (1.5%)</option>
+        </select>
+    </div>
+
+    <div style="margin-bottom: 20px;">
+        <label style="display: block; margin-bottom: 5px;">결제 금액 (원)</label>
+        <input type="number" id="preciseInput" placeholder="금액 입력" oninput="calcPrecise()"
+            style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; font-weight: 900;">
+    </div>
+
+    <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; font-size: 1rem; line-height: 2;">
+        <div style="display: flex; justify-content: space-between;">
+            <span>사장님 마진 (10%)</span>
+            <span id="pMargin" style="color: #1a1a1a;">0 원</span>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+            <span>수단별 수수료</span>
+            <span id="pFee" style="color: #d32f2f;">0 원</span>
+        </div>
+        <div
+            style="display: flex; justify-content: space-between; font-weight: 900; border-top: 2px solid #1a1a1a; margin-top: 10px; padding-top: 5px;">
+            <span>최종 배송비(로젠)</span>
+            <span id="pLogen">0 원</span>
+        </div>
+    </div>
+
+    <!-- Tax Dashboard -->
+    <div
+        style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; margin-top: 30px;">
+        <h3
+            style="margin-top: 0; font-size: 1.4rem; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">
+            📊 실시간 세무 현황</h3>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+            <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center;">
+                <div style="font-size: 0.85rem; margin-bottom: 5px;">총 결제액(VAT포함)</div>
+                <div id="totalSales" style="font-size: 1.2rem; font-weight: 900;">0 원</div>
+            </div>
+
+            <div
+                style="background: #1a1a1a; color: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center;">
+                <div style="font-size: 0.85rem; margin-bottom: 5px; color: #ccc;">납부 예정 부가세</div>
+                <div id="totalVat" style="font-size: 1.2rem; font-weight: 900; color: #ffeb3b;">0 원</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; background: #fff; padding: 15px; border: 2px solid #1a1a1a; font-size: 0.95rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span>사장님 순마진(공급가)</span>
+                <span id="netMargin">0 원</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: #d32f2f;">
+                <span>별도 예치 필요(세금용)</span>
+                <span id="taxReserve">0 원</span>
+            </div>
+        </div>
+
+        <p style="font-size: 0.8rem; color: #555; margin-top: 15px; line-height: 1.4;">
+            * 실시간 데이터는 원 단위 반올림된 수치입니다.<br>
+            * 정확한 세무 신고를 위해 매월 정산 리포트를 확인하십시오.
+        </p>
+    </div>
+
+    <p style="font-size: 0.85rem; color: #555; margin-top: 15px; line-height: 1.4;">
+        * 모든 금액은 원 단위에서 반올림 처리됩니다.<br>
+        * 취소 시 마진과 수수료를 제외하고 환불됩니다.
+    </p>
+
+    <div
+        style="background-color: #e0e0e0; padding: 20px; border: 3px solid #1a1a1a; font-weight: 800; color: #1a1a1a; border-radius: 10px; margin-top: 30px;">
+        <h3 style="margin-top: 0; font-weight: 900;">📅 통합 정산/세무 센터</h3>
+
+        <div style="display: flex; gap: 5px; margin-bottom: 20px;">
+            <input type="date" id="startDate"
+                style="flex: 2; padding: 10px; border: 2px solid #1a1a1a; font-weight: 800;">
+            <span style="align-self: center;">~</span>
+            <input type="date" id="endDate"
+                style="flex: 2; padding: 10px; border: 2px solid #1a1a1a; font-weight: 800;">
+            <button onclick="updateReport()"
+                style="flex: 1; background: #1a1a1a; color: #fff; border: none; font-weight: 900; cursor: pointer;">조회</button>
+        </div>
+
+        <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 20px;">
+            <div style="font-size: 0.9rem; color: #555;">해당 기간 순마진 합계</div>
+            <div id="periodMargin" style="font-size: 1.5rem; font-weight: 900; margin: 10px 0;">0 원</div>
+
+            <div style="border-top: 1px dashed #ccc; padding-top: 10px; font-size: 0.85rem;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>납부 예정 부가세</span>
+                    <span id="periodVat">0 원</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>카드/페이 수수료</span>
+                    <span id="periodFee">0 원</span>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="downloadExcel()"
+            style="width: 100%; background: #27ae60; color: #fff; padding: 18px; font-size: 1.1rem; font-weight: 900; border: none; border-radius: 5px; cursor: pointer;">
+            📥 세금 신고용 엑셀 다운로드 (.xlsx)
+        </button>
+    </div>
+
+    <a href="/admin/dashboard"
+        style="display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #1a1a1a; font-weight: 900;">🔙
+        대시보드로 돌아가기</a>
+</div>
+
+<script>
+    // ... (Existing calcPrecise) ...
+    function calcPrecise() {
+        const amount = document.getElementById('preciseInput').value;
+        const rate = document.getElementById('methodSelect').value;
+        if (!amount) {
+            document.getElementById('pMargin').innerText = "0 원";
+            document.getElementById('pFee').innerText = "0 원";
+            document.getElementById('pLogen').innerText = "0 원";
+            document.getElementById('totalSales').innerText = "0 원";
+            document.getElementById('totalVat').innerText = "0 원";
+            document.getElementById('netMargin').innerText = "0 원";
+            document.getElementById('taxReserve').innerText = "0 원";
+            return;
+        }
+
+        const margin = Math.round(amount * 0.1);
+        const fee = Math.round(amount * rate);
+        const logen = amount - margin - fee;
+
+        document.getElementById('pMargin').innerText = margin.toLocaleString() + " 원";
+        document.getElementById('pFee').innerText = fee.toLocaleString() + " 원";
+        document.getElementById('pLogen').innerText = logen.toLocaleString() + " 원";
+
+        // Tax Calc
+        const vat = Math.round(amount / 11);
+        const netMargin = Math.round(margin - (margin / 11)); // Simplified Net Margin
+
+        document.getElementById('totalSales').innerText = parseInt(amount).toLocaleString() + " 원";
+        document.getElementById('totalVat').innerText = vat.toLocaleString() + " 원";
+        document.getElementById('taxReserve').innerText = vat.toLocaleString() + " 원";
+        document.getElementById('netMargin').innerText = netMargin.toLocaleString() + " 원";
+    }
+
+    async function updateReport() {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        if (!start || !end) {
+            alert("조회 기간을 선택해주세요.");
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/admin/report?start=${start}&end=${end}`);
+            const data = await res.json();
+
+            if (data.error) {
+                alert(data.error);
+                return;
+            }
+
+            document.getElementById('periodMargin').innerText = data.total_margin.toLocaleString() + " 원";
+            document.getElementById('periodVat').innerText = data.total_vat.toLocaleString() + " 원";
+            document.getElementById('periodFee').innerText = data.total_fee.toLocaleString() + " 원";
+
+        } catch (e) {
+            console.error(e);
+            alert("데이터 조회 중 오류가 발생했습니다.");
+        }
+    }
+
+    function downloadExcel() {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        if (!start || !end) {
+            alert("기간을 선택해주세요.");
+            return;
+        }
+
+        // 직접 다운로드 링크 호출
+        window.location.href = `/api/admin/download-tax-excel?start=${start}&end=${end}`;
+    }
+
+    // Set default dates (Current Month)
+    window.onload = function () {
+        const date = new Date();
+        const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+        const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+        // Format YYYY-MM-DD
+        const formatDate = (d) => d.toISOString().split('T')[0];
+
+        document.getElementById('startDate').value = formatDate(firstDay);
+        document.getElementById('endDate').value = formatDate(lastDay);
+    };
+</script>
+{% endblock %}
