@@ -282,6 +282,24 @@ def init_db():
         c.execute("ALTER TABLE products ADD COLUMN inventory INTEGER DEFAULT 100")
     except: pass
 
+    # Customers (CRM / Memory)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS customers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_id TEXT,
+            store_id TEXT,
+            name TEXT,
+            phone TEXT,
+            address TEXT,
+            preferences TEXT,
+            notes TEXT,
+            total_orders INTEGER DEFAULT 0,
+            last_visit TEXT,
+            created_at TEXT,
+            UNIQUE(customer_id, store_id)
+        )
+    ''')
+
     # Virtual Number Mapping (050)
     c.execute('''
         CREATE TABLE IF NOT EXISTS virtual_numbers (
@@ -1736,5 +1754,100 @@ def update_order_status(order_id, status):
     except Exception as e:
         print(f"Order Status Update Error: {e}")
         return False
+    finally:
+        conn.close()
+
+
+# ==========================================
+# 🧠 Customer Memory (CRM)
+# ==========================================
+
+def get_customer(customer_id, store_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT * FROM customers WHERE customer_id = ? AND store_id = ?", (customer_id, store_id))
+        row = c.fetchone()
+        return dict(row) if row else None
+    except Exception:
+        return None
+    finally:
+        conn.close()
+
+
+def get_customer_by_phone(phone):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT * FROM customers WHERE phone = ? ORDER BY last_visit DESC LIMIT 1", (phone,))
+        row = c.fetchone()
+        return dict(row) if row else None
+    except Exception:
+        return None
+    finally:
+        conn.close()
+
+
+def save_customer(customer_data):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            INSERT OR REPLACE INTO customers (customer_id, store_id, name, phone, address, preferences, notes, total_orders, last_visit, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            customer_data.get('customer_id'),
+            customer_data.get('store_id'),
+            customer_data.get('name'),
+            customer_data.get('phone'),
+            customer_data.get('address'),
+            customer_data.get('preferences'),
+            customer_data.get('notes'),
+            customer_data.get('total_orders', 0),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Customer Save Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def update_customer_field(customer_id, field, value, store_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        allowed_fields = {'name', 'phone', 'address', 'preferences', 'notes'}
+        if field not in allowed_fields:
+            return False
+        c.execute(f"UPDATE customers SET {field} = ?, last_visit = ? WHERE customer_id = ? AND store_id = ?",
+                  (value, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), customer_id, store_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Customer Update Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def increment_customer_order(customer_id, store_id):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("""
+            UPDATE customers SET total_orders = total_orders + 1, last_visit = ?
+            WHERE customer_id = ? AND store_id = ?
+        """, (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), customer_id, store_id))
+        conn.commit()
+        c.execute("SELECT total_orders FROM customers WHERE customer_id = ? AND store_id = ?", (customer_id, store_id))
+        row = c.fetchone()
+        return row['total_orders'] if row else 0
+    except Exception as e:
+        print(f"Customer Order Increment Error: {e}")
+        return 0
     finally:
         conn.close()

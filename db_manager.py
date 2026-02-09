@@ -277,6 +277,25 @@ def get_integrated_ledger(store_id):
 def lock_ledger(store_id, date):
     return db.lock_ledger(store_id, date)
 
+# ==========================================
+# Customer Memory (CRM)
+# ==========================================
+
+def get_customer(customer_id, store_id):
+    return db.get_customer(customer_id, store_id)
+
+def get_customer_by_phone(phone):
+    return db.get_customer_by_phone(phone)
+
+def save_customer(customer_data):
+    return db.save_customer(customer_data)
+
+def update_customer_field(customer_id, field, value, store_id):
+    return db.update_customer_field(customer_id, field, value, store_id)
+
+def increment_customer_order(customer_id, store_id):
+    return db.increment_customer_order(customer_id, store_id)
+
 
 # ==========================================
 # Legacy / Unused Placeholders
