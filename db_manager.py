@@ -245,11 +245,17 @@ def decrease_product_inventory(product_id, quantity):
 def save_order(store_id, product_id, product_name, price, quantity, buyer_name, buyer_phone, buyer_address):
     return db.save_order(store_id, product_id, product_name, price, quantity, buyer_name, buyer_phone, buyer_address)
 
+def get_order_by_id(order_id):
+    return db.get_order_by_id(order_id)
+
 def update_order_status(order_id, status):
     return db.update_order_status(order_id, status)
 
 def update_payment_method(order_id, method):
     return db.update_order_payment_method(order_id, method)
+
+def update_order_tracking(order_id, tracking_number):
+    return db.update_order_tracking(order_id, tracking_number)
 
 # ==========================================
 # Tax & Expenses
