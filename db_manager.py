@@ -201,6 +201,81 @@ def get_store_deliveries(store_id):
     return db.get_store_deliveries(store_id)
 
 
+# ==========================================
+# Dashboard & Stats
+# ==========================================
+
+def get_today_stats(store_id):
+    return db.get_today_stats(store_id)
+
+# ==========================================
+# Auto Reply Settings
+# ==========================================
+
+def update_store_auto_reply(store_id, msg, missed, end, refill_on=0, refill_amount=50000):
+    return db.update_store_auto_reply(store_id, msg, missed, end, refill_on, refill_amount)
+
+# ==========================================
+# Wallet Charging
+# ==========================================
+
+def charge_wallet(store_id, amount, bonus, memo):
+    return db.charge_wallet(store_id, amount, bonus, memo)
+
+# ==========================================
+# Product & Market (webhook_app.py signatures)
+# ==========================================
+
+def save_product(store_id, name, price, image_path):
+    return db.save_product(store_id, name, price, image_path)
+
+def get_all_products():
+    return db.get_all_products()
+
+def get_product_detail(product_id):
+    return db.get_product_detail(product_id)
+
+def decrease_product_inventory(product_id, quantity):
+    return db.decrease_product_inventory(product_id, quantity)
+
+# ==========================================
+# Orders (webhook_app.py signatures)
+# ==========================================
+
+def save_order(store_id, product_id, product_name, price, quantity, buyer_name, buyer_phone, buyer_address):
+    return db.save_order(store_id, product_id, product_name, price, quantity, buyer_name, buyer_phone, buyer_address)
+
+def update_order_status(order_id, status):
+    return db.update_order_status(order_id, status)
+
+def update_payment_method(order_id, method):
+    return db.update_order_payment_method(order_id, method)
+
+# ==========================================
+# Tax & Expenses
+# ==========================================
+
+def get_tax_report_data(store_id, start, end):
+    return db.get_tax_report_data(store_id, start, end)
+
+def get_tax_stats(store_id):
+    return db.get_tax_stats(store_id)
+
+def get_monthly_expenses(store_id, month=None):
+    return db.get_monthly_expenses(store_id, month)
+
+def save_expense(store_id, card_name, category, amount, date, approval_no=None):
+    return db.save_expense(store_id, card_name, category, amount, date, approval_no)
+
+# ==========================================
+# Integrated Ledger
+# ==========================================
+
+def get_integrated_ledger(store_id):
+    return db.get_integrated_ledger(store_id)
+
+def lock_ledger(store_id, date):
+    return db.lock_ledger(store_id, date)
 
 
 # ==========================================

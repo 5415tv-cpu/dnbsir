@@ -277,6 +277,11 @@ def init_db():
         c.execute("ALTER TABLE stores ADD COLUMN auto_refill_amount INTEGER DEFAULT 50000")
     except: pass
 
+    # Product Inventory
+    try:
+        c.execute("ALTER TABLE products ADD COLUMN inventory INTEGER DEFAULT 100")
+    except: pass
+
     # Virtual Number Mapping (050)
     c.execute('''
         CREATE TABLE IF NOT EXISTS virtual_numbers (
@@ -1640,5 +1645,96 @@ def get_today_stats(store_id):
     except Exception as e:
         print(f"Stats Error: {e}")
         return {"revenue": 0, "margin": 0}
+    finally:
+        conn.close()
+
+
+def charge_wallet(store_id, amount, bonus, memo):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT wallet_balance FROM stores WHERE store_id = ?", (store_id,))
+        row = c.fetchone()
+        current = row['wallet_balance'] if row and row['wallet_balance'] else 0
+
+        new_balance = current + amount + bonus
+
+        c.execute("UPDATE stores SET wallet_balance = ? WHERE store_id = ?", (new_balance, store_id))
+        c.execute('''
+            INSERT INTO wallet_logs (store_id, change_type, amount, balance_after, memo, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (store_id, 'charge', amount + bonus, new_balance, memo, datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+        conn.commit()
+        return new_balance
+    except Exception as e:
+        print(f"Charge Wallet Error: {e}")
+        return None
+    finally:
+        conn.close()
+
+
+def decrease_product_inventory(product_id, quantity):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT inventory FROM products WHERE id = ?", (product_id,))
+        row = c.fetchone()
+        if not row:
+            return False, "상품을 찾을 수 없습니다."
+
+        current = row['inventory'] if row['inventory'] else 0
+        if current < quantity:
+            return False, "재고가 부족합니다."
+
+        c.execute("UPDATE products SET inventory = inventory - ? WHERE id = ?", (quantity, product_id))
+        conn.commit()
+        return True, "OK"
+    except Exception as e:
+        print(f"Inventory Error: {e}")
+        return False, str(e)
+    finally:
+        conn.close()
+
+
+def get_tax_report_data(store_id, start, end):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("""
+            SELECT COALESCE(SUM(price * quantity), 0) as total_sales
+            FROM orders
+            WHERE store_id = ? AND created_at >= ? AND created_at <= ?
+        """, (store_id, start, end + " 23:59:59"))
+        row = c.fetchone()
+        total_sales = row['total_sales'] if row else 0
+
+        total_vat = int(total_sales / 11)
+        total_fee = int(total_sales * 0.033)
+        net_margin = total_sales - total_vat - total_fee
+
+        return {
+            "total_sales": total_sales,
+            "total_vat": total_vat,
+            "total_fee": total_fee,
+            "net_margin": net_margin
+        }
+    except Exception as e:
+        print(f"Tax Report Error: {e}")
+        return None
+    finally:
+        conn.close()
+
+
+def update_order_status(order_id, status):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("UPDATE orders SET settlement_status = ? WHERE id = ?", (status, order_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Order Status Update Error: {e}")
+        return False
     finally:
         conn.close()
