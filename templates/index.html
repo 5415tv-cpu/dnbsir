@@ -101,7 +101,19 @@
                 </ul>
             </div>
 
-            <button class="main-btn" onclick="closeModal()">비서 서비스 시작하기</button>
+            <!-- Two Buttons -->
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button
+                    style="flex: 1; background: #fff; color: #1a1a1a; border: 2px solid #1a1a1a; padding: 15px; font-weight: 900; border-radius: 8px; cursor: pointer; font-size: 1rem;"
+                    onclick="location.href='/admin?mode=login'">
+                    기존 회원 로그인
+                </button>
+                <button
+                    style="flex: 1; background: #1a1a1a; color: #fff; border: 2px solid #1a1a1a; padding: 15px; font-weight: 900; border-radius: 8px; cursor: pointer; font-size: 1rem;"
+                    onclick="location.href='/admin?mode=signup'">
+                    지금 무료로 시작하기
+                </button>
+            </div>
             <div class="hideOption" onclick="closeModal()">오늘 하루 보지 않기</div>
         </div>
     </div>

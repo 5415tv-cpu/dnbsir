@@ -8,7 +8,8 @@
     <meta name="theme-color" content="#ffffff">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <title>{% block title %}동네비서{% endblock %}</title>
+    <title>내 손안의 동네비서</title>
+    <meta name="description" content="내 손안의 동네비서 - 농민과 기사님을 위한 AI 통합 관리 솔루션">
 
     <!-- CSS -->
     <link rel="stylesheet" href="/static/css/style.css">
@@ -20,10 +21,13 @@
         style="background-color: #E0E0E0; min-height: 100vh; font-family: 'Pretendard', sans-serif; padding-bottom: 70px;">
 
         <!-- Sticky Header -->
-        <header
-            style="background: #1A1A1A; color: #fff; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100;">
-            <h2 style="margin: 0; font-weight: 900; font-size: 1.2rem; letter-spacing: 1px;">똑똑한 동네비서</h2>
+        {% block header %}
+        <header style="padding: 20px 0; border-bottom: 3px solid #1A1A1A; margin-bottom: 25px;">
+            <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900; color: #1A1A1A; letter-spacing: -1px;">
+                내 손안의 동네비서
+            </h1>
         </header>
+        {% endblock %}
 
         <div style="padding: 20px;">
             {% block page_header %}
