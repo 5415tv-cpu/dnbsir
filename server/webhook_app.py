@@ -1,14 +1,19 @@
-from fastapi import FastAPI, HTTPException, Request, Form, Response, Depends
+from fastapi import FastAPI, HTTPException, Request, Form, Response, Depends, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from pathlib import Path
 import typing
+import openpyxl
+import hmac
+import hashlib
+import json
 
 import sms_manager as sms
 import db_manager as db
-import pydantic
+import server.logen_service as logen
+import server.google_sheet_sync as gsheet
 
 app = FastAPI()
 
@@ -37,19 +42,48 @@ async def login_page(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 # 3. 로그인 처리 API
+from datetime import datetime
+
 @app.post("/api/login")
 async def login(response: Response, store_id: str = Form(...), password: str = Form(...)):
     store = db.get_store(store_id)
     
-    # 간단한 비밀번호 확인 (실제 운영 시에는 bcrypt 사용 권장)
-    if store and str(store.get('password')) == password:
-        # 세션 쿠키 설정 (간단히 구현)
+    # 1. 신규 사용자면 자동 가입 (Auto Signup)
+    if not store:
+        new_store_data = {
+            "store_id": store_id,
+            "password": password,
+            "name": "사장님", # 기본 이름
+            "owner_name": "미입력",
+            "phone": store_id,
+            "points": 0,
+            "membership": "free"
+        }
+        # Fixed: db_manager.save_store requires (store_id, store_data)
+        res = db.save_store(store_id, new_store_data)
+        
+        if not res:
+            return RedirectResponse(url="/admin?error=signup_failed", status_code=303)
+            
+        # [Sync] 구글 시트 동기화 (Background Task 권장하나 여기선 직관적으로 처리)
+        # 데이터: [아이디, 이름, 등급, 가입일시]
+        join_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        gsheet.sync_to_google_sheet([store_id, "사장님", "무료회원", join_date])
+            
+        # 가입 후 바로 로그인 처리
+        store = new_store_data
+
+    # 2. 기존 사용자면 비밀번호 확인
+    db_password = str(store.get('password'))
+    
+    if db_password == password:
+        # 세션 쿠키 설정
         response = RedirectResponse(url="/admin/dashboard", status_code=303)
         response.set_cookie(key="admin_session", value=store_id)
         return response
     else:
-        # 로그인 실패 시 다시 로그인 페이지로 (에러 메시지 처리 필요)
-        return RedirectResponse(url="/admin?error=invalid", status_code=303)
+        # 비밀번호 불일치
+        return RedirectResponse(url="/admin?error=invalid_password", status_code=303)
 
 # 4. 관리자 대시보드
 @app.get("/admin/dashboard", response_class=HTMLResponse)
@@ -77,14 +111,6 @@ async def logout(response: Response):
 
 
 
-class OrderRequest(BaseModel):
-    name: str          # "홍길동"
-    phone: str         # "01012345678" (문자로 해야 0이 안 잘림)
-    address: str       # "태백시 황지동..."
-    order_item: str    # "사과 1박스" (숫자 1도 문자로 취급)
-    price: str         # "30000" (계산이 필요 없을 땐 문자가 안전)
-
-
 class MissedCallWebhook(BaseModel):
     virtual_number: str
     caller_phone: str
@@ -97,6 +123,7 @@ def _get_env(app_: FastAPI, key: str, default: str = "") -> str:
     return app_.extra.get(key, default)
 
 
+def _extract_value(payload: dict, keys: list) -> str:
     for key in keys:
         value = payload.get(key)
         if value:
@@ -106,12 +133,6 @@ def _get_env(app_: FastAPI, key: str, default: str = "") -> str:
 # --- Configuration for Risk Management ---
 # 1. Proxy Configuration (Mock)
 PROXY_URL = _get_env(app, "PROXY_URL", "http://korea-proxy.example.com:8080")
-
-# 2. MFA Session Manager (Mock)
-def get_card_session(store_id, card_name):
-    # In real world: db.get_active_token(store_id, card_name)
-    return "valid_token_example"
-
 
 def _normalize_nhn_payload(payload: dict) -> dict:
     virtual_number = _extract_value(
@@ -401,8 +422,6 @@ def _load_webhook_token():
     if not os.path.exists("uploads"):
         os.makedirs("uploads")
 
-from fastapi import UploadFile, File, Form
-
 @app.post("/api/admin/products")
 async def register_product(
     name: str = Form(...),
@@ -532,17 +551,12 @@ async def get_expenses():
         
     return df.to_dict(orient="records")
 
-import hmac
-import hashlib
-import server.logen_service as logen
-import sms_manager as sms
-
 @app.post("/v1/payments/webhook")
 async def payment_webhook(request: Request):
     # 1. 결제사 서버가 보낸 데이터 읽기
     payload = await request.body()
     signature = request.headers.get("X-Payment-Signature", "")
-    
+
     # 비밀키 로드
     webhook_secret = request.app.extra.get("PAYMENT_WEBHOOK_SECRET", "")
 
@@ -557,8 +571,8 @@ async def payment_webhook(request: Request):
         # 보안상 자세한 에러보다는 400/401 반환
         raise HTTPException(status_code=400, detail="유효하지 않은 신호입니다.")
 
-    # 3. 데이터 파싱
-    data = await request.json()
+    # 3. 데이터 파싱 (use already-read payload instead of re-reading body)
+    data = json.loads(payload)
     order_id = data.get("orderId")
     status = data.get("status")
 
@@ -629,7 +643,6 @@ async def register_card_api(card: CardRegisterRequest):
     # db.save_card_info(...)
     
     # Simulate Fetching initial expenses
-    import random
     store_id = "test_store"
     # Create mock expenses for this new card
     db.save_expense(store_id, "새로등록한카드", "식대", 15000, "2026-02-08")
@@ -682,17 +695,19 @@ async def export_ledger(email: str = None, send_cc: bool = False):
     )
 
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from html import escape as html_escape
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request, exc):
     if exc.status_code == 404:
+        safe_path = html_escape(request.url.path)
         return HTMLResponse(
             f"""
             <html>
                 <head><meta charset="utf-8"><title>404 페이지 없음</title></head>
                 <body style="text-align: center; padding-top: 50px; font-family: sans-serif;">
                     <h1 style="color: #E53935;">⚠️ 404 찾을 수 없음</h1>
-                    <p style="font-size: 18px;">요청하신 경로 <b>{request.url.path}</b> 를 찾을 수 없습니다.</p>
+                    <p style="font-size: 18px;">요청하신 경로 <b>{safe_path}</b> 를 찾을 수 없습니다.</p>
                     <div style="background: #f5f5f5; padding: 20px; display: inline-block; border-radius: 10px; text-align: left;">
                         <p><b>현재 작동 중인 경로:</b></p>
                         <ul>
