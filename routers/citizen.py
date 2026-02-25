@@ -26,7 +26,7 @@ class CourierReservationRequest(BaseModel):
 
 @router.get("/", response_class=HTMLResponse)
 async def index_page(request: Request):
-    return templates.TemplateResponse("citizen_home.html", {"request": request, "api_url": API_URL})
+    return templates.TemplateResponse("index.html", {"request": request, "api_url": API_URL})
 
 @router.get("/citizen/courier", response_class=HTMLResponse)
 async def public_courier_page(request: Request):
