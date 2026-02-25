@@ -5,48 +5,259 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>서비스 이용 동의 - 동네비서</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=2">
+    <style>
+        /* Tab Styles */
+        .tab-container {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: none;
+            font-weight: bold;
+            color: #888;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #1a1a1a;
+            border-bottom: 3px solid #1a1a1a;
+        }
+
+        .tab-content {
+            display: none;
+            background: #fff;
+            height: 300px;
+            overflow-y: scroll;
+            padding: 15px;
+            border: 1px solid #ddd;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .check-group {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .check-group input {
+            transform: scale(1.3);
+            margin-right: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-right: 5px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .badge-req {
+            background-color: #e53935;
+        }
+
+        .badge-opt {
+            background-color: #757575;
+        }
+    </style>
 </head>
 
 <body>
 
-    <div class="consent-container" style="background-color: #e0e0e0; padding: 25px; font-weight: 800;">
-        <h2 style="color: #1a1a1a; font-size: 1.5rem; font-weight: 900;">[필수] 서비스 이용 및<br>개인정보 제공 동의서</h2>
+    <div class="consent-container"
+        style="background-color: #f5f5f5; padding: 20px; max-width: 600px; margin: 20px auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <h2 style="color: #1a1a1a; font-size: 1.4rem; font-weight: 900; margin-bottom: 20px; text-align: center;">
+            서비스 이용 약관 동의
+        </h2>
 
-        <div
-            style="background: #fff; height: 300px; overflow-y: scroll; padding: 15px; border: 2px solid #1a1a1a; margin: 20px 0; font-size: 0.9rem;">
-            제1조 (목적)... <br>
-            본 서비스는 소상공인과 농어민의 수익 증대와 편의를 위해...
+        <!-- Tabs -->
+        <div class="tab-container">
+            <button class="tab-btn active" onclick="openTab('tab1')">이용약관</button>
+            <button class="tab-btn" onclick="openTab('tab2')">개인정보</button>
+            <button class="tab-btn" onclick="openTab('tab3')">위치기반</button>
+            <button class="tab-btn" onclick="openTab('tab4')">마케팅</button>
         </div>
 
-        <label style="display: block; margin-bottom: 20px;">
-            <input type="checkbox" id="consentCheck" style="transform: scale(1.5);"> 위의 모든 내용을 확인하였으며 서명합니다.
-        </label>
+        <!-- Tab Contents -->
+        <!-- 1. 이용약관 -->
+        <div id="tab1" class="tab-content active">
+            <strong>제1조 (목적)</strong><br>
+            본 약관은 '동네비서'(이하 '회사')가 제공하는 AI 매장 비서 서비스(이하 '서비스')의 이용조건 및 절차, 회사와 회원의 권리·의무 및 책임사항을 규정함을 목적으로 합니다.<br><br>
+            <strong>제2조 (용어의 정의)</strong><br>
+            1. '서비스'란 회사가 제공하는 매장 관리, 고객 관리, 세무 리포트 등 제반 서비스를 말합니다.<br>
+            2. '회원'이란 본 약관에 동의하고 서비스를 이용하는 자를 말합니다.<br><br>
+            <strong>제3조 (서비스의 제공)</strong><br>
+            회사는 회원에게 다음과 같은 서비스를 제공합니다.<br>
+            1. AI 기반 매장 운영 분석 및 리포트<br>
+            2. 고객 관리(CRM) 및 재방문 유도 기능<br>
+            3. 세무/회계 관련 기초 자료 정리<br>
+            4. 기타 회사가 정하는 업무 지원 서비스<br>
+        </div>
 
-        <input type="text" id="userName" placeholder="성명을 입력하세요"
-            style="width: 100%; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 15px; font-weight: 900;">
+        <!-- 2. 개인정보 -->
+        <div id="tab2" class="tab-content">
+            <strong>[개인정보 수집 및 이용 동의]</strong><br><br>
+            <strong>1. 수집 항목</strong><br>
+            - 필수: 성명, 휴대전화번호, 상호명, 사업자번호(선택 시), 접속 로그, 쿠키<br>
+            - 선택: 이메일, 주소<br><br>
+            <strong>2. 이용 목적</strong><br>
+            - 본인 확인 및 회원 관리<br>
+            - 서비스 제공 및 기능 개선<br>
+            - 고충 처리 및 공지사항 전달<br><br>
+            <strong>3. 보유 기간</strong><br>
+            - 회원 탈퇴 시까지 (단, 관계 법령에 따른 보존 의무 기간 동안 보관)<br>
+        </div>
 
-        <button onclick="submitSignature()" class="main-btn">동의 및 서명 완료</button>
+        <!-- 3. 위치기반 -->
+        <div id="tab3" class="tab-content">
+            <strong>[위치기반 서비스 이용약관]</strong><br><br>
+            <strong>1. 목적</strong><br>
+            본 약관은 회사가 제공하는 위치기반 서비스의 이용 조건 및 절차를 규정합니다.<br><br>
+            <strong>2. 서비스 내용</strong><br>
+            - 이용자의 현재 위치 또는 배송지 위치를 기반으로 한 주변 상권 분석<br>
+            - 배송 경로 최적화 및 관제<br><br>
+            <strong>3. 위치정보의 보유</strong><br>
+            회사는 위치정보의 보호 및 이용 등에 관한 법률에 따라 위치정보를 안전하게 관리합니다.<br>
+        </div>
+
+        <!-- 4. 마케팅 -->
+        <div id="tab4" class="tab-content">
+            <strong>[마케팅 정보 수신 동의 (선택)]</strong><br><br>
+            동네비서에서 제공하는 이벤트, 혜택, 신규 기능 업데이트 소식 등 유용한 정보를 받아보실 수 있습니다.<br><br>
+            - 전송 매체: SMS, 알림톡, 이메일, 앱 푸시<br>
+            - 철회 방법: 설정 메뉴 또는 고객센터를 통해 철회 가능<br>
+            * 동의하지 않으셔도 기본 서비스 이용에는 제한이 없습니다.<br>
+        </div>
+
+        <form id="agreementForm">
+            <div style="background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <label class="check-group"
+                    style="padding-bottom: 10px; border-bottom: 1px solid #eee; margin-bottom: 10px; font-weight: bold;">
+                    <input type="checkbox" id="checkAll"> 전체 동의하기
+                </label>
+
+                <label class="check-group">
+                    <input type="checkbox" class="req-check" id="checkService">
+                    <span class="badge badge-req">필수</span> 서비스 이용약관 동의
+                </label>
+                <label class="check-group">
+                    <input type="checkbox" class="req-check" id="checkPrivacy">
+                    <span class="badge badge-req">필수</span> 개인정보 수집 및 이용 동의
+                </label>
+                <label class="check-group">
+                    <input type="checkbox" class="req-check" id="checkLocation">
+                    <span class="badge badge-req">필수</span> 위치기반 서비스 이용약관 동의
+                </label>
+                <label class="check-group">
+                    <input type="checkbox" id="checkMarketing">
+                    <span class="badge badge-opt">선택</span> 마케팅 정보 수신 동의
+                </label>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 700;">신청자 성명 (서명)</label>
+                <input type="text" id="userName" placeholder="성명을 정자로 입력하세요"
+                    style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem;">
+            </div>
+
+            <button type="submit" class="main-btn" style="width: 100%; padding: 15px; font-size: 1.1rem;">동의 및
+                시작하기</button>
+        </form>
     </div>
 
     <script>
-        function submitSignature() {
-            const isChecked = document.getElementById('consentCheck').checked;
-            const name = document.getElementById('userName').value;
+        // Tab Logic
+        function openTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
-            if (!isChecked) {
-                alert('서비스 이용에 동의해주세요.');
-                return;
-            }
-            if (!name) {
-                alert('성명을 입력해주세요.');
-                return;
-            }
-
-            alert(name + '님, 서명이 완료되었습니다.\n서비스 가입 절차를 진행합니다.');
-            // 추후 서버로 데이터 전송 로직 추가 필요
-            // window.location.href = '/signup-complete'; 
+            document.getElementById(tabId).classList.add('active');
+            // Find button that calls this function (rough match)
+            const btns = document.querySelectorAll('.tab-btn');
+            if (tabId === 'tab1') btns[0].classList.add('active');
+            if (tabId === 'tab2') btns[1].classList.add('active');
+            if (tabId === 'tab3') btns[2].classList.add('active');
+            if (tabId === 'tab4') btns[3].classList.add('active');
         }
+
+        // Check All Logic
+        const checkAll = document.getElementById('checkAll');
+        const checkboxes = document.querySelectorAll('.check-group input[type="checkbox"]:not(#checkAll)');
+
+        checkAll.addEventListener('change', function () {
+            checkboxes.forEach(cb => cb.checked = checkAll.checked);
+        });
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function () {
+                const allChecked = Array.from(checkboxes).every(c => c.checked);
+                checkAll.checked = allChecked;
+            });
+        });
+
+        // Submit Logic
+        document.getElementById('agreementForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            // Validate Mandatory
+            const reqChecks = document.querySelectorAll('.req-check');
+            for (let cb of reqChecks) {
+                if (!cb.checked) {
+                    alert('필수 약관에 모두 동의해주셔야 서비스 이용이 가능합니다.');
+                    return;
+                }
+            }
+
+            const name = document.getElementById('userName').value.trim();
+            if (!name) {
+                alert('본인 확인을 위해 성명을 입력해주세요.');
+                return;
+            }
+
+            const marketingAgreed = document.getElementById('checkMarketing').checked;
+
+            // Send to Server
+            try {
+                const response = await fetch('{{ api_url }}/api/agreement', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        agreed: true,
+                        marketing_agreed: marketingAgreed
+                    })
+                });
+
+                if (response.ok) {
+                    alert(name + '님, 환영합니다!\n다음 단계로 이동합니다.');
+                    window.location.href = '/job_selection';
+                } else {
+                    const result = await response.json();
+                    alert('오류가 발생했습니다: ' + (result.detail || '서비스 연결 실패'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('서버 통신 중 오류가 발생했습니다.');
+            }
+        });
     </script>
 
 </body>

@@ -1,96 +1,96 @@
-<!DOCTYPE html>
-<html lang="ko">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사업용 카드 자동 기장 센터</title>
-</head>
+{% block title %}사업용 카드 자동 기장 센터 - 동네비서{% endblock %}
 
-<body style="margin: 0; font-family: sans-serif; background-color: #e0e0e0; padding: 20px;">
+{% block page_header %}
+<div class="page-header" style="text-align: left; padding: 20px;">
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">경비 처리 비서</div>
+    <div class="page-title" style="font-size: 1.8rem; font-weight: 900;">사업용 카드 자동 기장</div>
+</div>
+{% endblock %}
 
-    <header
-        style="background: #1a1a1a; color: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0; font-size: 1.2rem; font-weight: 900;">💳 사업용 카드 자동 기장 센터</h1>
-        <a href="/admin/dashboard" style="color: #fff; text-decoration: none; font-size: 0.9rem;">🔙 돌아가기</a>
-    </header>
+<div style="max-width: 600px; margin: 0 auto;">
 
-    <div style="background-color: #e0e0e0; padding: 5px; max-width: 600px; margin: 0 auto;">
+    <div class="kiosk-card" style="display: block; text-align: left;">
+
+        <h3
+            style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+            <span style="color: #27ae60;">●</span> 카드 연결 현황
+        </h3>
 
         <div
-            style="background-color: #fff; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a;">
-
-            <h3 style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">💳 카드
-                연결 현황</h3>
-
-            <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin: 20px 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>연결된 카드: 삼성카드(4567)</span>
-                    <span style="color: #27ae60; font-size: 0.8rem;">● 실시간 연동 중</span>
-                </div>
-                <button onclick="location.href='/admin/cards/register'"
-                    style="margin-top: 10px; width: 100%; padding: 10px; background: #f0f0f0; border: 1px solid #1a1a1a; font-weight: 900; cursor: pointer;">+
-                    새 카드 등록하기</button>
+            style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #eee;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-weight: 800; font-size: 1.1rem;">삼성카드(4567)</span>
+                <span
+                    style="color: #27ae60; font-size: 0.8rem; font-weight: 700; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;">실시간
+                    연동 중</span>
             </div>
-
-            <div style="background: #1a1a1a; color: #fff; padding: 20px; border-radius: 5px;">
-                <div
-                    style="font-size: 0.9rem; color: #ccc; margin-bottom: 10px; display: flex; justify-content: space-between;">
-                    <span>2026년 2월 자동 기장 현황</span>
-                    <span style="font-size: 0.8rem; cursor: pointer;">🔄 새로고침</span>
-                </div>
-
-                <div id="expenseList">
-                    <!-- JS will populate this -->
-                    <div style="text-align: center; color: #777;">불러오는 중...</div>
-                </div>
-
-                <div
-                    style="display: flex; justify-content: space-between; font-weight: 900; border-top: 1px solid #555; margin-top: 10px; padding-top: 10px; color: #ffeb3b;">
-                    <span>총 인정 경비 합계</span>
-                    <span id="totalExpense">0 원</span>
-                </div>
-            </div>
+            <button onclick="location.href='/admin/cards/register'" class="main-btn"
+                style="padding: 12px; font-size: 1rem; background: #fff; color: #1a1a1a; border: 2px solid #ddd; box-shadow: none;">
+                + 새 카드 등록하기
+            </button>
         </div>
 
+        <div
+            style="background: #1a1a1a; color: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+            <div
+                style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                <span>2026년 2월 자동 기장 현황</span>
+                <span style="font-size: 0.8rem; cursor: pointer; color: #fff;">🔄 새로고침</span>
+            </div>
+
+            <div id="expenseList" style="margin-bottom: 20px; min-height: 50px;">
+                <!-- JS will populate this -->
+                <div style="text-align: center; color: #777;">불러오는 중...</div>
+            </div>
+
+            <div
+                style="display: flex; justify-content: space-between; font-weight: 900; border-top: 1px solid #333; padding-top: 15px; color: #ffeb3b; font-size: 1.2rem;">
+                <span>총 인정 경비</span>
+                <span id="totalExpense">0 원</span>
+            </div>
+        </div>
     </div>
 
-    <script>
-        async function fetchExpenses() {
-            try {
-                const res = await fetch('/api/admin/expenses');
-                const data = await res.json();
+</div>
+{% endblock %}
 
-                const listEl = document.getElementById('expenseList');
-                listEl.innerHTML = '';
+{% block scripts %}
+<script>
+    async function fetchExpenses() {
+        try {
+            const res = await fetch('{{ api_url }}/api/admin/expenses');
+            const data = await res.json();
 
-                let total = 0;
+            const listEl = document.getElementById('expenseList');
+            listEl.innerHTML = '';
 
-                data.forEach(item => {
-                    total += item.amount;
+            let total = 0;
 
-                    const div = document.createElement('div');
-                    div.style.display = 'flex';
-                    div.style.justifyContent = 'space-between';
-                    div.style.marginBottom = '5px';
-                    div.innerHTML = `
-                        <span>${item.category} <small style="color:#aaa; font-weight:normal;">(${item.date.substring(5)})</small></span>
-                        <span>${item.amount.toLocaleString()} 원</span>
-                    `;
-                    listEl.appendChild(div);
-                });
+            data.forEach(item => {
+                total += item.amount;
 
-                document.getElementById('totalExpense').innerText = total.toLocaleString() + " 원";
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.marginBottom = '5px';
+                div.innerHTML = `
+                    <span>${item.category} <small style="color:#aaa; font-weight:normal;">(${item.date.substring(5)})</small></span>
+                    <span>${item.amount.toLocaleString()} 원</span>
+                `;
+                listEl.appendChild(div);
+            });
 
-            } catch (e) {
-                console.error("Failed to fetch expenses", e);
-                document.getElementById('expenseList').innerHTML = '<div style="color:red">데이터 로드 실패</div>';
-            }
+            document.getElementById('totalExpense').innerText = total.toLocaleString() + " 원";
+
+        } catch (e) {
+            console.error("Failed to fetch expenses", e);
+            document.getElementById('expenseList').innerHTML = '<div style="color:red">데이터 로드 실패</div>';
         }
+    }
 
-        // Load on start
-        fetchExpenses();
-    </script>
-</body>
-
-</html>
+    // Load on start
+    fetchExpenses();
+</script>
+{% endblock %}

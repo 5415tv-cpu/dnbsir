@@ -1,148 +1,145 @@
-<!DOCTYPE html>
-<html lang="ko">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>종합소득세 관리 비서</title>
-</head>
+{% block title %}종합소득세 관리 비서{% endblock %}
 
-<body style="margin: 0; font-family: sans-serif; background-color: #e0e0e0; padding: 20px;">
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">장부/세무</div>
+    <div class="page-title">종합소득세 관리 비서</div>
+</div>
+{% endblock %}
 
-    <header
-        style="background: #1a1a1a; color: #fff; padding: 15px; border-radius: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-        <h1 style="margin: 0; font-size: 1.2rem; font-weight: 900;">📉 종합소득세 관리 비서</h1>
-        <a href="/admin/dashboard" style="color: #fff; text-decoration: none; font-size: 0.9rem;">🔙 돌아가기</a>
-    </header>
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
 
-    <div style="background-color: #e0e0e0; padding: 5px; max-width: 600px; margin: 0 auto;">
-
-        <div
-            style="background-color: #fff; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a;">
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
-                <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a;">
-                    <div style="font-size: 0.8rem; margin-bottom: 5px;">누적 순마진(매출)</div>
-                    <div id="accMargin" style="font-size: 1.2rem; font-weight: 900;">0 원</div>
-                </div>
-
-                <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a;">
-                    <div style="font-size: 0.8rem; margin-bottom: 5px;">인정 경비(지출)</div>
-                    <div id="accExpense" style="font-size: 1.2rem; font-weight: 900; color: #d32f2f;">0 원</div>
-                </div>
+    <div class="kiosk-card" style="display: block; text-align: left;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div style="text-align: center;">
+                <div style="font-size: 0.9rem; color: #555; margin-bottom: 5px; font-weight: 600;">누적 순마진(매출)</div>
+                <div id="accMargin" style="font-size: 1.3rem; font-weight: 900; color: #1A1A1A;">0 원</div>
             </div>
 
-            <div style="margin-top: 20px; background: #1a1a1a; color: #fff; padding: 20px; border-radius: 5px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.9rem; color: #ccc;">현재 기준 예상 소득세</span>
-                    <span id="predictedTax" style="font-size: 1.6rem; font-weight: 900; color: #ffeb3b;">0 원</span>
-                </div>
-                <div style="font-size: 0.75rem; color: #aaa; margin-top: 10px; line-height: 1.4;">
-                    * 단순경비율(33.4%) / 간편장부 기준 가산출 수치입니다.<br>
-                    * 매달 10만원씩 세금 통장에 별도 예치하시는 것을 권장합니다.
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-                <button onclick="openChecklist()"
-                    style="background: #27ae60; color: #fff; border: none; padding: 15px 30px; font-size: 1rem; font-weight: 900; cursor: pointer; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                    📥 통합 장부 엑셀 다운로드 (국세청 양식)
-                </button>
+            <div style="text-align: center; border-left: 2px solid #eee;">
+                <div style="font-size: 0.9rem; color: #555; margin-bottom: 5px; font-weight: 600;">인정 경비(지출)</div>
+                <div id="accExpense" style="font-size: 1.3rem; font-weight: 900; color: #d32f2f;">0 원</div>
             </div>
         </div>
-    </div>
 
-    <!-- Checklist Modal -->
-    <div id="checklistModal"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
         <div
-            style="background-color: #fff; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a; width: 90%; max-width: 600px; position: relative;">
-            <button onclick="closeModal()"
-                style="position: absolute; top: 10px; right: 10px; border: none; background: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
-            <h3 style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">📤 세무사
-                자료 전송 센터</h3>
-
-            <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 20px;">
-                <p style="margin-top: 0; color: #d32f2f;">※ 전송 전 반드시 체크해주세요</p>
-                <div style="line-height: 2;">
-                    <input type="checkbox" id="check1"> <label for="check1">개인적인 카드 지출은 제외했습니다.</label><br>
-                    <input type="checkbox" id="check2"> <label for="check2">현금 매출 내역을 모두 입력했습니다.</label><br>
-                    <input type="checkbox" id="check3"> <label for="check3">중복된 영수증이 없음을 확인했습니다.</label>
-                </div>
+            style="margin-top: 25px; background: #1a1a1a; color: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 1rem; color: #ddd; font-weight: 500;">예상 소득세</span>
+                <span id="predictedTax" style="font-size: 1.8rem; font-weight: 900; color: #ffeb3b;">0 원</span>
             </div>
-
-            <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 5px;">담당 세무사 이메일</label>
-                <input type="email" id="taxEmail" placeholder="tax@expert.com"
-                    style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; font-weight: 900; box-sizing: border-box;">
-
-                <label style="display: flex; gap: 10px; margin-top: 10px; cursor: pointer; align-items: center;">
-                    <input type="checkbox" id="checkCC">
-                    <span style="font-size: 0.9rem; color: #555;">남김없이 나에게도 참조(CC) 보내기 (기록용)</span>
-                </label>
+            <div style="font-size: 0.8rem; color: #aaa; line-height: 1.5; text-align: right;">
+                * 단순경비율(33.4%) 기준 가산출<br>
+                * 매달 10만원씩 세금 통장 예치 권장
             </div>
+        </div>
 
-            <button onclick="sendToTaxAccountant()"
-                style="width: 100%; background: #1a1a1a; color: #fff; border: none; padding: 20px; font-size: 1.1rem; font-weight: 900; border-radius: 5px; cursor: pointer;">
-                🚀 검토 완료 및 엑셀 파일 바로 전송
+        <div style="text-align: center; margin-top: 25px;">
+            <button onclick="openChecklist()" class="main-btn" style="background: #27ae60; font-size: 1rem;">
+                📥 통합 장부 엑셀 다운로드 (국세청 양식)
             </button>
         </div>
     </div>
 
-    <script>
-        function openChecklist() {
-            document.getElementById('checklistModal').style.display = 'flex';
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="/admin/dashboard" style="color: #666; text-decoration: none; font-weight: 700; font-size: 0.9rem;">🔙
+            대시보드로 돌아가기</a>
+    </div>
+
+</div>
+
+<!-- Checklist Modal -->
+<div id="checklistModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(5px);">
+    <div class="login-box" style="width: 90%; max-width: 500px; margin: 0; position: relative; text-align: left;">
+        <button onclick="closeModal()"
+            style="position: absolute; top: 15px; right: 20px; border: none; background: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+
+        <h3 style="margin-top: 0; font-weight: 900; margin-bottom: 15px;">📤 세무사 자료 전송</h3>
+
+        <div
+            style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #ddd;">
+            <p style="margin-top: 0; color: #d32f2f; font-weight: 700; margin-bottom: 10px;">※ 전송 전 반드시 체크해주세요</p>
+            <div style="line-height: 2;">
+                <label style="cursor: pointer;"><input type="checkbox" id="check1"> 개인적인 카드 지출은 제외했습니다.</label><br>
+                <label style="cursor: pointer;"><input type="checkbox" id="check2"> 현금 매출 내역을 모두 입력했습니다.</label><br>
+                <label style="cursor: pointer;"><input type="checkbox" id="check3"> 중복된 영수증이 없음을 확인했습니다.</label>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 700;">담당 세무사 이메일</label>
+            <input type="email" id="taxEmail" class="input-field" placeholder="tax@expert.com">
+
+            <label style="display: flex; gap: 10px; margin-top: 10px; cursor: pointer; align-items: center;">
+                <input type="checkbox" id="checkCC">
+                <span style="font-size: 0.9rem; color: #555;">남김없이 나에게도 참조(CC) 보내기</span>
+            </label>
+        </div>
+
+        <button onclick="sendToTaxAccountant()" class="main-btn" style="background: #1a1a1a;">
+            🚀 검토 완료 및 파일 전송
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openChecklist() {
+        document.getElementById('checklistModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('checklistModal').style.display = 'none';
+    }
+
+    function sendToTaxAccountant() {
+        const c1 = document.getElementById('check1').checked;
+        const c2 = document.getElementById('check2').checked;
+        const c3 = document.getElementById('check3').checked;
+        const email = document.getElementById('taxEmail').value;
+        const cc = document.getElementById('checkCC').checked;
+
+        if (!c1 || !c2 || !c3) {
+            alert("모든 확인 항목에 체크해주세요.");
+            return;
         }
 
-        function closeModal() {
-            document.getElementById('checklistModal').style.display = 'none';
+        if (!email) {
+            alert("세무사 이메일을 입력해주세요.");
+            return;
         }
 
-        function sendToTaxAccountant() {
-            const c1 = document.getElementById('check1').checked;
-            const c2 = document.getElementById('check2').checked;
-            const c3 = document.getElementById('check3').checked;
-            const email = document.getElementById('taxEmail').value;
-            const cc = document.getElementById('checkCC').checked;
+        alert(email + " 님에게 엑셀 파일이 전송되었습니다.\n(실제 전송은 서버 연동 필요, 현재는 파일 다운로드로 대체)\n" + (cc ? "참조(CC) 메일도 발송되었습니다." : ""));
 
-            if (!c1 || !c2 || !c3) {
-                alert("모든 확인 항목에 체크해주세요.");
-                return;
-            }
+        // Encode parameters
+        const params = new URLSearchParams({
+            email: email,
+            send_cc: cc
+        });
 
-            if (!email) {
-                alert("세무사 이메일을 입력해주세요.");
-                return;
-            }
+        location.href = '{{ api_url }}/api/admin/ledger/export?' + params.toString();
+        closeModal();
+    }
 
-            alert(email + " 님에게 엑셀 파일이 전송되었습니다.\n(실제 전송은 서버 연동 필요, 현재는 파일 다운로드로 대체)\n" + (cc ? "참조(CC) 메일도 발송되었습니다." : ""));
+    async function fetchStats() {
+        try {
+            const res = await fetch('{{ api_url }}/api/admin/tax/stats');
+            const data = await res.json();
 
-            // Encode parameters
-            const params = new URLSearchParams({
-                email: email,
-                send_cc: cc
-            });
-
-            location.href = '/api/admin/ledger/export?' + params.toString();
-            closeModal();
+            document.getElementById('accMargin').innerText = data.total_revenue.toLocaleString() + " 원";
+            document.getElementById('accExpense').innerText = "- " + data.recognized_expenses.toLocaleString() + " 원";
+            document.getElementById('predictedTax').innerText = data.predicted_tax.toLocaleString() + " 원";
+        } catch (e) {
+            console.error("Failed to fetch tax stats", e);
+            // alert("데이터를 불러오는데 실패했습니다."); // Suppress initial load error
         }
+    }
 
-        async function fetchStats() {
-            try {
-                const res = await fetch('/api/admin/tax/stats');
-                const data = await res.json();
-
-                document.getElementById('accMargin').innerText = data.total_revenue.toLocaleString() + " 원";
-                document.getElementById('accExpense').innerText = "- " + data.recognized_expenses.toLocaleString() + " 원";
-                document.getElementById('predictedTax').innerText = data.predicted_tax.toLocaleString() + " 원";
-            } catch (e) {
-                console.error("Failed to fetch tax stats", e);
-                alert("데이터를 불러오는데 실패했습니다.");
-            }
-        }
-
-        fetchStats();
-    </script>
-</body>
-
-</html>
+    fetchStats();
+</script>
+{% endblock %}

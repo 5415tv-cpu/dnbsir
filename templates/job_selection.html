@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>업종 선택 - 동네비서</title>
+    <link rel="stylesheet" href="/static/css/style.css?v=2">
+</head>
+
+<body>
+
+    <div class="consent-container"
+        style="background-color: #f5f5f5; min-height: 100vh; padding: 25px; max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center;">
+
+        <div style="text-align: center; margin-bottom: 30px;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">💼</div>
+            <h2 style="color: #1a1a1a; font-size: 1.8rem; font-weight: 900; margin: 0;">사장님의 업종은<br>무엇인가요?</h2>
+            <p style="color: #666; margin-top: 10px;">업종에 딱 맞는 AI 비서가 배정됩니다.</p>
+        </div>
+
+        <div class="job-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+
+            <button onclick="selectJob('restaurant', '식당/요식업')" class="kiosk-card"
+                style="border: 2px solid #ddd; background: #fff; padding: 20px; cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🍳</div>
+                <div style="font-size: 1.1rem; font-weight: 800;">식당 / 요식업</div>
+            </button>
+
+            <button onclick="selectJob('cafe', '카페/베이커리')" class="kiosk-card"
+                style="border: 2px solid #ddd; background: #fff; padding: 20px; cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">☕</div>
+                <div style="font-size: 1.1rem; font-weight: 800;">카페 / 디저트</div>
+            </button>
+
+            <button onclick="selectJob('retail', '소매/편의점')" class="kiosk-card"
+                style="border: 2px solid #ddd; background: #fff; padding: 20px; cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🏪</div>
+                <div style="font-size: 1.1rem; font-weight: 800;">편의점 / 마트</div>
+            </button>
+
+            <button onclick="selectJob('services', '뷰티/서비스')" class="kiosk-card"
+                style="border: 2px solid #ddd; background: #fff; padding: 20px; cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">✂️</div>
+                <div style="font-size: 1.1rem; font-weight: 800;">뷰티 / 서비스</div>
+            </button>
+
+            <button onclick="selectJob('farm', '농축수산물')" class="kiosk-card"
+                style="border: 2px solid #ddd; background: #fff; padding: 20px; cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🚜</div>
+                <div style="font-size: 1.1rem; font-weight: 800;">농축수산물</div>
+            </button>
+
+            <button onclick="selectJob('other', '기타 업종')" class="kiosk-card"
+                style="border: 2px solid #ddd; background: #fff; padding: 20px; cursor: pointer; transition: all 0.2s;">
+                <div style="font-size: 2.5rem; margin-bottom: 10px;">🏢</div>
+                <div style="font-size: 1.1rem; font-weight: 800;">기타 업종</div>
+            </button>
+
+        </div>
+
+        <form id="jobForm" style="display: none;">
+            <input type="hidden" id="selectedCategory" name="category">
+        </form>
+
+    </div>
+
+    <script>
+        async function selectJob(category, label) {
+            // UI Feedback
+            // const buttons = document.querySelectorAll('button');
+            // buttons.forEach(btn => btn.style.border = '2px solid #ddd');
+            // event.currentTarget.style.border = '2px solid #000'; // Simple visual feedback
+
+            if (confirm(`'${label}'(으)로 시작하시겠습니까?`)) {
+                try {
+                    const response = await fetch('{{ api_url }}/api/job_category', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            category: category
+                        })
+                    });
+
+                    if (response.ok) {
+                        window.location.href = '/admin/dashboard';
+                    } else {
+                        const result = await response.json();
+                        alert('오류가 발생했습니다: ' + (result.detail || '저장 실패'));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('서버 통신 중 오류가 발생했습니다.');
+                }
+            }
+        }
+    </script>
+
+</body>
+
+</html>

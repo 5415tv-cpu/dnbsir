@@ -1,47 +1,153 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div
-    style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; padding: 20px;">
+<div class="login-wrapper"
+    style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; background-color: #f8f9fa;">
 
-    <div
-        style="background-color: #E0E0E0; padding: 30px; border: 4px solid #1A1A1A; border-radius: 15px; font-weight: 800; color: #1A1A1A; max-width: 500px; width: 100%;">
+    <div class="login-box"
+        style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 400px;">
 
-        {% if request.query_params.get('mode') == 'login' %}
-        <div style="text-align: center; margin-bottom: 25px;">
-            <h2 style="font-size: 1.8rem; font-weight: 900; margin: 0;">사장님 로그인</h2>
-            <p style="font-size: 1rem; color: #555; margin-top: 5px;">가게 ID와 비밀번호를 입력해주세요</p>
+        <!-- Tabs -->
+        <div style="display: flex; margin-bottom: 30px; border-bottom: 2px solid #eee;">
+            <div id="tab-login" onclick="switchTab('login')"
+                style="flex: 1; text-align: center; padding: 15px; cursor: pointer; font-weight: bold; color: #1a1a1a; border-bottom: 3px solid #1a1a1a;">
+                로그인
+            </div>
+            <div id="tab-signup" onclick="switchTab('signup')"
+                style="flex: 1; text-align: center; padding: 15px; cursor: pointer; font-weight: bold; color: #aaa; border-bottom: 3px solid transparent;">
+                무료 회원가입
+            </div>
         </div>
-        {% else %}
-        <div style="text-align: center; margin-bottom: 25px;">
-            <h2 style="font-size: 1.8rem; font-weight: 900; margin: 0;">내 손안의 동네비서</h2>
-            <p style="font-size: 1rem; color: #555; margin-top: 5px;">30초면 끝나는 무료 회원가입</p>
-        </div>
-        {% endif %}
 
-        <form action="/api/login" method="post">
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h2 id="formTitle" class="app-title" style="font-size: 1.8rem; margin-bottom: 10px;">사장님 로그인</h2>
+            <p id="formDesc" style="font-size: 1rem; color: #666; word-break: keep-all;">가게 ID와 비밀번호를 입력해주세요</p>
+        </div>
+
+        <form id="loginForm">
+            <input type="hidden" id="authMode" name="mode" value="login">
+
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px;">휴대폰 번호 (아이디)</label>
-                <input type="tel" name="store_id" placeholder="010-0000-0000" required
-                    style="width: 100%; padding: 15px; border: 3px solid #1A1A1A; font-weight: 900; box-sizing: border-box;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">휴대폰 번호 (아이디)</label>
+                <input type="tel" id="store_id" name="store_id" class="login-input" placeholder="010-0000-0000" required
+                    style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem;">
             </div>
 
             <div style="margin-bottom: 20px;">
-                <label style="display: block; margin-bottom: 8px;">비밀번호</label>
-                <input type="password" name="password" placeholder="6자리 이상 입력" required
-                    style="width: 100%; padding: 15px; border: 3px solid #1A1A1A; font-weight: 900; box-sizing: border-box;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">비밀번호</label>
+                <input type="password" id="password" name="password" class="login-input" placeholder="6자리 이상 입력"
+                    required
+                    style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem;">
             </div>
 
-            <button type="submit"
-                style="width: 100%; background: #1A1A1A; color: #fff; border: 3px solid #1A1A1A; padding: 20px; font-size: 1.3rem; font-weight: 900; border-radius: 10px; cursor: pointer;">
-                {% if request.query_params.get('mode') == 'login' %}로그인하기{% else %}지금 무료로 시작하기{% endif %}
+            <button type="submit" id="submitBtn" class="main-btn"
+                style="width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 10px; background: #1a1a1a; color: #fff; border: none; font-weight: bold; cursor: pointer;">
+                로그인하기
             </button>
         </form>
 
-        <p style="text-align: center; font-size: 0.8rem; margin-top: 20px; color: #666;">
-            * 가입 즉시 <b>일반 회원</b> 혜택이 적용됩니다.
+        <p style="text-align: center; font-size: 0.9rem; margin-top: 25px; color: #888; line-height: 1.5;">
+            * 가입 즉시 <b>모든 기능</b>을 무료로 체험할 수 있습니다.<br>
+            (초기 설정이나 서류 제출 없이 바로 시작하세요)
         </p>
     </div>
 
 </div>
+
+<script>
+    // Initial State based on URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialMode = urlParams.get('mode') || 'login';
+    switchTab(initialMode);
+
+    function switchTab(mode) {
+        const loginTab = document.getElementById('tab-login');
+        const signupTab = document.getElementById('tab-signup');
+        const title = document.getElementById('formTitle');
+        const desc = document.getElementById('formDesc');
+        const btn = document.getElementById('submitBtn');
+        const hiddenInput = document.getElementById('authMode');
+
+        if (mode === 'signup') {
+            // Activate Signup
+            signupTab.style.color = '#1a1a1a';
+            signupTab.style.borderBottom = '3px solid #1a1a1a';
+            loginTab.style.color = '#aaa';
+            loginTab.style.borderBottom = '3px solid transparent';
+
+            title.innerText = '30초면 가입 완료!';
+            desc.innerText = '휴대폰 번호만으로 간편하게 시작하세요.';
+            btn.innerText = '무료로 시작하기';
+            hiddenInput.value = 'signup';
+
+            // Update URL without reload
+            window.history.replaceState(null, '', '/admin?mode=signup');
+        } else {
+            // Activate Login
+            loginTab.style.color = '#1a1a1a';
+            loginTab.style.borderBottom = '3px solid #1a1a1a';
+            signupTab.style.color = '#aaa';
+            signupTab.style.borderBottom = '3px solid transparent';
+
+            title.innerText = '사장님 로그인';
+            desc.innerText = '가게 ID와 비밀번호를 입력해주세요';
+            btn.innerText = '로그인하기';
+            hiddenInput.value = 'login';
+
+            window.history.replaceState(null, '', '/admin?mode=login');
+        }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        // [UX] Prevent double click
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = '처리 중...';
+
+        const formData = new FormData(this);
+
+        try {
+            const API_BASE_URL = "{{ api_url }}";
+
+            // Same backend endpoint for both logic (Auto-signup handling)
+            const response = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                body: formData,
+                redirect: 'manual'
+            });
+
+            if (response.type === 'opaqueredirect' || response.status === 0 || response.status === 303 || response.status === 200) {
+                // Set Cookie
+                document.cookie = "admin_session=" + formData.get('store_id') + "; path=/; max-age=86400";
+                window.location.href = "/admin/dashboard";
+            } else if (response.status === 404) {
+                alert('가입되지 않은 회원입니다. [무료 회원가입] 탭 이용해주세요.');
+                switchTab('signup');
+                btn.disabled = false;
+                btn.innerText = originalText;
+            } else if (response.status === 409) {
+                alert('이미 가입된 번호입니다. [로그인] 탭을 이용해주세요.');
+                switchTab('login');
+                btn.disabled = false;
+                btn.innerText = originalText;
+            } else if (response.status === 401) {
+                alert('비밀번호가 일치하지 않습니다.');
+                btn.disabled = false;
+                btn.innerText = originalText;
+            } else {
+                alert('오류가 발생했습니다. 정보를 확인해주세요. (Code: ' + response.status + ')');
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        } catch (error) {
+            console.error('Login Error:', error);
+            alert('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    });
+</script>
 {% endblock %}

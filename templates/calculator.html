@@ -4,13 +4,13 @@
 
 {% block content %}
 <div
-    style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a; max-width: 450px; margin: 20px auto;">
+    style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 5px; font-weight: 800; color: #1a1a1a; max-width: 450px; margin: 20px auto; box-shadow: 4px 4px 0px #ccc;">
     <h3 style="margin-top: 0; font-size: 1.4rem; font-weight: 900;">🎯 정밀 수익 계산기</h3>
 
     <div style="margin-bottom: 15px;">
         <label style="display: block; margin-bottom: 5px;">결제 수단 선택</label>
         <select id="methodSelect" onchange="calcPrecise()"
-            style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; font-weight: 900;">
+            style="width: 100%; padding: 12px; border: 3px solid #1a1a1a; font-weight: 900; border-radius: 5px; font-family: inherit;">
             <option value="0.00">현금 (0%)</option>
             <option value="0.03" selected>신용카드 (3%)</option>
             <option value="0.037">간편페이 (3.7%)</option>
@@ -21,10 +21,11 @@
     <div style="margin-bottom: 20px;">
         <label style="display: block; margin-bottom: 5px;">결제 금액 (원)</label>
         <input type="number" id="preciseInput" placeholder="금액 입력" oninput="calcPrecise()"
-            style="width: 100%; padding: 12px; border: 2px solid #1a1a1a; font-weight: 900;">
+            style="width: 100%; padding: 12px; border: 3px solid #1a1a1a; font-weight: 900; border-radius: 5px; font-family: inherit;">
     </div>
 
-    <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; font-size: 1rem; line-height: 2;">
+    <div
+        style="background: #fff; padding: 15px; border: 3px solid #1a1a1a; font-size: 1rem; line-height: 2; border-radius: 5px; box-shadow: 4px 4px 0px #ccc;">
         <div style="display: flex; justify-content: space-between;">
             <span>사장님 마진 (10%)</span>
             <span id="pMargin" style="color: #1a1a1a;">0 원</span>
@@ -34,7 +35,7 @@
             <span id="pFee" style="color: #d32f2f;">0 원</span>
         </div>
         <div
-            style="display: flex; justify-content: space-between; font-weight: 900; border-top: 2px solid #1a1a1a; margin-top: 10px; padding-top: 5px;">
+            style="display: flex; justify-content: space-between; font-weight: 900; border-top: 3px solid #1a1a1a; margin-top: 10px; padding-top: 5px;">
             <span>최종 배송비(로젠)</span>
             <span id="pLogen">0 원</span>
         </div>
@@ -42,25 +43,27 @@
 
     <!-- Tax Dashboard -->
     <div
-        style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; margin-top: 30px;">
+        style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 5px; margin-top: 30px; box-shadow: 4px 4px 0px #ccc;">
         <h3
-            style="margin-top: 0; font-size: 1.4rem; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">
+            style="margin-top: 0; font-size: 1.4rem; font-weight: 900; border-bottom: 3px solid #1a1a1a; padding-bottom: 10px;">
             📊 실시간 세무 현황</h3>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
-            <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center;">
+            <div
+                style="background: #fff; padding: 15px; border: 3px solid #1a1a1a; text-align: center; border-radius: 5px; box-shadow: 4px 4px 0px #ccc;">
                 <div style="font-size: 0.85rem; margin-bottom: 5px;">총 결제액(VAT포함)</div>
                 <div id="totalSales" style="font-size: 1.2rem; font-weight: 900;">0 원</div>
             </div>
 
             <div
-                style="background: #1a1a1a; color: #fff; padding: 15px; border: 2px solid #1a1a1a; text-align: center;">
+                style="background: #1a1a1a; color: #fff; padding: 15px; border: 3px solid #1a1a1a; text-align: center; border-radius: 5px; box-shadow: 4px 4px 0px #555;">
                 <div style="font-size: 0.85rem; margin-bottom: 5px; color: #ccc;">납부 예정 부가세</div>
                 <div id="totalVat" style="font-size: 1.2rem; font-weight: 900; color: #ffeb3b;">0 원</div>
             </div>
         </div>
 
-        <div style="margin-top: 20px; background: #fff; padding: 15px; border: 2px solid #1a1a1a; font-size: 0.95rem;">
+        <div
+            style="margin-top: 20px; background: #fff; padding: 15px; border: 3px solid #1a1a1a; font-size: 0.95rem; border-radius: 5px; box-shadow: 4px 4px 0px #ccc;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                 <span>사장님 순마진(공급가)</span>
                 <span id="netMargin">0 원</span>
@@ -83,20 +86,21 @@
     </p>
 
     <div
-        style="background-color: #e0e0e0; padding: 20px; border: 3px solid #1a1a1a; font-weight: 800; color: #1a1a1a; border-radius: 10px; margin-top: 30px;">
+        style="background-color: #e0e0e0; padding: 20px; border: 3px solid #1a1a1a; font-weight: 800; color: #1a1a1a; border-radius: 5px; margin-top: 30px; box-shadow: 4px 4px 0px #ccc;">
         <h3 style="margin-top: 0; font-weight: 900;">📅 통합 정산/세무 센터</h3>
 
         <div style="display: flex; gap: 5px; margin-bottom: 20px;">
             <input type="date" id="startDate"
-                style="flex: 2; padding: 10px; border: 2px solid #1a1a1a; font-weight: 800;">
+                style="flex: 2; padding: 10px; border: 3px solid #1a1a1a; font-weight: 800; border-radius: 5px; font-family: inherit;">
             <span style="align-self: center;">~</span>
             <input type="date" id="endDate"
-                style="flex: 2; padding: 10px; border: 2px solid #1a1a1a; font-weight: 800;">
+                style="flex: 2; padding: 10px; border: 3px solid #1a1a1a; font-weight: 800; border-radius: 5px; font-family: inherit;">
             <button onclick="updateReport()"
-                style="flex: 1; background: #1a1a1a; color: #fff; border: none; font-weight: 900; cursor: pointer;">조회</button>
+                style="flex: 1; background: #1a1a1a; color: #fff; border: 3px solid #1A1A1A; font-weight: 900; cursor: pointer; border-radius: 5px; box-shadow: 3px 3px 0px #555;">조회</button>
         </div>
 
-        <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 20px;">
+        <div
+            style="background: #fff; padding: 15px; border: 3px solid #1a1a1a; margin-bottom: 20px; border-radius: 5px; box-shadow: 4px 4px 0px #ccc;">
             <div style="font-size: 0.9rem; color: #555;">해당 기간 순마진 합계</div>
             <div id="periodMargin" style="font-size: 1.5rem; font-weight: 900; margin: 10px 0;">0 원</div>
 
@@ -113,7 +117,7 @@
         </div>
 
         <button onclick="downloadExcel()"
-            style="width: 100%; background: #27ae60; color: #fff; padding: 18px; font-size: 1.1rem; font-weight: 900; border: none; border-radius: 5px; cursor: pointer;">
+            style="width: 100%; background: #27ae60; color: #fff; padding: 18px; font-size: 1.1rem; font-weight: 900; border: 3px solid #1A1A1A; border-radius: 5px; cursor: pointer; box-shadow: 3px 3px 0px #145a32;">
             📥 세금 신고용 엑셀 다운로드 (.xlsx)
         </button>
     </div>
@@ -122,7 +126,9 @@
         style="display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #1a1a1a; font-weight: 900;">🔙
         대시보드로 돌아가기</a>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
     // ... (Existing calcPrecise) ...
     function calcPrecise() {
@@ -167,7 +173,7 @@
         }
 
         try {
-            const res = await fetch(`/api/admin/report?start=${start}&end=${end}`);
+            const res = await fetch(`{{ api_url }}/api/admin/report?start=${start}&end=${end}`);
             const data = await res.json();
 
             if (data.error) {
@@ -195,7 +201,7 @@
         }
 
         // 직접 다운로드 링크 호출
-        window.location.href = `/api/admin/download-tax-excel?start=${start}&end=${end}`;
+        window.location.href = `{{ api_url }}/api/admin/download-tax-excel?start=${start}&end=${end}`;
     }
 
     // Set default dates (Current Month)

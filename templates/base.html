@@ -5,65 +5,69 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#F0F2F5">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>내 손안의 동네비서</title>
     <meta name="description" content="내 손안의 동네비서 - 농민과 기사님을 위한 AI 통합 관리 솔루션">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2503/2503650.png">
 
     <!-- CSS -->
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v=2">
     {% block head %}{% endblock %}
 </head>
 
 <body>
-    <div
-        style="background-color: #E0E0E0; min-height: 100vh; font-family: 'Pretendard', sans-serif; padding-bottom: 70px;">
+    <!-- AI Status Bar (Fixed Top) -->
+    <div class="ai-status-bar">
+        <div class="ai-pulse"></div>
+        AI 동네비서가 실시간 관리 중
+    </div>
+
+    <div class="main-container" style="padding-bottom: 15vh;"> <!-- Padding for taller nav -->
 
         <!-- Sticky Header -->
         {% block header %}
-        <header style="padding: 20px 0; border-bottom: 3px solid #1A1A1A; margin-bottom: 25px;">
-            <h1 style="margin: 0; font-size: 1.8rem; font-weight: 900; color: #1A1A1A; letter-spacing: -1px;">
+        <header class="sticky-header" style="top: 45px;"> <!-- Adjust for AI Bar -->
+            <h1 class="app-title">
                 내 손안의 동네비서
             </h1>
         </header>
         {% endblock %}
 
-        <div style="padding: 20px;">
-            {% block page_header %}
-            <!-- Default Page Header (Can be overridden) -->
-            <div style="background: #fff; border: 3px solid #1A1A1A; padding: 20px; margin-bottom: 20px;">
-                <div style="font-size: 0.8rem; color: #666; margin-bottom: 5px;">{% block current_menu %}현재 메뉴{%
-                    endblock %}</div>
-                <div style="font-size: 1.5rem; font-weight: 900;">{% block menu_title %}타이틀{% endblock %}</div>
-            </div>
-            {% endblock %}
+        {% block page_header %}
+        <!-- Override in child -->
+        {% endblock %}
 
-            <!-- Main Content -->
+        <!-- Main Content -->
+        <div class="content-area">
             {% block content %}{% endblock %}
         </div>
 
-        <!-- Bottom Navigation -->
-        <nav
-            style="position: fixed; bottom: 0; width: 100%; background: #fff; border-top: 4px solid #1A1A1A; display: flex; justify-content: space-around; padding: 10px 0; z-index: 100;">
-            <a href="/admin/dashboard" style="text-decoration: none; color: #1a1a1a; text-align: center;">
-                <div style="font-size: 1.2rem;">🏠</div>
-                <div style="font-weight: 900; font-size: 0.8rem;">홈</div>
-            </a>
-            <a href="/market" style="text-decoration: none; color: #1a1a1a; text-align: center;">
-                <div style="font-size: 1.2rem;">🛒</div>
-                <div style="font-weight: 900; font-size: 0.8rem;">마켓</div>
-            </a>
-            <a href="/admin/farm/orders" style="text-decoration: none; color: #1a1a1a; text-align: center;">
-                <div style="font-size: 1.2rem;">📅</div>
-                <div style="font-weight: 900; font-size: 0.8rem;">예약</div>
-            </a>
-            <a href="/admin/tax" style="text-decoration: none; color: #1a1a1a; text-align: center;">
-                <div style="font-size: 1.2rem;">📒</div>
-                <div style="font-weight: 900; font-size: 0.8rem;">장부</div>
-            </a>
-        </nav>
     </div>
+
+    {% if not hide_bottom_nav %}
+    <!-- Bottom Navigation (Kiosk Style) -->
+    <nav class="bottom-nav">
+        <a href="/admin/dashboard" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">홈</div>
+        </a>
+        <a href="/market" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-text">마켓</div>
+        </a>
+        <a href="/admin/farm/orders" class="nav-item">
+            <div class="nav-icon">📅</div>
+            <div class="nav-text">예약</div>
+        </a>
+        <a href="/admin/tax" class="nav-item">
+            <div class="nav-icon">📒</div>
+            <div class="nav-text">장부</div>
+        </a>
+    </nav>
+    {% endif %}
 
     <!-- Scripts -->
     <script src="/static/js/app.js"></script>

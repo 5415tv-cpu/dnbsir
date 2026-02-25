@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - 내 지갑</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 pb-20">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                💰 내 포인트 지갑
+            </h1>
+            <a href="/admin" class="text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-6">
+
+        <!-- Balance Card -->
+        <div
+            class="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
+            <div class="absolute right-[-20px] top-[-20px] bg-white/10 w-32 h-32 rounded-full"></div>
+            <p class="text-blue-100 text-sm font-medium">현재 잔액</p>
+            <h2 class="text-4xl font-bold mt-1">{{ "{:,.0f}".format(details.current_points | default(0)) }} <span
+                    class="text-xl font-normal">P</span></h2>
+            <div class="mt-6 flex gap-3">
+                <button onclick="openPaymentModal()"
+                    class="bg-white text-blue-600 px-4 py-2 rounded-lg font-bold text-sm shadow active:scale-95 transition">
+                    + 충전하기
+                </button>
+                <button onclick="openAutoCharge()"
+                    class="bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow active:scale-95 transition">
+                    자동충전 설정
+                </button>
+            </div>
+        </div>
+
+        <!-- Today's Usage -->
+        <h3 class="font-bold text-gray-800 mb-3">오늘 사용량 📊</h3>
+        <div class="grid grid-cols-2 gap-3 mb-8">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-xs text-gray-400">AI 상담 (토큰)</p>
+                <p class="text-lg font-bold text-gray-800 mt-1">{{ "{:,.0f}".format(details.ai_usage_today.tokens |
+                    default(0)) }}
+                </p>
+                <p class="text-xs text-red-500 mt-1">-{{ "{:,.0f}".format(details.ai_usage_today.cost | default(0)) }} P
+                </p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-xs text-gray-400">문자 발송 (건)</p>
+                <p class="text-lg font-bold text-gray-800 mt-1">{{ "{:,.0f}".format(details.sms_usage_today.count |
+                    default(0)) }}
+                </p>
+                <p class="text-xs text-red-500 mt-1">-{{ "{:,.0f}".format(details.sms_usage_today.cost | default(0)) }}
+                    P</p>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <h3 class="font-bold text-gray-800 mb-3">최근 이용 내역</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <ul class="divide-y divide-gray-100">
+                {% for log in details.wallet_logs %}
+                <li class="p-4 flex justify-between items-center">
+                    <div>
+                        <p class="font-medium text-gray-800">{{ log.type }}</p>
+                        <p class="text-xs text-gray-400">{{ log.created_at }}</p>
+                    </div>
+                    <span class="text-red-500 font-bold">-{{ "{:,.0f}".format(log.amount | default(0)) }} P</span>
+                </li>
+                {% else %}
+                <li class="p-8 text-center text-gray-400 text-sm">최근 내역이 없습니다.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </main>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+            <button onclick="closePaymentModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            <h3 class="text-xl font-bold mb-4">포인트 충전</h3>
+
+            <!-- Amount Selection -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button onclick="selectAmount(10000)"
+                    class="amt-btn border rounded-lg p-3 hover:bg-blue-50 focus:ring-2 ring-blue-500">1만원</button>
+                <button onclick="selectAmount(30000)"
+                    class="amt-btn border rounded-lg p-3 hover:bg-blue-50 focus:ring-2 ring-blue-500">3만원</button>
+                <button onclick="selectAmount(50000)"
+                    class="amt-btn border rounded-lg p-3 hover:bg-blue-50 focus:ring-2 ring-blue-500">5만원</button>
+            </div>
+            <p class="text-right text-lg font-bold text-blue-600 mb-4" id="selectedAmountDisplay">0원</p>
+
+            <button onclick="requestPayment()"
+                class="w-full bg-blue-600 text-white rounded-xl py-3 font-bold shadow-md hover:bg-blue-700 transition mt-4">
+                충전하기
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+        class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 text-white flex-col">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+        <p>결제 승인 중입니다...</p>
+    </div>
+
+    <!-- Toss Payments SDK (Window Mode) -->
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <script>
+        const clientKey = "{{ toss_client_key }}"; // From Server Env
+        let tossPayments = null;
+
+        // Initialize SDK
+        try {
+            tossPayments = TossPayments(clientKey);
+        } catch (e) {
+            console.error("Toss SDK Init Error:", e);
+            alert("결제 모듈 초기화 실패: " + e);
+        }
+
+        let selectedPoints = 0;
+        let paymentAmount = 0;
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function selectAmount(points) {
+            selectedPoints = points;
+            paymentAmount = Math.ceil(points * 1.1); // 10% VAT
+            document.getElementById('selectedAmountDisplay').innerHTML =
+                `<span class="text-sm text-gray-500 font-normal">부가세 포함</span> ` +
+                paymentAmount.toLocaleString() + "원";
+        }
+
+        function requestPayment() {
+            if (selectedPoints === 0) {
+                alert("충전할 금액을 선택해주세요.");
+                return;
+            }
+
+            if (!tossPayments) {
+                alert("결제 모듈이 로드되지 않았습니다. 새로고침 해주세요.");
+                return;
+            }
+
+            // Generate Order ID (Unique)
+            const orderId = "ORD-" + new Date().getTime() + "-" + Math.random().toString(36).substring(2, 7);
+
+            // Request Payment (Server expects VAT-inclusive amount)
+            tossPayments.requestPayment('카드', {
+                amount: paymentAmount,
+                orderId: orderId,
+                orderName: "포인트 " + selectedPoints.toLocaleString() + "P 충전",
+                successUrl: window.location.origin + "/admin/wallet",
+                failUrl: window.location.origin + "/admin/wallet",
+                customerEmail: "store@example.com",
+                customerName: "{{ store_id }}"
+            }).catch(function (error) {
+                if (error.code === 'USER_CANCEL') {
+                    // Canceled
+                } else {
+                    alert(error.message);
+                }
+            });
+        }
+
+        // Auto Charge Placeholder
+        function openAutoCharge() {
+            alert("자동 충전 기능은 준비 중입니다. (COMIMG SOON)");
+        }
+
+        // Check for Payment Result (Redirected from Toss)
+        window.onload = async function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentKey = urlParams.get("paymentKey");
+            const orderId = urlParams.get("orderId");
+            const amount = urlParams.get("amount");
+
+            // Attach Auto Charge Alert
+            // Handled via onclick in HTML
+
+            if (paymentKey && orderId && amount) {
+                // Confirm Payment
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+
+                try {
+                    const response = await fetch("/api/payment/confirm", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            paymentKey: paymentKey,
+                            orderId: orderId,
+                            amount: parseInt(amount),
+                            store_id: "{{ store_id }}"
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert("충전이 완료되었습니다!");
+                        window.location.href = "/admin/wallet"; // Clean URL
+                    } else {
+                        alert("충전 실패: " + (result.message || "알 수 없는 오류"));
+                        document.getElementById('loadingOverlay').classList.add('hidden');
+                        fetch("/api/debug_log", { method: "POST", body: JSON.stringify({ error: result, type: "Payment Failed" }) });
+                    }
+                } catch (error) {
+                    alert("시스템 에러: " + error);
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    fetch("/api/debug_log", { method: "POST", body: JSON.stringify({ error: error.toString(), type: "System Error" }) });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>

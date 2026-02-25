@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - 슈퍼 관리자</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                🛠️ Dongne Biseo Master
+            </h1>
+            <div class="flex gap-4 text-sm text-slate-400 items-center">
+                <span>Total Revenue: ₩{{ "{:,.0f}".format(stats.total_revenue) }}</span>
+                <span>Active Stores: {{ stats.active_stores }} / {{ stats.total_stores }}</span>
+                <button onclick="backupSystem()"
+                    class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded transition text-xs font-bold">
+                    🛡️ System Backup
+                </button>
+            </div>
+        </header>
+
+        <script>
+            async function backupSystem() {
+                if (!confirm("Start Full System Backup?")) return;
+                try {
+                    const kw = "{{ kw }}";
+                    const response = await fetch(`/api/admin/security/backup?kw=${kw}`);
+
+                    if (response.ok) {
+                        // Create a link to download the blob
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        // Try to get filename from header or default
+                        const contentDisposition = response.headers.get('Content-Disposition');
+                        let fileName = 'backup_full.json';
+                        if (contentDisposition) {
+                            const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                            if (fileNameMatch) fileName = fileNameMatch[1];
+                        }
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                        alert("✅ Backup Download Started");
+                    } else {
+                        const err = await response.json();
+                        alert(`❌ Backup Failed: ${err.error || 'Unknown Error'}`);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Network Error");
+                }
+            }
+        </script>
+
+        <!-- KPI Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-slate-400 text-sm font-medium">총 가맹점</h3>
+                <p class="text-3xl font-bold mt-2">{{ stats.total_stores }}</p>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-slate-400 text-sm font-medium">총 사용자</h3>
+                <p class="text-3xl font-bold mt-2">{{ stats.total_users }}</p>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-slate-400 text-sm font-medium">AI 토큰 사용량</h3>
+                <p class="text-3xl font-bold mt-2 text-blue-400">{{ "{:,.0f}".format(stats.total_ai_tokens) }}</p>
+            </div>
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700">
+                <h3 class="text-slate-400 text-sm font-medium">최근 에러</h3>
+                <p class="text-3xl font-bold mt-2 text-red-400">{{ stats.recent_errors|length }}</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Store List -->
+            <div class="lg:col-span-2 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
+                <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+                    <h2 class="font-bold">가맹점 현황</h2>
+                    <input type="text" placeholder="Search ID..."
+                        class="bg-slate-900 border border-slate-600 rounded px-3 py-1 text-sm">
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-slate-400 uppercase bg-slate-900/50">
+                            <tr>
+                                <th class="px-4 py-3">Store ID</th>
+                                <th class="px-4 py-3">Name</th>
+                                <th class="px-4 py-3">Points</th>
+                                <th class="px-4 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-700">
+                            {% for store in stores %}
+                            <tr class="hover:bg-slate-700/50 transition">
+                                <td class="px-4 py-3 font-mono text-slate-400">{{ store.store_id }}</td>
+                                <td class="px-4 py-3 font-medium">{{ store.name }}</td>
+                                <td class="px-4 py-3 text-right">{{ "{:,.0f}".format(store.points) }}</td>
+                                <td class="px-4 py-3">
+                                    {% if store.points > 0 %}
+                                    <span class="bg-green-900 text-green-300 px-2 py-0.5 rounded text-xs">Active</span>
+                                    {% else %}
+                                    <span class="bg-red-900 text-red-300 px-2 py-0.5 rounded text-xs">suspended</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- System Logs -->
+            <div class="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                <h2 class="font-bold mb-4">🚨 Recent Alerts</h2>
+                <div class="space-y-3">
+                    {% for log in stats.recent_errors %}
+                    <div class="bg-slate-900/50 p-3 rounded border border-slate-700 text-sm">
+                        <div class="flex justify-between text-xs text-slate-500 mb-1">
+                            <span>{{ log.store_id }}</span>
+                            <span>{{ log.created_at }}</span>
+                        </div>
+                        <p class="text-red-300">{{ log.message }}</p>
+                    </div>
+                    {% else %}
+                    <p class="text-center text-slate-500 py-4">No recent errors. System Clean.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</body>
+
+</html>

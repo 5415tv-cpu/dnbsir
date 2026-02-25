@@ -2,20 +2,24 @@
 
 {% block title %}농가 통합 주문 관리 - 동네비서{% endblock %}
 
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">예약/주문</div>
+    <div class="page-title">농가 통합 주문 관리</div>
+</div>
+{% endblock %}
+
 {% block content %}
-<div
-    style="background-color: #e0e0e0; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a; max-width: 500px; margin: 20px auto;">
-    <h3 style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #1a1a1a; padding-bottom: 10px;">🚜 농가 통합 주문 관리
-    </h3>
+<div style="max-width: 600px; margin: 0 auto;">
 
     <!-- Products List (Mock for now) -->
-    <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 15px;">
+    <div class="card" style="padding: 15px; margin-bottom: 20px;">
         <div style="display: flex; gap: 15px; align-items: center;">
             <img src="/static/images/mock_cabbage.jpg" onerror="this.src='https://via.placeholder.com/60?text=IMG'"
-                style="width: 60px; height: 60px; object-fit: cover; border: 1px solid #1a1a1a;">
+                style="width: 60px; height: 60px; object-fit: cover; border-radius: 10px;">
             <div>
-                <div style="font-weight: 900;">태백 고랭지 배추 10kg</div>
-                <div style="font-size: 0.9rem; color: #d32f2f;">35,000원 (판매중)</div>
+                <div style="font-weight: 800; font-size: 1.1rem;">태백 고랭지 배추 10kg</div>
+                <div style="font-size: 0.95rem; color: #d32f2f; font-weight: 700;">35,000원 (판매중)</div>
             </div>
         </div>
     </div>
@@ -23,32 +27,44 @@
     <!-- Orders -->
     <div id="orderList">
         <!-- Loaded via JS -->
-        <div style="background: #fff; padding: 15px; border: 2px solid #1a1a1a; margin-bottom: 10px;">
-            <div style="font-size: 0.85rem; color: #555; margin-bottom: 10px;">신규 주문 (홍길동 님)</div>
-            <div style="font-weight: 900; margin-bottom: 10px;">강원도 태백시 번영로 123</div>
+        <div class="card" style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="font-size: 0.9rem; color: #555; font-weight: 600;">신규 주문 (홍길동 님)</span>
+                <span style="font-size: 0.8rem; background: #e0e0e0; padding: 2px 8px; border-radius: 10px;">입금완료</span>
+            </div>
+            <div style="font-weight: 900; font-size: 1.1rem; margin-bottom: 15px;">강원도 태백시 번영로 123</div>
 
-            <button onclick="bookLogen('ORDER_123')"
-                style="width: 100%; background: #1a1a1a; color: #fff; border: none; padding: 15px; font-size: 1rem; font-weight: 900; border-radius: 5px; cursor: pointer;">
+            <button onclick="bookLogen('ORDER_123')" class="main-btn" style="padding: 15px; font-size: 1rem;">
                 📦 클릭 한 번으로 로젠택배 접수
             </button>
         </div>
     </div>
 
-    <div style="margin-top: 15px; text-align: right; font-size: 0.85rem;">
-        알림톡 잔액: <span id="walletBalance">0</span>원
-        <span id="autoRefillStatus" style="color: #27ae60; display: none;">(자동충전 On)</span>
+    <div style="margin-top: 15px; text-align: right; font-size: 0.9rem; color: #666;">
+        알림톡 잔액: <span id="walletBalance" style="font-weight: 800; color: #1A1A1A;">0</span>원
+        <span id="autoRefillStatus" style="color: #27ae60; display: none; font-weight: 700;">(자동충전 On)</span>
     </div>
 
-    <a href="/admin/dashboard"
-        style="display: block; text-align: center; margin-top: 20px; text-decoration: none; color: #1a1a1a; font-weight: 900;">🔙
-        대시보드로 돌아가기</a>
+    <a href="/admin/dashboard" class="main-btn"
+        style="margin-top: 25px; background: white; color: var(--text-color); border: 2px solid #ddd; text-align: center; box-shadow: none;">
+        🔙 대시보드로 돌아가기
+    </a>
 </div>
 
+<!-- Daum Postcode Layer -->
+<div id="layer" style="display:none;position:fixed;overflow:hidden;z-index:99999;-webkit-overflow-scrolling:touch;">
+    <img src="//t1.daumcdn.net/postcode/resource/images/close.png" id="btnCloseLayer"
+        style="cursor:pointer;position:absolute;right:-3px;top:-3px;z-index:1" onclick="closeDaumPostcode()"
+        alt="닫기 버튼">
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
     async function loadData() {
         // 1. Get Wallet Info
         try {
-            const res = await fetch('/api/admin/auto-reply/settings');
+            const res = await fetch('{{ api_url }}/api/admin/auto-reply/settings');
             const data = await res.json();
             document.getElementById('walletBalance').innerText = data.wallet_balance.toLocaleString();
             if (data.auto_refill_on == 1) {
@@ -57,7 +73,7 @@
         } catch (e) { }
 
         // 2. Get Orders (Mock for demo)
-        // In real implementation, fetch from /api/admin/orders?type=FARM
+        // In real implementation, fetch from {{ api_url }}/api/admin/orders?type=FARM
     }
 
     // Daum Postcode
@@ -110,22 +126,15 @@
     }
 
     async function bookLogen(orderId) {
-        const address = document.getElementById('address_' + orderId).value;
-        if (!address) {
-            alert("주소를 입력해주세요.");
-            return;
-        }
+        // Mock ID for current static example
+        // In real app, we would get address from input if editable, or from DB
+        const address = "강원도 태백시 번영로 123";
 
         if (!confirm("로젠택배 접수를 진행하시겠습니까?\n주소: " + address)) return;
 
         try {
             // Mock API Call
-            /*
-            const res = await fetch('/api/logen/book', {
-                method: 'POST',
-                body: JSON.stringify({order_id: orderId})
-            });
-            */
+            // const res = await fetch('{{ api_url }}/api/logen/book', ...);
 
             // Simulate Success
             alert("로젠택배 접수가 완료되었습니다.\n송장번호: 987-6543-2100");

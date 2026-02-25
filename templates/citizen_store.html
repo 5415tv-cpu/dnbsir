@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - 가게 상세</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/service-worker.js');
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 pb-20">
+
+    <!-- Header -->
+    <div class="relative h-64 bg-gray-300 bg-cover bg-center" style="background-image: url('{{ store.image_url }}');">
+        <div class="absolute inset-0 bg-black/30"></div>
+        <button onclick="history.back()"
+            class="absolute top-4 left-4 bg-white/20 backdrop-blur rounded-full p-2 text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Content -->
+    <main class="max-w-md mx-auto -mt-8 relative z-10 px-4">
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ store.name }}</h1>
+                    <p class="text-sm text-gray-500 mt-1">{{ store.category }}</p>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">영업중</span>
+                    <span class="text-xs text-gray-400 mt-1">⭐ 4.8 (120)</span>
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                <div class="flex items-start gap-3">
+                    <span class="text-gray-400">📍</span>
+                    <p class="text-sm text-gray-600">위치 정보가 없습니다. (데모 데이터)</p>
+                </div>
+                <div class="flex items-start gap-3">
+                    <span class="text-gray-400">📞</span>
+                    <a href="tel:{{ store.phone }}" class="text-sm text-blue-600 hover:underline">{{ store.phone }}</a>
+                </div>
+                <div class="flex items-start gap-3">
+                    <span class="text-gray-400">📝</span>
+                    <p class="text-sm text-gray-600 leading-relaxed">{{ store.info }}</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 mt-8">
+                <button
+                    class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
+                    전화 예약
+                </button>
+                <button class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold active:scale-95 transition">
+                    지도 보기
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu Preview (Optional) -->
+        {% if store.menu_text %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mt-4">
+            <h2 class="font-bold text-lg mb-4">대표 메뉴</h2>
+            <div class="space-y-3">
+                <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ store.menu_text }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+</body>
+
+</html>

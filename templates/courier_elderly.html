@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간편 택배 예약 | 동네비서</title>
+    <!-- Daum Postcode API (For address verification/correction) -->
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <style>
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: #f0fff4;
+            /* Light Green for comfort */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .ai-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .ai-btn {
+            flex: 1;
+            padding: 30px 10px;
+            border: 2px solid #28a745;
+            border-radius: 15px;
+            background: white;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .ai-btn:active {
+            background: #e9ecef;
+        }
+
+        .ai-btn .icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .ai-btn .label {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-section {
+            border-top: 2px solid #eee;
+            padding-top: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            /* Larger font for elderly */
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 20px;
+            background: #28a745;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        /* Loading Overlay */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #28a745;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-msg">AI가 분석 중입니다...</div>
+    </div>
+
+    <div class="container">
+        <h2>🤖 동네비서 간편 예약</h2>
+
+        <div class="ai-buttons">
+            <div class="ai-btn" onclick="startVoiceInput()">
+                <span class="icon">🎙️</span>
+                <span class="label">말로 하기</span>
+            </div>
+            <div class="ai-btn" onclick="document.getElementById('cameraInput').click()">
+                <span class="icon">📸</span>
+                <span class="label">사진 찍기</span>
+                <input type="file" id="cameraInput" capture="environment" accept="image/*" style="display:none"
+                    onchange="processImage(this)">
+            </div>
+        </div>
+
+        <form id="aiForm" action="/api/citizen/courier/reserve" method="post">
+            <div class="form-section">
+                <!-- Sender (Auto-filled or Default) -->
+                <div class="form-group">
+                    <label>보내는 분 (나)</label>
+                    <input type="text" name="sender_name" id="sender_name" value="{{ store.get('owner_name', '') }}"
+                        placeholder="이름">
+                </div>
+                <!-- Hidden inputs for full address logic if needed, but for MVP keeping it simple -->
+                <div class="form-group">
+                    <label>보내는 분 연락처</label>
+                    <input type="text" name="sender_phone" id="sender_phone" value="{{ store.get('phone', '') }}"
+                        placeholder="전화번호">
+                </div>
+
+                <!-- Receiver (AI Focus) -->
+                <div class="form-group" style="background: #e8f5e9; padding: 10px; border-radius: 10px;">
+                    <label>👐 받는 분 (AI 자동입력)</label>
+                    <input type="text" name="receiver_name" id="receiver_name" placeholder="이름"
+                        style="margin-bottom: 5px;">
+                    <input type="text" name="receiver_phone" id="receiver_phone" placeholder="전화번호"
+                        style="margin-bottom: 5px;">
+                    <input type="text" name="receiver_addr" id="receiver_addr" placeholder="주소"
+                        onclick="execDaumPostcode('receiver_addr')">
+                </div>
+
+                <div class="form-group">
+                    <label>물품 종류</label>
+                    <input type="text" name="item_type" id="item_type" placeholder="예: 사과 한 박스">
+                </div>
+
+                <input type="hidden" name="payment_method" value="points"> <!-- Simplify for elderly: points default -->
+                <input type="hidden" name="weight" value="medium">
+                <input type="hidden" name="quantity" value="1">
+            </div>
+
+            <button type="button" class="btn-submit" onclick="submitForm()">✅ 예약하기</button>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="/citizen/courier/landing" style="color: #666; text-decoration: none;">뒤로 가기</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Wrap for Daum Postcode -->
+    <div id="wrap_layer" style="display:none;border:1px solid;width:100%;height:300px;margin:5px 0;position:relative">
+        <img src="//t1.daumcdn.net/postcode/resource/images/close.png" id="btnFoldWrap"
+            style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1" onclick="foldDaumPostcode()"
+            alt="접기 버튼">
+    </div>
+
+    <script>
+        // 1. Voice Input (Web Speech API)
+        function startVoiceInput() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("이 브라우저는 음성 인식을 지원하지 않습니다. 크롬 브라우저를 사용해주세요.");
+                return;
+            }
+
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = 'ko-KR';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            document.getElementById('loading-msg').innerText = "말씀해주세요... (예: 서울 아들한테 사과 보내줘)";
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            recognition.start();
+
+            recognition.onresult = function (event) {
+                const speechResult = event.results[0][0].transcript;
+                console.log('Speech Result:', speechResult);
+                document.getElementById('loading-msg').innerText = "AI가 내용을 분석하고 있습니다...";
+
+                // Send to Backend
+                sendToAI('voice', { text: speechResult });
+            };
+
+            recognition.onerror = function (event) {
+                console.error('Speech Error:', event.error);
+                document.getElementById('loading-overlay').style.display = 'none';
+                alert("음성 인식에 실패했습니다. 다시 시도해주세요.");
+            };
+
+            recognition.onend = function () {
+                // If no result, overlay will close in logic above or here
+            };
+        }
+
+        // 2. Camera Input
+        async function processImage(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const formData = new FormData();
+                formData.append('image', file);
+
+                document.getElementById('loading-msg').innerText = "사진을 분석하고 있습니다...";
+                document.getElementById('loading-overlay').style.display = 'flex';
+
+                try {
+                    const response = await fetch('/api/ai/parse-image', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+                    applyAIResult(data);
+                } catch (e) {
+                    console.error("OCR Error:", e);
+                    alert("사진 분석 중 오류가 발생했습니다.");
+                } finally {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                }
+            }
+        }
+
+        // 3. Send to Backend AI
+        async function sendToAI(type, payload) {
+            try {
+                const response = await fetch('/api/ai/parse-voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                applyAIResult(data);
+            } catch (e) {
+                console.error("AI Error:", e);
+                alert("AI 분석 중 오류가 발생했습니다.");
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        }
+
+        // 4. Apply Result
+        function applyAIResult(data) {
+            if (data.sender_name) document.getElementById('sender_name').value = data.sender_name;
+            if (data.receiver_name) document.getElementById('receiver_name').value = data.receiver_name;
+            if (data.receiver_phone) document.getElementById('receiver_phone').value = data.receiver_phone;
+            if (data.receiver_addr) document.getElementById('receiver_addr').value = data.receiver_addr;
+            if (data.item_type) document.getElementById('item_type').value = data.item_type;
+
+            alert("AI가 내용을 입력했습니다. 맞는지 확인해주세요!");
+        }
+
+        // 5. Submit
+        async function submitForm() {
+            // For MVP, just reusing the logic or directing to a consolidated endpoint
+            // Here we might want to consolidate data and send to existing API
+            alert("예약 기능은 일반 모드와 동일하게 연동됩니다. (데모)");
+        }
+
+        // Daum Postcode Logic (Reuse simplified)
+        function execDaumPostcode(targetId) {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    var addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+                    if (data.buildingName !== '') addr += ' (' + data.buildingName + ')';
+                    document.getElementById(targetId).value = addr;
+                }
+            }).open();
+        }
+    </script>
+</body>
+
+</html>

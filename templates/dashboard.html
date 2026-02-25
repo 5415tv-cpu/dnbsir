@@ -1,53 +1,87 @@
 {% extends "base.html" %}
 
-
-
-{% block page_header %}{% endblock %}
+{% block page_header %}
+<div class="page-header" style="text-align: left; padding: 20px;">
+    <div class="current-menu-label" style="font-size: 1rem; color: #666;">{{ today_date }}</div>
+    <div class="page-title" style="font-size: 1.8rem; font-weight: 900;">사장님, 안녕하세요!</div>
+</div>
+{% endblock %}
 
 {% block content %}
-<!-- Margin Card -->
-<div
-    style="border: 4px solid #1A1A1A; background: #fff; padding: 20px; margin-bottom: 20px; box-shadow: 5px 5px 0px #1a1a1a;">
-    <div style="font-size: 0.95rem; font-weight: 800; color: #555; margin-bottom: 5px;">오늘의 마진(10%) 수익</div>
-    <div style="font-size: 2.2rem; font-weight: 900; color: #1A1A1A; letter-spacing: -1px;">
-        {{ "{:,}".format(stats.margin) }} 원
+<!-- AI Briefing Hero (Prominent) -->
+<div class="kiosk-card highlight"
+    style="background: #1A1A1A; color: #fff; min-height: 200px; margin-bottom: 25px; align-items: flex-start; text-align: left;">
+    <div class="ai-badge" style="background: #00FF88; color: #1A1A1A;">AI 분석</div>
+    <div style="font-size: 1rem; color: #ccc; margin-bottom: 10px;">오늘의 순수익 (마진 10%)</div>
+    <div style="font-size: 3rem; font-weight: 900; letter-spacing: -2px; color: #00FF88;">
+        {{ "{:,}".format(stats.margin) }}원
     </div>
-    <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">
-        매출: {{ "{:,}".format(stats.revenue) }}원
+    <div style="font-size: 1.2rem; color: #fff; margin-top: 10px;">
+        총 매출: {{ "{:,}".format(stats.revenue) }}원
     </div>
 </div>
 
-<!-- Quick Actions -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-    <a href="/courier" style="text-decoration: none; color: inherit;">
-        <div
-            style="border: 3px solid #1A1A1A; background: #fff; padding: 20px; text-align: center; height: 100%; box-sizing: border-box; box-shadow: 4px 4px 0px #ccc; transition: transform 0.1s;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">📦</div>
-            <div style="font-weight: 900; font-size: 1.1rem;">로젠 접수</div>
-        </div>
-    </a>
-    <a href="/admin/tax" style="text-decoration: none; color: inherit;">
-        <div
-            style="border: 3px solid #1A1A1A; background: #1A1A1A; color: #fff; padding: 20px; text-align: center; height: 100%; box-sizing: border-box; box-shadow: 4px 4px 0px #555; transition: transform 0.1s;">
-            <div style="font-size: 2rem; margin-bottom: 10px;">💰</div>
-            <div style="font-weight: 900; font-size: 1.1rem;">세무 센터</div>
-        </div>
-    </a>
-</div>
+<!-- Kiosk Grid Layout -->
+<div class="kiosk-grid">
 
-<!-- Secondary Actions -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
-    <a href="/admin/farm/orders" style="text-decoration: none; color: inherit;">
-        <div
-            style="border: 3px solid #1A1A1A; background: #27ae60; color: #fff; padding: 15px; text-align: center; font-weight: 900; box-shadow: 3px 3px 0px #1e8449;">
-            🚜 농가 주문
-        </div>
+    <!-- 1. Receipts (Rozen) -->
+    <a href="/courier" class="kiosk-card">
+        <div class="ai-badge">AI 자동접수</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">📦</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">로젠택배<br>접수</div>
     </a>
-    <a href="/admin/expenses" style="text-decoration: none; color: inherit;">
-        <div
-            style="border: 3px solid #1A1A1A; background: #fff; color: #1a1a1a; padding: 15px; text-align: center; font-weight: 900; box-shadow: 3px 3px 0px #ccc;">
-            💳 비용 기장
-        </div>
+
+    <!-- 2. Tax Center (Smart Logic) -->
+    <a href="/admin/tax" class="kiosk-card">
+        <div class="ai-badge" style="background: #FF5252;">필수</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">💰</div>
+        {% if current_month in [1, 7] %}
+        <div style="font-size: 1.3rem; font-weight: 800;">부가가치세<br>신고센터</div>
+        {% elif current_month == 5 %}
+        <div style="font-size: 1.3rem; font-weight: 800;">종합소득세<br>신고센터</div>
+        {% else %}
+        <div style="font-size: 1.3rem; font-weight: 800;">세무<br>센터</div>
+        {% endif %}
     </a>
+
+    <!-- 3. Farm Orders -->
+    <a href="/admin/farm/orders" class="kiosk-card">
+        <div class="ai-badge">AI 연동</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🚜</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">농가<br>주문관리</div>
+    </a>
+
+    <!-- 4. Expenses -->
+    <a href="/admin/expenses" class="kiosk-card">
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">💳</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">간편<br>비용기장</div>
+    </a>
+
+    <!-- [NEW] 5. Regular Management -->
+    <a href="#" class="kiosk-card" onclick="alert('준비 중인 프리미엄 기능입니다.')">
+        <div class="ai-badge">AI 추천</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">👥</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">단골<br>관리</div>
+    </a>
+
+    <!-- [NEW] 6. Table Order -->
+    <a href="#" class="kiosk-card" onclick="alert('준비 중인 프리미엄 기능입니다.')">
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🍽️</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">테이블<br>주문</div>
+    </a>
+
+    <!-- [NEW] 7. Store Management -->
+    <a href="/admin/store" class="kiosk-card">
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🏪</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">매장<br>관리</div>
+    </a>
+
+    <!-- [NEW] 8. Delivery Integration -->
+    <a href="#" class="kiosk-card" onclick="alert('배달의민족/요기요/쿠팡이츠 연동 준비 중입니다.')">
+        <div class="ai-badge">매출통합</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🛵</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">배달매출<br>통합</div>
+    </a>
+
 </div>
 {% endblock %}

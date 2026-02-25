@@ -1,17 +1,18 @@
-import config
-secrets = config.load_secrets()
-creds = Credentials.from_service_account_info(
-    dict(secrets['gcp_service_account']), 
-    scopes=['https://www.googleapis.com/auth/spreadsheets']
-)
-client = gspread.authorize(creds)
-spreadsheet = client.open_by_url(secrets['spreadsheet_url'])
-stores_ws = spreadsheet.worksheet('stores')
+import sqlite3
+import pandas as pd
 
-# 원본 데이터 확인
-all_values = stores_ws.get_all_values()
+DB_FILE = "database.db"
 
-print('=== RAW DATA ===')
-for i, row in enumerate(all_values):
-    print(f'Row {i}: {row}')
+def check_stores():
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        # Select specific columns to avoid clutter
+        df = pd.read_sql("SELECT store_id, password, name, phone FROM stores", conn)
+        print("Stores (ID, Password, Name, Phone):")
+        print(df.to_string())
+        conn.close()
+    except Exception as e:
+        print(f"Error: {e}")
 
+if __name__ == "__main__":
+    check_stores()

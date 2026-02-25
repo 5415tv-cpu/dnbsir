@@ -1,109 +1,103 @@
-<!DOCTYPE html>
-<html lang="ko">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>사업용 카드 보안 연결</title>
-</head>
+{% block title %}사업용 카드 보안 연결{% endblock %}
 
-<body
-    style="margin: 0; font-family: sans-serif; background-color: #e0e0e0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+{% block content %}
+<div style="background-color: #e0e0e0; padding: 5px; width: 100%; max-width: 500px; margin: 0 auto;">
 
-    <div style="background-color: #e0e0e0; padding: 5px; width: 100%; max-width: 500px;">
+    <div
+        style="background-color: #fff; padding: 25px; border: 3px solid #1a1a1a; border-radius: 5px; font-weight: 800; color: #1a1a1a; box-shadow: 4px 4px 0px #ccc;">
 
-        <div
-            style="background-color: #fff; padding: 25px; border: 3px solid #1a1a1a; border-radius: 10px; font-weight: 800; color: #1a1a1a;">
-
-            <div style="text-align: center; margin-bottom: 20px;">
-                <span style="font-size: 2rem;">🔒</span>
-                <h3 style="margin: 10px 0 0; font-weight: 900; font-size: 1.4rem;">사업용 카드 보안 연결</h3>
-                <p style="font-size: 0.8rem; color: #555; font-weight: 700;">금융 보안 표준에 따라 안전하게 암호화됩니다</p>
-            </div>
-
-            <form id="cardForm" onsubmit="event.preventDefault(); registerCard();">
-                <div style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 10px; font-size: 0.9rem;">카드 번호 (16자리)</label>
-                    <input type="text" id="cardNumber" placeholder="•••• •••• •••• ••••" maxlength="19"
-                        style="width: 100%; padding: 12px; border: 1px solid #1a1a1a; font-weight: 900; letter-spacing: 3px; box-sizing: border-box;">
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">유효기간 (MM/YY)</label>
-                            <input type="text" id="expiry" placeholder="05 / 29" maxlength="5"
-                                style="width: 100%; padding: 12px; border: 1px solid #1a1a1a; font-weight: 900; text-align: center; box-sizing: border-box;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">비밀번호 앞 2자리</label>
-                            <input type="password" id="pwd2" placeholder="••" maxlength="2"
-                                style="width: 100%; padding: 12px; border: 1px solid #1a1a1a; font-weight: 900; text-align: center; box-sizing: border-box;">
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    style="background: #f8f9fa; padding: 12px; border: 1px solid #ccc; font-size: 0.75rem; line-height: 1.5; color: #666; margin-bottom: 20px;">
-                    ✅ **안내:** 등록된 카드는 '종합소득세' 경비 인정을 위한 데이터 수집 용도로만 사용되며, 어떠한 경우에도 임의로 결제되지 않습니다.
-                </div>
-
-                <button type="submit"
-                    style="width: 100%; background: #1a1a1a; color: #fff; border: none; padding: 18px; font-size: 1.1rem; font-weight: 900; cursor: pointer; border-radius: 5px;">
-                    카드 연동 및 보안 저장하기
-                </button>
-            </form>
-
-            <a href="/admin/expenses"
-                style="display: block; text-align: center; margin-top: 15px; color: #1a1a1a; font-size: 0.9rem; text-decoration: none;">취소하고
-                돌아가기</a>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <span style="font-size: 2rem;">🔒</span>
+            <h3 style="margin: 10px 0 0; font-weight: 900; font-size: 1.4rem;">사업용 카드 보안 연결</h3>
+            <p style="font-size: 0.8rem; color: #555; font-weight: 700;">금융 보안 표준에 따라 안전하게 암호화됩니다</p>
         </div>
 
+        <form id="cardForm" onsubmit="event.preventDefault(); registerCard();">
+            <div
+                style="background: #fff; padding: 20px; border: 3px solid #1a1a1a; margin-bottom: 15px; border-radius: 5px;">
+                <label style="display: block; margin-bottom: 10px; font-size: 0.9rem;">카드 번호 (16자리)</label>
+                <input type="text" id="cardNumber" placeholder="•••• •••• •••• ••••" maxlength="19"
+                    style="width: 100%; padding: 12px; border: 3px solid #1a1a1a; font-weight: 900; letter-spacing: 3px; box-sizing: border-box; border-radius: 5px; font-family: inherit;">
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">유효기간 (MM/YY)</label>
+                        <input type="text" id="expiry" placeholder="05 / 29" maxlength="5"
+                            style="width: 100%; padding: 12px; border: 3px solid #1a1a1a; font-weight: 900; text-align: center; box-sizing: border-box; border-radius: 5px; font-family: inherit;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.8rem;">비밀번호 앞 2자리</label>
+                        <input type="password" id="pwd2" placeholder="••" maxlength="2"
+                            style="width: 100%; padding: 12px; border: 3px solid #1a1a1a; font-weight: 900; text-align: center; box-sizing: border-box; border-radius: 5px; font-family: inherit;">
+                    </div>
+                </div>
+            </div>
+
+            <div
+                style="background: #f8f9fa; padding: 12px; border: 3px solid #ccc; font-size: 0.8rem; line-height: 1.5; color: #666; margin-bottom: 20px; border-radius: 5px;">
+                ✅ **안내:** 등록된 카드는 '종합소득세' 경비 인정을 위한 데이터 수집 용도로만 사용되며, 어떠한 경우에도 임의로 결제되지 않습니다.
+            </div>
+
+            <button type="submit"
+                style="width: 100%; background: #1a1a1a; color: #fff; border: 3px solid #1A1A1A; padding: 18px; font-size: 1.1rem; font-weight: 900; cursor: pointer; border-radius: 5px; box-shadow: 4px 4px 0px #555;">
+                카드 연동 및 보안 저장하기
+            </button>
+        </form>
+
+        <a href="/admin/expenses"
+            style="display: block; text-align: center; margin-top: 15px; color: #1a1a1a; font-size: 0.9rem; text-decoration: none; font-weight: 900;">취소하고
+            돌아가기</a>
     </div>
 
-    <script>
-        async function registerCard() {
-            const btn = document.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            btn.innerText = "연동 중...";
+</div>
+{% endblock %}
 
-            const cardNum = document.getElementById('cardNumber').value;
-            const expiry = document.getElementById('expiry').value;
-            const pwd = document.getElementById('pwd2').value;
+{% block scripts %}
+<script>
+    async function registerCard() {
+        const btn = document.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerText = "연동 중...";
 
-            if (cardNum.length < 10 || expiry.length < 4 || pwd.length < 2) {
-                alert("카드 정보를 정확히 입력해주세요.");
-                btn.disabled = false;
-                btn.innerText = "카드 연동 및 보안 저장하기";
-                return;
-            }
+        const cardNum = document.getElementById('cardNumber').value;
+        const expiry = document.getElementById('expiry').value;
+        const pwd = document.getElementById('pwd2').value;
 
-            try {
-                const res = await fetch('/api/admin/cards/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        card_number: cardNum,
-                        expiry: expiry,
-                        pwd_2digit: pwd
-                    })
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    alert('성공적으로 연동되었습니다! (보안 저장 완료)');
-                    window.location.href = '/admin/expenses';
-                } else {
-                    alert('연동 실패: ' + (data.error || '알 수 없는 오류'));
-                    btn.disabled = false;
-                    btn.innerText = "카드 연동 및 보안 저장하기";
-                }
-            } catch (e) {
-                console.error(e);
-                alert("서버 통신 오류");
-                btn.disabled = false;
-                btn.innerText = "카드 연동 및 보안 저장하기";
-            }
+        if (cardNum.length < 10 || expiry.length < 4 || pwd.length < 2) {
+            alert("카드 정보를 정확히 입력해주세요.");
+            btn.disabled = false;
+            btn.innerText = "카드 연동 및 보안 저장하기";
+            return;
         }
-    </script>
-</body>
 
-</html>
+        try {
+            const res = await fetch('{{ api_url }}/api/admin/cards/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    card_number: cardNum,
+                    expiry: expiry,
+                    pwd_2digit: pwd
+                })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                alert('성공적으로 연동되었습니다! (보안 저장 완료)');
+                window.location.href = '/admin/expenses';
+            } else {
+                alert('연동 실패: ' + (data.error || '알 수 없는 오류'));
+                btn.disabled = false;
+                btn.innerText = "카드 연동 및 보안 저장하기";
+            }
+        } catch (e) {
+            console.error(e);
+            alert("서버 통신 오류");
+            btn.disabled = false;
+            btn.innerText = "카드 연동 및 보안 저장하기";
+        }
+    }
+</script>
+{% endblock %}

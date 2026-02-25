@@ -79,6 +79,27 @@ def init_db():
             created_at TEXT
         )
     ''')
+    
+    # 2-3. Courier Requests (Citizen -> Logistics)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS courier_requests (
+            request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            citizen_id TEXT,
+            sender_name TEXT,
+            sender_phone TEXT,
+            sender_addr TEXT,
+            receiver_name TEXT,
+            receiver_phone TEXT,
+            receiver_addr TEXT,
+            item_type TEXT,
+            weight TEXT,
+            status TEXT DEFAULT 'pending',
+            payment_method TEXT,
+            tracking_code TEXT,
+            created_at TEXT,
+            FOREIGN KEY(citizen_id) REFERENCES stores(store_id)
+        )
+    ''')
 
     # 3. Business Records (General, Delivery, Farmer)
     # Using a single flexible table or separate ones. Separate is cleaner for this legacy code.
@@ -1849,5 +1870,671 @@ def increment_customer_order(customer_id, store_id):
     except Exception as e:
         print(f"Customer Order Increment Error: {e}")
         return 0
+    finally:
+        conn.close()
+
+
+
+# ==========================================
+# 💰 AI Billing & Quota Management
+# ==========================================
+
+def check_ai_limit(store_id):
+    """
+    Check if the store can use AI services (Daily Limit & Points).
+    Returns: (is_allowed, message)
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute("SELECT daily_token_limit, current_usage, last_usage_date, points, tier FROM stores WHERE store_id = ?", (store_id,))
+        row = c.fetchone()
+        
+        if not row:
+            return False, "Store not found"
+            
+        limit = row['daily_token_limit'] or 10000
+        usage = row['current_usage'] or 0
+        last_date = row['last_usage_date']
+        points = row['points'] or 0
+        
+        # 1. Daily Reset Check
+        today = datetime.now().strftime("%Y-%m-%d")
+        if last_date != today:
+            # Reset usage for new day
+            c.execute("UPDATE stores SET current_usage = 0, last_usage_date = ? WHERE store_id = ?", (today, store_id))
+            conn.commit()
+            usage = 0
+            
+        # 2. Check Limit
+        if usage >= limit:
+            return False, f"Daily limit exceeded ({usage}/{limit})"
+            
+        # 3. Check Points (Pay-as-you-go)
+        # Assuming 10 points minimum required to start a turn
+        if points < 10:
+             return False, "Insufficient points"
+             
+        return True, "OK"
+        
+    except Exception as e:
+        print(f"Billing Check Error: {e}")
+        # Fail safe: allow if DB error? Or block? Block is safer for billing.
+        return False, f"System Error: {e}"
+    finally:
+        conn.close()
+
+def log_ai_usage(store_id, input_tokens, output_tokens):
+    """
+    Log AI usage and deduct points.
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        pass # Transaction start implicitly
+        
+        total_tokens = input_tokens + output_tokens
+        
+        # Cost calculation (Simple model: 1 token = 1 point? Or 1000 tokens = 100 points?)
+        # Let's say 1 turn costs 10 points fixed + 1 point per 100 tokens
+        # Or just: total_tokens
+        
+        # Implementation Plan said "10 points per call" as example
+        cost = 10 + (total_tokens // 100)
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # 1. Log Usage
+        c.execute('''
+            INSERT INTO ai_usage_logs (store_id, tokens_input, tokens_output, cost, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (store_id, input_tokens, output_tokens, cost, timestamp))
+        
+        # 2. Update Store (Deduct Points, Increment Usage)
+        c.execute('''
+            UPDATE stores 
+            SET points = points - ?, 
+                current_usage = current_usage + ?
+            WHERE store_id = ?
+        ''', (cost, total_tokens, store_id))
+        
+        conn.commit()
+        return True, cost
+        
+    except Exception as e:
+        print(f"Logging Error: {e}")
+        return False, 0
+    finally:
+        conn.close()
+
+
+
+# ==========================================
+# 🚀 AI Caching (Zero-Cost)
+# ==========================================
+
+def get_cached_response(store_id, user_message):
+    """
+    Check if a similar question exists in cache.
+    For MVP: Exact match or simple keyword logic.
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Normalize message (remove spaces, lowercase) for better hit rate
+        # core_msg = user_message.replace(" ", "").strip()
+        
+        c.execute('''
+            SELECT answer, hits FROM cached_responses 
+            WHERE store_id = ? AND question = ?
+        ''', (store_id, user_message))
+        
+        row = c.fetchone()
+        if row:
+            # Update hits
+            c.execute("UPDATE cached_responses SET hits = hits + 1, last_used = ? WHERE store_id = ? AND question = ?", 
+                      (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), store_id, user_message))
+            conn.commit()
+            return row['answer']
+            
+        return None
+    except Exception as e:
+        print(f"Cache Get Error: {e}")
+        return None
+    finally:
+        conn.close()
+
+def save_cached_response(store_id, question, answer):
+    """
+    Save a Q&A pair to cache.
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            INSERT OR REPLACE INTO cached_responses (store_id, question, answer, last_used, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (
+            store_id, 
+            question, 
+            answer, 
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Cache Save Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+# ==========================================
+# 💰 Wallet & Usage (SQLite Stub)
+# ==========================================
+
+def get_wallet_details(store_id):
+    """
+    Get wallet balance and recent logs for a store.
+    """
+    store = get_store(store_id)
+    if not store:
+        return {
+            "current_points": 0,
+            "wallet_logs": [],
+            "ai_usage_today": {"tokens": 0, "cost": 0},
+            "sms_usage_today": {"count": 0, "cost": 0}
+        }
+        
+    return {
+        "current_points": store.get('points', 0),
+        "wallet_logs": [], # SQLite version doesn't track detailed logs yet
+        "ai_usage_today": {"tokens": 0, "cost": 0},
+        "sms_usage_today": {"count": 0, "cost": 0}
+    }
+
+def get_daily_usage_stats(store_id):
+    return {
+        "ai": {"tokens": 0, "cost": 0},
+        "sms": {"count": 0, "cost": 0}
+    }
+
+
+
+def confirm_payment(store_id, amount, order_id, payment_key):
+    """
+    Simulate payment confirmation for SQLite (Local Dev).
+    """
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        
+        # 1. Update Points
+        c.execute("UPDATE stores SET points = COALESCE(points, 0) + ? WHERE store_id = ?", (amount, store_id))
+        
+        # 2. Log
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        c.execute('''
+            INSERT INTO wallet_logs (store_id, change_type, amount, balance_after, memo, created_at)
+            VALUES (?, ?, ?, (SELECT points FROM stores WHERE store_id = ?), ?, ?)
+        ''', (store_id, 'CHARGE', amount, store_id, '포인트 충전', now))
+        
+        print(f"[SQLite] Payment Confirmed: Store {store_id} +{amount}P")
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[!] SQLite Payment Error: {e}")
+        return False
+
+# ==========================================
+# 🎯 CRM & Target Marketing (SQLite)
+# ==========================================
+
+def get_crm_customers(store_id, filter_type="all"):
+    """
+    Get customers list based on filter for Target Marketing.
+    """
+    conn = get_connection()
+    try:
+        # SQLite Query construction
+        query = "SELECT * FROM customers WHERE store_id = ?"
+        params = [store_id]
+        
+        if filter_type == "recent":
+            # Visit within last 30 days
+            query += " AND last_visit >= date('now', '-30 days')"
+            
+        elif filter_type == "regular":
+            # 3 or more orders
+            query += " AND total_orders >= 3"
+            
+        elif filter_type == "vip":
+            # 10 or more orders
+            query += " AND total_orders >= 10"
+            
+        query += " ORDER BY last_visit DESC LIMIT 100"
+        
+        # Helper to convert sqlite3.Row to dict
+        c = conn.cursor()
+        c.execute(query, params)
+        rows = c.fetchall()
+        return [dict(row) for row in rows]
+        
+    except Exception as e:
+        print(f"CRM Get Error: {e}")
+        return []
+    finally:
+        conn.close()
+
+def deduct_points_for_sms(store_id, total_cost, customer_count):
+    """
+    Atomic Point Deduction for Batch SMS (SQLite).
+    """
+    conn = get_connection()
+    try:
+        c = conn.cursor()
+        
+        # 1. Check Balance
+        c.execute("SELECT points FROM stores WHERE store_id = ?", (store_id,))
+        row = c.fetchone()
+        current_points = row['points'] if row and row['points'] else 0
+        
+        if current_points < total_cost:
+            return False, "잔액이 부족합니다.", None
+        
+        # 2. Deduct
+        new_balance = current_points - total_cost
+        c.execute("UPDATE stores SET points = ? WHERE store_id = ?", (new_balance, store_id))
+        
+        # 3. Log
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        memo = f"단체 문자 발송 ({customer_count}명)"
+        
+        c.execute('''
+            INSERT INTO wallet_logs (store_id, change_type, amount, balance_after, memo, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (store_id, 'USE', -total_cost, new_balance, memo, now))
+        
+        conn.commit()
+        return True, "성공", "TX_" + datetime.now().strftime("%Y%m%d%H%M%S")
+        
+    except Exception as e:
+        print(f"[!] Point Deduction Error: {e}")
+        return False, f"시스템 오류: {e}", None
+    finally:
+        conn.close()
+
+def refund_points(store_id, amount, reason):
+    """
+    Refund points (e.g., for failed SMS).
+    """
+    conn = get_connection()
+    try:
+        if amount <= 0: return True
+        c = conn.cursor()
+        
+        # 1. Refund
+        c.execute("UPDATE stores SET points = points + ? WHERE store_id = ?", (amount, store_id))
+        
+        # 2. Log
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        c.execute('''
+            INSERT INTO wallet_logs (store_id, change_type, amount, balance_after, memo, created_at)
+            VALUES (?, ?, ?, (SELECT points FROM stores WHERE store_id = ?), ?, ?)
+        ''', (store_id, 'REFUND', amount, store_id, reason, now))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[!] Refund Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def deduct_fixed_cost(store_id, amount, reason):
+    """
+    Deduct fixed amount (SQLite).
+    """
+    conn = get_connection()
+    try:
+        c = conn.cursor()
+        
+        # 1. Check Balance
+        c.execute("SELECT points FROM stores WHERE store_id = ?", (store_id,))
+        row = c.fetchone()
+        current = row['points'] if row and row['points'] else 0
+        
+        if current < amount:
+            return False
+        
+        # 2. Deduct
+        c.execute("UPDATE stores SET points = points - ? WHERE store_id = ?", (amount, store_id))
+        
+        # 3. Log
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        c.execute('''
+            INSERT INTO wallet_logs (store_id, change_type, amount, balance_after, memo, created_at)
+            VALUES (?, ?, ?, (SELECT points FROM stores WHERE store_id = ?), ?, ?)
+        ''', (store_id, 'USE', -amount, store_id, reason, now))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[!] Deduct Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_daily_usage_stats(store_id):
+    """
+    Get daily usage statistics (SQLite Dummy).
+    """
+    return {
+        "ai": {"tokens": 0, "cost": 0},
+        "sms": {"count": 0, "cost": 0}
+    }
+
+def get_wallet_details(store_id):
+    """
+    Get wallet balance and logs (SQLite).
+    """
+    details = {
+        "current_points": 0,
+        "wallet_logs": [],
+        "ai_usage_today": {"tokens": 0, "cost": 0},
+        "sms_usage_today": {"count": 0, "cost": 0}
+    }
+    conn = get_connection()
+    try:
+        c = conn.cursor()
+        
+        # 1. Current Points
+        c.execute("SELECT points FROM stores WHERE store_id = ?", (store_id,))
+        row = c.fetchone()
+        details["current_points"] = row['points'] if row and row['points'] else 0
+        
+        # 2. Recent Wallet Logs
+        c.execute('''
+            SELECT change_type as type, amount, created_at, memo 
+            FROM wallet_logs 
+            WHERE store_id = ? 
+            ORDER BY id DESC LIMIT 20
+        ''', (store_id,))
+        rows = c.fetchall()
+        details["wallet_logs"] = [dict(row) for row in rows]
+        
+    except Exception as e:
+        print(f"Wallet Details Error: {e}")
+    finally:
+        conn.close()
+        
+    # Get Usage Stats
+    usage = get_daily_usage_stats(store_id)
+    details["ai_usage_today"] = usage.get("ai")
+    details["sms_usage_today"] = usage.get("sms")
+    return details
+
+def create_db_backup():
+    """
+    Create a full system backup (JSON Dump of all tables).
+    Returns path to backup file.
+    """
+    try:
+        import pandas as pd
+        import json
+        import os
+        from datetime import datetime
+
+        conn = get_connection()
+        # List of tables to backup
+        tables = ["users", "stores", "couriers", "riders", "wallet_logs", "sms_logs", "ai_usage_logs", "customers"]
+        
+        backup_data = {}
+        
+        try:
+            for table in tables:
+                try:
+                    df = pd.read_sql(f"SELECT * FROM {table}", conn)
+                    # simplistic approach: use records orientation
+                    backup_data[table] = df.to_dict(orient="records")
+                except Exception as e:
+                    print(f"[Backup] Skipping table {table}: {e}")
+        finally:
+            conn.close()
+                    
+        # Save to file
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"backup_full_{timestamp}.json"
+        
+        # Use a localized path or /tmp
+        backup_dir = os.path.join(os.getcwd(), "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        filepath = os.path.join(backup_dir, filename)
+        
+        with open(filepath, 'w', encoding='utf-8') as f:
+            json.dump(backup_data, f, indent=4, default=str)
+            
+        return filepath
+    except Exception as e:
+        print(f"[!] Backup Error: {e}")
+        return None
+
+def check_db_integrity():
+    """
+    Check Database Integrity.
+    """
+    conn = get_connection()
+    try:
+        c = conn.cursor()
+        c.execute("PRAGMA integrity_check")
+        result = c.fetchone()
+        if result and result[0] == "ok":
+            return "OK (Verified)"
+        return f"Corrupt: {result[0]}" if result else "Unknown"
+    except Exception as e:
+        return f"Error: {e}"
+    finally:
+        conn.close()
+
+def save_user(store_id, password, name, phone):
+    """
+    Save user to 'users' table (Legacy/Admin Management)
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Check if exists
+        c.execute("SELECT id FROM users WHERE id = ?", (store_id,))
+        if c.fetchone():
+            c.execute("UPDATE users SET password=?, name=?, phone=? WHERE id=?", (password, name, phone, store_id))
+        else:
+            c.execute("INSERT INTO users (id, password, name, phone, joined_at) VALUES (?, ?, ?, ?, ?)", 
+                      (store_id, password, name, phone, datetime.now().isoformat()))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[!] SQLite save_user Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_all_users():
+    """
+    Get all users (for Admin Dashboard)
+    """
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT * FROM users")
+        rows = c.fetchall()
+        
+        # Convert to list of dicts
+        users = []
+        for row in rows:
+            users.append(dict(row))
+            
+        conn.close()
+        return users
+    except Exception as e:
+        print(f"[!] SQLite get_all_users Error: {e}")
+        return []
+
+def get_wallet_topups(store_id):
+    """
+    Get all topup requests (sqlite)
+    """
+    try:
+        conn = get_connection()
+        query = "SELECT * FROM wallet_topups WHERE store_id = ? ORDER BY requested_at DESC"
+        df = pd.read_sql_query(query, conn, params=(store_id,))
+        conn.close()
+        return df
+    except Exception as e:
+        print(f"[!] SQLite get_wallet_topups Error: {e}")
+        return pd.DataFrame()
+
+def update_store_role(store_id, role):
+    """
+    Update store role (RBAC)
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # 1. Update Role
+        c.execute("UPDATE stores SET user_role = ? WHERE store_id = ?", (role, store_id))
+        
+        # 2. Add column if not exists (Migration for existing DB)
+        if c.rowcount == 0:
+            # Check if store exists
+            c.execute("SELECT store_id FROM stores WHERE store_id = ?", (store_id,))
+            if c.fetchone():
+                # Store exists, maybe column missing? 
+                # (In SQLite adding column safely is tricky in one go if strict, but let's try ALTER)
+                try:
+                    c.execute("ALTER TABLE stores ADD COLUMN user_role TEXT")
+                    c.execute("UPDATE stores SET user_role = ? WHERE store_id = ?", (role, store_id))
+                except:
+                    pass # Column likely exists
+            else:
+                return False # Store not found
+                
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[!] SQLite update_store_role Error: {e}")
+        # Try migration if error was about missing column
+        try:
+            c.execute("ALTER TABLE stores ADD COLUMN user_role TEXT")
+            c.execute("UPDATE stores SET user_role = ? WHERE store_id = ?", (role, store_id))
+            conn.commit()
+            return True
+        except:
+            return False
+    finally:
+        conn.close()
+
+def save_courier_request(data):
+    """
+    Save Citizen Courier Request
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Check table exists (Safety)
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='courier_requests'")
+        if not c.fetchone():
+            # Create if missing (Migration)
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS courier_requests (
+                    request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    citizen_id TEXT,
+                    sender_name TEXT,
+                    sender_phone TEXT,
+                    sender_addr TEXT,
+                    receiver_name TEXT,
+                    receiver_phone TEXT,
+                    receiver_addr TEXT,
+                    item_type TEXT,
+                    weight TEXT,
+                    status TEXT DEFAULT 'pending',
+                    payment_method TEXT,
+                    tracking_code TEXT,
+                    created_at TEXT
+                )
+            ''')
+            
+        c.execute('''
+            INSERT INTO courier_requests (
+                citizen_id, sender_name, sender_phone, sender_addr,
+                receiver_name, receiver_phone, receiver_addr,
+                item_type, weight, status, payment_method, tracking_code, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data.get('citizen_id'), data.get('sender_name'), data.get('sender_phone'), data.get('sender_addr'),
+            data.get('receiver_name'), data.get('receiver_phone'), data.get('receiver_addr'),
+            data.get('item_type'), data.get('weight'), data.get('status', 'pending'),
+            data.get('payment_method'), data.get('tracking_code'), datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ))
+        conn.commit()
+        return c.lastrowid
+    except Exception as e:
+        print(f"[!] SQLite save_courier_request Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def get_courier_requests(citizen_id=None):
+    """
+    Get Courier Requests (Filter by citizen_id if provided)
+    """
+    conn = get_connection()
+    try:
+        if citizen_id:
+            df = pd.read_sql("SELECT * FROM courier_requests WHERE citizen_id = ? ORDER BY created_at DESC", conn, params=(citizen_id,))
+        else:
+            df = pd.read_sql("SELECT * FROM courier_requests ORDER BY created_at DESC", conn)
+        return df
+    except Exception as e:
+        print(f"[!] SQLite get_courier_requests Error: {e}")
+        return pd.DataFrame()
+    finally:
+        conn.close()
+
+def deduct_points(store_id, amount):
+    """
+    Deduct Points from Store
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Check current points first to avoid negative? 
+        # For now, let's just subtract. verification happened in app.
+        c.execute("UPDATE stores SET points = points - ? WHERE store_id = ?", (amount, store_id))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[!] SQLite deduct_points Error: {e}")
+        return False
+    finally:
+        conn.close()
+
+def update_courier_payment_success(tracking_code, method):
+    """
+    Update Status after Payment Success
+    """
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        # Update status from 'payment_pending' to 'pending'
+        c.execute("UPDATE courier_requests SET status = 'pending', payment_method = ? WHERE tracking_code = ?", (method, tracking_code))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[!] SQLite update_courier_payment_success Error: {e}")
+        return False
     finally:
         conn.close()

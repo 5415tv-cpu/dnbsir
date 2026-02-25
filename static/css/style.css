@@ -1,34 +1,279 @@
-/* 사장님의 디자인 철학을 이 한 곳에 모두 담습니다 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
 :root {
-    --bg-color: #e0e0e0;
-    /* 옅은 회색 바탕 */
-    --text-color: #1a1a1a;
-    /* 짙은 검정 텍스트 */
-    --point-color: #ffffff;
-    /* 흰색 (카드 배경) */
+    --bg-color: #F0F2F5;
+    /* 부드러운 중간 톤 배경 */
+    --text-color: #1A1A1A;
+    /* 진한 텍스트 */
+    --nav-bg: #1A1A1A;
+    /* 하단 바 배경 (진한 색) */
+    --nav-text: #FFFFFF;
+    /* 하단 바 텍스트/아이콘 (흰색) */
+    --accent-color: #27AE60;
+    /* 강조 색상 */
+    --shadow-color: rgba(0, 0, 0, 0.1);
 }
 
+/* Kiosk Global Overrides */
 body {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    font-weight: 800;
-    /* 전체 텍스트 굵게 */
+    font-family: 'Pretendard', sans-serif;
+    background-color: #F0F2F5;
+    color: #1A1A1A;
+    font-weight: 700;
+    /* Bold default */
+    -webkit-font-smoothing: antialiased;
     margin: 0;
-    font-family: -apple-system, sans-serif;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
-/* 공통 버튼 디자인 */
-.main-btn {
-    background: var(--text-color);
-    color: white;
-    padding: 18px;
-    border-radius: 5px;
+/* AI Status Bar */
+.ai-status-bar {
+    background: #1A1A1A;
+    color: #00FF88;
+    /* Cyber Green */
+    padding: 12px;
+    text-align: center;
+    font-size: 0.9rem;
     font-weight: 900;
-    width: 100%;
-    border: none;
-    cursor: pointer;
+    position: sticky;
+    top: 0;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-.main-btn:hover {
-    opacity: 0.9;
+.ai-pulse {
+    width: 8px;
+    height: 8px;
+    background-color: #00FF88;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(0, 255, 136, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+    }
+}
+
+/* Kiosk Grid System */
+.kiosk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* 2 Column Fixed */
+    gap: 20px;
+    padding: 10px;
+}
+
+/* Kiosk Card */
+.kiosk-card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 0px #DDDDDD;
+    /* Blocky Shadow */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    min-height: 180px;
+    /* Fixed Height for Uniformity */
+    position: relative;
+    border: 3px solid transparent;
+    transition: transform 0.1s, border-color 0.2s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.kiosk-card:active {
+    transform: translateY(4px);
+    box-shadow: 0 4px 0px #DDDDDD;
+}
+
+.kiosk-card.highlight {
+    border-color: #1A1A1A;
+}
+
+/* AI Badge */
+.ai-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #1A1A1A;
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+/* 메인 컨테이너 */
+.main-container {
+    flex: 1;
+    padding: 20px;
+    padding-bottom: 16vh;
+    /* 하단 바 높이 + 여백 */
+    max-width: 600px;
+    /* 모바일/키오스크 최적화 */
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 헤더 */
+.sticky-header {
+    position: sticky;
+    top: 0;
+    background-color: var(--bg-color);
+    z-index: 50;
+    padding: 20px 0;
+    margin-bottom: 20px;
+}
+
+.app-title {
+    font-size: 2rem;
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -1px;
+}
+
+/* 페이지 헤더 (카드 형태) */
+.page-header {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 25px var(--shadow-color);
+}
+
+.current-menu-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.page-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+/* 로그인 박스 */
+.login-box {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    /* 입체감 강화 */
+    text-align: center;
+    margin: 20px 0;
+}
+
+.login-input,
+.input-field {
+    width: 100%;
+    padding: 18px;
+    margin-bottom: 15px;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.login-input:focus,
+.input-field:focus {
+    border-color: var(--nav-bg);
+    outline: none;
+}
+
+/* 버튼 스타일 */
+.main-btn {
+    background-color: var(--nav-bg);
+    color: white;
+    width: 100%;
+    padding: 20px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.main-btn:active {
+    transform: scale(0.98);
+}
+
+/* 하단 네비게이션 바 (핵심) */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 15vh;
+    /* 화면 높이의 15% */
+    min-height: 100px;
+    background-color: var(--nav-bg);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1000;
+    box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.2);
+    padding-bottom: env(safe-area-inset-bottom);
+    /* 아이폰 하단 바 대응 */
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--nav-text);
+    text-decoration: none;
+    flex: 1;
+    height: 100%;
+}
+
+.nav-icon {
+    font-size: 40px;
+    /* 아이콘 크기 확대 */
+    margin-bottom: 8px;
+}
+
+.nav-text {
+    font-size: 18px;
+    /* 텍스트 크기 확대 */
+    font-weight: 700;
+}
+
+/* 유틸리티 */
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px var(--shadow-color);
 }

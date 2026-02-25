@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>역할 선택 - AI 단골비서</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .role-btn {
+            background: #fff;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .role-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .role-btn.citizen:hover,
+        .role-btn.citizen.selected {
+            border-color: #ffc107;
+            background: #fff9db;
+        }
+
+        .role-btn.farmer:hover,
+        .role-btn.farmer.selected {
+            border-color: #40c057;
+            background: #ebfbee;
+        }
+
+        .role-btn.merchant:hover,
+        .role-btn.merchant.selected {
+            border-color: #228be6;
+            background: #e7f5ff;
+        }
+
+        .role-btn.logistics:hover,
+        .role-btn.logistics.selected {
+            border-color: #7950f2;
+            background: #f3f0ff;
+        }
+
+        .role-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .role-label {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .role-desc {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .submit-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 25px;
+            cursor: pointer;
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>어떤 업무를 하시나요?</h1>
+            <p style="color: #666;">선택하신 역할에 맞춰 맞춤형 화면이 제공됩니다.</p>
+
+            <form action="/api/select-role" method="POST">
+                <input type="hidden" name="store_id" value="{{ store_id }}">
+                <input type="hidden" name="role" id="selected-role">
+
+                <div class="role-grid">
+                    <div class="role-btn citizen" onclick="selectRole('citizen', this)">
+                        <span class="role-icon">🏘️</span>
+                        <span class="role-label">시민</span>
+                        <span class="role-desc">동네 가게 찾기, 할인 정보</span>
+                    </div>
+                    <div class="role-btn farmer" onclick="selectRole('farmer', this)">
+                        <span class="role-icon">🌾</span>
+                        <span class="role-label">농민</span>
+                        <span class="role-desc">직거래 장터, 수확 일지</span>
+                    </div>
+                    <div class="role-btn merchant" onclick="selectRole('merchant', this)">
+                        <span class="role-icon">🏪</span>
+                        <span class="role-label">일반사업자</span>
+                        <span class="role-desc">매장/단골 관리, 매출 정산</span>
+                    </div>
+                    <div class="role-btn logistics" onclick="selectRole('logistics', this)">
+                        <span class="role-icon">🚚</span>
+                        <span class="role-label">택배사업자</span>
+                        <span class="role-desc">배송 조회, 운송장 관리</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: left;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #555;">
+                        <input type="checkbox" name="remember_role" id="remember-check" checked
+                            style="width: 18px; height: 18px;">
+                        <div>
+                            <span style="font-size: 0.95rem; font-weight: bold;">이 등급을 기본으로 설정</span>
+                            <div style="font-size: 0.8rem; color: #888;">다음 로그인 시 이 화면을 건너뜁니다.</div>
+                        </div>
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn" disabled>시작하기</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function selectRole(role, el) {
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('selected-role').value = role;
+            document.getElementById('submit-btn').disabled = false;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,91 +1,272 @@
-<!DOCTYPE html>
-<html lang="ko">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>간편 택배 접수 - 동네비서</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-</head>
+{% block page_header %}
+<div class="page-header" style="text-align: left; padding: 20px;">
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">로젠택배 x 동네비서</div>
+    <div class="page-title" style="font-size: 1.8rem; font-weight: 900;">택배 예약</div>
+</div>
+{% endblock %}
 
-<body>
+{% block content %}
+<!-- Daum Postcode API -->
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
-    <main style="background-color: #e0e0e0; min-height: 100vh; padding: 15px; font-weight: 800; color: #1a1a1a;">
+<form id="reservationForm" onsubmit="submitReservation(event)">
 
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <button
-                style="flex: 1; background: #1a1a1a; color: #fff; padding: 15px; border: none; font-weight: 900; border-radius: 5px; cursor: pointer;">🤖
-                AI 접수 도우미</button>
-            <button
-                style="flex: 1; background: #fff; color: #1a1a1a; padding: 15px; border: 2px solid #1a1a1a; font-weight: 900; border-radius: 5px; cursor: pointer;">📊
-                엑셀 대량접수</button>
+    <!-- 1. Terms -->
+    <div class="kiosk-card" style="display: block; text-align: left; margin-bottom: 20px; background: #fff;">
+        <h3
+            style="font-size: 1.2rem; font-weight: 900; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <span style="color: #007bff;">STEP 1</span> 약관 동의
+        </h3>
+        <label
+            style="display: flex; align-items: center; cursor: pointer; padding: 10px; background: #f9f9f9; border-radius: 8px;">
+            <input type="checkbox" id="termsAgree" required style="width: 20px; height: 20px; margin-right: 10px;">
+            <span style="font-size: 0.95rem; font-weight: 700;">개인정보 수집 및 이용, 택배 표준약관에 동의합니다. (필수)</span>
+        </label>
+    </div>
+
+    <!-- 2. Sender Info -->
+    <div class="kiosk-card" style="display: block; text-align: left; margin-bottom: 20px; background: #fff;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <h3 style="font-size: 1.2rem; font-weight: 900; margin: 0;">
+                <span style="color: #007bff;">STEP 2</span> 보내는 분
+            </h3>
+            <label style="font-size: 0.8rem; display: flex; align-items: center;">
+                <input type="checkbox" onchange="copyMemberInfo(this)" style="margin-right: 5px;"> 회원정보와 동일
+            </label>
         </div>
 
-        <section
-            style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; border-radius: 5px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin: 0; font-weight: 900;">1. 보내는 분</h3>
-                <button onclick="unlock('sender')"
-                    style="background: #ccc; border: 1px solid #1a1a1a; padding: 5px 10px; font-size: 0.8rem; font-weight: 900; cursor: pointer;">🔓
-                    잠금해제</button>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">이름 *</label>
+            <input type="text" id="senderName" name="sender_name" class="u-input" required placeholder="보내는 분 성함">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">연락처 *</label>
+            <input type="tel" id="senderPhone" name="sender_phone" class="u-input" required placeholder="010-0000-0000">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">주소 *</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <input type="text" id="senderPostcode" class="u-input" placeholder="우편번호" readonly
+                    style="width: 100px; background: #eee;">
+                <button type="button" onclick="searchAddress('sender')" class="main-btn"
+                    style="padding: 10px; flex: 1; font-size: 0.9rem;">주소 찾기</button>
             </div>
-            <input id="sender_name" type="text" value="홍길동" readonly
-                style="width: 100%; padding: 12px; border: 1px solid #ddd; margin-bottom: 10px; background: #f9f9f9; font-weight: 700; box-sizing: border-box;">
-            <input id="sender_addr" type="text" value="강원도 태백시..." readonly
-                style="width: 100%; padding: 12px; border: 1px solid #ddd; background: #f9f9f9; font-weight: 700; box-sizing: border-box;">
-        </section>
+            <input type="text" id="senderAddr1" name="sender_addr1" class="u-input" readonly placeholder="기본 주소"
+                style="margin-bottom: 10px; background: #eee;">
+            <input type="text" id="senderAddr2" name="sender_addr2" class="u-input" required placeholder="상세 주소를 입력하세요">
+        </div>
+    </div>
 
-        <section
-            style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; border-radius: 5px; margin-bottom: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3 style="margin: 0; font-weight: 900;">2. 받는 분</h3>
-                <button onclick="unlock('receiver')"
-                    style="background: #ccc; border: 1px solid #1a1a1a; padding: 5px 10px; font-size: 0.8rem; font-weight: 900; cursor: pointer;">🔓
-                    잠금해제</button>
+    <!-- 3. Receiver Info -->
+    <div class="kiosk-card" style="display: block; text-align: left; margin-bottom: 20px; background: #fff;">
+        <h3
+            style="font-size: 1.2rem; font-weight: 900; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <span style="color: #007bff;">STEP 3</span> 받는 분
+        </h3>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">이름 *</label>
+            <input type="text" id="receiverName" name="receiver_name" class="u-input" required placeholder="받는 분 성함">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">연락처 *</label>
+            <input type="tel" id="receiverPhone" name="receiver_phone" class="u-input" required
+                placeholder="010-0000-0000">
+        </div>
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">주소 *</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <input type="text" id="receiverPostcode" class="u-input" placeholder="우편번호" readonly
+                    style="width: 100px; background: #eee;">
+                <button type="button" onclick="searchAddress('receiver')" class="main-btn"
+                    style="padding: 10px; flex: 1; font-size: 0.9rem;">주소 찾기</button>
             </div>
-            <input id="receiver_name" type="text" placeholder="이름"
-                style="width: 100%; padding: 12px; border: 1px solid #1a1a1a; margin-bottom: 10px; font-weight: 700; box-sizing: border-box;">
-            <input id="receiver_addr" type="text" placeholder="주소 찾기"
-                style="width: 100%; padding: 12px; border: 1px solid #1a1a1a; font-weight: 700; box-sizing: border-box;">
-        </section>
+            <input type="text" id="receiverAddr1" name="receiver_addr1" class="u-input" readonly placeholder="기본 주소"
+                style="margin-bottom: 10px; background: #eee;">
+            <input type="text" id="receiverAddr2" name="receiver_addr2" class="u-input" required
+                placeholder="상세 주소를 입력하세요">
+        </div>
+    </div>
 
-        <section style="background: #fff; padding: 20px; border: 2px solid #1a1a1a; border-radius: 5px;">
-            <h3 style="margin-bottom: 15px; font-weight: 900;">3. 결제 방식 선택</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
-                <label style="border: 2px solid #1a1a1a; padding: 10px; text-align: center; cursor: pointer;"><input
-                        type="radio" name="pay" checked> 현금</label>
-                <label style="border: 2px solid #1a1a1a; padding: 10px; text-align: center; cursor: pointer;"><input
-                        type="radio" name="pay"> 카드</label>
-                <label style="border: 2px solid #1a1a1a; padding: 10px; text-align: center; cursor: pointer;"><input
-                        type="radio" name="pay"> 페이</label>
+    <!-- 4. Item Details -->
+    <div class="kiosk-card" style="display: block; text-align: left; margin-bottom: 80px; background: #fff;">
+        <h3
+            style="font-size: 1.2rem; font-weight: 900; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <span style="color: #007bff;">STEP 4</span> 물품 정보
+        </h3>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">포장 수량 *</label>
+            <select name="quantity" class="u-input" style="background: #fff;">
+                <option value="1">1박스</option>
+                <option value="2">2박스</option>
+                <option value="3">3박스</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">물품 구분 *</label>
+            <select name="item_type" class="u-input" style="background: #fff;">
+                <option value="food">식품/농산물</option>
+                <option value="apparel">의류/잡화</option>
+                <option value="book">서적/음반</option>
+                <option value="appliance">가전제품 (파손면책 필수)</option>
+                <option value="other">기타</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">물품 가액 (만원) *</label>
+            <input type="number" name="item_value" class="u-input" required placeholder="예: 5" min="0">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">방문 희망일 *</label>
+            <input type="date" name="pickup_date" class="u-input" required>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label style="font-weight: 800; display: block; margin-bottom: 5px;">운임 결제 *</label>
+            <div style="display: flex; gap: 10px;">
+                <label
+                    style="flex: 1; border: 2px solid #ddd; padding: 10px; text-align: center; border-radius: 5px; font-weight: 700;">
+                    <input type="radio" name="payment_type" value="prepaid" checked> 선불
+                </label>
+                <label
+                    style="flex: 1; border: 2px solid #ddd; padding: 10px; text-align: center; border-radius: 5px; font-weight: 700;">
+                    <input type="radio" name="payment_type" value="postpaid"> 착불
+                </label>
             </div>
-            <button
-                style="width: 100%; background: #1a1a1a; color: #fff; padding: 20px; font-size: 1.2rem; font-weight: 900; border: none; margin-top: 20px; cursor: pointer; border-radius: 5px;">운송장
-                출력 및 예약완료</button>
-        </section>
-    </main>
+        </div>
 
-    <script>
-        function unlock(type) {
-            if (type === 'sender') {
-                const nameEl = document.getElementById('sender_name');
-                const addrEl = document.getElementById('sender_addr');
-                nameEl.readOnly = false;
-                nameEl.style.background = '#fff';
-                nameEl.style.border = '1px solid #1a1a1a';
-                addrEl.readOnly = false;
-                addrEl.style.background = '#fff';
-                addrEl.style.border = '1px solid #1a1a1a';
-            } else {
-                const nameEl = document.getElementById('receiver_name');
-                const addrEl = document.getElementById('receiver_addr');
-                nameEl.readOnly = false;
-                nameEl.style.background = '#fff';
+        <button type="submit" class="main-btn" style="width: 100%; font-size: 1.2rem; padding: 15px;">
+            예약 접수하기
+        </button>
+    </div>
 
+</form>
+
+<style>
+    .u-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+        font-weight: 600;
+        box-sizing: border-box;
+    }
+
+    .u-input:focus {
+        border-color: #1a1a1a;
+        outline: none;
+    }
+</style>
+
+<script>
+    // Set default date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.querySelector('[name="pickup_date"]').valueAsDate = tomorrow;
+
+    function searchAddress(type) {
+        new daum.Postcode({
+            oncomplete: function (data) {
+                // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
+                var addr = ''; // 주소 변수
+
+                if (data.userSelectedType === 'R') { // 사용자가 도로명 주소를 선택했을 경우
+                    addr = data.roadAddress;
+                } else { // 사용자가 지번 주소를 선택했을 경우(J)
+                    addr = data.jibunAddress;
+                }
+
+                if (type === 'sender') {
+                    document.getElementById('senderPostcode').value = data.zonecode;
+                    document.getElementById('senderAddr1').value = addr;
+                    document.getElementById('senderAddr2').focus();
+                } else {
+                    document.getElementById('receiverPostcode').value = data.zonecode;
+                    document.getElementById('receiverAddr1').value = addr;
+                    document.getElementById('receiverAddr2').focus();
+                }
+            }
+        }).open();
+    }
+
+    function copyMemberInfo(checkbox) {
+        if (checkbox.checked) {
+            // Mock Data or usage of template variables if available
+            // In a real scenario, we might want to fetch this from the server or use data attributes
+            document.getElementById('senderName').value = "{{ store.owner_name or '사장님' }}";
+            // Assuming phone/address logic here
+        } else {
+            document.getElementById('senderName').value = "";
+        }
+    }
+
+    async function submitReservation(e) {
+        e.preventDefault();
+
+        // [PWA Standard] Network Check
+        if (!navigator.onLine) {
+            alert('인터넷 연결을 확인해주세요.\n(오프라인 상태에서는 접수가 불가능합니다.)');
+            return;
+        }
+
+        if (!document.getElementById('termsAgree').checked) {
+            alert('약관에 동의해주세요.');
+            return;
+        }
+
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        if (confirm('택배 예약을 접수하시겠습니까?')) {
+            // [UX] Loading State
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 접수 중... (잠시만 기다려주세요)';
+
+            try {
+                // Set 10s timeout for "Connection Drop" feedback
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+                // [Remote API] Enforce Cloud Run URL
+                const response = await fetch('{{ api_url }}/api/courier/reserve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    alert('예약이 정상적으로 접수되었습니다.\n기사님 배정 시 알림톡이 발송됩니다.');
+                    window.location.href = '/admin/dashboard';
+                } else {
+                    const errorText = await response.text();
+                    alert('예약 실패: ' + errorText);
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    alert('서버 응답이 늦어지고 있습니다.\n네트워크 상태를 확인 후 다시 시도해주세요.');
+                } else {
+                    console.error('Error:', error);
+                    alert('접수 중 오류가 발생했습니다.\n(네트워크 연결 끊김 등)');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
             }
         }
-    </script>
-
-</body>
-
-</html>
+    }
+</script>
+{% endblock %}

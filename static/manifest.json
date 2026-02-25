@@ -1,0 +1,20 @@
+{
+    "name": "동네비서 - 우리 동네 AI 비서",
+    "short_name": "동네비서",
+    "start_url": "/citizen",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#3b82f6",
+    "icons": [
+        {
+            "src": "https://via.placeholder.com/192.png?text=Biseo",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://via.placeholder.com/512.png?text=Biseo",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

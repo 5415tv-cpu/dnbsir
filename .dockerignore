@@ -3,8 +3,12 @@ __pycache__/
 .git/
 .devcontainer/
 .streamlit/
-database.db
-*.sqlite
-*.db
+database.db  <- Upload DB for Sync (User Request)
+# *.sqlite
+# *.db
 .env
 secrets.toml
+venv/
+.vscode/
+.idea/
+.DS_Store
