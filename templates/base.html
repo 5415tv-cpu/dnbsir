@@ -45,6 +45,16 @@
             {% block content %}{% endblock %}
         </div>
 
+        <!-- Global Footer (For Kakao Business Review) -->
+        <footer
+            style="text-align: center; padding: 30px 20px; font-size: 0.85rem; color: #64748b; background-color: transparent; margin-top: 40px; border-top: 1px solid #e2e8f0;">
+            <p style="margin: 0 0 8px 0; font-weight: 800; color: #334155; font-size: 0.95rem;">탄탄제작소가 운영하는 AI 택배 예약
+                서비스, 동네비서</p>
+            <p style="margin: 0 0 4px 0;">상호명: 탄탄제작소 <span style="margin: 0 5px; color: #cbd5e1;">|</span> 서비스명: 동네비서
+            </p>
+            <p style="margin: 0;">Copyright © 탄탄제작소. All rights reserved.</p>
+        </footer>
+
     </div>
 
     {% if not hide_bottom_nav %}
@@ -54,7 +64,7 @@
             <div class="nav-icon">🏠</div>
             <div class="nav-text">홈</div>
         </a>
-        <a href="/market" class="nav-item">
+        <a href="/citizen/market" class="nav-item">
             <div class="nav-icon">🛒</div>
             <div class="nav-text">마켓</div>
         </a>

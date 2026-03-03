@@ -1,0 +1,24 @@
+2026-03-02T13:55:58Z INF Starting tunnel tunnelID=b9f3598e-6ba8-4037-81a2-82cb501bc43c
+2026-03-02T13:55:58Z INF Version 2026.2.0 (Checksum 176746db3be7dc7bd48f3dd287c8930a4645ebb6e6700f883fddda5a4c307c16)
+2026-03-02T13:55:58Z INF GOOS: linux, GOVersion: go1.24.13, GoArch: amd64
+2026-03-02T13:55:58Z INF Settings: map[no-autoupdate:true token:*****]
+2026-03-02T13:55:58Z INF cloudflared will not automatically update if installed by a package manager.
+2026-03-02T13:55:58Z INF Generated Connector ID: 6f808145-52f2-40e7-89bc-b850378f1e9e
+2026-03-02T13:55:58Z INF Initial protocol quic
+2026-03-02T13:55:58Z INF ICMP proxy will use 172.17.0.2 as source for IPv4
+2026-03-02T13:55:58Z INF ICMP proxy will use ::1 in zone lo as source for IPv6
+2026-03-02T13:55:58Z INF ICMP proxy will use 172.17.0.2 as source for IPv4
+2026-03-02T13:55:58Z INF ICMP proxy will use ::1 in zone lo as source for IPv6
+2026-03-02T13:55:58Z INF Starting metrics server on 127.0.0.1:20241/metrics
+2026-03-02T13:55:58Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=0 event=0 ip=198.41.200.33
+2026/03/02 13:55:58 failed to sufficiently increase receive buffer size (was: 208 kiB, wanted: 7168 kiB, got: 416 kiB). See https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes for details.
+2026-03-02T13:55:59Z INF Registered tunnel connection connIndex=0 connection=5d3badbc-01be-4f2c-9631-a6e8cd790810 event=0 ip=198.41.200.33 location=icn01 protocol=quic
+2026-03-02T13:55:59Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=1 event=0 ip=198.41.192.107
+2026-03-02T13:55:59Z INF Registered tunnel connection connIndex=1 connection=f74a8be8-20cb-4cec-bc25-c1a09e46db50 event=0 ip=198.41.192.107 location=icn06 protocol=quic
+2026-03-02T13:56:00Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=2 event=0 ip=198.41.192.227
+2026-03-02T13:56:00Z INF Registered tunnel connection connIndex=2 connection=f032e6ed-3a6f-4515-a9a4-d0e00f8f9c76 event=0 ip=198.41.192.227 location=icn06 protocol=quic
+2026-03-02T13:56:01Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=3 event=0 ip=198.41.200.43
+2026-03-02T13:56:01Z INF Registered tunnel connection connIndex=3 connection=e44a06e0-27a5-4481-a859-1ae31c18fe7a event=0 ip=198.41.200.43 location=icn01 protocol=quic
+2026-03-02T16:00:17Z INF Updated to new configuration config="{\"ingress\":[{\"hostname\":\"dnbsir.com\",\"originRequest\":{},\"service\":\"http://localhost:8000\"},{\"service\":\"http_status:404\"}],\"warp-routing\":{\"enabled\":false}}" version=1
+2026-03-02T16:10:56Z INF Updated to new configuration config="{\"ingress\":[{\"hostname\":\"api.dnbsir.com\",\"originRequest\":{},\"service\":\"http://localhost:8000\"},{\"service\":\"http_status:404\"}],\"warp-routing\":{\"enabled\":false}}" version=2
+2026-03-02T17:15:40Z INF Updated to new configuration config="{\"ingress\":[{\"hostname\":\"api.dnbsir.com\",\"originRequest\":{},\"service\":\"http://localhost:8000\"},{\"hostname\":\"dnbsir.com\",\"originRequest\":{},\"service\":\"http://localhost:8000\"},{\"service\":\"http_status:404\"}],\"warp-routing\":{\"enabled\":false}}" version=3

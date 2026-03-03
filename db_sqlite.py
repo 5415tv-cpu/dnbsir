@@ -258,6 +258,13 @@ def init_db():
         c.execute("ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'CARD'")
     except: pass
     
+    try:
+        c.execute("ALTER TABLE stores ADD COLUMN is_signed INTEGER DEFAULT 0")
+    except: pass
+    try:
+        c.execute("ALTER TABLE stores ADD COLUMN role TEXT DEFAULT 'merchant'")
+    except: pass
+
     # Kakao Biz Customization
     try:
         c.execute("ALTER TABLE stores ADD COLUMN kakao_biz_key TEXT")

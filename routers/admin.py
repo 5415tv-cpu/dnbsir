@@ -16,7 +16,7 @@ router = APIRouter()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-API_URL = os.environ.get("API_URL", "https://dnbsir-api-ap33e42daq-uc.a.run.app")
+API_URL = os.environ.get("API_URL", "")
 
 @router.get("/admin/master", response_class=HTMLResponse)
 async def master_dashboard(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
@@ -69,7 +69,7 @@ async def admin_dashboard(request: Request, cookie_store_id: Union[str, None] = 
         return RedirectResponse(url="/agreement", status_code=303)
 
     if not store.get("category"):
-         return RedirectResponse(url="/job_selection", status_code=303)
+         return RedirectResponse(url="/select-role", status_code=303)
         
     now = datetime.now()
     current_month = now.month

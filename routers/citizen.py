@@ -10,7 +10,7 @@ import db_manager as db
 router = APIRouter()
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-API_URL = os.environ.get("API_URL", "https://dnbsir-api-ap33e42daq-uc.a.run.app")
+API_URL = os.environ.get("API_URL", "")
 
 class CourierReservationRequest(BaseModel):
     sender_name: str
@@ -27,6 +27,10 @@ class CourierReservationRequest(BaseModel):
 @router.get("/", response_class=HTMLResponse)
 async def index_page(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "api_url": API_URL})
+
+@router.get("/agreement", response_class=HTMLResponse)
+async def agreement_page(request: Request):
+    return templates.TemplateResponse("agreement.html", {"request": request})
 
 @router.get("/citizen/courier", response_class=HTMLResponse)
 async def public_courier_page(request: Request):

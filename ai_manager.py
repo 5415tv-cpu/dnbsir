@@ -48,8 +48,8 @@ def get_project_structure():
         dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'venv', 'env']]
         level = root.replace(start_path, '').count(os.sep)
         indent = ' ' * 4 * (level)
-       structure.append(f"{indent}{os.path.basename(root)}/")
-        subindent = ' ' * end(f4 * (level + 1)
+        structure.append(f"{indent}{os.path.basename(root)}/")
+        subindent = ' ' * 4 * (level + 1)
         for f in files:
             if not f.startswith('.') and not f.endswith('.pyc'):
                 structure.append(f"{subindent}{f}")

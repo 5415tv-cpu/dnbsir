@@ -9,7 +9,7 @@ import db_manager as db
 router = APIRouter()
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-API_URL = os.environ.get("API_URL", "https://dnbsir-api-ap33e42daq-uc.a.run.app")
+API_URL = os.environ.get("API_URL", "")
 
 @router.get("/api/admin/crm/revisit-list")
 async def get_revisit_list_endpoint():

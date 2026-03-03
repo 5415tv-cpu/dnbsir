@@ -1,0 +1,21 @@
+2026-03-02T13:23:48Z INF Starting tunnel tunnelID=e3e0b3d2-2f81-4166-b23d-42902b98f698
+2026-03-02T13:23:48Z INF Version 2026.2.0 (Checksum 176746db3be7dc7bd48f3dd287c8930a4645ebb6e6700f883fddda5a4c307c16)
+2026-03-02T13:23:48Z INF GOOS: linux, GOVersion: go1.24.13, GoArch: amd64
+2026-03-02T13:23:48Z INF Settings: map[no-autoupdate:true p:http2 protocol:http2 token:*****]
+2026-03-02T13:23:48Z INF cloudflared will not automatically update if installed by a package manager.
+2026-03-02T13:23:48Z INF Generated Connector ID: 71ebf9f3-2de3-412d-bd67-4d46e406c709
+2026-03-02T13:23:48Z INF Initial protocol http2
+2026-03-02T13:23:48Z INF ICMP proxy will use 172.17.0.2 as source for IPv4
+2026-03-02T13:23:48Z INF ICMP proxy will use ::1 in zone lo as source for IPv6
+2026-03-02T13:23:48Z INF ICMP proxy will use 172.17.0.2 as source for IPv4
+2026-03-02T13:23:48Z INF ICMP proxy will use ::1 in zone lo as source for IPv6
+2026-03-02T13:23:48Z INF Starting metrics server on 127.0.0.1:20241/metrics
+2026-03-02T13:23:48Z ERR failed to serve incoming request error="Failed to get tunnel"
+2026-03-02T13:23:48Z ERR Register tunnel error from server side error="Failed to get tunnel" connIndex=0 event=0 ip=198.41.192.77
+2026-03-02T13:23:48Z INF Retrying connection in up to 2s connIndex=0 event=0 ip=198.41.192.77
+2026-03-02T13:23:48Z ERR initial tunnel connection failed error="Failed to get tunnel"
+2026-03-02T13:23:48Z INF Tunnel server stopped
+2026-03-02T13:23:48Z ERR Initiating shutdown error="Failed to get tunnel"
+2026-03-02T13:23:48Z ERR icmp router terminated error="context canceled"
+2026-03-02T13:23:49Z INF Metrics server stopped
+Failed to get tunnel

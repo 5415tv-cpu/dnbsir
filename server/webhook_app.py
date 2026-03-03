@@ -18,6 +18,7 @@ from routers.webhooks import router as webhooks_router
 from routers.citizen import router as citizen_router
 from routers.crm import router as crm_router
 from routers.system import router as system_router
+from routers.search import router as search_router
 
 load_dotenv()
 app = FastAPI()
@@ -89,3 +90,4 @@ app.include_router(webhooks_router)
 app.include_router(citizen_router)
 app.include_router(crm_router)
 app.include_router(system_router)
+app.include_router(search_router)

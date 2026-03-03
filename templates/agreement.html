@@ -248,7 +248,7 @@
 
                 if (response.ok) {
                     alert(name + '님, 환영합니다!\n다음 단계로 이동합니다.');
-                    window.location.href = '/job_selection';
+                    window.location.href = '/select-role';
                 } else {
                     const result = await response.json();
                     alert('오류가 발생했습니다: ' + (result.detail || '서비스 연결 실패'));

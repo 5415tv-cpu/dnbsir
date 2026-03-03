@@ -54,6 +54,14 @@
                 <button type="button" onclick="searchAddress('sender')" class="main-btn"
                     style="padding: 10px; flex: 1; font-size: 0.9rem;">주소 찾기</button>
             </div>
+
+            <div id="wrap_sender"
+                style="display:none;border:1px solid #ddd; border-radius:8px; width:100%;height:300px;margin-bottom:10px;position:relative">
+                <img src="//t1.daumcdn.net/postcode/resource/images/close.png" id="btnFoldWrap"
+                    style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1"
+                    onclick="foldDaumPostcode('wrap_sender')" alt="접기 버튼">
+            </div>
+
             <input type="text" id="senderAddr1" name="sender_addr1" class="u-input" readonly placeholder="기본 주소"
                 style="margin-bottom: 10px; background: #eee;">
             <input type="text" id="senderAddr2" name="sender_addr2" class="u-input" required placeholder="상세 주소를 입력하세요">
@@ -84,6 +92,14 @@
                 <button type="button" onclick="searchAddress('receiver')" class="main-btn"
                     style="padding: 10px; flex: 1; font-size: 0.9rem;">주소 찾기</button>
             </div>
+
+            <div id="wrap_receiver"
+                style="display:none;border:1px solid #ddd; border-radius:8px; width:100%;height:300px;margin-bottom:10px;position:relative">
+                <img src="//t1.daumcdn.net/postcode/resource/images/close.png" id="btnFoldWrap"
+                    style="cursor:pointer;position:absolute;right:0px;top:-1px;z-index:1"
+                    onclick="foldDaumPostcode('wrap_receiver')" alt="접기 버튼">
+            </div>
+
             <input type="text" id="receiverAddr1" name="receiver_addr1" class="u-input" readonly placeholder="기본 주소"
                 style="margin-bottom: 10px; background: #eee;">
             <input type="text" id="receiverAddr2" name="receiver_addr2" class="u-input" required
@@ -92,59 +108,168 @@
     </div>
 
     <!-- 4. Item Details -->
-    <div class="kiosk-card" style="display: block; text-align: left; margin-bottom: 80px; background: #fff;">
-        <h3
-            style="font-size: 1.2rem; font-weight: 900; margin-bottom: 15px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+    <div class="kiosk-card"
+        style="display: block; text-align: left; margin-bottom: 80px; background: #fff; border: 1px solid #ddd; padding: 0; overflow: hidden;">
+        <h3 style="font-size: 1.4rem; font-weight: 900; margin: 20px 20px 10px 20px;">
             <span style="color: #007bff;">STEP 4</span> 물품 정보
         </h3>
 
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="font-weight: 800; display: block; margin-bottom: 5px;">포장 수량 *</label>
-            <select name="quantity" class="u-input" style="background: #fff;">
-                <option value="1">1박스</option>
-                <option value="2">2박스</option>
-                <option value="3">3박스</option>
-            </select>
+        <div style="padding: 0 20px 15px 20px; font-size: 0.9rem; color: #ff9800; font-weight: 700;">
+            ※ 취급금지품목은 예약이 불가합니다. 집하금지품목 해당 여부는 "집하금지 품목조회"에서 확인 바랍니다.<br>
+            ※ 집하금지품목조회를 확인하셔야 예약이 진행됩니다.
         </div>
 
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="font-weight: 800; display: block; margin-bottom: 5px;">물품 구분 *</label>
-            <select name="item_type" class="u-input" style="background: #fff;">
-                <option value="food">식품/농산물</option>
-                <option value="apparel">의류/잡화</option>
-                <option value="book">서적/음반</option>
-                <option value="appliance">가전제품 (파손면책 필수)</option>
-                <option value="other">기타</option>
-            </select>
-        </div>
+        <table class="logen-table">
+            <tr>
+                <th>물품명</th>
+                <td>
+                    <input type="text" id="itemName" name="item_name" class="logen-input"
+                        style="max-width: 400px; width: 100%;" required oninput="updateEstimatedPrice()">
+                    <a href="javascript:void(0)" onclick="openProhibitedInfo()" class="logen-link">🔍 집하금지 품목조회</a>
+                </td>
+            </tr>
+            <tr>
+                <th>물품사진 첨부</th>
+                <td>
+                    <input type="file" name="item_photo" class="logen-input" style="border: none; padding: 0;"
+                        accept="image/*" required>
+                </td>
+            </tr>
+            <tr>
+                <th>박스수량</th>
+                <td>
+                    <select id="boxQuantity" name="quantity" class="logen-input" style="width: 150px;"
+                        onchange="updateEstimatedPrice()">
+                        <option value="1">1박스</option>
+                        <option value="2">2박스</option>
+                        <option value="3">3박스</option>
+                        <option value="4">4박스</option>
+                        <option value="5">5박스</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th>물품가격</th>
+                <td>
+                    <input type="number" id="itemValue" name="item_value" class="logen-input"
+                        style="width: 150px; text-align: right;" required min="0" oninput="updateEstimatedPrice()"> 만원
+                </td>
+            </tr>
+            <tr>
+                <th>물품크기</th>
+                <td style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; border-bottom: none;">
+                    가로 <input type="number" id="itemWidth" name="width" class="logen-input"
+                        style="width: 80px; text-align: right;" required min="0" oninput="updateEstimatedPrice()"> cm
+                    세로 <input type="number" id="itemHeight" name="height" class="logen-input"
+                        style="width: 80px; text-align: right;" required min="0" oninput="updateEstimatedPrice()"> cm
+                    높이 <input type="number" id="itemLength" name="length" class="logen-input"
+                        style="width: 80px; text-align: right;" required min="0" oninput="updateEstimatedPrice()"> cm
+                </td>
+            </tr>
+            <tr>
+                <th>중량</th>
+                <td>
+                    <input type="number" id="itemWeight" name="weight" class="logen-input"
+                        style="width: 150px; text-align: right;" required min="0" step="0.1"
+                        oninput="updateEstimatedPrice()"> kg
+                </td>
+            </tr>
+            <tr>
+                <th>배송권역</th>
+                <td>
+                    <select id="deliveryRegion" name="delivery_region" class="logen-input" style="width: 150px;"
+                        onchange="updateEstimatedPrice()">
+                        <option value="same">동일권역</option>
+                        <option value="other">타권역 (+1,000원)</option>
+                        <option value="jeju">제주지역 (+3,000원)</option>
+                        <option value="island">도서산간 (+5,000원)</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th>방문 희망일</th>
+                <td>
+                    <input type="date" name="pickup_date" class="logen-input" style="width: 150px;" required>
+                </td>
+            </tr>
+            <tr>
+                <th>운임구분</th>
+                <td>
+                    <select name="payment_type" class="logen-input" style="width: 150px;">
+                        <option value="prepaid">선불</option>
+                        <option value="postpaid">착불</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <th>예상택배운임</th>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <div style="position: relative;">
+                            <input type="text" id="baseFare" class="logen-input"
+                                style="width: 150px; text-align: right; background: #f4f4f4; color: #d32f2f; font-weight: bold; padding-right: 30px;"
+                                readonly value="0">
+                            <span
+                                style="position: absolute; right: 10px; top: 10px; color: #666; font-weight: 700;">원</span>
+                        </div>
+                        <span id="tierLabel"
+                            style="font-size: 1.1rem; color: #007bff; font-weight: 900; margin-left: 5px;">(정보를
+                            입력해주세요)</span>
+                        <a href="#" class="logen-link" style="margin-left: 10px;">🔍 예상운임안내</a>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <th>예상할증운임</th>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <div style="position: relative;">
+                            <input type="text" id="surchargeFare" class="logen-input"
+                                style="width: 150px; text-align: right; background: #f4f4f4; padding-right: 30px;"
+                                readonly value="0">
+                            <span
+                                style="position: absolute; right: 10px; top: 10px; color: #666; font-weight: 700;">원</span>
+                        </div>
+                        <a href="javascript:void(0)" onclick="openSurchargeInfo()" class="logen-link">🔍 예상할증운임안내</a>
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <th>예상운임합계</th>
+                <td>
+                    <strong id="totalFare" style="font-size: 1.5rem; color: #e74c3c;">0 원</strong>
+                </td>
+            </tr>
+        </table>
 
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="font-weight: 800; display: block; margin-bottom: 5px;">물품 가액 (만원) *</label>
-            <input type="number" name="item_value" class="u-input" required placeholder="예: 5" min="0">
-        </div>
+        <div style="padding: 0 20px 20px 20px;">
+            <div style="font-size: 0.85rem; color: #fc9411; margin-bottom: 20px; line-height: 1.5;">
+                제주, 연륙/도서, 산간지역의 경우 제주, 연륙/도서, 산간 운임 등 별도의 추가 운임이 발생됩니다.<br>
+                해당 영업소장님이 방문 후 택배 운임은 다를 수가 있으니 이점 유념해 주시기 바랍니다.
+            </div>
 
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="font-weight: 800; display: block; margin-bottom: 5px;">방문 희망일 *</label>
-            <input type="date" name="pickup_date" class="u-input" required>
+            <button type="submit" class="main-btn"
+                style="width: 100%; font-size: 1.2rem; padding: 15px; border-radius: 8px;">
+                예약 접수하기
+            </button>
         </div>
+    </div>
 
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label style="font-weight: 800; display: block; margin-bottom: 5px;">운임 결제 *</label>
-            <div style="display: flex; gap: 10px;">
-                <label
-                    style="flex: 1; border: 2px solid #ddd; padding: 10px; text-align: center; border-radius: 5px; font-weight: 700;">
-                    <input type="radio" name="payment_type" value="prepaid" checked> 선불
-                </label>
-                <label
-                    style="flex: 1; border: 2px solid #ddd; padding: 10px; text-align: center; border-radius: 5px; font-weight: 700;">
-                    <input type="radio" name="payment_type" value="postpaid"> 착불
-                </label>
+    <!-- Info Modal -->
+    <div id="infoModal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 99999; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px);">
+        <div
+            style="background: #fff; border-radius: 12px; max-width: 800px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <div
+                style="position: sticky; top: 0; background: #fff; padding: 20px; border-bottom: 2px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 10;">
+                <h3 id="modalTitle" style="margin: 0; color: #111; font-size: 1.4rem; font-weight: 900;">안내</h3>
+                <button type="button" onclick="closeInfoModal()"
+                    style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+            </div>
+            <div id="modalContent" style="padding: 20px; font-size: 0.95rem; line-height: 1.6; color: #444;">
+                <!-- Content injected via JS -->
             </div>
         </div>
-
-        <button type="submit" class="main-btn" style="width: 100%; font-size: 1.2rem; padding: 15px;">
-            예약 접수하기
-        </button>
     </div>
 
 </form>
@@ -165,6 +290,89 @@
         border-color: #1a1a1a;
         outline: none;
     }
+
+    /* Logen Style Table CSS */
+    .logen-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-top: 2px solid #333;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+    }
+
+    .logen-table th {
+        background: #fdfdfd;
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        font-weight: 900;
+        width: 120px;
+        vertical-align: middle;
+        color: #111;
+    }
+
+    .logen-table td {
+        padding: 15px 20px;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+
+    .logen-input {
+        padding: 10px;
+        border: 1px solid #ddd;
+        font-size: 0.95rem;
+        box-sizing: border-box;
+        border-radius: 4px;
+        color: #333;
+        outline: none;
+    }
+
+    .logen-input:focus {
+        border-color: #ff9800;
+    }
+
+    .logen-btn {
+        padding: 10px 15px;
+        background: #eee;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        font-weight: 700;
+        color: #333;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .logen-btn:hover {
+        background: #e0e0e0;
+    }
+
+    .logen-link {
+        color: #ff9800;
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 800;
+        margin-left: 10px;
+        white-space: nowrap;
+    }
+
+    @media (max-width: 600px) {
+
+        .logen-table th,
+        .logen-table td {
+            display: block;
+            width: 100%;
+            border-bottom: none;
+        }
+
+        .logen-table th {
+            padding-bottom: 5px;
+        }
+
+        .logen-table td {
+            padding-top: 5px;
+            border-bottom: 1px solid #eee;
+        }
+    }
 </style>
 
 <script>
@@ -173,7 +381,182 @@
     tomorrow.setDate(tomorrow.getDate() + 1);
     document.querySelector('[name="pickup_date"]').valueAsDate = tomorrow;
 
+    function closeInfoModal() {
+        document.getElementById('infoModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    function openProhibitedInfo() {
+        document.getElementById('modalTitle').innerText = '집하금지 품목조회';
+        document.getElementById('modalContent').innerHTML = `
+            <p style="color: #e74c3c; font-weight: bold; margin-bottom: 15px;">※ 물품명을 자세히 기재하여 주시기 바랍니다. (예: 의류, 도서, 신발, 키보드..)<br>다음과 같은 물품은 택배 예약이 불가능 하오니 고객님의 많은 양해 부탁 드립니다.</p>
+            <table class="logen-table" style="font-size: 0.9rem;">
+                <tr style="background: #f8f9fa;">
+                    <th style="width: 30%;">구분</th>
+                    <th>품목</th>
+                </tr>
+                <tr><th>현금화 가능 물품</th><td>현금, 어음, 수표, 유가증권, 신용카드, 상품권(할인권) 등<br>예금통장, 인감도장, 모조 화폐 등</td></tr>
+                <tr><th>식품, 과일류</th><td>부패되기 쉬운 식품 및 과일</td></tr>
+                <tr><th>예술품 / 귀중품</th><td>미술품, 골동품, 고서, 귀금속 등 300만원 초과 물품</td></tr>
+                <tr><th>변질 및 부패성</th><td>활어, 동/식물, 동물의 사체류, 화훼류 등</td></tr>
+                <tr><th>위험물품</th><td>독극물, 농약류, 화약류, 총포(도검)류, 인화성 물질, 페인트, 스프레이 등</td></tr>
+                <tr><th>고가물품</th><td>노트북, 컴퓨터 등 Box당 300만원 초과 물품</td></tr>
+                <tr><th>유리 / 사기 제품</th><td>유리, 도자기 등 90% 이상이 유리/사기 재질로 구성된 물품</td></tr>
+                <tr><th>재생 불가능 물품</th><td>원고, 테이프, 여권, 수험표, 서류 등</td></tr>
+                <tr><th>대형가구</th><td>침대, 소파 등 1인 운반불가 물품, 세변합 160cm 초과 완제품 가구류</td></tr>
+                <tr><th>대형물품</th><td>자전거, 42인치 TV 등 세변합 200cm, 최장변 160cm 초과, 중량 27kg 이상 물품</td></tr>
+                <tr><th>기타</th><td>밀수품, 포장 안 된 물품, 위법한 물품 등</td></tr>
+            </table>
+        `;
+        document.getElementById('infoModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function openSurchargeInfo() {
+        document.getElementById('modalTitle').innerText = '예상할증운임 안내';
+        document.getElementById('modalContent').innerHTML = `
+            <p style="color: #e74c3c; font-weight: bold; margin-bottom: 20px;">※ 1box의 가격이 300만원을 초과하는 물품은 취급하지 않습니다.</p>
+            
+            <h4 style="margin-bottom: 10px; color: #111;">할증운임 적용 기준 (물품 가액)</h4>
+            <table class="logen-table" style="font-size: 0.9rem; margin-bottom: 30px; text-align: center;">
+                <tr style="background: #f8f9fa;">
+                    <th style="text-align: center;">50만원 이하</th>
+                    <th style="text-align: center;">50만~100만 이하</th>
+                    <th style="text-align: center;">100만~200만 이하</th>
+                    <th style="text-align: center;">200만~300만 이하</th>
+                    <th style="text-align: center;">300만원 초과</th>
+                </tr>
+                <tr>
+                    <td>할증료 없음</td>
+                    <td>기본운임의 100%</td>
+                    <td>기본운임의 150%</td>
+                    <td>기본운임의 200%</td>
+                    <td style="color: red; font-weight: bold;">예약금지</td>
+                </tr>
+            </table>
+
+            <h4 style="margin-bottom: 10px; color: #111;">중량물 / 대형물 할증 기준</h4>
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #eee;">
+                ➔ <strong>초대형운임 기준으로 50% 추가 책정</strong><br>
+                (20kg 초과 ~ 27kg 이하, 세변의 합 160cm 초과 ~ 200cm 이하, 최장변 120cm 초과 ~ 160cm 이하)
+            </div>
+        `;
+        document.getElementById('infoModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function updateEstimatedPrice() {
+        const qty = parseInt(document.getElementById('boxQuantity').value) || 1;
+        const weight = parseFloat(document.getElementById('itemWeight').value) || 0;
+        const width = parseFloat(document.getElementById('itemWidth').value) || 0;
+        const height = parseFloat(document.getElementById('itemHeight').value) || 0;
+        const length = parseFloat(document.getElementById('itemLength').value) || 0;
+        let itemValue = parseFloat(document.getElementById('itemValue').value) || 0;
+        const itemName = (document.getElementById('itemName').value || "").toLowerCase();
+        const region = document.getElementById('deliveryRegion').value;
+
+        const sizeSum = width + height + length;
+        const maxSide = Math.max(width, height, length);
+
+        let basePrice = 6000; // 기본 최소 요금
+        let tierName = "소형(5kg)";
+
+        // Value block logic
+        if (itemValue > 300) {
+            alert('1box의 가격이 300만원을 초과하는 물품은 예약이 불가능합니다.');
+            document.getElementById('itemValue').value = 300;
+            itemValue = 300;
+        }
+
+        // Heavy/Large Block logic
+        if (weight > 27 || sizeSum > 200 || maxSide > 160) {
+            alert('27kg 초과 또는 세변의 합 200cm 초과, 최장변 160cm 초과 물품은 택배 접수가 불가능합니다.');
+            if (weight > 27) document.getElementById('itemWeight').value = 27;
+            if (sizeSum > 200) {
+                document.getElementById('itemWidth').value = 0;
+                document.getElementById('itemHeight').value = 0;
+                document.getElementById('itemLength').value = 0;
+            }
+            return; // Exit calculation to avoid displaying invalid sum
+        }
+
+        // 1. 크기 및 무게에 따른 기본 운임 계산 (로젠택배 기준)
+        if (weight <= 5 && sizeSum <= 100) {
+            basePrice = 6000;
+            tierName = "소형(5kg/100cm)";
+        } else if (weight <= 10 && sizeSum <= 120) {
+            basePrice = 7000;
+            tierName = "중형(10kg/120cm)";
+        } else if (weight <= 20 && sizeSum <= 160 && maxSide <= 100) {
+            basePrice = 9000;
+            tierName = "대형(20kg/160cm)";
+        } else {
+            basePrice = 9000; // 대형 기준음 기본 베이스
+            tierName = "초대형물";
+        }
+
+        // 2. 김치 특별 요금 판별
+        if (itemName.includes('김치')) {
+            basePrice = 10000;
+            tierName = "김치(중형 20kg)";
+        }
+
+        const totalBaseFare = basePrice * qty;
+
+        // 3. 지역/가액/초대형 할증 요금 판별
+        let surchargePerBox = 0;
+
+        // 지역
+        if (region === 'other') surchargePerBox += 1000;
+        else if (region === 'jeju') surchargePerBox += 3000;
+        else if (region === 'island') surchargePerBox += 5000;
+
+        // 가액 (Base Fare 기준 퍼센트)
+        if (itemValue > 50 && itemValue <= 100) {
+            surchargePerBox += basePrice * 1.0;
+        } else if (itemValue > 100 && itemValue <= 200) {
+            surchargePerBox += basePrice * 1.5;
+        } else if (itemValue > 200 && itemValue <= 300) {
+            surchargePerBox += basePrice * 2.0;
+        }
+
+        // 초대형물 (Base Fare 기준 50% 추가)
+        if (weight > 20 || sizeSum > 160 || maxSide > 120) {
+            surchargePerBox += basePrice * 0.5;
+            tierName += " (+대형할증 50%)";
+        }
+
+        const totalSurchargeFare = surchargePerBox * qty;
+
+        // 최종 합계 적용
+        const finalTotal = totalBaseFare + totalSurchargeFare;
+
+        // UI 텍스트 업데이트
+        if (weight > 0 || sizeSum > 0) {
+            document.getElementById('tierLabel').innerText = `(${tierName} 적용)`;
+        } else {
+            document.getElementById('tierLabel').innerText = `(크기/무게 입력시 자동계산)`;
+        }
+
+        document.getElementById('baseFare').value = totalBaseFare.toLocaleString();
+        document.getElementById('surchargeFare').value = totalSurchargeFare.toLocaleString();
+        document.getElementById('totalFare').innerText = finalTotal.toLocaleString() + ' 원';
+    }
+
+    // Initialize with 0 values on page load
+    window.addEventListener('load', function () {
+        updateEstimatedPrice();
+    });
+
+    function foldDaumPostcode(wrapId) {
+        document.getElementById(wrapId).style.display = 'none';
+    }
+
     function searchAddress(type) {
+        var wrapId = type === 'sender' ? 'wrap_sender' : 'wrap_receiver';
+        var element_wrap = document.getElementById(wrapId);
+        var currentScroll = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
+
         new daum.Postcode({
             oncomplete: function (data) {
                 // 팝업에서 검색결과 항목을 클릭했을때 실행할 코드를 작성하는 부분.
@@ -194,8 +577,19 @@
                     document.getElementById('receiverAddr1').value = addr;
                     document.getElementById('receiverAddr2').focus();
                 }
-            }
-        }).open();
+
+                // iframe을 넣은 element를 안보이게 한다.
+                element_wrap.style.display = 'none';
+                document.body.scrollTop = currentScroll;
+            },
+            onresize: function (size) {
+                element_wrap.style.height = size.height + 'px';
+            },
+            width: '100%',
+            height: '100%'
+        }).embed(element_wrap);
+
+        element_wrap.style.display = 'block';
     }
 
     function copyMemberInfo(checkbox) {
@@ -223,50 +617,62 @@
             return;
         }
 
-        const formData = new FormData(e.target);
-        const data = Object.fromEntries(formData.entries());
+        // 1. Gather all form data
+        const senderName = document.getElementById('senderName').value;
+        const senderPhone = document.querySelector('[name="sender_phone"]').value;
+        const senderAddr = document.getElementById('senderAddr1').value + ' ' + document.getElementById('senderAddr2').value;
 
-        if (confirm('택배 예약을 접수하시겠습니까?')) {
-            // [UX] Loading State
-            const btn = e.target.querySelector('button[type="submit"]');
-            const originalText = btn.innerText;
-            btn.disabled = true;
-            btn.innerHTML = '⏳ 접수 중... (잠시만 기다려주세요)';
+        const receiverName = document.querySelector('[name="receiver_name"]').value;
+        const receiverPhone = document.querySelector('[name="receiver_phone"]').value;
+        const receiverAddr = document.getElementById('receiverAddr1').value + ' ' + document.getElementById('receiverAddr2').value;
 
-            try {
-                // Set 10s timeout for "Connection Drop" feedback
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const itemName = document.getElementById('itemName').value;
+        const itemValue = document.getElementById('itemValue').value;
+        const boxQuantity = document.getElementById('boxQuantity').value;
+        const pickupDate = document.querySelector('[name="pickup_date"]').value;
 
-                // [Remote API] Enforce Cloud Run URL
-                const response = await fetch('{{ api_url }}/api/courier/reserve', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data),
-                    signal: controller.signal
-                });
+        const totalFare = document.getElementById('totalFare').innerText;
 
-                clearTimeout(timeoutId);
+        // 2. Format message for KakaoTalk
+        const message = `📦 [동네비서 로젠택배 임시 접수]
 
-                if (response.ok) {
-                    alert('예약이 정상적으로 접수되었습니다.\n기사님 배정 시 알림톡이 발송됩니다.');
-                    window.location.href = '/admin/dashboard';
-                } else {
-                    const errorText = await response.text();
-                    alert('예약 실패: ' + errorText);
-                }
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    alert('서버 응답이 늦어지고 있습니다.\n네트워크 상태를 확인 후 다시 시도해주세요.');
-                } else {
-                    console.error('Error:', error);
-                    alert('접수 중 오류가 발생했습니다.\n(네트워크 연결 끊김 등)');
-                }
-            } finally {
-                btn.disabled = false;
-                btn.innerText = originalText;
-            }
+[보내는 분]
+이름: ${senderName}
+연락처: ${senderPhone}
+주소: ${senderAddr}
+
+[받는 분]
+이름: ${receiverName}
+연락처: ${receiverPhone}
+주소: ${receiverAddr}
+
+[물품 정보]
+물품명: ${itemName}
+물품가액: ${itemValue} 만원
+박스수량: ${boxQuantity} 박스
+방문희망일: ${pickupDate}
+
+계산된 예상운임: ${totalFare}
+
+※ 위 내용을 확인 부탁드립니다.`;
+
+        // 3. Copy to clipboard and alert user
+        try {
+            await navigator.clipboard.writeText(message);
+            alert(`✅ 예약 내용이 클립보드에 복사되었습니다!\n\n로젠택배 단체방 카톡이 열리면,\n1) 대화창에 '붙여넣기(Ctrl+V)' 하시고\n2) 물품 사진을 앨범에서 직접 첨부해서 전송해주세요.`);
+        } catch (err) {
+            alert(`예약 내용을 복사하는 데 실패했습니다. 카톡 창 수동 입력이 필요합니다.\n\n로젠택배 단체방 카톡으로 이동합니다.`);
         }
+
+        // [UX] Loading State
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerHTML = '⏳ 카카오톡으로 연결 중...';
+
+        setTimeout(() => {
+            window.location.href = 'https://open.kakao.com/o/givsAjBb';
+        }, 1000);
     }
 </script>
 {% endblock %}

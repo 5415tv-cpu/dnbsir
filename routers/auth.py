@@ -17,12 +17,17 @@ router = APIRouter()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-API_URL = os.environ.get("API_URL", "https://dnbsir-api-ap33e42daq-uc.a.run.app")
+API_URL = os.environ.get("API_URL", "")
 
 class User(BaseModel):
     store_id: str
     role: str = "owner"
     is_signed: bool = False
+
+class AgreementRequest(BaseModel):
+    name: str
+    agreed: bool
+    marketing_agreed: bool
 
 async def get_current_user(request: Request):
     store_id = request.cookies.get("admin_session")
@@ -141,6 +146,21 @@ async def login(
     else:
         print("DEBUG: Password mismatch")
         raise HTTPException(status_code=401, detail="Invalid password")
+
+@router.post("/api/agreement")
+async def submit_agreement(
+    req: AgreementRequest,
+    current_user: User = Depends(get_current_user)
+):
+    if not req.agreed:
+        raise HTTPException(status_code=400, detail="필수 약관에 동의해야 합니다.")
+        
+    store_id = current_user.store_id
+    success = db.update_store_agreement(store_id, req.name, req.marketing_agreed)
+    if not success:
+        raise HTTPException(status_code=500, detail="약관 동의 처리에 실패했습니다.")
+    
+    return {"message": "Agreement saved successfully"}
 
 @router.get("/select-role", response_class=HTMLResponse)
 async def select_role_page(request: Request):

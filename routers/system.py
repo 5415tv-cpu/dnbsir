@@ -12,6 +12,10 @@ async def debug_log(request: Request):
     print(f"[Frontend Log] {data}")
     return {"status": "ok"}
 
+@router.get("/api/ping")
+async def ping():
+    return {"status": "ok", "message": "pong"}
+
 @router.get("/api/health_full")
 def health_full():
     pass 
@@ -46,3 +50,32 @@ async def check_integrity_endpoint():
 @router.get("/health")
 def health_check():
     return {"ok": True}
+
+@router.get("/status", response_class=HTMLResponse)
+async def visual_health_check():
+    return """
+    <html>
+        <head>
+            <title>동네비서 시스템 상태</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                body { font-family: 'Noto Sans KR', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8fafc; margin: 0; }
+                .card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; border: 1px solid #e2e8f0; width: 80%; max-width: 400px; }
+                .status-light { width: 40px; height: 40px; background: #22c55e; border-radius: 50%; display: inline-block; box-shadow: 0 0 20px #22c55e; animation: pulse 2s infinite; margin-bottom: 24px; }
+                @keyframes pulse { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(34, 197, 94, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
+                h1 { color: #0f172a; margin: 0 0 12px 0; font-size: 1.5rem; }
+                p { color: #64748b; margin: 0; font-size: 1rem; line-height: 1.5; }
+                .refresh-btn { margin-top: 32px; padding: 14px 28px; border: none; background: #f1f5f9; color: #334155; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 1rem; width: 100%; transition: all 0.2s; }
+                .refresh-btn:hover { background: #e2e8f0; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <div class="status-light"></div>
+                <h1>시스템 정상 가동 중</h1>
+                <p>AI 동네비서 마이크로서비스가 완벽하게 돌아가고 있습니다.</p>
+                <button class="refresh-btn" onclick="location.reload()">새로고침</button>
+            </div>
+        </body>
+    </html>
+    """

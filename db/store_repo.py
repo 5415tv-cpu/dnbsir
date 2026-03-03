@@ -41,6 +41,26 @@ def save_store(store_data):
     finally:
         conn.close()
 
+def update_store_agreement(store_id, owner_name, marketing_agreed):
+    conn = get_connection()
+    c = conn.cursor()
+    try:
+        c.execute('''
+            UPDATE stores
+            SET is_signed = 1, owner_name = ?
+            WHERE store_id = ?
+        ''', (owner_name, store_id))
+        conn.commit()
+    except Exception as e:
+        print(f"Agreement Update Error: {e}")
+        return False
+    finally:
+        conn.close()
+    
+    # Also save marketing_agreed as a store setting
+    save_setting(store_id, "marketing_agreed", "True" if marketing_agreed else "False")
+    return True
+
 def get_all_stores():
     conn = get_connection()
     try:

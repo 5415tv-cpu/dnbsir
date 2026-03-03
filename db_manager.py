@@ -58,20 +58,28 @@ def save_store(store_id, store_data, encrypt_password=True):
         # [Fallback] Mock Success for Demo
         return True
 
+def update_store_agreement(store_id, owner_name, marketing_agreed):
+    """이용약관 동의 및 소유자 이름 업데이트"""
+    try:
+        return db.update_store_agreement(store_id, owner_name, marketing_agreed)
+    except Exception as e:
+        print(f"[!] DB Error (update_store_agreement): {e}")
+        return False
+
 def get_store(store_id):
     """가게 정보 조회"""
     try:
         store = db.get_store(store_id)
         if store:
             return store
+        return None # If DB successfully returns nothing, the user really doesn't exist
     except Exception as e:
         print(f"[!] DB Error (get_store): {e}")
 
-    # [Fallback] Mock Data for Demo (Universal)
-    # If store_id looks like a demo ID or we are in forced demo mode due to DB error
+    # [Fallback] Mock Data for Demo only on DB Failure
     return {
         "store_id": store_id,
-        "password": "1234", # Any password works in demo usually, or flow handles it
+        "password": "1234",
         "name": "강남 1호점 (Demo)",
         "owner_name": "김사장",
         "phone": store_id,
