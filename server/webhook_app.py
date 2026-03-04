@@ -19,6 +19,7 @@ from routers.citizen import router as citizen_router
 from routers.crm import router as crm_router
 from routers.system import router as system_router
 from routers.search import router as search_router
+from routers.silver import router as silver_router
 
 load_dotenv()
 app = FastAPI()
@@ -91,3 +92,4 @@ app.include_router(citizen_router)
 app.include_router(crm_router)
 app.include_router(system_router)
 app.include_router(search_router)
+app.include_router(silver_router)

@@ -63,7 +63,7 @@ def _load_webhook_token():
     if not os.path.exists("uploads"):
         os.makedirs("uploads")
 
-from routers import admin, auth, citizen, courier, crm, market, system, webhooks, search
+from routers import admin, auth, citizen, courier, crm, market, system, webhooks, search, silver
 
 app.include_router(auth.router)
 app.include_router(admin.router)
@@ -74,6 +74,7 @@ app.include_router(market.router)
 app.include_router(system.router)
 app.include_router(webhooks.router)
 app.include_router(search.router)
+app.include_router(silver.router)
 
 if __name__ == "__main__":
     import uvicorn
