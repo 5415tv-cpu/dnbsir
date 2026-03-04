@@ -110,6 +110,110 @@
     <!-- Toss Payments SDK -->
     <!-- Toss Payments Widget SDK -->
     <script src="https://js.tosspayments.com/v1/payment-widget"></script>
+    <style>
+        /* AI Overlay */
+        #ai_overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+
+        .mic-animation {
+            width: 100px;
+            height: 100px;
+            background: #28a745;
+            border-radius: 50%;
+            margin-bottom: 30px;
+            animation: pulse 1.5s infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+        }
+
+        #ai_realtime_text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 20px;
+            border: 2px dashed #666;
+            border-radius: 10px;
+            width: 80%;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            word-break: keep-all;
+            line-height: 1.4;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+            }
+
+            70% {
+                transform: scale(1.1);
+                box-shadow: 0 0 0 20px rgba(40, 167, 69, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
+        }
+
+        .ai-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .ai-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-btn-voice {
+            background-color: #28a745;
+        }
+
+        .ai-btn-camera {
+            background-color: #17a2b8;
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            color: white;
+            text-align: center;
+            padding-top: 200px;
+            font-size: 1.5rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -118,9 +222,20 @@
 
         <div style="margin-bottom: 20px; text-align: center;">
             <a href="/silver/courier"
-                style="display: block; padding: 15px; background: #28a745; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                style="display: block; padding: 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                 👴👵 큰 글씨 & 쉬운 입력 (어르신 전용) 바로가기
             </a>
+        </div>
+
+        <div class="ai-btn-group">
+            <button type="button" class="ai-btn ai-btn-voice" onclick="startVoiceSearch()">
+                🎤 음성으로 자동입력
+            </button>
+            <button type="button" class="ai-btn ai-btn-camera" onclick="document.getElementById('cameraInput').click()">
+                📸 송장/메모 사진입력
+                <input type="file" id="cameraInput" capture="environment" accept="image/*" style="display:none"
+                    onchange="processImage(this)">
+            </button>
         </div>
 
         <form id="courierForm" onsubmit="submitCourierRequest(event)">
@@ -495,7 +610,143 @@
             }
         }
     </script>
-    <!-- End of Body -->
+
+    <!-- AI Loading & Overlay -->
+    <div id="loading">사진을 분석 중입니다...<br>잠시만 기다려주세요.</div>
+    <div id="ai_overlay">
+        <div style="font-size:1.5rem; margin-bottom:20px; font-weight:bold;">택배 정보를 말씀해 주세요...</div>
+        <div class="mic-animation">🎤</div>
+        <div id="ai_realtime_text">듣고 있습니다...</div>
+        <button onclick="closeAIOverlay()"
+            style="margin-top:30px; padding:10px 30px; font-size:1.2rem; background:transparent; border:2px solid white; color:white; border-radius:30px; cursor:pointer;">취소</button>
+    </div>
+
+    <!-- AI Scripts -->
+    <script>
+        let recognition;
+
+        function closeAIOverlay() {
+            document.getElementById('ai_overlay').style.display = 'none';
+            if (recognition) recognition.stop();
+        }
+
+        function startVoiceSearch() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("지원하지 않는 브라우저입니다. 크롬을 사용해주세요.");
+                return;
+            }
+
+            recognition = new webkitSpeechRecognition();
+            recognition.lang = 'ko-KR';
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            const overlay = document.getElementById('ai_overlay');
+            const textDisplay = document.getElementById('ai_realtime_text');
+
+            overlay.style.display = 'flex';
+            textDisplay.innerText = "듣고 있습니다...";
+
+            recognition.start();
+
+            recognition.onresult = function (event) {
+                let interim = '';
+                let final = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) final += event.results[i][0].transcript;
+                    else interim += event.results[i][0].transcript;
+                }
+                textDisplay.innerText = final + interim;
+                if (final) {
+                    textDisplay.innerText = "분석 중입니다...";
+                    recognition.stop();
+                    sendToAI(final);
+                }
+            };
+
+            recognition.onerror = function (event) {
+                if (event.error !== 'no-speech') {
+                    alert("오류가 났습니다: " + event.error);
+                    closeAIOverlay();
+                }
+            };
+        }
+
+        async function sendToAI(text) {
+            try {
+                const response = await fetch('/api/ai/parse-voice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await response.json();
+                closeAIOverlay();
+                applyAIResult(data);
+            } catch (e) {
+                closeAIOverlay();
+                alert("음성 인식에 실패했습니다.");
+            }
+        }
+
+        async function processImage(input) {
+            if (input.files && input.files[0]) {
+                const formData = new FormData();
+                formData.append('image', input.files[0]);
+
+                document.getElementById('loading').style.display = 'block';
+
+                try {
+                    const response = await fetch('/api/ai/parse-image', { method: 'POST', body: formData });
+                    const data = await response.json();
+                    document.getElementById('loading').style.display = 'none';
+                    applyAIResult(data);
+                } catch (e) {
+                    document.getElementById('loading').style.display = 'none';
+                    alert("사진 분석에 실패했습니다.");
+                }
+            }
+        }
+
+        function applyAIResult(data) {
+            const addr = data.receiver_addr || "";
+            const name = data.receiver_name || "";
+            const item = data.item_type || "";
+            const phone = data.receiver_phone || "";
+
+            if (!addr && !name) {
+                alert("정보를 인식하지 못했습니다. 다시 시도해주세요.");
+                return;
+            }
+
+            let msg = "✨ AI가 찾은 정보입니다:\n\n";
+            if (name) msg += "이름: " + name + "\n";
+            if (phone) msg += "전화번호: " + phone + "\n";
+            if (addr) msg += "주소: " + addr + "\n";
+            if (item) msg += "품목: " + item + "\n";
+            msg += "\n이대로 입력하시겠습니까?";
+
+            if (confirm(msg)) {
+                if (data.receiver_name) document.querySelector('input[name="receiver_name"]').value = data.receiver_name;
+                if (data.receiver_phone) document.querySelector('input[name="receiver_phone"]').value = data.receiver_phone;
+                if (data.receiver_addr) document.getElementById('receiver_addr').value = data.receiver_addr;
+                if (data.item_type) {
+                    // Try to match dropdown first, manually match "식품", "전자제품" etc if needed
+                    // For the main form, item_type is a select
+                    const select = document.querySelector('select[name="item_type"]');
+                    const text = data.item_type;
+                    if (text.includes('김치') || text.includes('쌀') || text.includes('과일') || text.includes('식품')) {
+                        select.value = 'food';
+                    } else if (text.includes('유리') || text.includes('가전') || text.includes('파손')) {
+                        select.value = 'fragile';
+                    } else if (text.includes('종이') || text.includes('서류') || text.includes('문서')) {
+                        select.value = 'document';
+                    } else {
+                        select.value = 'general';
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 
 </html>

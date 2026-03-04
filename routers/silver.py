@@ -21,6 +21,10 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 class VoiceTextRequest(BaseModel):
     text: str
 
+class ChatMessage(BaseModel):
+    message: str
+    current_state: dict
+
 def get_gemini_model(model_name="gemini-2.5-flash"):
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -33,13 +37,73 @@ def get_gemini_model(model_name="gemini-2.5-flash"):
 @router.get("/silver/courier", response_class=HTMLResponse)
 async def silver_courier_page(request: Request):
     toss_client_key = os.getenv("TOSS_CLIENT_KEY", "test_ck_PBal2vxj81ND2OPW6a7135RQgOAN")
-    # For now, pass a dummy store for points testing, or let it be empty
-    store = {"points": 10000, "owner_name": "테스트할아버지", "phone": "010-9999-1111", "address": "서울시 노인정"}
+    # Using an empty store to force the user to provide info, testing chat UX
+    store = {} 
     return templates.TemplateResponse("silver_courier.html", {
         "request": request, 
         "toss_client_key": toss_client_key,
         "store": store 
     })
+
+# 1.5 Conversational AI Endpoint
+@router.post("/api/ai/chat")
+async def chat_with_ai(data: ChatMessage):
+    if not HAS_GENAI:
+        raise HTTPException(status_code=500, detail="Gemini SDK not installed")
+        
+    prompt = f"""
+    You are an AI assistant helping elderly people send a parcel.
+    You must extract information from the user's message and update the current state.
+    Be very polite, use large, clear text conceptually (brief sentences), and speak like a friendly helper.
+
+    CURRENT STATE (JSON):
+    {json.dumps(data.current_state, ensure_ascii=False)}
+
+    USER MESSAGE:
+    "{data.message}"
+
+    Required information to collect:
+    - sender_name (보내는 분 이름)
+    - sender_phone (보내는 분 전화번호, hyphens added)
+    - sender_addr (보내는 분 주소, include details)
+    - receiver_name (받는 분 이름)
+    - receiver_phone (받는 분 전화번호, hyphens added)
+    - receiver_addr (받는 분 주소, include details)
+    - item_type (물품 종류: e.g., 김치, 과일, 옷, 서류 등)
+    - quantity (몇 박스인지, default to 1 if not mentioned)
+    
+    INSTRUCTIONS:
+    1. Extract any new information from the USER MESSAGE and merge it with the CURRENT STATE. Fix typos if obvious.
+    2. Identify what required information is still missing.
+    3. Generate a `next_message` (Korean) asking for ONE OR TWO missing pieces of information naturally. 
+       - If everything is collected, `next_message` should summarize the order (Sender, Receiver, Item, Box count) and ask for final confirmation (e.g. "이대로 결제창을 띄워드릴까요?").
+       - Keep `next_message` short, polite, and easy for the elderly to understand.
+    4. Set `is_complete` to true ONLY if all required fields are present AND the user has agreed/confirmed to proceed in the current message.
+    
+    Return ONLY a valid JSON object with the following structure:
+    {{
+        "extracted_data": {{ updated state object with all gathered keys }},
+        "next_message": "...",
+        "is_complete": false or true
+    }}
+    """
+    
+    try:
+        model = get_gemini_model()
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        result_json = json.loads(text.strip())
+        return result_json
+    except Exception as e:
+        print(f"[!] AI Chat Parse Error: {e}")
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"error": "대화 처리 중 오류가 발생했습니다."})
 
 # 2. Voice Parsing Endpoint
 @router.post("/api/ai/parse-voice")
@@ -62,7 +126,14 @@ async def parse_voice(data: VoiceTextRequest):
     try:
         model = get_gemini_model()
         response = model.generate_content(prompt)
-        result_json = json.loads(response.text)
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        result_json = json.loads(text.strip())
         return result_json
     except Exception as e:
         print(f"[!] AI Voice Parse Error: {e}")
@@ -78,13 +149,6 @@ async def parse_image(image: UploadFile = File(...)):
     try:
         content = await image.read()
         
-        # Prepare image for Gemini old SDK
-        from google.generativeai.types import BlobDict
-        image_blob = BlobDict(
-            mime_type=image.content_type or "image/jpeg",
-            data=content
-        )
-        
         prompt = """
         You are an AI assistant helping elderly people parse handwritten or printed shipping labels.
         Extract the following details from the image.
@@ -94,10 +158,23 @@ async def parse_image(image: UploadFile = File(...)):
         - receiver_addr: The full address of the receiver.
         - item_type: What is being sent, if visible (품목/내용물).
         """
-        
         model = get_gemini_model("gemini-1.5-flash") # Use 1.5-flash for image parsing if 2.5 is not available
-        response = model.generate_content([prompt, image_blob])
-        result_json = json.loads(response.text)
+        
+        # Prepare image using a standard dict
+        image_part = {
+            "mime_type": image.content_type or "image/jpeg",
+            "data": content
+        }
+        
+        response = model.generate_content([prompt, image_part])
+        text = response.text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        result_json = json.loads(text.strip())
         return result_json
         
     except Exception as e:
