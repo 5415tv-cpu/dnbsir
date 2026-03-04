@@ -158,6 +158,7 @@
         let paymentWidget = null;
 
         function initToss() {
+            if (paymentWidget) return; // Already initialized
             try {
                 if (window.PaymentWidget) {
                     paymentWidget = PaymentWidget(clientKey, customerKey);
@@ -168,7 +169,6 @@
                 console.error("Toss Error:", e);
             }
         }
-        initToss();
 
         // Chat UI Functions
         function addMessage(text, sender) {
@@ -235,6 +235,7 @@
                 // Show Payment if complete
                 if (data.is_complete) {
                     document.getElementById('paymentModal').style.display = 'block';
+                    setTimeout(initToss, 100); // Initialize Toss Widget after rendering the modal
                     addMessage("아래 결제창에서 결제를 진행해주세요.", 'ai');
                     // Lock chat
                     document.getElementById('chatInput').disabled = true;
