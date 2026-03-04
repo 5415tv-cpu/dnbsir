@@ -21,4 +21,4 @@ EXPOSE 8080
 
 # 6. 비서를 출근시킵니다. (Gunicorn으로 안정적인 운영 - 구글 표준 권장: CPU 코어 * 2 + 1, 여기선 가볍게 2~4)
 # 6. 비서를 출근시킵니다. (Gunicorn으로 안정적인 운영 - 메모리 최적화를 위해 워커 수 조정)
-CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "8", "--timeout", "0", "--max-requests", "1000", "--max-requests-jitter", "50", "main:app"]
+CMD ["sh", "-c", "gunicorn -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT} --workers 2 --threads 8 --timeout 0 --max-requests 1000 --max-requests-jitter 50 main:app"]
