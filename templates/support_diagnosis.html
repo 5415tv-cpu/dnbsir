@@ -1,0 +1,749 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .diagnosis-container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        color: white;
+        padding: 30px 24px;
+        text-align: center;
+    }
+
+    .hero-section h2 {
+        margin: 0 0 10px 0;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-section p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 0.95rem;
+    }
+
+    .form-section {
+        padding: 30px 24px;
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+    }
+
+    .input-group label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 8px;
+    }
+
+    .input-group input, .input-group select {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 1rem;
+        color: #0f172a;
+        background: #f8fafc;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .input-group input:focus, .input-group select:focus {
+        border-color: #3b82f6;
+        background: #fff;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .submit-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #c2410c, #ea580c);
+        color: white;
+        font-weight: 800;
+        font-size: 1.1rem;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(234, 88, 12, 0.4);
+    }
+
+    /* Loading Sequence */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15, 23, 42, 0.9);
+        z-index: 1000;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255,255,255,0.1);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 24px;
+    }
+
+    .loading-text {
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.6;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* Results Card */
+    .result-section {
+        display: none;
+        padding: 30px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .result-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 2px solid #3b82f6;
+        position: relative;
+    }
+
+    .result-badge {
+        position: absolute;
+        top: -14px;
+        left: 20px;
+        background: #3b82f6;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+    }
+
+    .result-item {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    
+    .result-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .result-label {
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .result-val {
+        color: #0f172a;
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+
+    .highlight-val {
+        color: #c2410c;
+    }
+
+    /* Budget Bar */
+    .budget-container {
+        pointer-events: none;
+        margin-top: 24px;
+        background: #fff;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    .budget-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 8px;
+    }
+    .progress-bar {
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #ef4444, #f59e0b);
+        width: 15%;
+        border-radius: 5px;
+    }
+    
+    .warning-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 16px;
+        text-align: center;
+        line-height: 1.5;
+    }
+
+    /* Upload Area Styles */
+    .guide-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+    .guide-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .guide-text {
+        font-size: 0.95rem;
+        color: #475569;
+        line-height: 1.6;
+    }
+    .doc-item {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .doc-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    .doc-name {
+        font-weight: 800;
+        font-size: 1.05rem;
+        color: #0f172a;
+        margin-bottom: 4px;
+    }
+    .doc-source {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+    .doc-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .btn-upload {
+        flex: 1;
+        padding: 10px;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #334155;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+    .btn-upload:hover {
+        background: #e2e8f0;
+    }
+    .doc-status {
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: #10b981;
+        display: none;
+        align-items: center;
+        gap: 4px;
+        margin-top: 4px;
+    }
+    
+    .final-guide {
+        background: #fff7ed;
+        border: 1px solid #fed7aa;
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 24px;
+        margin-bottom: 24px;
+    }
+    .final-guide h4 {
+        color: #c2410c;
+        margin: 0 0 12px 0;
+        font-size: 1.05rem;
+    }
+    .final-guide ul {
+        margin: 0;
+        padding-left: 20px;
+        color: #9a3412;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+    .final-guide li {
+        margin-bottom: 8px;
+    }
+
+    /* Receipt Card */
+    .receipt-card {
+        background: white;
+        border: 2px dashed #cbd5e1;
+        border-radius: 16px;
+        padding: 30px 24px;
+        position: relative;
+        text-align: left;
+    }
+    .receipt-card::before, .receipt-card::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 20px;
+        height: 20px;
+        background: #f8fafc;
+        border-radius: 50%;
+        border: 2px solid #cbd5e1;
+    }
+    .receipt-card::before { left: -10px; border-left-color: transparent; border-top-color: transparent; transform: rotate(45deg); }
+    .receipt-card::after { right: -10px; border-right-color: transparent; border-bottom-color: transparent; transform: rotate(45deg); }
+    
+</style>
+
+<div class="diagnosis-container">
+    <div class="hero-section">
+        <h2 id="pageTitle">🔍 소상공인 경영자금 지원 자격 조회 1분 정밀 진단</h2>
+        <p>복잡한 서류 없이 1분 만에 끝내는 정밀 진단</p>
+    </div>
+
+    <!-- Step 1: Input Form -->
+    <div class="form-section" id="diagFormArea">
+        <form id="diagnosisForm" onsubmit="runDiagnosis(event)">
+            
+            <div class="input-group">
+                <label>📍 사업장 소재지</label>
+                <input type="text" id="loc" placeholder="예: 강원도 태백시" required>
+            </div>
+            
+            <div class="input-group">
+                <label>🏢 사업자등록번호</label>
+                <input type="text" id="bizNum" placeholder="예: 123-45-67890 (생략 가능)">
+            </div>
+            
+            <div class="input-group">
+                <label>🏪 업종</label>
+                <input type="text" id="industry" placeholder="예: 일반음식점, 화물운송업" required>
+            </div>
+            
+            <div class="input-group">
+                <label>📅 개업일</label>
+                <input type="date" id="openDate" required>
+            </div>
+            
+            <div class="input-group">
+                <label>💰 연 매출액 (단위: 만원)</label>
+                <input type="number" id="revenue" placeholder="예: 8000" required>
+            </div>
+
+            <div class="input-group">
+                <label>💳 신용 점수 (추정치)</label>
+                <select id="credit" required>
+                    <option value="" disabled selected>선택해주세요</option>
+                    <option value="900">900점 이상 (우수)</option>
+                    <option value="800">800점대 (양호)</option>
+                    <option value="700">700점대 (보통)</option>
+                    <option value="600">600점대 (주의)</option>
+                    <option value="500">500점 이하</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn">지금 바로 자격 조회하기</button>
+        </form>
+    </div>
+
+    <!-- Step 2: Animated Loading Sequence Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">
+            노트북LM 시스템 연동 중...<br>
+            <span style="font-size: 0.9rem; color: #94a3b8; font-weight: normal; margin-top: 10px; display: inline-block;">
+                정부 공공데이터포털 접속 완료
+            </span>
+        </div>
+    </div>
+
+    <!-- Step 3: Premium Result Diagnostic Report -->
+    <div class="result-section" id="resultArea">
+        <div class="result-card">
+            <div class="result-badge">✨ 동네비서 AI 진단 완료</div>
+            
+            <h3 style="margin-top: 10px; margin-bottom: 24px; color: #0f172a; font-size: 1.3rem;">
+                👨‍💼 사장님은 <span style="color: #16a34a; font-weight: 900;">'지원 가능'</span> 상태입니다!
+            </h3>
+
+            <div class="result-item">
+                <div class="result-label">🎯 매칭 자금</div>
+                <div class="result-val">2026 강원도 경영안정자금 (1차)</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">💸 예상 한도</div>
+                <div class="result-val" style="color: #1d4ed8; font-size: 1.3rem;">최대 5,000만 원</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">📉 적용 금리</div>
+                <div class="result-val highlight-val">
+                    시중 금리 - 2.5%p 특례 지원
+                    <div style="font-size: 0.85rem; font-weight: 600; color: #c2410c; margin-top: 4px; background: #fff7ed; padding: 6px 10px; border-radius: 6px; display: inline-block;">
+                        💡 사장님은 연 매출 1억 미만으로 0.5% 추가 우대 발굴됨!
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">📁 준비 서류 <span style="font-size:0.8rem; font-weight: normal; color: #64748b;">(사진 촬영으로 대체 가능)</span></div>
+                <div class="result-val" style="font-size: 0.95rem;">
+                    1. 사업자등록증명원<br>2. 부가가치세과세표준증명
+                </div>
+            </div>
+            
+            <button class="submit-btn" style="margin-top: 20px; background: #0f172a; box-shadow: none;" onclick="delegateLoanApp()">
+                 AI 비서에게 대출 신청 맡기기
+            </button>
+        </div>
+
+        <div class="budget-container" id="budgetContainer">
+            <div class="budget-label">
+                <span>🔥 현재 강원도 자금 잔여액</span>
+                <span style="color: #ef4444;">방전 임박 (15%)</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+
+        <div class="warning-text" id="warningText">
+            * 사용자가 입력한 데이터 오차(매출 누락 등)로 인해 실제 서류 심사 시 결과가 변동될 수 있습니다.<br>
+            * 본 진단은 최신 법령 근거를 기초로 NotebookLM이 분석한 추정치입니다.
+        </div>
+    </div>
+
+    <!-- Step 3.5: Document Upload Area -->
+    <div class="result-section" id="uploadArea" style="display: none;">
+        <h2 style="font-size: 1.4rem; font-weight: 900; color: #0f172a; margin-top: 0; margin-bottom: 20px;">
+            📄 AI 비서 대출 대행 서비스 가이드
+        </h2>
+
+        <div class="guide-card">
+            <div class="guide-title">💡 핵심 원리: "사장님의 서류가 AI의 지식이 됩니다"</div>
+            <div class="guide-text">
+                사장님이 올리신 정부24 서류와 전자보증서 데이터를 NotebookLM 기반 AI 비서가 <strong>정밀 분석</strong>합니다. AI는 이 데이터를 바탕으로 은행 및 재단의 신청 양식에 맞춰 정보를 <strong>자동 매칭하여 접수를 대행</strong>합니다.
+            </div>
+        </div>
+
+        <h3 style="font-size: 1.1rem; color: #334155; margin-bottom: 12px;">📑 필수 준비 서류 및 제출</h3>
+        <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 20px; line-height: 1.5;">
+            * <strong>파일 첨부 방식:</strong> 정부24 등에서 다운로드한 PDF 파일을 그대로 업로드 (가장 정확도 높음)<br>
+            * <strong>실물 촬영 방식:</strong> 종이 서류를 평평한 곳에 두고 스마트폰 카메라로 촬영
+        </p>
+
+        <!-- Document Items -->
+        <div class="doc-item" id="doc_guarantee">
+            <div class="doc-header">
+                <div>
+                    <div class="doc-name">1. 전자보증서</div>
+                    <div class="doc-source">발급처: 강원신용보증재단 (홈페이지/앱)</div>
+                </div>
+            </div>
+            <div class="doc-actions">
+                <button class="btn-upload" onclick="simulateUpload('doc_guarantee', '전자보증서')">📎 PDF 첨부</button>
+                <button class="btn-upload" onclick="simulateUpload('doc_guarantee', '전자보증서')">📸 사진 촬영</button>
+            </div>
+            <div class="doc-status" id="status_doc_guarantee">✅ AI 검토 확인 완료</div>
+        </div>
+
+        <div class="doc-item" id="doc_business">
+            <div class="doc-header">
+                <div>
+                    <div class="doc-name">2. 사업자등록증명</div>
+                    <div class="doc-source">발급처: 정부24 / 홈택스</div>
+                </div>
+            </div>
+            <div class="doc-actions">
+                <button class="btn-upload" onclick="simulateUpload('doc_business', '사업자등록증명')">📎 PDF 첨부</button>
+                <button class="btn-upload" onclick="simulateUpload('doc_business', '사업자등록증명')">📸 사진 촬영</button>
+            </div>
+            <div class="doc-status" id="status_doc_business">✅ AI 검토 확인 완료</div>
+            <div class="doc-status" id="error_doc_business" style="color: #ef4444; background: #fee2e2; padding: 10px; border-radius: 8px; font-weight: 700;">
+                ⚠️ 사업자번호 부분이 흐려 판독이 어렵습니다. 빛 반사가 없는 곳에서 다시 촬영하거나 PDF 원본을 올려주세요.
+            </div>
+        </div>
+
+        <div class="doc-item" id="doc_vat">
+            <div class="doc-header">
+                <div>
+                    <div class="doc-name">3. 부가세과세표준증명 (최근 1~3년치)</div>
+                    <div class="doc-source">발급처: 정부24 / 홈택스</div>
+                </div>
+            </div>
+            <div class="doc-actions">
+                <button class="btn-upload" onclick="simulateUpload('doc_vat', '부가가치세과세표준증명')">📎 PDF 첨부</button>
+                <button class="btn-upload" onclick="simulateUpload('doc_vat', '부가가치세과세표준증명')">📸 사진 촬영</button>
+            </div>
+            <div class="doc-status" id="status_doc_vat">✅ AI 검토 확인 완료</div>
+        </div>
+
+        <!-- OCR Loading Message -->
+        <div id="ocrLoading" style="display: none; text-align: center; padding: 20px; color: #3b82f6; font-weight: 700; font-size: 0.95rem;">
+            🔍 AI 시각 지능(OCR)이 서류를 텍스트로 변환 및 판독 중입니다... (약 2초)
+        </div>
+
+        <div class="final-guide">
+            <h4>"이제 서류 뭉치를 들고 은행에 가실 필요가 없습니다."</h4>
+            <ul>
+                <li><strong>정확한 데이터 처리:</strong> 사장님이 올려주신 서류는 NotebookLM 지능형 비서가 법적 기준에 맞춰 완벽하게 검토합니다.</li>
+                <li><strong>대출 신청 대행:</strong> 모든 서류가 확인되면, AI 비서가 사장님을 대신해 해당 금융기관에 접수 절차를 시작합니다.</li>
+                <li><strong>개인정보 보호:</strong> 모든 서류는 대출 신청 목적 외에는 즉시 비식별 처리되어 안전하게 보호됩니다.</li>
+            </ul>
+        </div>
+
+        <button class="submit-btn" id="btnFinalSubmit" style="background: #94a3b8; cursor: not-allowed; box-shadow: none;" disabled onclick="startFinalDelegation()">
+            📑 서류 확인 대기 중...
+        </button>
+
+    </div>
+    
+    <!-- Step 4: Delegation Loading Overlay -->
+    <div class="loading-overlay" id="delegationOverlay" style="background: rgba(15, 23, 42, 0.95);">
+        <div class="loading-spinner" style="border-top-color: #10b981;"></div>
+        <div class="loading-text" id="delegationText" style="color: #10b981;">
+            사장님의 기본 정보를 불러오는 중...
+        </div>
+    </div>
+
+    <!-- Step 5: Delegation Success Screen (Receipt) -->
+    <div class="result-section" id="delegationSuccessArea" style="display: none; padding: 40px 24px; text-align: center;">
+        <div style="font-size: 3.5rem; margin-bottom: 20px;">🎉</div>
+        
+        <div class="receipt-card">
+            <h3 style="text-align: center; color: #0f172a; font-size: 1.4rem; font-weight: 900; margin-top: 0; margin-bottom: 20px; border-bottom: 2px dashed #cbd5e1; padding-bottom: 20px;">
+                🧾 대출 접수 완료 확인증
+            </h3>
+            
+            <div style="margin-bottom: 16px; font-size: 1rem; color: #334155;">
+                <strong style="color: #0f172a;" id="receipt_user_name">사장님</strong>의 대출 서류 준비 및 접수 임무가 완벽하게 처리되었습니다.
+            </div>
+
+            <div style="background: #f8fafc; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                <div style="font-size: 0.85rem; color: #64748b; font-weight: 700; margin-bottom: 8px;">[ AI 검토 및 접수 완료 서류 ]</div>
+                <div style="font-size: 0.95rem; color: #0f172a; font-weight: 800; line-height: 1.6;">
+                    ✅ 1. 전자보증서 (이상 없음)<br>
+                    ✅ 2. 사업자등록증명 (데이터 추출 완료)<br>
+                    ✅ 3. 부가가치세과세표준증명 (매출 분석 완료)
+                </div>
+            </div>
+
+            <div style="margin-bottom: 12px; display: flex; justify-content: space-between;">
+                <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">접수 대상 자금</span>
+                <span style="color: #0f172a; font-weight: 800;">2026 강원도 경영안정자금</span>
+            </div>
+            
+            <div style="margin-bottom: 24px; display: flex; justify-content: space-between;">
+                <span style="color: #64748b; font-size: 0.9rem; font-weight: 600;">담당 비서</span>
+                <span style="color: #1d4ed8; font-weight: 800;">동네비서 NotebookLM AI</span>
+            </div>
+            
+            <div style="text-align: center; margin-bottom: 24px;">
+                <button style="background: #FEE500; color: #371D1E; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 800; font-size: 0.95rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" onclick="alert('카카오톡으로 접수증이 발송되었습니다.')">
+                    💬 카카오톡으로 접수증 받기
+                </button>
+            </div>
+
+            <p style="color: #475569; font-size: 0.95rem; line-height: 1.6; margin: 0; word-break: keep-all; text-align: center; background: #eff6ff; padding: 16px; border-radius: 12px;">
+                서류 발급이나 추가 서명이 필요할 때 카카오톡으로 개별 알림을 드리겠습니다. <br><strong style="color: #1d4ed8;">사장님은 본업에만 집중하세요!</strong>
+            </p>
+        </div>
+
+        <button class="submit-btn" onclick="location.href='/admin/dashboard'" style="background: #1e293b; margin-top: 30px;">대시보드로 돌아가기</button>
+    </div>
+
+</div>
+
+<script>
+    function runDiagnosis(e) {
+        e.preventDefault();
+        
+        // Hide Form, Show Loader
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        
+        const loadingText = document.getElementById('loadingText');
+        
+        // Simulate complex AI NotebookLM reasoning steps
+        setTimeout(() => {
+            loadingText.innerHTML = "공공데이터포털 <strong>[2026 경영안정자금 공고문]</strong><br>텍스트 무결성 대조 중...<br><span style='font-size: 0.9rem; color: #94a3b8; font-weight: normal; margin-top: 10px; display: inline-block;'>약 240페이지 분량 속독 중</span>";
+        }, 1500);
+
+        setTimeout(() => {
+            loadingText.innerHTML = "결격 사유(도박/향락/중복수혜) 스캔 완료.<br>숨겨진 <strong>'가점 우대 항목'</strong> 추출 중...<br><span style='font-size: 0.9rem; color: #94a3b8; font-weight: normal; margin-top: 10px; display: inline-block;'>거의 다 되었습니다!</span>";
+        }, 3000);
+
+        setTimeout(() => {
+            // Finish Loading, Show Results
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('diagFormArea').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('pageTitle').innerText = "✅ 진단 리포트 완성";
+        }, 4500);
+    }
+    
+    function delegateLoanApp() {
+        // Hide the Report, Show Document Upload Area
+        document.getElementById('resultArea').style.display = 'none';
+        document.getElementById('uploadArea').style.display = 'block';
+        window.scrollTo(0, 0);
+    }
+    
+    let uploadedDocs = {
+        'doc_guarantee': false,
+        'doc_business': false,
+        'doc_vat': false
+    };
+
+    let businessDocAttempts = 0;
+
+    function simulateUpload(docId, docName) {
+        if (uploadedDocs[docId]) return;
+
+        // Hide previous errors if retrying
+        const errorDiv = document.getElementById(`error_${docId}`);
+        if (errorDiv) errorDiv.style.display = 'none';
+
+        // Show OCR Loading
+        const ocrLoading = document.getElementById('ocrLoading');
+        const defaultText = ocrLoading.innerHTML;
+        ocrLoading.style.display = 'block';
+        
+        // Disable buttons during "upload"
+        const actions = document.querySelector(`#${docId} .doc-actions`);
+        actions.style.opacity = '0.5';
+        actions.style.pointerEvents = 'none';
+
+        // Edge case simulation for doc_business
+        if (docId === 'doc_business' && businessDocAttempts === 0) {
+            businessDocAttempts++;
+            setTimeout(() => {
+                ocrLoading.innerHTML = `⚠️ <strong>${docName}</strong> 판독 중 오류 발생`;
+            }, 1200);
+
+            setTimeout(() => {
+                ocrLoading.style.display = 'none';
+                ocrLoading.innerHTML = defaultText;
+                
+                // Show Error
+                if (errorDiv) errorDiv.style.display = 'block';
+                
+                // Re-enable actions
+                actions.style.opacity = '1';
+                actions.style.pointerEvents = 'auto';
+            }, 2000);
+            return;
+        }
+
+        // Simulating the AI OCR and Validation (Success)
+        setTimeout(() => {
+            ocrLoading.innerHTML = `✅ <strong>${docName}</strong> 확인 완료! (NotebookLM 기준 부합)`;
+        }, 1200);
+
+        setTimeout(() => {
+            ocrLoading.style.display = 'none';
+            ocrLoading.innerHTML = defaultText;
+            
+            // Mark as uploaded
+            uploadedDocs[docId] = true;
+            actions.style.display = 'none';
+            document.getElementById(`status_${docId}`).style.display = 'flex';
+            
+            checkAllUploaded();
+        }, 2000);
+    }
+
+    function checkAllUploaded() {
+        if (uploadedDocs['doc_guarantee'] && uploadedDocs['doc_business'] && uploadedDocs['doc_vat']) {
+            const btn = document.getElementById('btnFinalSubmit');
+            btn.disabled = false;
+            btn.style.background = 'linear-gradient(135deg, #c2410c, #ea580c)';
+            btn.style.cursor = 'pointer';
+            btn.innerHTML = '🚀 AI 비서에게 대출 접수 시작하기';
+            btn.style.boxShadow = '0 4px 12px rgba(234, 88, 12, 0.3)';
+        }
+    }
+
+    function startFinalDelegation() {
+        // Populate receipt user name
+        const locVal = document.getElementById('loc').value || "사장님";
+        document.getElementById('receipt_user_name').innerText = locVal;
+
+        // Hide upload area, open delegation overlay
+        document.getElementById('uploadArea').style.display = 'none';
+        document.getElementById('delegationOverlay').style.display = 'flex';
+        
+        const delegationText = document.getElementById('delegationText');
+        
+        // Step 1
+        setTimeout(() => {
+            delegationText.innerHTML = "사장님의 서류를 정밀 검토하여<br>대출 가능성을 계산 중입니다 (약 3초)<br><span style='font-size: 0.9rem; color: #cbd5e1; font-weight: normal; margin-top: 10px; display: inline-block;'>은행 및 보증재단 암호화 연결 중</span>";
+        }, 500);
+        
+        // Step 2
+        setTimeout(() => {
+            delegationText.innerHTML = "강원도청(관할지자체) 서류 접수 채널에<br><strong>안전하게 제출 중...</strong><br><span style='font-size: 0.9rem; color: #cbd5e1; font-weight: normal; margin-top: 10px; display: inline-block;'>접수 준비 막바지 작업 중</span>";
+        }, 2500);
+        
+        // Finish
+        setTimeout(() => {
+            document.getElementById('delegationOverlay').style.display = 'none';
+            document.getElementById('delegationSuccessArea').style.display = 'block';
+            window.scrollTo(0, 0);
+        }, 4500);
+    }
+</script>
+
+{% endblock %}
