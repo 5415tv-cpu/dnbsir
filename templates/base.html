@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>내 손안의 동네비서</title>
     <meta name="description" content="내 손안의 동네비서 - 농민과 기사님을 위한 AI 통합 관리 솔루션">
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2503/2503650.png">
 
     <!-- CSS -->
@@ -78,6 +78,21 @@
         </a>
     </nav>
     {% endif %}
+
+    <!-- PWA Install Banner -->
+    <div id="pwaInstallBanner" style="display: none; position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: #fff; padding: 15px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); border: 1px solid #eee; z-index: 9998; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="/static/icons/dnbsir-icon-192.png" style="width: 45px; height: 45px; border-radius: 10px; object-fit: cover;">
+            <div>
+                <strong style="display: block; font-size: 0.95rem; color: #1a1a1a; margin-bottom: 2px;">동네비서 앱 화면에 추가</strong>
+                <span style="font-size: 0.75rem; color: #666;">터치 한 번으로 모바일에서 접속하세요</span>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+            <button onclick="installPWA()" style="background: #2563eb; color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; cursor: pointer;">설치</button>
+            <button onclick="hidePWABanner()" style="background: transparent; color: #999; border: none; padding: 4px; font-size: 1.2rem; cursor: pointer;">✕</button>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="/static/js/app.js"></script>
