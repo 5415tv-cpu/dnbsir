@@ -5,52 +5,109 @@
 <div id="modalOverlay">
     <div class="modalContent">
         <div class="modalHeader">
-            <div class="badge">✨ 인생 2막의 든든한 파트너</div>
+            <div class="badge">✨ 동네 가게 사장님의 손과 발이 되는 AI 전담 비서</div>
             <h2>똑똑한 <span class="highlight">동네비서</span></h2>
         </div>
         <p class="desc">
-            복잡한 예약, 골치 아픈 세무와 장부관리.<br>
-            이제 <b>AI 동네비서</b>에게 모두 맡기세요.<br>
-            당신의 하루가 더욱 여유롭고 풍성해집니다.
+            본 플랫폼은 <b>[상품 판매 + 택배 예약 + 시세 분석 + 장부 관리]</b>를 하나로 통합하여,<br>
+            디지털 조작 없이 <b>사진 촬영만으로 모든 업무를 자동화</b>하는 소상공인 맞춤형 솔루션입니다.
         </p>
 
         <div class="feature-list">
             <div class="feature-item">
                 <div class="icon" style="background: #e3f2fd; color: #1976d2;">📦</div>
                 <div class="text">
-                    <strong>간편 택배 예약</strong>
-                    <span>어려운 주소지 입력? 구형 송장도 사진 한 장이면 AI가 척척!</span>
+                    <strong>[판매] 사진만 찍으세요, 판매는 AI가 합니다</strong>
+                    <span><b>작동 원리:</b> 상품 사진을 찍으면 AI가 상품명, 특징, 가격을 분석해 쇼핑몰 상세 페이지를 자동 생성하고 등록합니다.<br><b style="color:#1976d2">💡 이점:</b> 복잡한 쇼핑몰 입점 절차 없이 온라인 판매를 즉시 시작할 수 있습니다.</span>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="icon" style="background: #e8f5e9; color: #2e7d32;">📈</div>
                 <div class="text">
-                    <strong>농산물 시세분석</strong>
-                    <span>전국 공판장의 실시간 가격 동향과 정확한 AI 시세 예측</span>
+                    <strong>[배송] 송장 사진 한 장으로 끝내는 택배 예약</strong>
+                    <span><b>작동 원리:</b> 기존에 썼던 송장이나 주소가 적힌 종이를 촬영하면 AI(OCR)가 주소 정보를 추출해 택배사에 자동 접수합니다.<br><b style="color:#2e7d32">💡 이점:</b> 작은 글씨를 입력할 필요가 없어 오타가 사라지고 배송 예약이 10초 만에 끝납니다.</span>
                 </div>
             </div>
             <div class="feature-item">
                 <div class="icon" style="background: #fff3e0; color: #f57c00;">🧾</div>
                 <div class="text">
-                    <strong>초간편 장부정리</strong>
-                    <span>영수증만 촬영하면 세무 기장과 매출 관리가 자동으로 끝</span>
+                    <strong>[분석] 전국 공판장 시세를 통한 최적가 제안</strong>
+                    <span><b>작동 원리:</b> 실시간으로 전국 경매 데이터를 수집·분석하여 내 상품의 오늘 적정 판매가를 추천합니다.<br><b style="color:#f57c00">💡 이점:</b> 손해 보지 않는 정확한 가격 설정으로 수익률을 극대화합니다.</span>
+                </div>
+            </div>
+            <div class="feature-item">
+                <div class="icon" style="background: #fce4ec; color: #c2185b;">🧾</div>
+                <div class="text">
+                    <strong>[관리] 영수증 촬영으로 자동 완성되는 장부</strong>
+                    <span><b>작동 원리:</b> 지출 영수증을 찍기만 하면 세무 항목별로 자동 분류되어 매출/매입 통계가 생성됩니다.<br><b style="color:#c2185b">💡 이점:</b> 골치 아픈 장부 정리와 세무 준비를 AI가 알아서 처리합니다.</span>
                 </div>
             </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="action-buttons">
-            <button class="btn-login" onclick="location.href='/admin?mode=login'">
-                기존 회원 로그인
+        <!-- Technical Transparency -->
+        <div class="tech-check-box" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 24px; text-align: left;">
+            <strong style="color: #334155; font-size: 0.95rem; display: block; margin-bottom: 8px;">🛠️ 기술적 투명성 및 오류 대응 (Technical Check)</strong>
+            <ul style="margin: 0; padding-left: 20px; color: #64748b; font-size: 0.85rem; line-height: 1.5;">
+                <li style="margin-bottom: 4px;"><strong>데이터 처리 경로:</strong> 수집된 데이터는 중앙 서버로 전송되어 정밀 분석됩니다. 약 1~2초의 지연이 발생할 수 있습니다.</li>
+                <li style="margin-bottom: 4px;"><strong>에러 변수 알림:</strong> 사진이 흐릴 경우 AI가 잘못된 정보를 입력할 수 있습니다. 시스템의 <strong>'재촬영 요청'</strong>에 따라주십시오.</li>
+                <li><strong>시세 데이터 점검:</strong> 공공 API 점검 시 실시간 시세 반영이 늦어질 수 있으며, 이 경우 최근 저장된 데이터를 기준으로 안내합니다.</li>
+            </ul>
+        </div>
+
+        <!-- Data Shortcuts -->
+        <strong
+            style="color: #c2410c; font-size: 0.95rem; display: block; margin-bottom: 12px; margin-top: 10px; display: flex; align-items: center; gap: 6px;">
+            <span>💸</span> 돈이 되는 맞춤형 바로가기
+        </strong>
+        <div class="action-buttons-vertical"
+            style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px;">
+            <button class="btn-shortcut"
+                style="background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.5px; cursor: pointer; transition: transform 0.2s;"
+                onclick="location.href='/admin?mode=login&next=/admin/support'"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                🏆 소상공인 경영자금 지원 자격 조회
             </button>
-            <button class="btn-signup" onclick="location.href='/admin?mode=signup'">
-                1분 무료 회원가입
+            <button class="btn-shortcut"
+                style="background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.5px; cursor: pointer; transition: transform 0.2s;"
+                onclick="location.href='/subsidy'" onmouseover="this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                🌾 지자체 농업인 수당
+            </button>
+            <button class="btn-shortcut"
+                style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.5px; cursor: pointer; transition: transform 0.2s;"
+                onclick="location.href='/auction'" onmouseover="this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                ⚖️ 농산물 경매 시세
+            </button>
+            <button class="btn-shortcut"
+                style="background: #fdf4ff; color: #7e22ce; border: 1px solid #e9d5ff; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.5px; cursor: pointer; transition: transform 0.2s;"
+                onclick="location.href='/market'" onmouseover="this.style.transform='translateY(-2px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                🛒 우리 동네 장날 (마켓)
+            </button>
+            <button class="btn-shortcut"
+                style="background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.5px; cursor: pointer; transition: transform 0.2s;"
+                onclick="location.href='/admin?mode=login&next=/admin/commercial'"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                📊 상권 및 인구 통계
             </button>
         </div>
 
-        <button class="btn-guest" onclick="closeModal()">
-            지금 바로 둘러보기 (비회원)
-        </button>
+        <!-- Action Buttons -->
+        <div class="action-buttons-vertical" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+            <button class="btn-primary" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;" onclick="location.href='/admin/dashboard?action=register_product'">
+                내 상품 지금 바로 팔기 <span style="font-size: 0.8rem; font-weight: 500; display: block; margin-top: 4px; opacity: 0.8;">(상품 판매 즉시 연결)</span>
+            </button>
+            <button class="btn-delivery" style="background: linear-gradient(135deg, #e81cff, #40c9ff); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;" onclick="location.href='/citizen/courier'">
+                송장 사진 한 장으로 택배 보내기 <span style="font-size: 0.8rem; font-weight: 500; display: block; margin-top: 4px; opacity: 0.9;">(예약 후 기사님 방문)</span>
+            </button>
+            <button class="btn-secondary" style="background: #2563eb; color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;" onclick="location.href='/admin?mode=signup'">
+                1분 무료 회원가입 <span style="font-size: 0.8rem; font-weight: 500; display: block; margin-top: 4px; opacity: 0.8;">(AI 비서 기능 무료 시작)</span>
+            </button>
+            <button class="btn-outline" style="background: white; color: #334155; border: 2px solid #e2e8f0; padding: 16px; border-radius: 14px; font-weight: 800; cursor: pointer; transition: transform 0.2s;" onclick="closeModal()">
+                서비스 상세 가이드 보기 <span style="font-size: 0.8rem; font-weight: 500; display: block; margin-top: 4px; color: #64748b;">(작동 원리 확인)</span>
+            </button>
+        </div>
 
         <div class="hideOption" onclick="closeModalToday()">오늘 하루 보지 않기</div>
     </div>
@@ -58,9 +115,13 @@
 
 <script>
     window.addEventListener('DOMContentLoaded', () => {
-        const hideDate = localStorage.getItem('hideIntroModal');
+        const urlParams = new URLSearchParams(window.location.search);
+        const hideDate = localStorage.getItem('hideIntroModalV8');
         const today = new Date().toDateString();
-        if (hideDate === today) {
+        
+        if (urlParams.get('show_intro') === 'true') {
+            document.getElementById('modalOverlay').style.display = 'flex';
+        } else if (hideDate === today) {
             document.getElementById('modalOverlay').style.display = 'none';
         }
     });
@@ -70,7 +131,7 @@
     }
 
     function closeModalToday() {
-        localStorage.setItem('hideIntroModal', new Date().toDateString());
+        localStorage.setItem('hideIntroModalV8', new Date().toDateString());
         closeModal();
     }
 </script>
@@ -97,7 +158,9 @@
     .modalContent {
         background: #ffffff;
         width: 100%;
-        max-width: 440px;
+        max-width: 600px;
+        max-height: 85vh;
+        overflow-y: auto;
         border-radius: 24px;
         padding: 32px 28px;
         box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
@@ -390,11 +453,13 @@
     <script>
         // Check on load
         window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
             const hideDate = localStorage.getItem('hideIntroModal');
             const today = new Date().toDateString();
 
-            // If hidden date matches today, don't show
-            if (hideDate === today) {
+            if (urlParams.get('show_intro') === 'true') {
+                document.getElementById('modalOverlay').style.display = 'flex';
+            } else if (hideDate === today) {
                 document.getElementById('modalOverlay').style.display = 'none';
             }
         });
