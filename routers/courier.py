@@ -47,6 +47,16 @@ async def reserve_courier(data: CourierReservationRequest, request: Request, use
         
         print(f"✅ Logen API Call: Reserve {delivery_data['tracking_code']}")
         
+        # 카카오 알림톡 발송 (택배 예약)
+        import sms_manager
+        alimtalk_msg = f"[동네비서 택배]\n{data.sender_name}님, 예약이 접수되었습니다! (송장: {delivery_data['tracking_code']})"
+        sms_manager.send_alimtalk(
+            to_phone=data.sender_phone, 
+            message=alimtalk_msg, 
+            template_id="tmp_courier", # 나중에 실제 승인된 ID로 교체 필요
+            variables={"#{name}": data.sender_name, "#{track}": delivery_data['tracking_code']}
+        )
+        
         return {"success": True, "tracking_code": delivery_data["tracking_code"]}
     except Exception as e:
         print(f"❌ Courier Reservation Failed: {e}")

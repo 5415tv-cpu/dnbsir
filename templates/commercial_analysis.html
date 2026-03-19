@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .commercial-container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+        font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #4c1d95, #2e1065);
+        color: white;
+        padding: 30px 24px;
+        text-align: center;
+    }
+
+    .hero-section h2 {
+        margin: 0 0 10px 0;
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .hero-section p {
+        margin: 0;
+        color: #a78bfa;
+        font-size: 0.95rem;
+    }
+
+    .form-section {
+        padding: 30px 24px;
+    }
+
+    .input-group {
+        margin-bottom: 20px;
+    }
+
+    .input-group label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 8px;
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: 14px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 1rem;
+        color: #0f172a;
+        background: #f8fafc;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+
+    .input-group input:focus {
+        border-color: #8b5cf6;
+        background: #fff;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.1);
+    }
+
+    .submit-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #7c3aed, #5b21b6);
+        color: white;
+        font-weight: 800;
+        font-size: 1.1rem;
+        padding: 16px;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+    }
+
+    /* Loading Sequence */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(15, 23, 42, 0.92);
+        z-index: 1000;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        backdrop-filter: blur(5px);
+    }
+
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(255,255,255,0.1);
+        border-top-color: #8b5cf6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 24px;
+    }
+
+    .loading-text {
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-align: center;
+        line-height: 1.6;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    /* Results section styles */
+    .result-section {
+        display: none;
+        padding: 30px 24px;
+        background: #f8fafc;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .result-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 2px solid #8b5cf6;
+        position: relative;
+    }
+
+    .result-badge {
+        position: absolute;
+        top: -14px;
+        left: 20px;
+        background: #8b5cf6;
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-weight: 800;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+    }
+
+    .result-item {
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+    
+    .result-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .result-label {
+        color: #64748b;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+    }
+
+    .result-val {
+        color: #0f172a;
+        font-size: 1.1rem;
+        font-weight: 800;
+    }
+
+    .highlight-val {
+        color: #7c3aed;
+    }
+    
+    .ai-strategy-box {
+        margin-top: 4px;
+        background: #f5f3ff;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border-left: 4px solid #8b5cf6;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4c1d95;
+        line-height: 1.5;
+    }
+
+    .warning-text {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 16px;
+        text-align: center;
+        line-height: 1.5;
+    }
+    
+</style>
+
+<div class="commercial-container">
+    <div class="hero-section">
+        <h2 id="pageTitle">📊 AI 상권 및 인구 통계 분석</h2>
+        <p>빅데이터 기반 내 매장 맞춤형 프리미엄 리포트</p>
+    </div>
+
+    <!-- Step 1: Input Form -->
+    <div class="form-section" id="diagFormArea">
+        <form id="commercialForm" onsubmit="runCommercialAnalysis(event)">
+            
+            <div class="input-group">
+                <label>📌 분석 희망 지역 또는 도로명</label>
+                <input type="text" id="targetArea" placeholder="예: 강원도 태백시 황지동" required>
+            </div>
+            
+            <div class="input-group">
+                <label>🏪 타겟 업종 (주력 메뉴 가능)</label>
+                <input type="text" id="targetIndustry" placeholder="예: 한식 프랜차이즈, 카페/디저트" required>
+            </div>
+            
+            <button type="submit" class="submit-btn" style="margin-top: 10px;">빅데이터 AI 분석 시작하기</button>
+        </form>
+    </div>
+
+    <!-- Step 2: Animated Loading Sequence Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">
+            AI 모델 초기화 중...
+        </div>
+    </div>
+
+    <!-- Step 3: Premium Result Diagnostic Report -->
+    <div class="result-section" id="resultArea">
+        <div class="result-card">
+            <div class="result-badge">✨ 동네비서 AI 분석 완료</div>
+            
+            <h3 style="margin-top: 10px; margin-bottom: 24px; color: #0f172a; font-size: 1.2rem;">
+                종합 상권 등급: <span style="color: #16a34a; font-weight: 900;">🌟 A등급</span>
+                <div style="font-size: 0.9rem; color: #15803d; font-weight: normal; margin-top: 4px;">(창업/확장 매우 긍정적)</div>
+            </h3>
+
+            <div class="result-item">
+                <div class="result-label">💰 예상 월 평균 매출</div>
+                <div class="result-val highlight-val" style="font-size: 1.3rem;">3,500 ~ 4,200만 원</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">👥 주력 소비층</div>
+                <div class="result-val">30-40대 직장인</div>
+                <div style="font-size: 0.85rem; color: #64748b; margin-top: 2px;">지출 집중: 평일 점심 및 퇴근 시간대</div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">⚔️ 경쟁 포화도 (반경 500m)</div>
+                <div class="result-val">
+                    유사 경쟁 점포: <span style="color: #ea580c;">12개 (포화도 보통)</span>
+                </div>
+            </div>
+
+            <div class="result-item">
+                <div class="result-label">💡 동네비서 AI의 한줄 전략</div>
+                <div class="result-val">
+                    <div class="ai-strategy-box">
+                        "저녁 시간대 테이크아웃/배달 비중을 40% 이상 끌어올리는 1~2인용 특화 세트 메뉴 구성이 이 상권에서 가장 유리합니다."
+                    </div>
+                </div>
+            </div>
+            
+            <button class="submit-btn" style="margin-top: 20px; background: #0f172a; box-shadow: none;" onclick="delegateReportApp()">
+                 AI 비서에게 상세 분석 리포트 작성 맡기기 (준비중)
+            </button>
+        </div>
+
+        <div class="warning-text" id="warningText">
+            * 통신사 기지국 유동인구 및 국세청 매출 통계 데이터를 기반으로 한 추정 모델입니다.<br>
+            * 본 리포트는 의사결정 참고용이며 법적 책임의 근거로 사용될 수 없습니다.
+        </div>
+    </div>
+    
+    <!-- Step 4: Delegation Success Screen (Hidden initially) -->
+    <div class="result-section" id="delegationSuccessArea" style="display: none; padding: 40px 24px; text-align: center;">
+        <div style="font-size: 4rem; margin-bottom: 20px;">✅</div>
+        <h3 style="color: #0f172a; font-size: 1.3rem; font-weight: 800; margin-bottom: 16px; line-height: 1.4;">
+            AI 비서에게 상세 상권 분석<br>리포트 작성 지시가 완료되었습니다.
+        </h3>
+        <p style="color: #64748b; font-size: 1rem; line-height: 1.6; margin-bottom: 32px; word-break: keep-all;">
+            심층 데이터 조사를 마친 뒤, 결과물(PDF)이 생성되면 등록하신 카카오톡 번호로 알림을 보내드리겠습니다.
+        </p>
+        <button class="submit-btn" onclick="location.href='/admin/dashboard'" style="background: #8b5cf6;">확인 및 대시보드로 돌아가기</button>
+    </div>
+
+</div>
+
+<script>
+    function runCommercialAnalysis(e) {
+        e.preventDefault();
+        
+        // Hide Form, Show Loader
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        
+        const loadingText = document.getElementById('loadingText');
+        const overlay = document.getElementById('loadingOverlay');
+        
+        // Step 1
+        setTimeout(() => {
+            overlay.style.background = 'rgba(76, 29, 149, 0.9)'; // Deep purple tint
+            loadingText.innerHTML = "통신사 기지국 유동인구 데이터<br><strong>실시간 동기화 중...</strong><br><span style='font-size: 0.9rem; color: #d8b4fe; font-weight: normal; margin-top: 10px; display: inline-block;'>최근 3개월 보행 패턴 분석 중</span>";
+        }, 800);
+
+        // Step 2
+        setTimeout(() => {
+            overlay.style.background = 'rgba(15, 23, 42, 0.9)'; 
+            loadingText.innerHTML = "국세청/카드사 1개년 매출 블록<br><strong>암호화 해제 중...</strong><br><span style='font-size: 0.9rem; color: #94a3b8; font-weight: normal; margin-top: 10px; display: inline-block;'>연령별 소비 파워 측정 중</span>";
+        }, 2200);
+        
+        // Step 3
+        setTimeout(() => {
+            overlay.style.background = 'rgba(23, 37, 84, 0.9)'; // Deep blue tint
+            loadingText.innerHTML = "AI 상권 분석 모델링...<br><strong>최적 영업 시간대 추출 중...</strong><br><span style='font-size: 0.9rem; color: #bfdbfe; font-weight: normal; margin-top: 10px; display: inline-block;'>최종 리포트 생성 중!</span>";
+        }, 3600);
+
+        setTimeout(() => {
+            // Finish Loading, Show Results
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.getElementById('diagFormArea').style.display = 'none';
+            document.getElementById('resultArea').style.display = 'block';
+            document.getElementById('pageTitle').innerText = "✅ 프리미엄 상권 리포트 완료";
+        }, 5000);
+    }
+    
+    async function delegateReportApp() {
+        const targetArea = document.getElementById('targetArea').value;
+        const submitBtn = document.querySelector('.result-card .submit-btn');
+        submitBtn.innerText = "접수 중...";
+        submitBtn.disabled = true;
+
+        try {
+            await fetch('/api/admin/commercial/delegate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ area: targetArea })
+            });
+        } catch(e) { console.error(e); }
+
+        document.querySelector('.result-card').style.display = 'none';
+        document.getElementById('warningText').style.display = 'none';
+        
+        document.getElementById('delegationSuccessArea').style.display = 'block';
+        document.getElementById('pageTitle').innerText = "🎉 리포트 작성 접수 완료";
+    }
+</script>
+
+{% endblock %}

@@ -170,6 +170,28 @@ async def commercial_analysis_page(request: Request, cookie_store_id: Union[str,
         "api_url": API_URL
     })
 
+@router.post("/api/admin/commercial/delegate")
+async def delegate_commercial_analysis(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
+    if not cookie_store_id:
+        return {"success": False, "error": "로그인이 필요합니다."}
+        
+    data = await request.json()
+    area = data.get("area", "지정 지역")
+    
+    store = db.get_store(cookie_store_id)
+    phone = store.get("phone", "") if store else ""
+    
+    import config
+    import sms_manager
+    # 사장님 번호가 없으면 시스템 마스터 번호로 발송
+    target_phone = phone if phone else config.get_secret("SENDER_PHONE")
+    
+    if target_phone:
+        alimtalk_msg = f"[동네비서 상권분석]\n사장님, '{area}' 지역의 상권분석 리포트가 접수되었습니다. (완료 시 재알림)"
+        sms_manager.send_alimtalk(target_phone, alimtalk_msg, template_id="tmp_commercial", variables={"#{area}": area})
+        
+    return {"success": True}
+
 
 @router.get("/admin/wallet", response_class=HTMLResponse)
 async def admin_wallet_page(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
