@@ -1,752 +1,451 @@
 <!DOCTYPE html>
 <html lang="ko">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>택배 보내기 | 동네비서</title>
-    <style>
-        body {
-            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-            background-color: #fff9db;
-            /* Citizen Yellow Theme */
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 600px;
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            background: #ffc107;
-            color: #000;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .address-btn {
-            background: #333;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            border: none;
-            margin-top: 5px;
-            display: inline-block;
-        }
-
-        .back-link {
-            display: block;
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            text-decoration: none;
-        }
-
-        .fold-btn {
-            cursor: pointer;
-            position: absolute;
-            right: 0px;
-            top: -1px;
-            z-index: 1;
-            width: 20px;
-            height: 20px;
-            font-size: 20px;
-            line-height: 20px;
-            text-align: center;
-            background: #fff;
-            border: 1px solid #ddd;
-        }
-    </style>
-    <!-- Daum Postcode API -->
+    <title>프리미엄 택배 접수 | 동네비서</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
     <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-    <!-- Toss Payments SDK -->
-    <!-- Toss Payments Widget SDK -->
     <script src="https://js.tosspayments.com/v1/payment-widget"></script>
     <style>
-        /* AI Overlay */
-        #ai_overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 10000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            text-align: center;
-        }
-
-        .mic-animation {
-            width: 100px;
-            height: 100px;
-            background: #28a745;
-            border-radius: 50%;
-            margin-bottom: 30px;
-            animation: pulse 1.5s infinite;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 3rem;
-        }
-
-        #ai_realtime_text {
-            font-size: 1.5rem;
-            font-weight: bold;
-            padding: 20px;
-            border: 2px dashed #666;
-            border-radius: 10px;
-            width: 80%;
-            min-height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255, 255, 255, 0.1);
-            word-break: keep-all;
-            line-height: 1.4;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
-            }
-
-            70% {
-                transform: scale(1.1);
-                box-shadow: 0 0 0 20px rgba(40, 167, 69, 0);
-            }
-
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
-            }
-        }
-
-        .ai-btn-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .ai-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .ai-btn-voice {
-            background-color: #28a745;
-        }
-
-        .ai-btn-camera {
-            background-color: #17a2b8;
-        }
-
-        #loading {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 9999;
-            color: white;
-            text-align: center;
-            padding-top: 200px;
-            font-size: 1.5rem;
-        }
+        body { margin:0; padding:20px; font-family:'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background-color:#f1f5f9; display:flex; justify-content:center; }
+        .container { width:100%; max-width:650px; background:white; padding:25px; border-radius:16px; box-shadow:0 10px 25px rgba(0,0,0,0.05); }
+        h2 { text-align:center; color:#0f172a; margin-bottom:20px; font-weight:800; font-size:1.6rem; }
+        .form-group { margin-bottom:15px; }
+        label { display:block; margin-bottom:6px; font-weight:bold; color:#334155; font-size:0.95rem; }
+        input, select { width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:1rem; transition:border-color 0.2s; background:#f8fafc; }
+        input:focus, select:focus { outline:none; border-color:#3b82f6; background:#ffffff; }
+        .btn { width:100%; padding:16px; border:none; border-radius:12px; background:linear-gradient(135deg, #1e293b, #0f172a); color:white; font-size:1.15rem; font-weight:800; cursor:pointer; margin-top:10px; transition:transform 0.2s; box-shadow:0 4px 10px rgba(0,0,0,0.1); }
+        .btn:disabled { background:#94a3b8; cursor:not-allowed; transform:none; }
+        .address-btn { background:#475569; color:white; padding:10px 14px; border-radius:8px; font-size:0.9rem; cursor:pointer; border:none; display:inline-block; font-weight:700; }
+        .receiver-block { border:1px solid #e2e8f0; padding:20px; border-radius:12px; margin-bottom:15px; background:#ffffff; box-shadow:0 2px 5px rgba(0,0,0,0.02); position:relative; }
+        .qty-controls { display:flex; align-items:center; gap:10px; }
+        .qty-btn { width:36px; height:36px; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-size:1.2rem; cursor:pointer; font-weight:bold; display:flex; justify-content:center; align-items:center; }
+        .delete-btn { position:absolute; top:20px; right:20px; background:#ef4444; color:white; border:none; border-radius:6px; padding:6px 10px; font-size:0.8rem; font-weight:bold; cursor:pointer; }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <h2>📦 택배 보내기</h2>
+        <h2>📦 스마트 택배 예약</h2>
 
-        <div style="margin-bottom: 20px; text-align: center;">
-            <a href="/silver/courier"
-                style="display: block; padding: 15px; background: #6c757d; color: white; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                👴👵 큰 글씨 & 쉬운 입력 (어르신 전용) 바로가기
+        <div style="margin-bottom: 25px; text-align: center;">
+            <a href="/silver/courier" style="display:block; padding:14px; background:#f1f5f9; color:#475569; text-decoration:none; border-radius:10px; font-weight:800; border:1px solid #cbd5e1;">
+                👴 큰 글씨 간편 예약 (어르신 전용)
             </a>
         </div>
 
-        <div class="ai-btn-group">
-            <button type="button" class="ai-btn ai-btn-voice" onclick="startVoiceSearch()">
-                🎤 음성으로 자동입력
+        <!-- 3 대장 AI 버튼 -->
+        <div style="display:flex; gap:8px; margin-bottom:25px;">
+            <button onclick="startVoiceOrder(event)" style="flex:1; padding:12px 6px; background:#22c55e; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2); word-break:keep-all;">
+                🎙️ 말로 접수
             </button>
-            <button type="button" class="ai-btn ai-btn-camera" onclick="document.getElementById('cameraInput').click()">
-                📸 송장/메모 사진입력
-                <input type="file" id="cameraInput" capture="environment" accept="image/*" style="display:none"
-                    onchange="processImage(this)">
+            <button onclick="document.getElementById('excelUploadFile').click()" style="flex:1; padding:12px 6px; background:#10b981; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); word-break:keep-all;">
+                📊 엑셀 대량
             </button>
+            <button onclick="document.getElementById('photoUploadFile').click()" id="btnPhotoOrder" style="flex:1; padding:12px 6px; background:#0ea5e9; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2); word-break:keep-all;">
+                📸 송장판독
+            </button>
+            <input type="file" id="excelUploadFile" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;" onchange="handleExcelUpload(this)">
+            <input type="file" id="photoUploadFile" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoUpload(this)">
         </div>
 
         <form id="courierForm" onsubmit="submitCourierRequest(event)">
-            <!-- Sender Info -->
-            <div
-                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 5px; margin-bottom: 15px;">
-                <h3 style="border-bottom: none; padding-bottom: 0; margin: 0;">보내는 분</h3>
-                <label style="font-size: 0.9rem; color: #666; cursor: pointer;">
-                    <input type="checkbox" id="saveSender" style="width: auto; margin-right: 5px;">정보 저장
-                </label>
-            </div>
-            <div class="form-group">
-                <label>이름</label>
-                <input type="text" id="sender_name" name="sender_name" value="{{ store.get('owner_name', '') }}"
-                    required>
-            </div>
-            <div class="form-group">
-                <label>연락처</label>
-                <input type="text" id="sender_phone" name="sender_phone" value="{{ store.get('phone', '') }}" required>
-            </div>
-            <div class="form-group">
-                <label>주소</label>
-                <input type="text" id="sender_addr" name="sender_addr" placeholder="주소 검색 버튼을 눌러주세요" readonly required>
-                <button type="button" class="address-btn" onclick="execDaumPostcode('sender_addr', 'wrap_sender')">주소
-                    검색</button>
-                <div id="wrap_sender"
-                    style="display:none;border:1px solid;width:100%;height:300px;margin:5px 0;position:relative">
-                    <img src="//t1.daumcdn.net/postcode/resource/images/close.png" class="fold-btn"
-                        onclick="foldDaumPostcode('wrap_sender')" alt="접기 버튼">
-                </div>
-                <div style="margin-top: 5px;">
-                    <input type="text" id="sender_addr_detail" name="sender_addr_detail"
-                        placeholder="상세 주소를 입력해주세요 (예: 101동 101호)" required>
+            <!-- Sender Info (Global) -->
+            <div style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0; margin-bottom:25px;">
+                <h3 style="margin:0 0 15px 0; color:#0f172a;">보내는 분</h3>
+                <div class="form-group"><label>이름</label><input type="text" id="sender_name" name="sender_name" value="{{ store.get('owner_name', '') }}" required></div>
+                <div class="form-group"><label>연락처</label><input type="text" id="sender_phone" name="sender_phone" value="{{ store.get('phone', '') }}" required></div>
+                <div class="form-group">
+                    <label>출발지 주소</label>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <input type="text" id="sender_addr" name="sender_addr" placeholder="주소를 검색하세요" readonly required style="flex:1;">
+                        <button type="button" class="address-btn" onclick="execDaumPostcode('sender_addr')">주소 검색</button>
+                    </div>
+                    <div id="wrap_sender_addr" style="display:none; border:1px solid #cbd5e1; width:100%; height:300px; margin-bottom:8px; position:relative;"></div>
+                    <input type="text" id="sender_addr_detail" name="sender_addr_detail" placeholder="상세 주소 (선택)" required>
                 </div>
             </div>
 
-            <!-- Receiver Info -->
-            <h3 style="border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px;">받는 분</h3>
-            <div class="form-group">
-                <label>이름</label>
-                <input type="text" name="receiver_name" required>
+            <!-- Receiver List Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding-bottom:10px; border-bottom:2px solid #e2e8f0;">
+                <h3 style="margin:0; color:#0f172a;">받는 분 목록</h3>
+                <button type="button" onclick="addReceiver()" style="padding:8px 14px; background:#334155; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">+ 배송지 추가</button>
             </div>
-            <div class="form-group">
-                <label>연락처</label>
-                <input type="text" name="receiver_phone" placeholder="010-0000-0000" required>
-            </div>
-            <div class="form-group">
-                <label>주소</label>
-                <input type="text" id="receiver_addr" name="receiver_addr" placeholder="주소 검색 버튼을 눌러주세요" readonly
-                    required>
-                <button type="button" class="address-btn"
-                    onclick="execDaumPostcode('receiver_addr', 'wrap_receiver')">주소
-                    검색</button>
-                <div id="wrap_receiver"
-                    style="display:none;border:1px solid;width:100%;height:300px;margin:5px 0;position:relative">
-                    <img src="//t1.daumcdn.net/postcode/resource/images/close.png" class="fold-btn"
-                        onclick="foldDaumPostcode('wrap_receiver')" alt="접기 버튼">
-                </div>
-                <div style="margin-top: 5px;">
-                    <input type="text" id="receiver_addr_detail" name="receiver_addr_detail" placeholder="상세 주소를 입력해주세요"
-                        required>
+
+            <div id="receiversList"></div>
+
+            <div style="background:#fff7ed; padding:15px; border-radius:10px; margin-bottom:20px; border:1px solid #ffedd5;">
+                <h4 style="margin:0 0 10px 0; color:#c2410c;">총 배송 운임</h4>
+                <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                    <span style="color:#9a3412; font-weight:600;">총 <span id="totalBoxCount">0</span>박스</span>
+                    <span style="font-size:1.6rem; font-weight:900; color:#ea580c;"><span id="totalShippingFee">0</span>원</span>
                 </div>
             </div>
 
-            <!-- Item Info -->
-            <h3 style="border-bottom: 2px solid #eee; padding-bottom: 5px; margin-top: 25px;">물품 정보</h3>
-            <div class="form-group">
-                <label>물품 종류</label>
-                <select name="item_type">
-                    <option value="general">일반 공산품</option>
-                    <option value="food">식품/농산물</option>
-                    <option value="fragile">파손주의(유리/가전)</option>
-                    <option value="document">서류</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>무게 (예상)</label>
-                <select name="weight">
-                    <option value="small">소형 (5kg / 100cm) - 6,000원</option>
-                    <option value="medium">중형 (10kg / 120cm) - 7,000원</option>
-                    <option value="large">대형 (20kg / 140cm) - 9,000원</option>
-                </select>
-                <p style="font-size: 0.8rem; color: #dc3545; margin-top: 5px;">
-                    ※ 20kg 이상, 인화성 물질(가스, 휘발성 액체 등), 현금 등은 접수가 불가합니다.
-                </p>
-            </div>
-            <div class="form-group">
-                <label>수량 (박스)</label>
-                <input type="number" name="quantity" value="1" min="1" max="50" required>
-            </div>
-
-            <!-- Payment -->
-            <div class="form-group" style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <div class="form-group" style="background:#f8fafc; padding:20px; border-radius:12px; border:1px solid #e2e8f0;">
                 <label>결제 수단</label>
-                {% if store.get('points') %}
-                <div style="display: flex; gap: 10px; margin-top: 5px;">
-                    <label style="font-weight: normal; cursor: pointer;">
-                        <input type="radio" name="payment_method" value="points"
-                            onchange="togglePaymentMethod(this.value)" checked>
-                        내 포인트 사용 (보유: {{ "{:,}".format(store.points) }} P)
-                    </label>
+                <div style="display:flex; gap:15px; margin-top:10px; margin-bottom:15px;">
+                    <label style="cursor:pointer;"><input type="radio" name="pay_type" value="prepaid" onchange="togglePayType()" checked> 선불 (즉시결제)</label>
+                    <label style="cursor:pointer;"><input type="radio" name="pay_type" value="collect" onchange="togglePayType()"> 착불 (받는 분 지불)</label>
                 </div>
-                {% endif %}
-                <div style="display: flex; gap: 10px; margin-top: 5px;">
-                    <label style="font-weight: normal; cursor: pointer;">
-                        <input type="radio" name="payment_method" value="toss"
-                            onchange="togglePaymentMethod(this.value)" {% if not store.get('points') %}checked{% endif
-                            %}>
-                        토스 페이먼츠 (신용카드/가상계좌/간편결제 등)
-                    </label>
-                </div>
-
-                <!-- Toss Payment Widget Area -->
-                <div id="toss-widget-area"
-                    style="margin-top: 15px; {% if store.get('points') %}display:none;{% endif %}">
+                <div id="toss-widget-area" style="background:white; border-radius:8px;">
                     <div id="payment-method"></div>
                     <div id="agreement"></div>
                 </div>
             </div>
 
-            <button type="submit" class="btn">택배 예약하기</button>
-            <a href="/admin/dashboard" class="back-link">취소하고 돌아가기</a>
+            <button type="submit" id="submitBtn" class="btn">총 0원 택배 결제 및 예약 완료</button>
+            <a href="/admin/dashboard" style="display:block; text-align:center; margin-top:15px; color:#64748b; text-decoration:none;">취소하고 돌아가기</a>
         </form>
     </div>
 
     <script>
-        // --- 1. Daum Postcode (Inline Mode) ---
-        var element_layer = document.getElementById('wrap_receiver');
-        var sender_layer = document.getElementById('wrap_sender');
-
-        function foldDaumPostcode(elementId) {
-            var el = document.getElementById(elementId);
-            if (el) el.style.display = 'none';
-        }
-
-        function execDaumPostcode(fieldId, wrapperId) {
-            var currentScroll = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
-            var el = document.getElementById(wrapperId);
-
-            new daum.Postcode({
-                oncomplete: function (data) {
-                    var addr = '';
-                    var extraAddr = '';
-
-                    if (data.userSelectedType === 'R') {
-                        addr = data.roadAddress;
-                    } else {
-                        addr = data.jibunAddress;
-                    }
-
-                    if (data.userSelectedType === 'R') {
-                        if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
-                            extraAddr += data.bname;
-                        }
-                        if (data.buildingName !== '' && data.apartment === 'Y') {
-                            extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
-                        }
-                        if (extraAddr !== '') {
-                            extraAddr = ' (' + extraAddr + ')';
-                        }
-                    }
-
-                    var fullAddr = addr + extraAddr;
-                    document.getElementById(fieldId).value = fullAddr;
-
-                    // Detail addr focus
-                    document.getElementById(fieldId + "_detail").focus();
-
-                    el.style.display = 'none';
-                    document.body.scrollTop = currentScroll;
-                },
-                onresize: function (size) {
-                    el.style.height = size.height + 'px';
-                },
-                width: '100%',
-                height: '100%'
-            }).embed(el);
-
-            el.style.display = 'block';
-        }
-    </script>
-    <script>
-        const clientKey = "{{ toss_client_key }}";
-        const customerKey = PaymentWidget.ANONYMOUS; // Non-member generic key
+        let receiverCount = 0;
         let paymentWidget = null;
         let paymentMethodWidget = null;
+        const TOSS_CLIENT_KEY = "{{ toss_client_key }}";
 
-        // Initialize Widget
-        try {
-            if (clientKey) {
-                paymentWidget = PaymentWidget(clientKey, customerKey);
-                // Render Payment Methods
-                paymentMethodWidget = paymentWidget.renderPaymentMethods(
-                    '#payment-method',
-                    { value: 6000 }, // Initial value (Small)
-                    { variantKey: 'DEFAULT' }
-                );
-                // Render Agreement
-                paymentWidget.renderAgreement('#agreement', { variantKey: 'AGREEMENT' });
-            }
-        } catch (e) {
-            console.error("Toss Widget Init Error:", e);
-        }
-
-        // Toggle Widget Visibility
-        function togglePaymentMethod(method) {
-            const area = document.getElementById('toss-widget-area');
-            if (method === 'toss') {
-                area.style.display = 'block';
-                // Update amount when showing
-                updateWidgetAmount();
-            } else {
-                area.style.display = 'none';
-            }
-        }
-
-        // Calculate Fee & Update Widget
-        function updateWidgetAmount() {
-            if (!paymentMethodWidget) return;
-
-            const weight = document.querySelector('select[name="weight"]');
-            const quantity = document.querySelector('input[name="quantity"]');
-
-            if (!weight || !quantity) return;
-
-            let price = 6000; // Small
-            if (weight.value === "medium") price = 7000;
-            if (weight.value === "large") price = 9000;
-            // xlarge removed
-
-            let qty = parseInt(quantity.value) || 1;
-            if (qty < 1) qty = 1;
-
-            const totalAmount = price * qty;
-
-            paymentMethodWidget.updateAmount(totalAmount);
-        }
-
-        // Add Event Listeners for amount change
-        document.addEventListener("DOMContentLoaded", function () {
-            const weightSelect = document.querySelector('select[name="weight"]');
-            const qtyInput = document.querySelector('input[name="quantity"]');
-
-            if (weightSelect) weightSelect.addEventListener('change', updateWidgetAmount);
-            if (qtyInput) qtyInput.addEventListener('change', updateWidgetAmount);
-
-            // Initial Load Sender Info
-            const savedSenderNode = localStorage.getItem("courier_sender_info");
-            if (savedSenderNode) {
-                const senderInfo = JSON.parse(savedSenderNode);
-                document.getElementById("sender_name").value = senderInfo.name || "";
-                document.getElementById("sender_phone").value = senderInfo.phone || "";
-                document.getElementById("sender_addr").value = senderInfo.addr || "";
-                document.getElementById("sender_addr_detail").value = senderInfo.addr_detail || ""; // Load Detail Address
-                document.getElementById("saveSender").checked = true;
-            }
-
-            // Initial Amount Update
-            updateWidgetAmount();
+        document.addEventListener('DOMContentLoaded', () => {
+            initToss();
+            addReceiver(); // Initial empty block
         });
 
-        function execDaumPostcode(targetId, wrapId) {
-            var element_wrap = document.getElementById(wrapId);
-            var currentScroll = Math.max(document.body.scrollTop, document.documentElement.scrollTop);
-
-            new daum.Postcode({
-                oncomplete: function (data) {
-                    var addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
-                    if (data.buildingName !== '') {
-                        addr += ' (' + data.buildingName + ')';
-                    }
-                    document.getElementById(targetId).value = addr;
-                    element_wrap.style.display = 'none';
-                    document.body.scrollTop = currentScroll;
-
-                    // Focus Detail Address
-                    document.getElementById(targetId + '_detail').focus();
-                },
-                onresize: function (size) {
-                    element_wrap.style.height = size.height + 'px';
-                },
-                width: '100%',
-                height: '100%'
-            }).embed(element_wrap);
-
-            element_wrap.style.display = 'block';
+        function initToss() {
+            if(!TOSS_CLIENT_KEY) return;
+            const customerKey = "CITIZEN_USER_" + Math.random().toString(36).substring(2, 10);
+            paymentWidget = TossPayments(TOSS_CLIENT_KEY).widgets({ customerKey });
+            paymentMethodWidget = paymentWidget.renderPaymentMethods('#payment-method', { value: 6000 }, { variantKey: "DEFAULT" });
+            paymentWidget.renderAgreement('#agreement', { variantKey: "AGREEMENT" });
         }
 
-        function foldDaumPostcode(wrapId) {
-            var element_wrap = document.getElementById(wrapId);
-            element_wrap.style.display = 'none';
+        function togglePayType() {
+            const type = document.querySelector('input[name="pay_type"]:checked').value;
+            const tossArea = document.getElementById('toss-widget-area');
+            if(type === 'prepaid') tossArea.style.display = 'block';
+            else tossArea.style.display = 'none';
+            updateTotal();
+        }
+
+        function updateTotal() {
+            let totalFee = 0;
+            let totalBoxes = 0;
+            const blocks = document.querySelectorAll('.receiver-block');
+            
+            blocks.forEach(block => {
+                const wt = block.querySelector('.block-weight').value;
+                const qty = parseInt(block.querySelector('.block-qty').value) || 1;
+                let fee = 6000;
+                if(wt === 'medium') fee = 7000; else if(wt === 'large') fee = 9000;
+                
+                totalFee += (fee * qty);
+                totalBoxes += qty;
+            });
+
+            document.getElementById('totalBoxCount').innerText = totalBoxes;
+            document.getElementById('totalShippingFee').innerText = totalFee.toLocaleString();
+            
+            const pType = document.querySelector('input[name="pay_type"]:checked').value;
+            const submitBtn = document.getElementById('submitBtn');
+            if(pType === 'prepaid') {
+                submitBtn.innerText = `총 ${totalFee.toLocaleString()}원 결제 및 예약 완료`;
+            } else {
+                submitBtn.innerText = `예약 접수 완료 (결제금액 없음)`;
+            }
+
+            if(paymentMethodWidget) {
+                try { paymentMethodWidget.updateAmount(totalFee); } catch(e){}
+            }
+        }
+
+        function toggleSenderArea(cb, id) {
+            const area = document.getElementById('sender-area-' + id);
+            if(cb.checked) {
+                area.style.display = 'none';
+            } else {
+                area.style.display = 'block';
+            }
+        }
+
+        function addReceiver() {
+            receiverCount++;
+            const id = receiverCount;
+            const html = `
+                <div class="receiver-block" id="recv-${id}">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h4 style="margin:0; color:#1e293b; font-size:1.3rem;">배송지 #${id}</h4>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" onclick="addReceiver()" style="padding:10px 15px; background:#4f46e5; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.95rem; box-shadow:0 2px 5px rgba(79,70,229,0.3);">+ 새 배송지 추가</button>
+                            ${id > 1 ? `<button type="button" onclick="document.getElementById('recv-${id}').remove(); updateTotal();" style="padding:10px 15px; background:#ef4444; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.95rem;">삭제 ✕</button>` : ''}
+                        </div>
+                    </div>
+                    
+                    <label style="margin-bottom:15px; font-size:1.15rem; color:#1e293b; font-weight:800; display:flex; align-items:center; gap:8px; cursor:pointer; background:#f8fafc; padding:10px 15px; border-radius:8px; border:2px solid #cbd5e1; box-shadow:0 2px 4px rgba(0,0,0,0.02); transition:border-color 0.2s;">
+                        <input type="checkbox" class="isFixedSender" checked onchange="toggleSenderArea(this, ${id})" style="width:24px; height:24px; cursor:pointer; accent-color:#0ea5e9;">
+                        보내는 분 고정 (기본 설정 유지)
+                    </label>
+
+                    <!-- Per-block Sender Area (Hidden by default) -->
+                    <div class="sender-area" id="sender-area-${id}" style="display:none; background:#f1f5f9; padding:15px; border-radius:8px; margin-top:10px; margin-bottom:15px; border:1px solid #e2e8f0;">
+                        <strong style="display:block; margin-bottom:10px; color:#475569;">[이곳만 특별히] 다른 분이름으로 택배 발송</strong>
+                        <div style="display:flex; gap:10px;">
+                            <div class="form-group" style="flex:1;"><label>보내는 분 이름</label><input type="text" class="s-name"></div>
+                            <div class="form-group" style="flex:1;"><label>보내는 분 연락처</label><input type="text" class="s-phone" placeholder="010-"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>보내는 분 주소</label>
+                            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                                <input type="text" id="s_addr_${id}" class="s-addr" placeholder="주소 검색" readonly style="flex:1;">
+                                <button type="button" class="address-btn" onclick="execDaumPostcode('s_addr_${id}')">검색</button>
+                            </div>
+                            <div id="wrap_s_addr_${id}" style="display:none; border:1px solid #cbd5e1; width:100%; height:300px; margin-bottom:8px;"></div>
+                            <input type="text" class="s-addrDetail" placeholder="상세 주소 (선택)">
+                        </div>
+                    </div>
+                    
+                    <hr style="border:none; border-top:1px dashed #cbd5e1; margin:15px 0;">
+                    
+                    <strong style="display:block; margin-bottom:10px; color:#0f172a;">받는 분 정보</strong>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:1;"><label>이름</label><input type="text" class="r-name" required></div>
+                        <div class="form-group" style="flex:1;"><label>연락처</label><input type="text" class="r-phone" placeholder="010-" required></div>
+                    </div>
+                    <div class="form-group">
+                        <label>도착지 주소</label>
+                        <div style="display:flex; gap:8px; margin-bottom:8px;">
+                            <input type="text" id="r_addr_${id}" class="r-addr" placeholder="주소 검색" readonly required style="flex:1;">
+                            <button type="button" class="address-btn" onclick="execDaumPostcode('r_addr_${id}')">주소 검색</button>
+                        </div>
+                        <div id="wrap_r_addr_${id}" style="display:none; border:1px solid #cbd5e1; width:100%; height:300px; margin-bottom:8px;"></div>
+                        <input type="text" class="r-addrDetail" placeholder="상세 주소 (선택)" required>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <div class="form-group" style="flex:2;">
+                            <label>물품종류</label>
+                            <select class="r-itemType">
+                                <option value="general">공산품</option><option value="food">식품/농산목</option>
+                                <option value="fragile">파손주의(유리)</option><option value="document">서류</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:3;">
+                            <label>크기/무게</label>
+                            <select class="block-weight r-weight" onchange="updateTotal()">
+                                <option value="small">소형(5kg/6천원)</option>
+                                <option value="medium">중형(10kg/7천원)</option>
+                                <option value="large">대형(20kg/9천원)</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex:2;">
+                            <label>수량</label>
+                            <div class="qty-controls">
+                                <button type="button" class="qty-btn" onclick="qtyMod(this, -1)">-</button>
+                                <input type="number" class="block-qty r-qty" value="1" min="1" max="50" onchange="updateTotal()" style="width:50px; text-align:center; padding:8px;">
+                                <button type="button" class="qty-btn" onclick="qtyMod(this, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('receiversList').insertAdjacentHTML('beforeend', html);
+            updateTotal();
+        }
+
+        function qtyMod(btn, delta) {
+            const input = btn.parentElement.querySelector('input');
+            let val = parseInt(input.value) + delta;
+            if(val < 1) val = 1;
+            input.value = val;
+            updateTotal();
+        }
+
+        function execDaumPostcode(targetId) {
+            const wrapId = 'wrap_' + targetId;
+            const wrap = document.getElementById(wrapId);
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    let addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+                    if(data.buildingName !== '') addr += ' (' + data.buildingName + ')';
+                    document.getElementById(targetId).value = addr;
+                    wrap.style.display = 'none';
+                    const nextInput = document.getElementById(targetId).parentElement.parentElement.querySelector('input:last-child');
+                    if(nextInput) nextInput.focus();
+                },
+                width: '100%', height: '100%'
+            }).embed(wrap);
+            wrap.style.display = 'block';
         }
 
         async function submitCourierRequest(e) {
             e.preventDefault();
-            const btn = document.querySelector('.btn');
+            const btn = document.getElementById('submitBtn');
             btn.disabled = true;
-            btn.innerText = "처리 중...";
+            btn.innerText = "예약 서버 접속 중...";
 
-            const formData = new FormData(e.target);
-            const data = Object.fromEntries(formData.entries());
+            const blocks = document.querySelectorAll('.receiver-block');
+            if(blocks.length === 0) { alert('최소 1개의 배송지가 필요합니다.'); btn.disabled = false; return; }
 
-            // Save Sender Info Logic
-            const saveSender = document.getElementById("saveSender").checked;
-            if (saveSender) {
-                const senderInfo = {
-                    name: data.sender_name,
-                    phone: data.sender_phone,
-                    addr: data.sender_addr,
-                    addr_detail: data.sender_addr_detail // Save Detail Address
-                };
-                localStorage.setItem("courier_sender_info", JSON.stringify(senderInfo));
-            } else {
-                localStorage.removeItem("courier_sender_info");
-            }
+            const s_name = document.getElementById('sender_name').value;
+            const s_phone = document.getElementById('sender_phone').value;
+            const s_addr = document.getElementById('sender_addr').value + " " + document.getElementById('sender_addr_detail').value;
+            const pay_type = document.querySelector('input[name="pay_type"]:checked').value;
 
-            // Combine Address for Backend
-            data.sender_addr = data.sender_addr + ' ' + data.sender_addr_detail;
-            data.receiver_addr = data.receiver_addr + ' ' + data.receiver_addr_detail;
+            const reservations = [];
+            blocks.forEach(b => {
+                const isFixed = b.querySelector('.isFixedSender').checked;
+                let b_s_name = s_name;
+                let b_s_phone = s_phone;
+                let b_s_addr = s_addr;
+                
+                if(!isFixed) {
+                    b_s_name = b.querySelector('.s-name').value || s_name;
+                    b_s_phone = b.querySelector('.s-phone').value || s_phone;
+                    b_s_addr = b.querySelector('.s-addr').value + " " + b.querySelector('.s-addrDetail').value;
+                }
+
+                reservations.push({
+                    sender_name: b_s_name, sender_phone: b_s_phone, sender_addr: b_s_addr,
+                    receiver_name: b.querySelector('.r-name').value,
+                    receiver_phone: b.querySelector('.r-phone').value,
+                    receiver_addr: b.querySelector('.r-addr').value + " " + b.querySelector('.r-addrDetail').value,
+                    item_type: b.querySelector('.r-itemType').value,
+                    weight: b.querySelector('.r-weight').value,
+                    quantity: parseInt(b.querySelector('.r-qty').value),
+                    payment_method: 'toss',
+                    pay_type: pay_type
+                });
+            });
 
             try {
-                const response = await fetch('/api/citizen/courier/reserve', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                const res = await fetch('/api/citizen/courier/reserve-multi', {
+                    method: 'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ reservations })
                 });
+                const result = await res.json();
 
-                const result = await response.json();
+                if(!result.success) throw new Error("서버 접수 실패");
 
-                if (result.success) {
-                    if (result.amount > 0 && data.payment_method === 'toss') {
-                        // Toss Payment Widget Trigger
-                        if (!paymentWidget) {
-                            alert("결제 모듈 초기화 실패. 새로고침 해주세요.");
-                            return;
-                        }
-
-                        // Request Payment via Widget
-                        paymentWidget.requestPayment({
-                            orderId: result.tracking_code,
-                            orderName: result.orderName,
-                            successUrl: window.location.origin + "/citizen/courier/toss/success",
-                            failUrl: window.location.origin + "/citizen/courier/toss/fail",
-                            customerName: data.sender_name,
-                        }).catch(function (error) {
-                            if (error.code === 'USER_CANCEL') {
-                                // User canceled
-                                btn.disabled = false;
-                                btn.innerText = "택배 예약하기";
-                            } else {
-                                alert(error.message);
-                                btn.disabled = false;
-                                btn.innerText = "택배 예약하기";
-                            }
-                        });
-
-                    } else {
-                        // Point Payment Success
-                        alert('택배 예약이 완료되었습니다! \n운송장 번호: ' + result.tracking_code);
-                        location.href = '/admin/dashboard';
-                    }
+                if(result.payment_required && pay_type === 'prepaid') {
+                    btn.innerText = "결제창 호출 중...";
+                    paymentWidget.requestPayment({
+                        orderId: result.tracking_code,
+                        orderName: result.orderName,
+                        successUrl: window.location.origin + "/citizen/courier/toss/success",
+                        failUrl: window.location.origin + "/citizen/courier/toss/fail",
+                        customerName: s_name,
+                    }).catch(function (error) {
+                        alert(error.message);
+                        btn.disabled = false; btn.innerText = "재시도";
+                    });
                 } else {
-                    alert('예약 실패: ' + result.error);
-                    btn.disabled = false;
-                    btn.innerText = "택배 예약하기";
+                    alert('택배 배송 접수가 완료되었습니다.\n등록번호: ' + result.tracking_code);
+                    location.href = '/admin/dashboard';
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('서버 오류가 발생했습니다.');
-                btn.disabled = false;
-                btn.innerText = "택배 예약하기";
+            } catch(error) {
+                console.error(error);
+                alert("오류가 발생했습니다.");
+                btn.disabled = false; btn.innerText = "택배 결제 예약";
             }
         }
-    </script>
 
-    <!-- AI Loading & Overlay -->
-    <div id="loading">사진을 분석 중입니다...<br>잠시만 기다려주세요.</div>
-    <div id="ai_overlay">
-        <div style="font-size:1.5rem; margin-bottom:20px; font-weight:bold;">택배 정보를 말씀해 주세요...</div>
-        <div class="mic-animation">🎤</div>
-        <div id="ai_realtime_text">듣고 있습니다...</div>
-        <button onclick="closeAIOverlay()"
-            style="margin-top:30px; padding:10px 30px; font-size:1.2rem; background:transparent; border:2px solid white; color:white; border-radius:30px; cursor:pointer;">취소</button>
-    </div>
-
-    <!-- AI Scripts -->
-    <script>
+        // --- AI FEATURES ---
+        // 1. Voice
         let recognition;
-
-        function closeAIOverlay() {
-            document.getElementById('ai_overlay').style.display = 'none';
-            if (recognition) recognition.stop();
-        }
-
-        function startVoiceSearch() {
-            if (!('webkitSpeechRecognition' in window)) {
-                alert("지원하지 않는 브라우저입니다. 크롬을 사용해주세요.");
-                return;
-            }
-
+        function startVoiceOrder(e) {
+            e.preventDefault();
+            if(!('webkitSpeechRecognition' in window)){ alert('크롬을 사용해주세요.'); return; }
             recognition = new webkitSpeechRecognition();
             recognition.lang = 'ko-KR';
-            recognition.interimResults = true;
-            recognition.maxAlternatives = 1;
-
-            const overlay = document.getElementById('ai_overlay');
-            const textDisplay = document.getElementById('ai_realtime_text');
-
-            overlay.style.display = 'flex';
-            textDisplay.innerText = "듣고 있습니다...";
+            recognition.interimResults = false;
+            
+            const btn = e.target;
+            const org = btn.innerHTML;
+            btn.innerHTML = '🎙️ 듣는 중...';
+            btn.style.background = '#ef4444';
 
             recognition.start();
-
-            recognition.onresult = function (event) {
-                let interim = '';
-                let final = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) final += event.results[i][0].transcript;
-                    else interim += event.results[i][0].transcript;
-                }
-                textDisplay.innerText = final + interim;
-                if (final) {
-                    textDisplay.innerText = "분석 중입니다...";
-                    recognition.stop();
-                    sendToAI(final);
-                }
-            };
-
-            recognition.onerror = function (event) {
-                if (event.error !== 'no-speech') {
-                    alert("오류가 났습니다: " + event.error);
-                    closeAIOverlay();
-                }
-            };
-        }
-
-        async function sendToAI(text) {
-            try {
-                const response = await fetch('/api/ai/parse-voice', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: text })
-                });
-                const data = await response.json();
-                closeAIOverlay();
-                applyAIResult(data);
-            } catch (e) {
-                closeAIOverlay();
-                alert("음성 인식에 실패했습니다.");
-            }
-        }
-
-        async function processImage(input) {
-            if (input.files && input.files[0]) {
-                const formData = new FormData();
-                formData.append('image', input.files[0]);
-
-                document.getElementById('loading').style.display = 'block';
-
+            recognition.onresult = async function(e) {
+                const final = e.results[0][0].transcript;
+                btn.innerHTML = '🎙️ AI 파싱 중...';
                 try {
-                    const response = await fetch('/api/ai/parse-image', { method: 'POST', body: formData });
-                    const data = await response.json();
-                    document.getElementById('loading').style.display = 'none';
-                    applyAIResult(data);
-                } catch (e) {
-                    document.getElementById('loading').style.display = 'none';
-                    alert("사진 분석에 실패했습니다.");
-                }
-            }
+                    const res = await fetch('/api/market/parse-voice', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({text: final})
+                    });
+                    const d = await res.json();
+                    if(d.success) applyAIData(d.data);
+                } catch(err){}
+                btn.innerHTML = org; btn.style.background = '#22c55e';
+            };
+            recognition.onerror = () => { btn.innerHTML = org; btn.style.background = '#22c55e'; };
         }
 
-        function applyAIResult(data) {
-            const addr = data.receiver_addr || "";
-            const name = data.receiver_name || "";
-            const item = data.item_type || "";
-            const phone = data.receiver_phone || "";
+        // 2. Photo
+        async function handlePhotoUpload(input) {
+            if(!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const btn = document.getElementById('btnPhotoOrder');
+            const org = btn.innerHTML;
+            btn.innerHTML = '📸 AI 비전 ⏳';
+            btn.style.background = '#f59e0b';
+            
+            const reader = new FileReader();
+            reader.onload = async function(e){
+                try {
+                    const res = await fetch('/api/market/parse-photo', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({image_base64: e.target.result})
+                    });
+                    const d = await res.json();
+                    if(d.success) applyAIData(d.data);
+                } catch(err){}
+                btn.innerHTML = org; btn.style.background = '#0ea5e9'; input.value="";
+            };
+            reader.readAsDataURL(file);
+        }
 
-            if (!addr && !name) {
-                alert("정보를 인식하지 못했습니다. 다시 시도해주세요.");
-                return;
-            }
-
-            let msg = "✨ AI가 찾은 정보입니다:\n\n";
-            if (name) msg += "이름: " + name + "\n";
-            if (phone) msg += "전화번호: " + phone + "\n";
-            if (addr) msg += "주소: " + addr + "\n";
-            if (item) msg += "품목: " + item + "\n";
-            msg += "\n이대로 입력하시겠습니까?";
-
-            if (confirm(msg)) {
-                if (data.receiver_name) document.querySelector('input[name="receiver_name"]').value = data.receiver_name;
-                if (data.receiver_phone) document.querySelector('input[name="receiver_phone"]').value = data.receiver_phone;
-                if (data.receiver_addr) document.getElementById('receiver_addr').value = data.receiver_addr;
-                if (data.item_type) {
-                    // Try to match dropdown first, manually match "식품", "전자제품" etc if needed
-                    // For the main form, item_type is a select
-                    const select = document.querySelector('select[name="item_type"]');
-                    const text = data.item_type;
-                    if (text.includes('김치') || text.includes('쌀') || text.includes('과일') || text.includes('식품')) {
-                        select.value = 'food';
-                    } else if (text.includes('유리') || text.includes('가전') || text.includes('파손')) {
-                        select.value = 'fragile';
-                    } else if (text.includes('종이') || text.includes('서류') || text.includes('문서')) {
-                        select.value = 'document';
-                    } else {
-                        select.value = 'general';
-                    }
+        // 3. Excel
+        function handleExcelUpload(input) {
+            if(!input.files || input.files.length === 0) return;
+            const btn = input.previousElementSibling;
+            const orgTitle = btn.innerHTML;
+            btn.innerHTML = '📊 분석 중... ⏳';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header:1});
+                
+                const arr = [];
+                for(let i=1; i<sheetData.length; i++){
+                    const row = sheetData[i];
+                    if(!row || row.length < 2) continue;
+                    arr.push({ name: row[0]||'', phone: row[1]||'', addr: row[2]||'', addrDetail: row[3]||'', qty: parseInt(row[4])||1 });
                 }
+                applyAIData(arr);
+                btn.innerHTML = orgTitle;
+                input.value = "";
+            };
+            reader.readAsArrayBuffer(input.files[0]);
+        }
+
+        // Shared AI Applicator
+        function applyAIData(arr) {
+            if(!arr || !arr.length) return;
+            const blankBlock = document.querySelector('.receiver-block');
+            if(blankBlock && !blankBlock.querySelector('.r-name').value && !blankBlock.querySelector('.r-addr').value) {
+                blankBlock.remove(); // Remove init empty block if AI populates
             }
+
+            arr.forEach(item => {
+                addReceiver();
+                const blocks = document.querySelectorAll('.receiver-block');
+                const b = blocks[blocks.length-1];
+                b.querySelector('.r-name').value = item.name || '';
+                b.querySelector('.r-phone').value = item.phone || '';
+                b.querySelector('.r-addr').value = item.addr || '';
+                b.querySelector('.r-addrDetail').value = item.addrDetail || '';
+                b.querySelector('.r-qty').value = item.qty || 1;
+            });
+            updateTotal();
         }
     </script>
 </body>
-
 </html>
