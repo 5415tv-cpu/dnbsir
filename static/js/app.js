@@ -50,11 +50,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // iOS check for PWA banner
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // Show PWA banner for all mobile devices natively fallback
+    const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     
-    if (isIOS && !isStandalone && localStorage.getItem('hidePWA') !== 'true') {
+    if (isMobile && !isStandalone && localStorage.getItem('hidePWA') !== 'true') {
         const banner = document.getElementById('pwaInstallBanner');
         if(banner) banner.style.display = 'flex';
     }
