@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}사업용 카드 자동 기장 센터 - 동네비서{% endblock %}
+
+{% block page_header %}
+<div class="page-header" style="text-align: left; padding: 20px;">
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 5px;">경비 처리 비서</div>
+    <div class="page-title" style="font-size: 1.8rem; font-weight: 900;">사업용 카드 자동 기장</div>
+</div>
+{% endblock %}
+
+<div style="max-width: 600px; margin: 0 auto;">
+
+    <div class="kiosk-card" style="display: block; text-align: left;">
+
+        <h3
+            style="margin-top: 0; font-weight: 900; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 20px;">
+            <span style="color: #27ae60;">●</span> 카드 연결 현황
+        </h3>
+
+        <div
+            style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #eee;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-weight: 800; font-size: 1.1rem;">삼성카드(4567)</span>
+                <span
+                    style="color: #27ae60; font-size: 0.8rem; font-weight: 700; background: #e8f5e9; padding: 4px 8px; border-radius: 4px;">실시간
+                    연동 중</span>
+            </div>
+            <button onclick="location.href='/admin/cards/register'" class="main-btn"
+                style="padding: 12px; font-size: 1rem; background: #fff; color: #1a1a1a; border: 2px solid #ddd; box-shadow: none;">
+                + 새 카드 등록하기
+            </button>
+        </div>
+
+        <div
+            style="background: #1a1a1a; color: #fff; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+            <div
+                style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px; display: flex; justify-content: space-between;">
+                <span>2026년 2월 자동 기장 현황</span>
+                <span style="font-size: 0.8rem; cursor: pointer; color: #fff;">🔄 새로고침</span>
+            </div>
+
+            <div id="expenseList" style="margin-bottom: 20px; min-height: 50px;">
+                <!-- JS will populate this -->
+                <div style="text-align: center; color: #777;">불러오는 중...</div>
+            </div>
+
+            <div
+                style="display: flex; justify-content: space-between; font-weight: 900; border-top: 1px solid #333; padding-top: 15px; color: #ffeb3b; font-size: 1.2rem;">
+                <span>총 인정 경비</span>
+                <span id="totalExpense">0 원</span>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function fetchExpenses() {
+        try {
+            const res = await fetch('{{ api_url }}/api/admin/expenses');
+            const data = await res.json();
+
+            const listEl = document.getElementById('expenseList');
+            listEl.innerHTML = '';
+
+            let total = 0;
+
+            data.forEach(item => {
+                total += item.amount;
+
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.justifyContent = 'space-between';
+                div.style.marginBottom = '5px';
+                div.innerHTML = `
+                    <span>${item.category} <small style="color:#aaa; font-weight:normal;">(${item.date.substring(5)})</small></span>
+                    <span>${item.amount.toLocaleString()} 원</span>
+                `;
+                listEl.appendChild(div);
+            });
+
+            document.getElementById('totalExpense').innerText = total.toLocaleString() + " 원";
+
+        } catch (e) {
+            console.error("Failed to fetch expenses", e);
+            document.getElementById('expenseList').innerHTML = '<div style="color:red">데이터 로드 실패</div>';
+        }
+    }
+
+    // Load on start
+    fetchExpenses();
+</script>
+{% endblock %}

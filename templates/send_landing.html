@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 택배보내기 - 분류 선택</title>
+    <style>
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .hero-title {
+            text-align: center;
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+
+        .hero-title h1 {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #1a1a1a;
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .hero-title p {
+            font-size: 1.2rem;
+            color: #166534;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+
+        .card-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            border: 3px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .desc {
+            font-size: 1.15rem;
+            color: #475569;
+            word-break: keep-all;
+            line-height: 1.5;
+            font-weight: bold;
+        }
+
+        /* 사장님 카드 */
+        .boss-card {
+            border-color: #3b82f6;
+        }
+        .boss-card .title { color: #1e3a8a; }
+
+        /* 어르신 카드 */
+        .elderly-card {
+            border-color: #16a34a;
+            background-color: #f0fdf4;
+        }
+        .elderly-card .title { color: #14532d; }
+        
+        /* 홈으로 버튼 */
+        .btn-home {
+            margin-top: 40px;
+            padding: 15px 30px;
+            background: #cbd5e1;
+            color: #334155;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 1.1rem;
+            transition: background 0.2s;
+        }
+        .btn-home:hover { background: #94a3b8; color: white; }
+
+    </style>
+</head>
+
+<body>
+
+    <div class="hero-title">
+        <img src="{{ static_url('icons/dnbsir-icon-192.png') }}" alt="동네비서 메인 캐릭터" onclick="installPWA()" title="클릭하여 PC/모바일 앱 설치하기" style="width: 120px; height: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s ease; border-radius: 20px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h1>보내기 비서</h1>
+        <p>맞춤형 택배 예약 화면을 선택해주세요</p>
+    </div>
+
+    <div class="card-container">
+        <!-- Boss Mode -->
+        <a href="/citizen/send/manager" class="card boss-card">
+            <span class="icon">💼 📱</span>
+            <span class="title">사장님용 센드페이지</span>
+            <span class="desc">일반적인 타이핑과 주소 검색에 익숙하시다면<br>이 화면을 선택하세요.</span>
+        </a>
+
+        <!-- Elderly (AI) Mode -->
+        <a href="/citizen/send/elderly" class="card elderly-card">
+            <span class="icon">👵 🎙️</span>
+            <span class="title">어르신용 센드페이지</span>
+            <span class="desc">글씨가 1.5배 더 크고 넓습니다!<br>말로 하거나 사진을 찍어 간편하게 보내세요.</span>
+        </a>
+    </div>
+
+    <a href="https://citizen.dongnebiseo.com" class="btn-home">돌아가기</a>
+
+</body>
+
+</html>

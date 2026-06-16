@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>환불정책 및 사업자정보 | 동네비서 산지직송 마켓</title>
+    <meta name="description" content="동네비서 산지직송 마켓의 환불·반품 정책과 사업자 정보를 안내합니다.">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 16px 60px;
+        }
+
+        /* ── 헤더 ── */
+        header {
+            width: 100%;
+            max-width: 680px;
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #94a3b8;
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+        .back-btn:hover { color: #fbbf24; }
+
+        .market-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0f172a;
+            font-weight: 900;
+            font-size: 0.95rem;
+            padding: 4px 16px;
+            border-radius: 30px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* ── 카드 공통 ── */
+        .card {
+            width: 100%;
+            max-width: 680px;
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 28px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.5);
+            transition: border-color 0.3s;
+        }
+        .card:hover {
+            border-color: rgba(251, 191, 36, 0.25);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #fbbf24;
+            margin-bottom: 20px;
+            padding-bottom: 14px;
+            border-bottom: 1px dashed rgba(251, 191, 36, 0.2);
+        }
+
+        .card-title .icon {
+            font-size: 1.4rem;
+        }
+
+        /* ── 환불정책 항목 ── */
+        .policy-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .policy-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .policy-badge {
+            flex-shrink: 0;
+            background: rgba(251, 191, 36, 0.12);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            color: #fbbf24;
+            font-size: 0.75rem;
+            font-weight: 900;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+            margin-top: 2px;
+        }
+
+        .policy-text {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        .policy-text strong {
+            color: #f1f5f9;
+            font-weight: 700;
+        }
+
+        .policy-note {
+            margin-top: 18px;
+            background: rgba(251, 191, 36, 0.07);
+            border-left: 3px solid #fbbf24;
+            border-radius: 0 12px 12px 0;
+            padding: 12px 16px;
+            font-size: 0.88rem;
+            color: #94a3b8;
+            line-height: 1.7;
+        }
+
+        /* ── 사업자정보 테이블 ── */
+        .biz-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .biz-table tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .biz-table tr:last-child {
+            border-bottom: none;
+        }
+
+        .biz-table th {
+            text-align: left;
+            padding: 11px 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #64748b;
+            width: 38%;
+            vertical-align: top;
+        }
+
+        .biz-table td {
+            padding: 11px 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #e2e8f0;
+            word-break: break-all;
+        }
+
+        .biz-table td a {
+            color: #fbbf24;
+            text-decoration: none;
+        }
+        .biz-table td a:hover {
+            text-decoration: underline;
+        }
+
+        /* ── 고객센터 버튼 ── */
+        .contact-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 680px;
+            padding: 18px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0f172a;
+            font-size: 1.05rem;
+            font-weight: 900;
+            border-radius: 18px;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+            margin-top: 4px;
+        }
+        .contact-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(245, 158, 11, 0.4);
+        }
+        .contact-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* ── 하단 저작권 ── */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #334155;
+            font-size: 0.8rem;
+            line-height: 1.8;
+        }
+
+        /* ── 모바일 ── */
+        @media (max-width: 480px) {
+            body { padding: 20px 12px 50px; }
+            h1 { font-size: 1.5rem; }
+            .card { padding: 20px 16px; border-radius: 18px; }
+            .card-title { font-size: 1.05rem; margin-bottom: 16px; }
+            .biz-table th { font-size: 0.8rem; width: 42%; }
+            .biz-table td { font-size: 0.88rem; }
+            .policy-text { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 헤더 -->
+    <header>
+        <a href="https://dongnebiseo.com/citizen/market" class="back-btn">
+            ← 마켓으로 돌아가기
+        </a>
+        <div class="market-badge">환불정책 및 사업자정보</div>
+        <h1>동네비서 산지직송 마켓</h1>
+        <p class="subtitle">고객님의 권리를 소중히 여깁니다</p>
+    </header>
+
+    <!-- 환불 / 반품 정책 -->
+    <div class="card">
+        <div class="card-title">
+            <span class="icon">↩️</span>
+            환불 · 반품 정책
+        </div>
+        <div class="policy-list">
+
+            <div class="policy-item">
+                <span class="policy-badge">단순 변심</span>
+                <p class="policy-text">
+                    상품 <strong>수령 후 7일 이내</strong> 반품 신청 가능합니다.<br>
+                    단, 반품 배송비는 <strong>고객 부담</strong>이며, 상품이 미개봉·미사용 상태여야 합니다.
+                </p>
+            </div>
+
+            <div class="policy-item">
+                <span class="policy-badge">불량 · 오배송</span>
+                <p class="policy-text">
+                    상품 불량 또는 오배송의 경우 수령 후 <strong>7일 이내</strong> 교환·환불이 가능합니다.<br>
+                    이 경우 반품 배송비는 <strong>판매자 부담</strong>입니다.
+                </p>
+            </div>
+
+            <div class="policy-item">
+                <span class="policy-badge">신선식품</span>
+                <p class="policy-text">
+                    신선식품 특성상 <strong>수령 당일</strong> 상품 상태를 반드시 확인해 주세요.<br>
+                    신선도 문제는 <strong>사진과 함께 고객센터</strong>로 연락 주시면 즉시 처리해 드립니다.
+                </p>
+            </div>
+
+            <div class="policy-item">
+                <span class="policy-badge">환불 처리</span>
+                <p class="policy-text">
+                    환불 승인 후 카드사 기준 <strong>3~5 영업일 이내</strong> 처리됩니다.
+                </p>
+            </div>
+
+            <div class="policy-item">
+                <span class="policy-badge">반품 불가</span>
+                <p class="policy-text">
+                    다음의 경우 반품·교환이 불가합니다:<br>
+                    신선식품 개봉 후 / 수령 7일 초과 / 고객 과실로 인한 상품 훼손
+                </p>
+            </div>
+
+        </div>
+        <div class="policy-note">
+            📦 최대 배송 기간은 주문 확정 후 영업일 기준 <strong>7일 이내</strong>입니다.<br>
+            도서·산간 지역은 추가 기간이 소요될 수 있습니다.
+        </div>
+    </div>
+
+    <!-- 사업자 정보 -->
+    <div class="card">
+        <div class="card-title">
+            <span class="icon">🏢</span>
+            사업자 정보
+        </div>
+        <table class="biz-table">
+            <tr>
+                <th>상호명</th>
+                <td>탄탄제작소</td>
+            </tr>
+            <tr>
+                <th>대표자</th>
+                <td>이영준</td>
+            </tr>
+            <tr>
+                <th>사업자등록번호</th>
+                <td>442-32-01655</td>
+            </tr>
+            <tr>
+                <th>통신판매업 신고번호</th>
+                <td>제2026-강원태백-0013호</td>
+            </tr>
+            <tr>
+                <th>사업장 주소</th>
+                <td>강원특별자치도 태백시 태붐로 54</td>
+            </tr>
+            <tr>
+                <th>대표 전화</th>
+                <td><a href="tel:01023847447">010-2384-7447</a></td>
+            </tr>
+            <tr>
+                <th>이메일</th>
+                <td><a href="mailto:support@dongnebiseo.com">support@dongnebiseo.com</a></td>
+            </tr>
+            <tr>
+                <th>운영 시간</th>
+                <td>평일 09:00 ~ 18:00<br><span style="color:#64748b; font-size:0.85rem;">주말·공휴일 휴무</span></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 고객센터 연락 버튼 -->
+    <a href="mailto:support@dongnebiseo.com" class="contact-btn">
+        ✉️ &nbsp; 고객센터 문의하기
+    </a>
+
+    <!-- 푸터 -->
+    <footer>
+        <p>© 2026 탄탄제작소. All rights reserved.</p>
+        <p>동네비서 산지직송 마켓 | 사업자등록번호 442-32-01655</p>
+    </footer>
+
+</body>
+</html>

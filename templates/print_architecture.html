@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - 시스템 핵심 정보 구조도 (인쇄용)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Outfit:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #000000;
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .no-print-container {
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .no-print-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .btn-print {
+            background-color: #1e293b;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-print:hover {
+            background-color: #0f172a;
+        }
+
+        .print-area {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 900;
+            border-bottom: 2px solid #000000;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-top: 35px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 6px;
+        }
+
+        .diagram-box {
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            background-color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            overflow: visible;
+        }
+        
+        .mermaid {
+            width: 100% !important;
+            max-width: 1100px !important;
+        }
+
+        .description {
+            font-size: 0.95rem;
+            color: #334155;
+            margin-bottom: 20px;
+        }
+
+        /* Print optimization media queries */
+        @media print {
+            .no-print-container {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+                margin: 0;
+            }
+            .print-area {
+                max-width: 100%;
+            }
+            .diagram-box {
+                border: none;
+                background-color: transparent;
+                padding: 0;
+            }
+            /* Avoid page break inside diagrams */
+            .page-break {
+                page-break-before: always;
+            }
+        }
+    </style>
+    <!-- Load Mermaid.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            themeVariables: {
+                fontSize: '18px',
+                fontFamily: 'Noto Sans KR, sans-serif'
+            }
+        });
+    </script>
+</head>
+<body>
+
+    <!-- Print Control Bar (Hidden on actual print) -->
+    <div class="no-print-container">
+        <div>
+            <h3 class="no-print-title">🖨️ 인쇄 제어 바 (배경색 흰색 및 고대비 폰트 적용됨)</h3>
+            <p style="margin: 5px 0 0 0; font-size: 0.85rem; color: #475569;">
+                잉크를 절약하고 인쇄 결과물이 깨끗하도록 불필요한 색상이 제거된 인쇄 전용 레이아웃입니다.
+            </p>
+        </div>
+        <button class="btn-print" onclick="window.print()">지금 인쇄하기</button>
+    </div>
+
+    <!-- Printable Content Area -->
+    <div class="print-area">
+        <h1>동네비서 플랫폼 핵심 정보 구조도 (Information Architecture)</h1>
+        
+        <h2>1. 데이터베이스 스키마 및 관계 정의 (ERD)</h2>
+        <div class="description">
+            동네비서 서비스의 핵심 비즈니스 모델인 가맹점(Stores), 상품/메뉴(Products), 주문내역(Orders), 택배 정보(Parcel Bookings)의 연동 관계 및 필수 필드 명세입니다.
+        </div>
+        <div class="diagram-box">
+            <pre class="mermaid">
+            erDiagram
+                STORES ||--o{ PRODUCTS : "registers (1:N)"
+                STORES ||--o{ ORDERS : "manages (1:N)"
+                STORES ||--o{ PARCEL_BOOKINGS : "books (1:N)"
+                USERS_JWT ||--o| USERS : "auth_bridge (1:1)"
+                
+                STORES {
+                    string store_id PK "가맹점 식별 ID (휴대폰)"
+                    string name "가맹점 상점명"
+                    string owner_name "대표자명"
+                    string membership "등급 (free/premium)"
+                    int wallet_balance "지갑 잔액"
+                }
+                PRODUCTS {
+                    int id PK "상품 고유 ID"
+                    string store_id FK "가맹점 식별 ID"
+                    string name "상품명/메뉴명"
+                    int price "가격"
+                    int sort_order "정렬 순서"
+                    int is_active "노출 상태"
+                    string landing_url "이동 주소"
+                    int inventory "재고 수량"
+                }
+                ORDERS {
+                    int id PK "주문 고유 ID"
+                    string store_id FK "가맹점 식별 ID"
+                    string item_name "상품 요약 정보"
+                    int amount "결제 금액"
+                    string customer_phone "주문자 연락처"
+                    string payment_method "결제 수단"
+                    string settlement_status "정산 상태"
+                }
+                PARCEL_BOOKINGS {
+                    int id PK "택배 접수 ID"
+                    string store_id FK "가맹점 식별 ID"
+                    string receiver_name "수화인 이름"
+                    string receiver_address "도로명 주소"
+                    string invoice_no "운송장 번호"
+                    string status "접수 상태"
+                }
+                USERS_JWT {
+                    string phone_number PK "인증 휴대폰 번호"
+                    string auth_provider "로그인 수단"
+                    string role "유저 권한"
+                }
+            </pre>
+        </div>
+
+        <div class="page-break"></div>
+
+        <h2>2. 시스템 컴포넌트 아키텍처 및 폴백(Fallback) 흐름도</h2>
+        <div class="description">
+            사용자 프론트엔드 인터페이스(키오스크 UI)와 API 라우터 통신 및 DB 스토리지 연동 구조도이며, 통신 단절이나 DB 장애 시 로컬 폴백 JSON으로 우회하는 예외 처리 흐름을 보여줍니다.
+        </div>
+        <div class="diagram-box">
+            <pre class="mermaid">
+            flowchart TD
+                subgraph Frontend [사용자 화면 / 키오스크 UI]
+                    M_UI[market.html <br> 산지직송 마켓 화면]
+                    S_UI[hybrid_simulator.html <br> 동적 메뉴/하이브리드 시뮬레이터]
+                end
+
+                subgraph API_Routers [FastAPI 백엔드 라우터 계층]
+                    M_Router[routers/market.py <br> 마켓/주문/토스 결제 API]
+                    S_Router[store_router.py <br> 키오스크 가맹점 상품 API]
+                    A_Router[routers/auth.py <br> 하이브리드 인증/로그인 API]
+                end
+
+                subgraph DB_Layer [데이터베이스 스토리지 계층]
+                    SQLite_DB[(database.db <br> SQLite 로컬 DB)]
+                    PG_DB[(PostgreSQL <br> 실전 운영 원격 DB)]
+                end
+
+                M_UI --> M_Router
+                S_UI --> S_Router
+                S_UI --> A_Router
+                
+                M_Router --> SQLite_DB
+                M_Router --> PG_DB
+                S_Router --> SQLite_DB
+                A_Router --> SQLite_DB
+                A_Router --> PG_DB
+                
+                S_UI -.->|네트워크 단절 / DB 장애 시| FB[안전 폴백 로컬 JSON 객체 호출]
+            </pre>
+        </div>
+    </div>
+
+</body>
+</html>

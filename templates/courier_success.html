@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 완료 - 동네비서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+            background: #f0fdf4;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px 60px;
+        }
+
+        /* ── 로딩 */
+        #loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            text-align: center;
+        }
+        #loading .spin-icon {
+            font-size: 3.5rem;
+            animation: spin 1.4s linear infinite;
+        }
+        #loading h2 { color: #0f172a; font-size: 1.3rem; font-weight: 900; }
+        #loading p  { color: #64748b; font-size: 0.95rem; line-height: 1.6; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* ── 완료 카드 */
+        #done { display: none; width: 100%; max-width: 420px; }
+
+        .done-header {
+            text-align: center;
+            margin-bottom: 24px;
+            animation: popIn .6s cubic-bezier(.34,1.56,.64,1) both;
+        }
+        @keyframes popIn {
+            from { transform: scale(.5); opacity: 0; }
+            to   { transform: scale(1);  opacity: 1; }
+        }
+        .done-icon  { font-size: 5rem; display: block; margin-bottom: 12px; }
+        .done-header h1 {
+            font-size: 1.7rem; font-weight: 900;
+            color: #166534; margin-bottom: 8px;
+        }
+        .done-header p { color: #475569; font-size: 0.95rem; line-height: 1.6; }
+
+        /* 송장 배지 */
+        .tracking-badge {
+            background: white;
+            border: 1px solid #bbf7d0;
+            border-radius: 14px;
+            padding: 14px 20px;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(22,163,74,.08);
+            animation: slideUp .4s .2s ease both;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(14px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+        .tracking-badge .t-label { font-size: 0.78rem; color: #64748b; margin-bottom: 4px; }
+        .tracking-badge .t-code  { font-size: 1.05rem; font-weight: 900; color: #0f172a; }
+        .tracking-badge .t-check { font-size: 1.8rem; }
+
+        /* ── 온보딩 섹션 */
+        .next-section { animation: slideUp .4s .35s ease both; }
+        .next-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #94a3b8;
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .onboarding-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .onboard-card {
+            background: white;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px 14px;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+            transition: transform .15s, box-shadow .15s, border-color .15s;
+            position: relative;
+            overflow: hidden;
+        }
+        .onboard-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+        .onboard-card:hover  { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.1); }
+        .onboard-card:active { transform: translateY(0); }
+
+        /* 장부 */
+        .card-ledger { border-color: #bfdbfe; }
+        .card-ledger::before { background: linear-gradient(90deg,#3b82f6,#6366f1); }
+        .card-ledger .icon-wrap { background: #eff6ff; }
+        .card-ledger .card-title { color: #1e40af; }
+
+        /* 마켓 */
+        .card-market { border-color: #fde68a; }
+        .card-market::before { background: linear-gradient(90deg,#f59e0b,#ef4444); }
+        .card-market .icon-wrap { background: #fffbeb; }
+        .card-market .card-title { color: #92400e; }
+
+        .icon-wrap {
+            border-radius: 12px;
+            width: 52px; height: 52px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem;
+        }
+        .card-title { font-size: 1rem; font-weight: 900; margin-bottom: 2px; }
+        .card-desc  { font-size: 0.78rem; color: #64748b; line-height: 1.4; }
+        .card-arrow { font-size: 0.78rem; color: #94a3b8; }
+
+        /* 홈 버튼 */
+        .btn-home {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            width: 100%; padding: 15px;
+            background: #16a34a; color: white;
+            text-decoration: none; font-size: 1.05rem; font-weight: 700;
+            border-radius: 12px; border: none; cursor: pointer;
+            transition: background .15s, transform .1s;
+        }
+        .btn-home:hover  { background: #15803d; transform: translateY(-1px); }
+        .btn-home:active { transform: translateY(0); }
+    </style>
+</head>
+<body>
+
+    <!-- 로딩 -->
+    <div id="loading">
+        <div class="spin-icon">⏳</div>
+        <h2>결제 확인 중...</h2>
+        <p>결제가 정상적으로 완료되었습니다.<br>택배 접수 시스템에 안전하게 정보를 전달하고 있습니다.</p>
+    </div>
+
+    <!-- 완료 -->
+    <div id="done">
+        <div class="done-header">
+            <span class="done-icon">🎉</span>
+            <h1>배송 예약 완료!</h1>
+            <p>신청하신 택배 예약이 완료되었습니다.<br>기사님 앱과 블루투스 프린터로<br>송장이 즉시 전송되었습니다!</p>
+        </div>
+
+        <!-- 송장 번호 -->
+        <div class="tracking-badge">
+            <div>
+                <div class="t-label">📦 송장 번호</div>
+                <div class="t-code" id="trackingLabel">발급 중...</div>
+            </div>
+            <div class="t-check">✅</div>
+        </div>
+
+        <!-- 다음 단계 온보딩 -->
+        <div class="next-section">
+            <div class="next-label">💡 다음으로 이런 기능도 써보세요</div>
+
+            <div class="onboarding-grid">
+                <!-- 장부 -->
+                <a href="/admin/dashboard" class="onboard-card card-ledger">
+                    <div class="icon-wrap">📒</div>
+                    <div>
+                        <div class="card-title">장부 보기</div>
+                        <div class="card-desc">매출·지출을<br>한눈에 정리</div>
+                    </div>
+                    <div class="card-arrow">바로가기 →</div>
+                </a>
+
+                <!-- 마켓 -->
+                <a href="/citizen/market" class="onboard-card card-market">
+                    <div class="icon-wrap">🛒</div>
+                    <div>
+                        <div class="card-title">마켓 구경</div>
+                        <div class="card-desc">등록만 하면<br>전국으로 자동 판매</div>
+                    </div>
+                    <div class="card-arrow">바로가기 →</div>
+                </a>
+            </div>
+
+            <!-- 추가 접수 버튼 -->
+            <a href="/citizen/courier" class="btn-home">
+                ↩ 택배 추가 접수하기
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function showDone() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('done').style.display    = 'block';
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const urlParams  = new URLSearchParams(window.location.search);
+            const paymentKey = "{{ paymentKey }}" || urlParams.get('paymentKey');
+            const orderId    = "{{ orderId }}"    || urlParams.get('orderId');
+            const orderType  = urlParams.get('type') || '';
+
+            // VIP 업그레이드 완료 분기
+            if (orderType === 'vip_upgrade' || (orderId && (orderId.startsWith("VIP-") || orderId.toLowerCase().includes("vip")))) {
+                showDone();
+                document.getElementById('done').innerHTML = `
+                    <div class="done-header">
+                        <span class="done-icon">👑</span>
+                        <h1 style="color:#d4af37;">VIP 패스 발급 완료!</h1>
+                        <p style="font-weight:700; color:#1e293b;">
+                            카카오/삼성페이 결제가 성공적으로 승인되었습니다.<br>
+                            지금부터 모든 프리미엄 기능을 무제한으로 이용하실 수 있습니다.
+                        </p>
+                    </div>
+                    <a href="/dashboard" class="btn-home" style="background:#0f172a; margin-top:20px;">
+                        👑 프리미엄 대시보드 바로가기
+                    </a>
+                `;
+                localStorage.setItem('vip_active_override', 'true');
+                return;
+            }
+
+            if (!orderId) {
+                showDone();
+                document.getElementById('trackingLabel').innerText = '주문 ID가 존재하지 않습니다.';
+                return;
+            }
+
+            // 폴링 시작 (1.5초 간격)
+            const pollInterval = setInterval(async () => {
+                try {
+                    const resp = await fetch(`/api/citizen/courier/order-status?orderId=${encodeURIComponent(orderId)}`);
+                    if (!resp.ok) {
+                        return; // Ignore HTTP errors and continue polling
+                    }
+                    const data = await resp.json();
+                    if (data.success) {
+                        if (data.status === 'SUCCESS' && data.waybill_number) {
+                            clearInterval(pollInterval);
+                            sessionStorage.removeItem('pending_courier_order');
+                            showDone();
+                            document.getElementById('trackingLabel').innerText = data.waybill_number;
+                        } else if (data.status === 'FAILED') {
+                            clearInterval(pollInterval);
+                            showDone();
+                            document.getElementById('trackingLabel').innerHTML = `<span style="color:#ef4444; font-size:0.9rem;">접수 실패: ${data.error_message || '알 수 없는 오류'}</span>`;
+                            // Show failure header details instead
+                            document.querySelector('.done-icon').innerText = "❌";
+                            document.querySelector('.done-header h1').innerText = "접수 오류 발생";
+                            document.querySelector('.done-header p').innerHTML = "서버 통신 실패 또는 규격 초과로 접수가 거부되었습니다.<br>우체국/로젠택배 본사에서 에러 보관함(Dead Letter Box)에 저장하였으므로,<br>동네비서 매니저/기사님이 수동으로 처리 예정입니다.";
+                        }
+                    }
+                } catch (err) {
+                    console.error("Polling error:", err);
+                }
+            }, 1500);
+        });
+    </script>
+</body>
+</html>

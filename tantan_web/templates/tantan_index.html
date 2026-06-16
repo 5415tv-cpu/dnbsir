@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>탄탄제작소 - AI 혁신으로 지역사회를 잇다</title>
+    <!-- Google Fonts: Pretendard -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <style>
+        :root {
+            --main-gold: #ffcc00;
+            --main-gold-dim: rgba(255, 204, 0, 0.2);
+            --bg-dark: #050505;
+            --text-light: #f8f9fa;
+            --text-gray: #a0aab2;
+            --glass-bg: rgba(25, 25, 25, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Navbar */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            background: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--main-gold);
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links a {
+            color: var(--text-light);
+            text-decoration: none;
+            margin-left: 30px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--main-gold);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 180px 20px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, var(--main-gold-dim) 0%, transparent 70%);
+            filter: blur(80px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hero-content {
+            z-index: 1;
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -2px;
+            animation: fadeInUp 1s ease-out;
+        }
+
+        .hero h1 span {
+            color: var(--main-gold);
+            -webkit-text-fill-color: var(--main-gold);
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            color: var(--text-gray);
+            margin-bottom: 40px;
+            font-weight: 400;
+            word-break: keep-all;
+            animation: fadeInUp 1s ease-out 0.2s backwards;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 18px 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-decoration: none;
+            border-radius: 30px;
+            transition: all 0.3s ease;
+            animation: fadeInUp 1s ease-out 0.4s backwards;
+        }
+
+        .btn-primary {
+            background-color: var(--main-gold);
+            color: #000;
+            box-shadow: 0 10px 30px rgba(255, 204, 0, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(255, 204, 0, 0.5);
+            background-color: #ffd633;
+        }
+
+        /* Section: Vision & About */
+        .section {
+            padding: 60px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .section-header h2 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .section-header p {
+            font-size: 1.2rem;
+            color: var(--main-gold);
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            backdrop-filter: blur(12px);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 204, 0, 0.3);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--main-gold);
+        }
+
+        .glass-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .glass-card p {
+            color: var(--text-gray);
+            font-size: 1.05rem;
+            line-height: 1.7;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 60px 20px;
+            border-top: 1px solid var(--glass-border);
+            color: var(--text-gray);
+            font-size: 0.9rem;
+        }
+
+        /* AI 인생 기록관 바로가기 카드 */
+        .docu-card {
+            background: linear-gradient(135deg, #064e3b 0%, #0f766e 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 40px 30px;
+            margin: 40px auto 0;
+            max-width: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-align: left;
+            animation: fadeInUp 1s ease-out 0.6s backwards;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .docu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .docu-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 350px;
+            height: 100%;
+            background: url('/static/images/docu_bg.webp') no-repeat right center;
+            background-size: cover;
+            opacity: 0.2;
+            z-index: 0;
+            mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+            -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        .docu-card-content {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .docu-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        .docu-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .docu-title span {
+            color: #fbbf24;
+        }
+
+        .docu-desc {
+            font-size: 1.15rem;
+            color: #d1fae5;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-weight: 500;
+            word-break: keep-all;
+        }
+
+        .docu-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #fbbf24;
+            color: #064e3b;
+            padding: 16px 32px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(251, 191, 36, 0.3);
+            white-space: nowrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .docu-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(251, 191, 36, 0.4);
+            background-color: #f59e0b;
+        }
+
+        @media (max-width: 768px) {
+            .docu-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 30px 20px;
+                gap: 20px;
+            }
+            .docu-card::before {
+                width: 100%;
+                opacity: 0.1;
+                mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+                -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+            }
+            .docu-title {
+                font-size: 1.5rem;
+            }
+            .docu-desc {
+                font-size: 1.05rem;
+                margin-bottom: 20px;
+            }
+            .docu-btn {
+                width: 100%;
+                font-size: 1.15rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 3rem; }
+            .hero p { font-size: 1.1rem; }
+            .nav-links { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">탄탄제작소</div>
+        <div class="nav-links">
+            <a href="#about">회사 소개</a>
+            <a href="#vision">우리의 비전</a>
+            <a href="{{ url_for('download') }}" style="color: var(--main-gold); font-weight: bold;">앱 다운로드</a>
+            {% if session.get('admin_logged_in') %}
+                <a href="{{ url_for('dashboard') }}" style="color: var(--main-gold);">관리자 대시보드</a>
+                <a href="{{ url_for('logout') }}">로그아웃</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">관리자 로그인</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>세상에서 가장 <span>따뜻한 AI</span></h1>
+            <p>탄탄제작소는 인공지능 기술을 통해 소상공인과 농민, 그리고 지역사회를 단단하게 연결합니다. 복잡한 업무는 '동네비서'에게 맡기고, 당신의 본업에 집중하세요.</p>
+            
+            <!-- AI 인생 기록관 바로가기 카드 -->
+            <div class="docu-card">
+                <div class="docu-card-content">
+                    <div class="docu-icon">🎥</div>
+                    <div class="docu-title">[내 생애 첫 다큐멘터리]</div>
+                    <div class="docu-desc">당신의 소중한 역사와 가게의 철학을 AI가 정교한 다큐멘터리로 기록합니다. (RTX 4070 기반 고화질 공정)</div>
+                </div>
+                <a href="{{ url_for('documentary_start') }}" class="docu-btn">기록 시작하기</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="section">
+        <div class="section-header">
+            <p>OUR PURPOSE</p>
+            <h2>설립 목적</h2>
+        </div>
+        <div class="grid-cards">
+            <div class="glass-card">
+                <div class="card-icon">🌱</div>
+                <h3>지역사회의 자생력 강화</h3>
+                <p>대도시 중심의 기술 발전에서 소외된 지역 상권과 농가에 첨단 IT 기술을 보급하여, 누구나 쉽고 평등하게 기술의 혜택을 누릴 수 있는 토대를 만듭니다.</p>
+            </div>
+            <div class="glass-card">
+                <div class="card-icon">🤝</div>
+                <h3>기술과 사람의 연결</h3>
+                <p>어려운 IT 용어 대신 '동네비서'라는 친숙한 이름으로 다가갑니다. 사람을 대체하는 AI가 아닌, 사람을 돕고 연결하는 따뜻한 AI 생태계를 구축합니다.</p>
+            </div>
+            <div class="glass-card">
+                <div class="card-icon">📈</div>
+                <h3>지속 가능한 비즈니스 환경</h3>
+                <p>주문 접수부터 고객 관리, 배송 연동까지 일련의 과정을 자동화하여, 소상공인이 본연의 가치 창출에만 집중할 수 있는 쾌적한 업무 환경을 제공합니다.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="technology" class="section">
+        <div class="section-header">
+            <p>CORE TECHNOLOGY</p>
+            <h2>동네비서 기술 소개</h2>
+        </div>
+        <div class="grid-cards" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+            <div class="glass-card">
+                <div class="card-icon">🍎</div>
+                <h3>시골 농부</h3>
+                <p style="color: var(--main-gold); font-weight: bold; margin-bottom: 10px;">직거래 AI 비서</p>
+                <p>수확철에 걸려오는 고객의 주문 전화를 AI가 자동으로 문자로 변환하여 접수하고, 복잡한 택배 송장 입력을 간편하게 처리해 주어 일손 부족을 해결합니다.</p>
+            </div>
+            <div class="glass-card">
+                <div class="card-icon">📦</div>
+                <h3>택배기사</h3>
+                <p style="color: var(--main-gold); font-weight: bold; margin-bottom: 10px;">배송 효율 AI 비서</p>
+                <p>수기송장 작성과 분류로 고통받는 현장의 어려움을 AI 기술로 해결합니다. 스마트폰으로 송장을 찍기만 하면 AI가 주소를 자동 인식해 디지털로 변환하고, 배송 완료 증명까지 원스톱으로 처리합니다.</p>
+            </div>
+            <div class="glass-card">
+                <div class="card-icon">🥘</div>
+                <h3>소상공인</h3>
+                <p style="color: var(--main-gold); font-weight: bold; margin-bottom: 10px;">주방 운영 AI 비서</p>
+                <p>식사 시간에 몰려드는 예약과 주문 전화를 단 한 통도 놓치지 않고 응대합니다. 체계적인 단골 고객 관리와 매출 분석 데이터도 똑똑하게 제공합니다.</p>
+            </div>
+            <div class="glass-card">
+                <div class="card-icon">👥</div>
+                <h3>일반 시민</h3>
+                <p style="color: var(--main-gold); font-weight: bold; margin-bottom: 10px;">지역 상생 파트너</p>
+                <p>탄탄가족으로 합류하여 동네 상권의 다양한 혜택과 정보를 손쉽게 얻을 수 있습니다. 편리한 AI 시스템 덕분에 동네 가게 이용이 더욱 빠르고 즐거워집니다.</p>
+            </div>
+            <div class="glass-card">
+                <div class="card-icon">🎬</div>
+                <h3>동네비서 비디오 솔루션</h3>
+                <p style="color: var(--main-gold); font-weight: bold; margin-bottom: 10px;">초저비용 AI 홍보 영상 제작</p>
+                <p>30분의 대화와 사진 1~2장만으로 고품질 홍보 영상이 완성됩니다. 구글 Veo와 Gemini 엔진을 결합하여, 사장님의 영상 제작 비용과 노력을 기존 대비 5% 수준으로 획기적으로 줄여드립니다.</p>
+            </div>
+            <div class="glass-card" style="border-color: var(--main-gold); box-shadow: 0 0 20px rgba(255, 204, 0, 0.2);">
+                <div class="card-icon">🧓</div>
+                <h3>비서야</h3>
+                <p style="color: var(--main-gold); font-weight: bold; margin-bottom: 10px;">취약계층 맞춤형 돌봄 비서</p>
+                <p>독거노인이나 장애인 등 사회적 돌봄이 필요한 분들의 일상 안부를 묻고 건강 상태를 체크합니다. 긴급 상황 발생 시 보호자나 유관 기관에 즉시 연락을 취하여 안전망 역할을 수행합니다.</p>
+            </div>
+            <a href="/tech-detail" style="text-decoration: none;">
+                <div class="glass-card" style="background: rgba(255, 204, 0, 0.1); border-color: var(--main-gold); cursor: pointer; height: 100%;">
+                    <div class="card-icon">📄</div>
+                    <h3 style="color: var(--main-gold);">동네비서 상세 기술소개</h3>
+                    <p style="color: #fff; font-weight: bold; margin-bottom: 10px;">정부지원/기관제휴 기술서</p>
+                    <p style="color: var(--text-gray);">클릭하시면 정부 지원 사업 및 기관 제휴를 위한 동네비서의 핵심 AI 기술 구조와 사회적 가치를 정리한 상세 문서를 확인하실 수 있습니다.</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <section id="vision" class="section">
+        <div class="section-header">
+            <p>PROJECT DONGNEBISEO</p>
+            <h2>우리의 비전</h2>
+        </div>
+        <div style="background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 30px; padding: 60px; text-align: center; backdrop-filter: blur(12px);">
+            <h3 style="font-size: 2rem; color: #fff; margin-bottom: 20px;">모두의 곁에, 든든한 AI 비서</h3>
+            <p style="font-size: 1.1rem; color: var(--text-gray); max-width: 800px; margin: 0 auto; line-height: 1.8;">
+                우리는 거창한 기술 혁신을 이야기하기 전에, 식당 사장님의 밀린 주문 전화를 대신 받고, 농부님의 택배 송장을 알아서 처리해 주는 작지만 확실한 변화를 만듭니다.<br><br>
+                탄탄제작소는 대한민국 모든 골목상권과 농가에 '동네비서'가 보급되어, 기술의 장벽 없이 누구나 편안하게 사업을 운영할 수 있는 미래를 꿈꿉니다.
+            </p>
+            
+            <div style="margin-top: 40px; padding-top: 30px; border-top: 1px dashed rgba(255, 255, 255, 0.2);">
+                <p style="font-size: 1.1rem; color: var(--main-gold); font-weight: 600; margin-bottom: 20px;">
+                    💡 동네비서를 사업적으로 이용하려면 동네비서앱 설치는 필수입니다.
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <a href="https://dongnebiseo.com" target="_blank" class="btn btn-primary">탄탄가족 합류하기</a>
+                    <a href="{{ url_for('download') }}" class="btn" style="background-color: #222; color: #fff; border: 1px solid #444; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                        📱 동네비서 앱 다운로드
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center; line-height: 1.8;">
+            <p style="font-weight: 700; color: #fff; font-size: 1.1rem; margin-bottom: 10px;">탄탄제작소</p>
+            <p>대표: 이영준 <span style="margin: 0 10px; color: #444;">|</span> 사업자등록번호: 442-32-01655</p>
+            <p>주소: 강원특별자치도 태백시 태붐로 54, 1003동 1903호 (황지동, 포레스트애시앙 1단지)</p>
+            <p>업태: 정보통신업 <span style="margin: 0 10px; color: #444;">|</span> 종목: 응용 소프트웨어 개발 및 공급업, 전자상거래 소매 중개업</p>
+            <p>대표 이메일: ceo@tantanfab.com</p>
+            <p style="margin-top: 20px; font-size: 0.85rem; color: #666;">&copy; 2026 탄탄제작소 (Tantanfab). All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 부드러운 스크롤 (선택적)
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

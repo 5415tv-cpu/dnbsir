@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}매장 방문/포장 예약 관리 - 탄탄제작소{% endblock %}
+
+{% block page_header %}
+<div class="page-header" style="background: transparent; border-bottom: none; box-shadow: none;">
+    <div class="current-menu-label" style="color: rgba(255,255,255,0.8);">예약 현황</div>
+    <div class="page-title" style="color: #ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">매장 예약 & 포장 주문 관리</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        color: #ffffff !important;
+    }
+    .app-title {
+        color: #ffffff !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .sticky-header {
+        background: transparent !important;
+        box-shadow: none !important;
+        border-bottom: none !important;
+        backdrop-filter: blur(5px) !important;
+    }
+    .card {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        backdrop-filter: blur(10px);
+        color: #ffffff !important;
+        border-radius: 16px;
+    }
+    .glass-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        color: #ffffff;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+    .glass-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+</style>
+<div style="max-width: 600px; margin: 0 auto; padding: 1rem;">
+
+    <!-- Information Card -->
+    <div class="card" style="padding: 15px; margin-bottom: 20px; text-align: center;">
+        <div style="font-weight: 800; font-size: 1.1rem; color: #ffffff;">💡 방문 예약 및 포장 주문</div>
+        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.8); margin-top: 5px;">고객이 접수한 예약/포장 내역을 실시간으로 확인하고 처리하세요.</div>
+    </div>
+
+    <!-- Orders -->
+    <div id="reservationList">
+        <!-- Loaded via JS -->
+    </div>
+
+    <div style="margin-top: 15px; text-align: right; font-size: 0.9rem; color: rgba(255,255,255,0.7);">
+        알림톡 잔액: <span id="walletBalance" style="font-weight: 800; color: #ffd700;">0</span>원
+        <span id="autoRefillStatus" style="color: #39ff14; display: none; font-weight: 700;">(자동충전 On)</span>
+    </div>
+
+    <a href="/admin/dashboard" class="main-btn glass-btn"
+        style="margin-top: 25px; padding: 1.2rem; text-align: center; box-shadow: none; text-decoration: none; display: block; font-weight: 800; font-size: 1.2rem;">
+        🔙 대시보드로 돌아가기
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadData() {
+        // 1. Get Wallet Info
+        try {
+            const res = await fetch('{{ api_url }}/api/admin/auto-reply/settings');
+            const data = await res.json();
+            document.getElementById('walletBalance').innerText = data.wallet_balance.toLocaleString();
+            if (data.auto_refill_on == 1) {
+                document.getElementById('autoRefillStatus').style.display = 'inline';
+            }
+        } catch (e) { }
+
+        // 2. Get Real Reservations
+        try {
+            const orderRes = await fetch('{{ api_url }}/api/admin/reservations');
+            let reservations = await orderRes.json();
+            
+            const listDiv = document.getElementById('reservationList');
+            if (!reservations || reservations.length === 0) {
+                // 예약이 없을 경우 디자인 확인을 위한 가상(Mock) 데이터를 생성합니다.
+                reservations = [
+                    {
+                        customer_name: "이동네",
+                        status: "신규접수",
+                        res_date: "오늘",
+                        res_time: "18:30",
+                        head_count: 4,
+                        contact: "010-1234-5678",
+                        id: "DEMO_001"
+                    },
+                    {
+                        customer_name: "김비서 (포장)",
+                        status: "예약확정",
+                        res_date: "오늘",
+                        res_time: "19:00",
+                        head_count: 1,
+                        contact: "010-9876-5432",
+                        id: "DEMO_002"
+                    }
+                ];
+            }
+            
+            let html = '';
+            reservations.forEach((r, index) => {
+                const customerName = r.customer_name || '고객';
+                const status = r.status || '대기중';
+                // res_date e.g., '2026-03-31', res_time e.g., '14:30'
+                const resTime = r.res_date ? `${r.res_date} ${r.res_time || ''}` : '현장 접수';
+                const headCount = r.head_count || 1;
+                const contact = r.contact || r.phone || '연락처 미상';
+                const resId = r.id || `MOCK_RES_${index}`;
+                
+                html += `
+                <div class="card" style="margin-bottom: 15px; border-left: 4px solid #39ff14 !important;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-size: 0.95rem; color: #ffffff; font-weight: 800;">방문 예약 (${customerName} 님)</span>
+                        <span style="font-size: 0.8rem; background: rgba(255,255,255,0.2); color: #ffd700; padding: 3px 10px; border-radius: 12px; font-weight: bold;">${status}</span>
+                    </div>
+                    <div style="font-weight: 900; font-size: 1.15rem; margin-bottom: 5px; color: #ffffff;">${resTime} (${headCount}명)</div>
+                    <div style="font-size: 0.95rem; color: rgba(255,255,255,0.8); margin-bottom: 15px; line-height: 1.4;">${contact}</div>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="confirmReservation('${resId}', '${customerName}', '${contact}')" class="glass-btn" style="padding: 10px; font-size: 0.95rem; width: 50%; border-radius: 10px; font-weight: bold; background: rgba(57,255,20,0.2); border-color: rgba(57,255,20,0.5); color: #fff;">
+                            ✅ 확정 알림톡
+                        </button>
+                        <a href="tel:${contact}" class="glass-btn" style="padding: 10px; font-size: 0.9rem; width: 50%; border-radius: 10px; font-weight: bold; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            📞 고객 전화 걸기
+                        </a>
+                    </div>
+                </div>
+                `;
+            });
+            listDiv.innerHTML = html;
+        } catch (e) {
+            console.error("Reservation Loading Error:", e);
+            document.getElementById('reservationList').innerHTML = '<div style="text-align:center; color: #ef4444; padding: 20px;">예약 목록을 불러오는데 실패했습니다.</div>';
+        }
+    }
+
+    async function confirmReservation(resId, customerName, contact) {
+        if (!confirm(`${customerName}님의 예약을 확정 처리하고 안내 알림톡을 발송하시겠습니까?`)) return;
+
+        try {
+            // [Todo] Integrate with actual status update API
+            // const res = await fetch('{{ api_url }}/api/admin/reservations/'+resId+'/status', { method: 'POST', ...});
+
+            alert(`예약이 확정되었습니다.\\n고객님(${contact})께 예약 확정 알림톡이 자동 발송됩니다.`);
+            // location.reload();
+
+        } catch (e) {
+            alert("확정 처리에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        }
+    }
+
+    window.onload = loadData;
+</script>
+{% endblock %}

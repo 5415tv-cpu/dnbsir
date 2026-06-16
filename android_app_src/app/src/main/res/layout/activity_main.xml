@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F9FA">
+
+    <!-- WebView (대시보드 웹뷰) -->
+    <WebView
+        android:id="@+id/webViewDashboard"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:visibility="visible" />
+
+    <!-- 기존 수신/기록 및 설정 전체 UI -->
+    <LinearLayout
+        android:id="@+id/layoutLocalFeatures"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- 1. 상단 헤더 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="14dp"
+            android:background="#FFFFFF"
+            android:elevation="3dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="동네비서"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#1E3C72"/>
+
+            <TextView
+                android:id="@+id/tvStatusMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="준비 중..."
+                android:textSize="12sp"
+                android:textColor="#999999"
+                android:background="#F0F4F8"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"/>
+        </LinearLayout>
+
+        <!-- 2. 콜백/통화 내역 (메인 콘텐츠) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="📋 최근 통화 및 콜백 내역"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvHistoryMain"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#FFFFFF"
+                android:scrollbars="vertical"
+                android:elevation="1dp"
+                android:padding="4dp"/>
+        </LinearLayout>
+
+        <!-- 3. 스마트 설정 (접이식) -->
+        <LinearLayout
+            android:id="@+id/layoutSettings"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="#FFFFFF"
+            android:padding="12dp"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginBottom="4dp"
+            android:elevation="2dp">
+
+            <CheckBox
+                android:id="@+id/cbBusinessOnly"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="'동네비서' 태그 연락처만 콜백 (추천)"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#2196F3" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <CheckBox
+                    android:id="@+id/cbOutgoing"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="발신 콜백"
+                    android:textSize="13sp"
+                    android:layout_marginEnd="15dp"/>
+
+                <CheckBox
+                    android:id="@+id/cbIncoming"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="수신 콜백"
+                    android:textSize="13sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 4. 다이얼패드 영역 (기본 숨김, 토글 시 나타남) -->
+        <LinearLayout
+            android:id="@+id/layoutDialer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:background="#FFFFFF"
+            android:padding="12dp"
+            android:elevation="6dp">
+
+            <!-- 번호 입력창 -->
+            <EditText
+                android:id="@+id/etDialNumber"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="전화번호 입력"
+                android:inputType="none"
+                android:textSize="28sp"
+                android:gravity="center"
+                android:padding="6dp"
+                android:background="@null"
+                android:focusable="false"
+                android:clickable="false"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD"
+                android:layout_marginHorizontal="30dp"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- 숫자 패드 -->
+            <GridLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:columnCount="3"
+                android:rowCount="4"
+                android:layout_gravity="center_horizontal">
+
+                <Button android:id="@+id/btn1" style="@style/DialerButtonStyle" android:text="1" />
+                <Button android:id="@+id/btn2" style="@style/DialerButtonStyle" android:text="2" />
+                <Button android:id="@+id/btn3" style="@style/DialerButtonStyle" android:text="3" />
+                <Button android:id="@+id/btn4" style="@style/DialerButtonStyle" android:text="4" />
+                <Button android:id="@+id/btn5" style="@style/DialerButtonStyle" android:text="5" />
+                <Button android:id="@+id/btn6" style="@style/DialerButtonStyle" android:text="6" />
+                <Button android:id="@+id/btn7" style="@style/DialerButtonStyle" android:text="7" />
+                <Button android:id="@+id/btn8" style="@style/DialerButtonStyle" android:text="8" />
+                <Button android:id="@+id/btn9" style="@style/DialerButtonStyle" android:text="9" />
+                <Button android:id="@+id/btnStar" style="@style/DialerButtonStyle" android:text="*" />
+                <Button android:id="@+id/btn0" style="@style/DialerButtonStyle" android:text="0" />
+                <Button android:id="@+id/btnHash" style="@style/DialerButtonStyle" android:text="#" />
+            </GridLayout>
+
+            <!-- 실행 버튼 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnCall"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:background="@drawable/circle_green"
+                    android:src="@android:drawable/ic_menu_call"
+                    android:scaleType="centerInside"
+                    android:padding="14dp"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="전화 걸기"/>
+
+                <ImageButton
+                    android:id="@+id/btnSms"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:background="@drawable/circle_blue"
+                    android:src="@android:drawable/sym_action_email"
+                    android:scaleType="centerInside"
+                    android:padding="14dp"
+                    android:layout_marginEnd="16dp"
+                    android:contentDescription="문자 보내기"/>
+
+                <ImageButton
+                    android:id="@+id/btnDelete"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:src="@android:drawable/ic_input_delete"
+                    android:scaleType="centerInside"
+                    android:contentDescription="지우기"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 5. 하단 고정 바 (토글 버튼들) -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="#FFFFFF"
+            android:elevation="8dp"
+            android:padding="8dp"
+            android:gravity="center">
+
+            <!-- 다이얼패드 토글 버튼 -->
+            <Button
+                android:id="@+id/btnToggleDialer"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="📞 전화번호 입력"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#1E3C72"
+                android:layout_marginEnd="4dp"/>
+
+            <!-- 설정 토글 버튼 -->
+            <Button
+                android:id="@+id/btnToggleSettings"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="⚙️ 설정"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#607D8B"
+                android:layout_marginStart="4dp"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="v1.7.1 (Internal Architecture)"
+            android:textSize="9sp"
+            android:textColor="#BBBBBB"
+            android:layout_gravity="center_horizontal"
+            android:paddingVertical="4dp"/>
+
+    </LinearLayout>
+
+
+
+</LinearLayout>

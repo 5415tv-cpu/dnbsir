@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}미수신 전화 목록 - 동네비서{% endblock %}
+
+{% block page_header %}
+<div class="page-header" style="background: transparent; border-bottom: none; box-shadow: none;">
+    <div class="current-menu-label" style="color: rgba(255,255,255,0.8);">전화 내역</div>
+    <div class="page-title" style="color: #ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">미수신 전화 및 AI 응대 내역</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        color: #ffffff !important;
+    }
+    .app-title {
+        color: #ffffff !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .sticky-header {
+        background: transparent !important;
+        box-shadow: none !important;
+        border-bottom: none !important;
+        backdrop-filter: blur(5px) !important;
+    }
+    .card {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        color: #ffffff;
+    }
+    .glass-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        color: #ffffff;
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+    .glass-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+</style>
+<div style="max-width: 600px; margin: 0 auto; padding: 1rem;">
+
+    <!-- Information Card -->
+    <div class="card" style="padding: 15px; margin-bottom: 20px; text-align: center; border-color: rgba(255,7,58,0.5) !important;">
+        <div style="font-weight: 800; font-size: 1.1rem; color: #ff4757;">🚨 AI 자동 응대 내역</div>
+        <div style="font-size: 0.95rem; color: rgba(255,255,255,0.8); margin-top: 5px;">사장님이 놓친 전화를 동네비서 AI가 응대한 내역과 "통화 목적"을 확인하세요.</div>
+    </div>
+
+    <div id="callLogsContainer">
+        {% if not ai_logs %}
+        <!-- Mock Data for Showcase when empty -->
+        <div class="card" style="margin-bottom: 15px; border-left: 4px solid #ff4757 !important; position: relative;">
+            <span style="position: absolute; top: 15px; right: 15px; background: #ff4757; color: white; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 10px; animation: blink 1.5s infinite;">
+                NEW
+            </span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-right: 40px;">
+                <span style="font-size: 1rem; color: #ffffff; font-weight: 900;">
+                    📞 010-8888-9999 (가상발신자)
+                </span>
+                <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+                    방금 전
+                </span>
+            </div>
+            
+            <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="margin-bottom: 8px;">
+                    <span style="display: inline-block; background: rgba(59,130,246,0.6); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; margin-right: 5px;">
+                        통화 목적
+                    </span>
+                    <strong style="font-size: 1.05rem; color: #ffd700;">
+                        영업시간 및 주차 문의
+                    </strong>
+                </div>
+                <div>
+                    <span style="display: inline-block; background: rgba(139,92,246,0.6); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; margin-right: 5px;">
+                        AI 요약
+                    </span>
+                    <span style="font-size: 0.95rem; color: rgba(255,255,255,0.9); line-height: 1.5;">
+                        "오늘 저녁 8시까지 영업하시나요? 그리고 가게 앞에 주차 1대 가능한지 궁금합니다." 라고 안내 받기를 원하셨습니다.
+                    </span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <a href="tel:010-8888-9999" class="glass-btn" style="padding: 12px; font-size: 1rem; width: 100%; border-radius: 10px; font-weight: bold; text-decoration: none; text-align: center;">
+                    📲 발신자에게 다시 전화 걸기
+                </a>
+            </div>
+        </div>
+        {% else %}
+            {% for log in ai_logs %}
+            <div class="card" style="margin-bottom: 15px; border-left: 4px solid {% if log.is_read %}rgba(255,255,255,0.3){% else %}#ff4757{% endif %} !important; position: relative;">
+                
+                {% if not log.is_read %}
+                <span style="position: absolute; top: 15px; right: 15px; background: #ff4757; color: white; font-size: 0.75rem; font-weight: 900; padding: 3px 8px; border-radius: 10px; animation: blink 1.5s infinite;">
+                    NEW
+                </span>
+                {% endif %}
+
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; padding-right: 40px;">
+                    <span style="font-size: 1rem; color: #ffffff; font-weight: 900;">
+                        📞 {{ log.customer_name or log.customer_phone or '발신자 정보 없음' }}
+                    </span>
+                    <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+                        {{ log.created_at[:16] if log.created_at else '' }}
+                    </span>
+                </div>
+                
+                {% if log.event_type == 'CALLBACK_FAILED' %}
+                <div style="background: rgba(255, 71, 87, 0.15); border: 1.5px dashed #ff4757; color: #ff6b81; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem; display: flex; align-items: center; font-weight: bold;">
+                    ⚠️ 콜백 문자 자동 전송 실패 (발송 실패)
+                </div>
+                {% elif log.event_type == 'CALLBACK_SUCCESS' %}
+                <div style="background: rgba(46, 213, 115, 0.15); border: 1.5px dashed #2ed573; color: #2ed573; padding: 8px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 0.85rem; display: flex; align-items: center; font-weight: bold;">
+                    ✅ 콜백 문자 자동 전송 완료
+                </div>
+                {% endif %}
+                
+                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="margin-bottom: 8px;">
+                        <span style="display: inline-block; background: rgba(59,130,246,0.5); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; margin-right: 5px;">
+                            통화 목적
+                        </span>
+                        <strong style="font-size: 1.05rem; color: #ffd700;">
+                            {{ log.intent or '단순 문의사항 (확인 필요)' }}
+                        </strong>
+                    </div>
+                    <div>
+                        <span style="display: inline-block; background: rgba(139,92,246,0.5); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; margin-right: 5px;">
+                            AI 요약
+                        </span>
+                        <span style="font-size: 0.95rem; color: rgba(255,255,255,0.9); line-height: 1.5;">
+                            {{ log.summary or 'AI 요약 내용이 없습니다.' }}
+                        </span>
+                    </div>
+                </div>
+
+                {% if log.event_details %}
+                <div class="manual-callback-box" style="background: rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.15);">
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 6px; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                        📝 콜백 문자 내용 {% if log.event_type == 'CALLBACK_FAILED' %}<span style="color: #ff4757; font-size: 0.8rem; font-weight: normal;">(직접 전송 권장)</span>{% endif %}
+                    </div>
+                    <div class="callback-text" style="font-size: 0.9rem; color: rgba(255,255,255,0.95); white-space: pre-wrap; word-break: break-all; background: rgba(0,0,0,0.15); padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px;">{{ log.event_details }}</div>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="triggerDirectSMS(this, '{{ log.customer_phone }}')" class="glass-btn" style="flex: 1; padding: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            📲 직접 문자 전송
+                        </button>
+                        <button onclick="triggerCopyToClipboard(this)" class="glass-btn" style="flex: 1; padding: 8px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                            📋 메시지 복사
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="display: flex; gap: 10px;">
+                    <a href="tel:{{ log.customer_phone }}" class="glass-btn" style="padding: 12px; font-size: 1rem; width: 100%; border-radius: 10px; font-weight: bold; text-decoration: none; text-align: center;">
+                        📲 발신자에게 다시 전화 걸기
+                    </a>
+                </div>
+                
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <a href="/admin/dashboard" class="glass-btn" style="display: block; padding: 1.2rem; margin-top: 25px; text-decoration: none; font-weight: 800; font-size: 1.2rem; text-align: center;">
+        🔙 대시보드로 돌아가기
+    </a>
+</div>
+
+<style>
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+</style>
+
+<!-- Toast Alert Notification -->
+<div id="toastAlert" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #2ed573; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; pointer-events: none; white-space: nowrap;">
+    📋 메시지가 복사되었습니다! 문자나 카카오톡 창에 붙여넣어 주세요.
+</div>
+
+<script>
+function showToast(message, isSuccess = true) {
+    const toast = document.getElementById('toastAlert');
+    toast.textContent = message;
+    toast.style.background = isSuccess ? '#2ed573' : '#ff4757';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+    toast.style.opacity = '1';
+    
+    setTimeout(() => {
+        toast.style.transform = 'translateX(-50%) translateY(100px)';
+        toast.style.opacity = '0';
+    }, 3000);
+}
+
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('📋 메시지가 복사되었습니다! 문자나 카카오톡 창에 붙여넣어 주세요.');
+        }).catch(err => {
+            fallbackCopyToClipboard(text);
+        });
+    } else {
+        fallbackCopyToClipboard(text);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showToast('📋 메시지가 복사되었습니다! 문자나 카카오톡 창에 붙여넣어 주세요.');
+        } else {
+            showToast('❌ 메시지 복사에 실패했습니다.', false);
+        }
+    } catch (err) {
+        showToast('❌ 메시지 복사에 실패했습니다.', false);
+    }
+    document.body.removeChild(textArea);
+}
+
+function sendDirectSMS(phone, body) {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const separator = isIOS ? '&' : '?';
+    const smsUrl = `sms:${phone}${separator}body=${encodeURIComponent(body)}`;
+    window.location.href = smsUrl;
+}
+
+function triggerDirectSMS(btn, phone) {
+    const box = btn.closest('.manual-callback-box');
+    const textEl = box.querySelector('.callback-text');
+    const text = textEl.textContent.trim();
+    sendDirectSMS(phone, text);
+}
+
+function triggerCopyToClipboard(btn) {
+    const box = btn.closest('.manual-callback-box');
+    const textEl = box.querySelector('.callback-text');
+    const text = textEl.textContent.trim();
+    copyToClipboard(text);
+}
+</script>
+{% endblock %}

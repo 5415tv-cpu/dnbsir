@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="탄탄제작소 및 동네비서 공식 홈페이지">
+    <title>{% block title %}탄탄제작소{% endblock %}</title>
+    <!-- 키오스크 스타일 (큰 폰트, 높은 대비) 스타일시트 적용 -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tantan_style.css') }}?v=1.0.2">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="container header-content">
+            <a href="{{ url_for('index') }}" class="logo">탄탄제작소</a>
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}" class="nav-item">홈</a>
+                <a href="{{ url_for('download') }}" class="nav-item" style="color: var(--main-gold, #0056b3);">앱 다운로드</a>
+                {% if session.get('admin_logged_in') %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-item">대시보드</a>
+                    <button class="hamburger-btn" onclick="toggleTantanSidebar(true)" style="background: none; border: none; font-size: var(--font-xl); cursor: pointer; color: var(--text-main); margin-left: 10px; display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 6px; transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='#e9ecef'" onmouseout="this.style.backgroundColor='transparent'">☰</button>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="nav-item">관리자 로그인</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="container">
+            <!-- 알림 메시지 (Flash) 영역 -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="flash-messages">
+                {% for category, message in messages %}
+                  <div class="flash-msg {{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="app-footer" style="background-color: #050505; color: #a0a0a0; padding: 50px 20px; text-align: center; font-size: 0.95rem; line-height: 1.8; border-top: 1px solid #222;">
+        <div class="container">
+            <h3 style="color: #ffffff; font-size: 1.2rem; margin-bottom: 25px; font-weight: bold;">탄탄제작소</h3>
+            <p>대표: 이영준 <span style="margin: 0 15px; color: #555;">|</span> 사업자등록번호: 442-32-01655</p>
+            <p>주소: 강원특별자치도 태백시 태붐로 54, 1003동 1903호 (황지동, 포레스트애시앙 1단지)</p>
+            <p>업태: 정보통신업 <span style="margin: 0 15px; color: #555;">|</span> 종목: 응용 소프트웨어 개발 및 공급업, 전자상거래 소매 중개업</p>
+            <p style="margin-bottom: 30px;">대표 이메일: ceo@tantanfab.com</p>
+            
+            <p style="font-size: 0.85rem; color: #777;">
+                &copy; 2026 탄탄제작소 (Tantanfab). All Rights Reserved.
+            </p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/tantan_main.js') }}"></script>
+
+    {% if session.get('admin_logged_in') %}
+    <!-- 햄버거 사이드바 오버레이 및 메뉴 -->
+    <div id="tantan-sidebar-overlay" onclick="toggleTantanSidebar(false)"></div>
+    <div id="tantan-sidebar-menu">
+        <div class="sidebar-header">
+            <span class="sidebar-title">탄탄 HQ 제어판</span>
+            <button class="sidebar-close" onclick="toggleTantanSidebar(false)">&times;</button>
+        </div>
+        <div class="sidebar-content">
+            <a href="/dashboard" class="sidebar-item">
+                <i class="ri-dashboard-3-line"></i> 📊 HQ 통합 대시보드 메인
+            </a>
+            <a href="/dashboard?tab=stores" class="sidebar-item">
+                <i class="ri-store-2-line"></i> 🏪 가맹 상점 관리
+            </a>
+            <a href="/dashboard?tab=citizens" class="sidebar-item">
+                <i class="ri-user-heart-line"></i> 👥 일반 시민 관리
+            </a>
+            <a href="/dashboard?tab=farmers" class="sidebar-item">
+                <i class="ri-plant-line"></i> 🌾 농어민 관리
+            </a>
+            <a href="/dashboard?tab=ai" class="sidebar-item">
+                <i class="ri-robot-2-line"></i> 🤖 AI 응대 관제
+            </a>
+            <a href="/dashboard?tab=sms" class="sidebar-item">
+                <i class="ri-message-3-line"></i> ✉️ 알림톡/문자 발송
+            </a>
+            <a href="/dashboard?tab=deliveries" class="sidebar-item">
+                <i class="ri-truck-line"></i> 🚚 택배 배송 현황
+            </a>
+            <a href="/dashboard?tab=drivers" class="sidebar-item">
+                <i class="ri-ebike-2-line"></i> 🏍️ 배달 기사 관리
+            </a>
+            <a href="/dashboard?tab=finance" class="sidebar-item">
+                <i class="ri-wallet-3-line"></i> 💰 재무/세금 현황
+            </a>
+            <a href="/dashboard?tab=video" class="sidebar-item">
+                <i class="ri-movie-2-line"></i> 🎬 비디오 솔루션
+            </a>
+            <a href="/dashboard?tab=reservations" class="sidebar-item">
+                <i class="ri-calendar-check-line"></i> 📅 예약 접수 현황
+            </a>
+            <div class="sidebar-divider"></div>
+            <a href="/dashboard?tab=logs" class="sidebar-item" style="color: #ef4444;">
+                <i class="ri-alarm-warning-line"></i> 🚨 시스템 모니터링 (에러 로그)
+            </a>
+            <a href="/dashboard?tab=settlement" class="sidebar-item" style="color: #8b5cf6;">
+                <i class="ri-hand-coin-line"></i> 💰 정산 관리 (4단계)
+            </a>
+            <a href="/dashboard?tab=crypto" class="sidebar-item" style="color: #7c3aed;">
+                <i class="ri-lock-password-line"></i> 🔐 AES-256 암호화 시뮬레이터
+            </a>
+            <a href="/dashboard?tab=farmer_api" class="sidebar-item" style="color: #059669;">
+                <i class="ri-seedling-line"></i> 🌾 농어민 가입 API 흐름 시뮬레이터
+            </a>
+            <a href="/dashboard?tab=callback_trace" class="sidebar-item" style="color: #dc2626;">
+                <i class="ri-radar-line"></i> 📡 콜백 미도달 레이어 추적
+            </a>
+            <a href="/dashboard?tab=solapi_test" class="sidebar-item" style="color: #f59e0b;">
+                <i class="ri-mail-send-line"></i> 🧪 솔라피 발송 직접 테스트
+            </a>
+            <div class="sidebar-divider"></div>
+            <a href="/documentary-dashboard" class="sidebar-item" style="color: #10b981;">
+                <i class="ri-film-line"></i> 🎥 내생애 다큐 관제센터
+            </a>
+            <button onclick="backupSystem()" class="sidebar-item" style="background: none; border: none; text-align: left; width: 100%; cursor: pointer; color: #3b82f6; font-family: inherit; font-size: inherit; font-weight: inherit;">
+                <i class="ri-database-2-line"></i> 💾 시스템 전체 백업
+            </button>
+            <div class="sidebar-divider"></div>
+            <a href="/logout" class="sidebar-item" style="color: var(--error-color, #dc3545);">
+                <i class="ri-logout-box-r-line"></i> 🚪 로그아웃
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <span style="font-size: 0.85rem; color: #8b949e;">&copy; 2026 Tantan Studio Admin</span>
+        </div>
+    </div>
+
+    <!-- 사이드바 제어 스크립트 -->
+    <script>
+        function toggleTantanSidebar(open) {
+            const overlay = document.getElementById('tantan-sidebar-overlay');
+            const menu = document.getElementById('tantan-sidebar-menu');
+            if (open) {
+                overlay.classList.add('active');
+                menu.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            } else {
+                overlay.classList.remove('active');
+                menu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
+        async function backupSystem() {
+            if (!confirm("전체 시스템 DB 백업을 시작하시겠습니까?")) return;
+            try {
+                const response = await fetch(`https://dongnebiseo.com/api/admin/security/backup?kw=admin1234`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    let fileName = 'backup_full.json';
+                    if (contentDisposition) {
+                        const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                        if (fileNameMatch) fileName = fileNameMatch[1];
+                    }
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                    alert("✅ 백업 파일 다운로드가 시작되었습니다.");
+                } else {
+                    const err = await response.json();
+                    alert(`❌ 백업 실패: ${err.error || 'Unknown Error'}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("통신 에러가 발생했습니다.");
+            }
+        }
+    </script>
+    {% endif %}
+</body>
+</html>

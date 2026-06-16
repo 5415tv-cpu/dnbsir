@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 택배 결제</title>
+    <!-- 1. 토스페이먼츠 공식 자바스크립트 도구 불러오기 (정석) -->
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <style>
+        /* 어르신들을 위한 큼직한 키오스크 스타일 UI 고정 */
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f4f5f7; }
+        h2 { font-size: 28px; margin-bottom: 30px; }
+        .price-btn {
+            display: block; width: 100%; padding: 25px; margin: 15px 0;
+            font-size: 24px; font-weight: bold; background-color: #3182f6; /* 토스페이먼츠 블루 */
+            color: white; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h2>택배 상자 크기를 선택해주세요</h2>
+    
+    <!-- 2. 직관적인 3단 정액제 버튼 (금액을 확정하여 분쟁 차단) -->
+    <button class="price-btn" onclick="startPayment(5000, '작은 상자 (라면 박스 이하)')">작은 상자 (5,000원)</button>
+    <button class="price-btn" onclick="startPayment(7000, '중간 상자 (사과 박스 크기)')">중간 상자 (7,000원)</button>
+    <button class="price-btn" onclick="startPayment(9000, '큰 상자 (대형 박스)')">큰 상자 (9,000원)</button>
+
+    <script>
+        // 발급받으신 토스페이먼츠 '클라이언트 키' (화면용이므로 공개되어도 안전함)
+        const clientKey = '{{ toss_client_key }}' || 'test_ck_PBal2vxj81ND2OPW6a7135RQgOAN';
+        const tossPayments = TossPayments(clientKey);
+
+        function startPayment(amount, orderName) {
+            // [방어] 각 주문을 구별하는 고유 번호 (실전에서는 DB의 주문번호 TNB-XXX를 사용)
+            const orderId = "TNB-" + new Date().getTime(); 
+
+            const PUBLIC_SERVER_URL = "https://dongnebiseo.com";
+
+            // 3. 토스페이먼츠 통합 결제창 띄우기 (카카오톡 내에서 리다이렉트 방식으로 구동)
+            tossPayments.requestPayment('카드', {
+                amount: amount,
+                orderId: orderId,
+                orderName: orderName,
+                customerName: '김탄탄', // 서버에서 받아온 어르신 성함 매칭
+                
+                // 토스 본사 서버가 동네비서 서버로 돈을 확인하러 오는 유일한 정식 주소
+                successUrl: PUBLIC_SERVER_URL + '/api/payment/success', 
+                failUrl: PUBLIC_SERVER_URL + '/api/payment/fail'
+            }).catch(function (error) {
+                // 어르신이 결제창을 중간에 닫았을 때의 에러 처리
+                if (error.code === 'USER_CANCEL') {
+                    alert("결제를 취소하셨습니다. 다시 눌러주세요.");
+                } else {
+                    alert("결제 시스템 오류입니다: " + error.message);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

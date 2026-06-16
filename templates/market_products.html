@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품 선택 | 동네비서 산지직송 마켓</title>
+    <meta name="description" content="동네비서 산지직송 마켓 - 강원 지역 신선 농산물을 산지 직송으로 만나보세요.">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 30% 20%, #1e293b 0%, #090d16 100%);
+            color: #f8fafc;
+            padding-bottom: 120px;
+        }
+
+        /* ── 헤더 ── */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(9, 13, 22, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .header-left { display: flex; flex-direction: column; gap: 2px; }
+
+        .market-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0f172a;
+            font-weight: 900;
+            font-size: 0.7rem;
+            padding: 2px 10px;
+            border-radius: 20px;
+            width: fit-content;
+        }
+
+        .header-title {
+            font-size: 1.1rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            color: #f8fafc;
+        }
+
+        .header-total {
+            text-align: right;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        .header-total span {
+            color: #fbbf24;
+            font-weight: 900;
+            font-size: 1rem;
+        }
+
+        /* ── 검색/필터 바 ── */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            padding: 14px 16px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .filter-bar::-webkit-scrollbar { display: none; }
+
+        .filter-chip {
+            flex-shrink: 0;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1.5px solid rgba(255,255,255,0.12);
+            background: rgba(30,41,59,0.5);
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .filter-chip.active, .filter-chip:hover {
+            background: rgba(251,191,36,0.15);
+            border-color: #fbbf24;
+            color: #fbbf24;
+        }
+
+        /* ── 상품 그리드 ── */
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            padding: 0 14px 20px;
+        }
+
+        @media (min-width: 600px) {
+            .product-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* ── 상품 카드 ── */
+        .product-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            overflow: hidden;
+            transition: border-color 0.25s, transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: inherit;
+            position: relative;
+        }
+        .product-card:hover {
+            border-color: #fbbf24;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(251,191,36,0.15);
+        }
+        .product-card:active { transform: scale(0.97); }
+
+        /* 카드 오른쪽 상단 화살표 힌트 */
+        .card-arrow {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: rgba(251,191,36,0.85);
+            color: #0f172a;
+            font-size: 0.7rem;
+            font-weight: 900;
+            padding: 3px 8px;
+            border-radius: 20px;
+        }
+
+        .product-img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            display: block;
+            background: rgba(15,23,42,0.6);
+        }
+
+        .product-body { padding: 12px; }
+
+        .product-region {
+            font-size: 0.65rem;
+            font-weight: 700;
+            color: #fbbf24;
+            background: rgba(251,191,36,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        .product-name {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #f1f5f9;
+            line-height: 1.3;
+            margin-bottom: 6px;
+        }
+
+        .product-price {
+            font-size: 1.05rem;
+            font-weight: 900;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        /* ── 수량 조절 ── */
+        .qty-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15,23,42,0.4);
+            border-radius: 12px;
+            padding: 4px 6px;
+        }
+
+        .qty-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .qty-btn:active { background: #fbbf24; color: #0f172a; border-color: #fbbf24; transform: scale(0.9); }
+
+        .qty-num {
+            font-size: 1rem;
+            font-weight: 900;
+            color: #fff;
+            min-width: 28px;
+            text-align: center;
+        }
+
+        /* ── 하단 고정 결제 바 ── */
+        .biz-footer-wrap {
+            position: fixed;
+            bottom: 80px; left: 0;
+            width: 100%;
+            background: rgba(9,13,22,0.97);
+            border-top: 1px solid rgba(255,255,255,0.07);
+            padding: 10px 16px 8px;
+            z-index: 199;
+        }
+        .pay-bar {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%;
+            padding: 8px 16px 20px;
+            background: rgba(9,13,22,1);
+            z-index: 200;
+        }
+
+        .biz-footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 2.0;
+            letter-spacing: 0.01em;
+        }
+        .biz-footer .biz-row { display: block; margin-bottom: 1px; }
+        .biz-footer .biz-label { color: #64748b; font-size: 0.7rem; }
+        .biz-footer a { color: #fbbf24; text-decoration: none; font-weight: 600; }
+
+        .pay-btn {
+            width: 100%;
+            height: 58px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(245,158,11,0.35);
+            transition: transform 0.1s, opacity 0.2s;
+        }
+        .pay-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .pay-btn:not(:disabled):active { transform: scale(0.97); }
+
+        /* ── 배송 모달 ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            z-index: 999;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 0;
+        }
+        .modal-overlay.open { display: flex; }
+
+        .modal-sheet {
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            background: #1e293b;
+            border: 1.5px solid rgba(251,191,36,0.3);
+            border-radius: 28px 28px 0 0;
+            padding: 28px 20px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: #fbbf24;
+            border-bottom: 1px dashed rgba(251,191,36,0.2);
+            padding-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-close { background: none; border: none; color: #94a3b8; font-size: 1.6rem; cursor: pointer; }
+
+        .form-section {
+            border: 1.5px dashed rgba(251,191,36,0.25);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .form-section-title { font-size: 0.9rem; font-weight: 900; color: #fbbf24; }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 0.82rem; font-weight: 700; color: #cbd5e1; }
+
+        .form-input {
+            width: 100%;
+            height: 46px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            background: rgba(15,23,42,0.5);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0 14px;
+            outline: none;
+        }
+        .form-input:focus { border-color: #fbbf24; }
+
+        .zip-row { display: flex; gap: 8px; }
+        .btn-zip {
+            flex-shrink: 0;
+            height: 46px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: none;
+            background: #cbd5e1;
+            color: #0f172a;
+            font-size: 0.85rem;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-confirm {
+            width: 100%;
+            height: 56px;
+            border-radius: 14px;
+            border: none;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0f172a;
+            font-size: 1rem;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        /* 다음 주소 레이어 */
+        .daum-layer {
+            display: none;
+            position: fixed;
+            z-index: 1200;
+            background: #fff;
+            overflow: hidden;
+            border: 2px solid #fbbf24;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .daum-close {
+            position: absolute;
+            right: 0; top: 0;
+            width: 36px; height: 36px;
+            background: #000;
+            color: #fff;
+            text-align: center;
+            line-height: 36px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+    <div class="header-left">
+        <div class="market-badge">시니어 맞춤 장터</div>
+        <div class="header-title">동네비서 산지직송 마켓</div>
+    </div>
+    <div class="header-total">
+        담은 상품<br>
+        <span id="headerTotal">0원</span>
+    </div>
+</header>
+
+<!-- 지역 필터 -->
+<div class="filter-bar">
+    <div class="filter-chip active" onclick="filterRegion('전체', this)">📍 전체</div>
+    <div class="filter-chip" onclick="filterRegion('태백', this)">태백시</div>
+    <div class="filter-chip" onclick="filterRegion('삼척', this)">삼척시</div>
+    <div class="filter-chip" onclick="filterRegion('정선', this)">정선군</div>
+    <div class="filter-chip" onclick="filterRegion('철원', this)">철원군</div>
+</div>
+
+<!-- 상품 그리드 -->
+<div class="product-grid" id="productGrid"></div>
+
+<!-- 사업자 정보 푸터 -->
+<div class="biz-footer-wrap">
+    <div class="biz-footer">
+        <span class="biz-row">
+            <span class="biz-label">상호</span> 탄탄제작소 &nbsp;|&nbsp;
+            <span class="biz-label">대표</span> 이영준 &nbsp;|&nbsp;
+            <span class="biz-label">사업자</span> 442-32-01655
+        </span>
+        <span class="biz-row">
+            <span class="biz-label">주소</span> 강원특별자치도 태백시 태붐로 54, 1003-1903
+        </span>
+        <span class="biz-row">
+            <span class="biz-label">통신판매업</span> 제2026-강원태백-0013호 &nbsp;|&nbsp;
+            <a href="/citizen/market/refund">환불정책 보기</a>
+        </span>
+    </div>
+</div>
+
+<!-- 하단 결제 바 -->
+<div class="pay-bar">
+    <button class="pay-btn" id="payBtn" disabled onclick="openModal()">
+        🛒 상품을 선택해 주세요
+    </button>
+</div>
+
+<!-- 배송 정보 모달 -->
+<div class="modal-overlay" id="orderModal">
+    <div class="modal-sheet">
+        <div class="modal-title">
+            📦 배송 정보 입력
+            <button class="btn-close" onclick="closeModal()">×</button>
+        </div>
+
+        <!-- 보내는 분 -->
+        <div class="form-section">
+            <div class="form-section-title">📤 보내시는 분</div>
+            <div class="form-group">
+                <label class="form-label">성함 / 상호</label>
+                <input class="form-input" id="senderName" value="탄탄제작소">
+            </div>
+            <div class="form-group">
+                <label class="form-label">연락처</label>
+                <input class="form-input" id="senderPhone" value="010-2384-7447" type="tel">
+            </div>
+            <div class="form-group">
+                <label class="form-label">주소</label>
+                <div class="zip-row">
+                    <input class="form-input" id="senderZip" value="26027" readonly style="flex:1">
+                    <button class="btn-zip" onclick="searchAddr('sender')">주소 찾기</button>
+                </div>
+                <input class="form-input" id="senderBase" value="강원특별자치도 태백시 태붐로 54" readonly style="margin-top:6px">
+                <input class="form-input" id="senderDetail" placeholder="상세 주소" style="margin-top:6px">
+            </div>
+        </div>
+
+        <!-- 받는 분 -->
+        <div class="form-section">
+            <div class="form-section-title">📥 받으시는 분</div>
+            <div class="form-group">
+                <label class="form-label">성함</label>
+                <input class="form-input" id="recipientName" placeholder="홍길동">
+            </div>
+            <div class="form-group">
+                <label class="form-label">연락처</label>
+                <input class="form-input" id="recipientPhone" placeholder="010-0000-0000" type="tel">
+            </div>
+            <div class="form-group">
+                <label class="form-label">배송 주소</label>
+                <div class="zip-row">
+                    <input class="form-input" id="recipientZip" placeholder="우편번호" readonly style="flex:1">
+                    <button class="btn-zip" onclick="searchAddr('recipient')">주소 찾기</button>
+                </div>
+                <input class="form-input" id="recipientBase" placeholder="기본 주소" readonly style="margin-top:6px">
+                <input class="form-input" id="recipientDetail" placeholder="상세 주소 (동·호수)" style="margin-top:6px">
+            </div>
+        </div>
+
+        <button class="btn-confirm" onclick="proceedToPayment()">결제창 열기</button>
+    </div>
+</div>
+
+<!-- 다음 주소 레이어 -->
+<div id="daumLayer" class="daum-layer">
+    <div class="daum-close" onclick="document.getElementById('daumLayer').style.display='none'">×</div>
+</div>
+
+<script>
+    // ── 상품 데이터 ──
+    // DB에서 서버가 주입한 상품 데이터
+    const PRODUCTS = [
+        {% for p in products %}
+        {
+            id:     {{ p.id }},
+            name:   "{{ p.name }}",
+            price:  {{ p.price }},
+            region: "{{ p.name.split(' ')[0] }}",
+            img:    "{{ p.image_path }}",
+            desc:   "{{ p.description | truncate(30, true, '') }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    const toss = TossPayments('test_ck_PBal2vxj81ND2OPW6a7135RQgOAN');
+    let qty = {};
+    PRODUCTS.forEach(p => qty[p.id] = 0);
+
+    let currentFilter = '전체';
+
+    function filterRegion(region, el) {
+        currentFilter = region;
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        renderGrid();
+    }
+
+    function renderGrid() {
+        const grid = document.getElementById('productGrid');
+        const list = currentFilter === '전체' ? PRODUCTS : PRODUCTS.filter(p => p.region === currentFilter);
+        grid.innerHTML = list.map(p => `
+            <a class="product-card" href="/citizen/market/product/${p.id}">
+                <div class="card-arrow">상세 →</div>
+                <img class="product-img" src="${p.img}" alt="${p.name}" onerror="this.src='/static/images/potato_pack.png'">
+                <div class="product-body">
+                    <div class="product-region">${p.region}</div>
+                    <div class="product-name">${p.name}</div>
+                    <div class="product-price">${p.price.toLocaleString()}원</div>
+                </div>
+            </a>
+        `).join('');
+    }
+
+    // 장바구니(sessionStorage) 기반 하단 버튼 업데이트
+    function updatePayBtn() {
+        const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        const count = cart.reduce((s, i) => s + i.qty, 0);
+        const btn = document.getElementById('payBtn');
+        const hdr = document.getElementById('headerTotal');
+        if (total > 0) {
+            hdr.textContent = total.toLocaleString() + '원';
+            btn.disabled = false;
+            btn.innerHTML = `🛒 &nbsp;${count}건 / ${total.toLocaleString()}원 결제하기`;
+        } else {
+            hdr.textContent = '0원';
+            btn.disabled = true;
+            btn.innerHTML = '상품을 눌러 담아보세요';
+        }
+    }
+
+    function openModal() {
+        const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+        if (!cart.length) return;
+        window.location.href = '/citizen/market/checkout';
+    }
+
+    let addrTarget = 'recipient';
+    function searchAddr(target) {
+        addrTarget = target;
+        const layer = document.getElementById('daumLayer');
+        new daum.Postcode({
+            oncomplete(data) {
+                const prefix = addrTarget === 'sender' ? 'sender' : 'recipient';
+                document.getElementById(prefix + 'Zip').value = data.zonecode;
+                document.getElementById(prefix + 'Base').value = data.address;
+                document.getElementById(prefix + 'Detail').value = '';
+                document.getElementById(prefix + 'Detail').focus();
+                layer.style.display = 'none';
+            },
+            width:'100%', height:'100%', maxSuggestItems:5
+        }).embed(layer);
+        const w = Math.min(window.innerWidth * 0.95, 440);
+        const h = Math.min(window.innerHeight * 0.75, 480);
+        layer.style.cssText = `display:block; width:${w}px; height:${h}px; left:${(window.innerWidth-w)/2}px; top:${(window.innerHeight-h)/2}px;`;
+    }
+
+    function proceedToPayment() {
+        const sName   = document.getElementById('senderName').value.trim();
+        const sPhone  = document.getElementById('senderPhone').value.trim();
+        const sZip    = document.getElementById('senderZip').value.trim();
+        const sBase   = document.getElementById('senderBase').value.trim();
+        const sDetail = document.getElementById('senderDetail').value.trim();
+
+        const rName   = document.getElementById('recipientName').value.trim();
+        const rPhone  = document.getElementById('recipientPhone').value.trim();
+        const rZip    = document.getElementById('recipientZip').value.trim();
+        const rBase   = document.getElementById('recipientBase').value.trim();
+        const rDetail = document.getElementById('recipientDetail').value.trim();
+
+        if (!sName || !sPhone || !sZip || !sBase) { alert('보내는 분 정보를 모두 입력해 주세요.'); return; }
+        if (!rName || !rPhone || !rZip || !rBase || !rDetail) { alert('받는 분 배송 정보를 모두 입력해 주세요.'); return; }
+
+        const items = PRODUCTS.filter(p => qty[p.id] > 0).map(p => ({ id:p.id, name:p.name, price:p.price, qty:qty[p.id] }));
+        if (!items.length) { alert('선택된 상품이 없습니다.'); return; }
+
+        const total = items.reduce((s, i) => s + i.price * i.qty, 0);
+        const orderName = items.length === 1 ? `${items[0].name} ${items[0].qty}개` : `${items[0].name} 외 ${items.length-1}건`;
+        const now = new Date();
+        const orderId = `MK-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getTime()).slice(-6)}`;
+
+        const successUrl = 'https://dongnebiseo.com/market/success'
+            + '?customer_name=' + encodeURIComponent(rName)
+            + '&phone_number=' + encodeURIComponent(rPhone)
+            + '&zip_code=' + encodeURIComponent(rZip)
+            + '&base_address=' + encodeURIComponent(rBase)
+            + '&detail_address=' + encodeURIComponent(rDetail)
+            + '&sender_name=' + encodeURIComponent(sName)
+            + '&sender_phone=' + encodeURIComponent(sPhone)
+            + '&sender_address=' + encodeURIComponent(`(${sZip}) ${sBase} ${sDetail}`)
+            + '&items_json=' + encodeURIComponent(JSON.stringify(items));
+
+        toss.requestPayment('카드', {
+            amount: total,
+            orderId,
+            orderName,
+            successUrl,
+            failUrl: 'https://dongnebiseo.com/market/fail'
+        }).catch(err => {
+            if (err.code !== 'USER_CANCEL') alert('결제 오류: ' + err.message);
+        });
+    }
+
+    // 초기 렌더링
+    renderGrid();
+</script>
+</body>
+</html>

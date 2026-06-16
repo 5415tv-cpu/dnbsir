@@ -1,0 +1,13 @@
+{% extends "tantan_base.html" %}
+
+{% block title %}서버 오류 - 탄탄제작소{% endblock %}
+
+{% block content %}
+<div class="error-container">
+    <h1 class="error-code">500</h1>
+    <h2 class="error-title">시스템 처리 중 문제가 발생했습니다.</h2>
+    <p class="error-desc">서버 내부 오류로 인해 페이지를 표시할 수 없습니다. 잠시 후 다시 시도해 주시거나 관리자에게 문의해 주세요.</p>
+    
+    <a href="{{ url_for('index') }}" class="btn btn-primary btn-large">홈으로 돌아가기</a>
+</div>
+{% endblock %}

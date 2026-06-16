@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - 딜리버리·사장님·농부·시민을 위한 AI 비서</title>
+    <meta name="description" content="동네비서는 딜리버리 기사, 소상공인 사장님, 농부, 일반 시민을 위한 맞춤형 AI 서비스입니다. 각 가입 대상별 특화된 조건과 혜택으로 일상의 편리함을 제공합니다.">
+    <meta name="keywords" content="동네비서, 딜리버리, 소상공인, 농업인, 시민 혜택, AI 비서">
+    <meta property="og:title" content="동네비서 - 딜리버리·사장님·농부·시민을 위한 AI 비서">
+    <meta property="og:description" content="동네비서는 딜리버리 기사, 소상공인 사장님, 농부, 일반 시민을 위한 맞춤형 AI 서비스입니다. 각 가입 대상별 특화된 조건과 혜택으로 일상의 편리함을 제공합니다.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://dongnebiseo.com/static/icons/dnbsir-icon-512.png?v=1004">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://dongnebiseo.com/static/icons/dnbsir-icon-512.png?v=1004">
+    <meta name="twitter:title" content="동네비서 - 딜리버리·사장님·농부·시민을 위한 AI 비서">
+    <link rel="canonical" href="https://dongnebiseo.com/">
+    <link rel="icon" href="/static/favicon.ico?v=1004" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/static/icons/dnbsir-icon-192.png?v=1004">
+    <link rel="manifest" href="/static/manifest.json?v=1005">
+    <!-- Modern Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f4f8; /* Soft blueish grey */
+            color: #333;
+        }
+
+        /* Hero Section (Blue theme, trustable) */
+        .hero-section {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            box-shadow: 0 10px 30px rgba(30, 60, 114, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative background element */
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            word-break: keep-all;
+        }
+
+        @media (max-width: 600px) {
+            .hero-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        .hero-title span.highlight {
+            color: #ffd700; 
+        }
+
+        .hero-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 2.5rem;
+            font-weight: 400;
+        }
+
+        /* Quick Navigation Grid */
+        .quick-nav-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .nav-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem 1rem;
+            color: #ffffff;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .nav-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .nav-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-role {
+            font-size: 0.9rem;
+            color: #ffd700;
+            font-weight: 800;
+            margin-bottom: 0.3rem;
+        }
+
+        .nav-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        .nav-card.span-2 {
+            grid-column: span 2;
+        }
+
+        @media screen and (max-width: 500px) {
+            .quick-nav-grid {
+                grid-template-columns: 1fr;
+            }
+            .nav-card.span-2 {
+                grid-column: span 1;
+            }
+        }
+
+        /* Senior Huge Button */
+        .senior-huge-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            border-radius: 24px;
+            padding: 1.5rem 2rem;
+            margin: 0 auto 2.5rem;
+            max-width: 600px;
+            text-decoration: none;
+            color: #ffffff;
+            box-shadow: 0 10px 25px rgba(255, 107, 107, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+
+        .senior-huge-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(255, 107, 107, 0.5);
+            background: linear-gradient(135deg, #ff5757 0%, #ff7d3b 100%);
+        }
+
+        .senior-icon {
+            font-size: 3.5rem;
+            line-height: 1;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .senior-text-wrapper {
+            text-align: left;
+        }
+
+        .senior-text {
+            font-size: 1.8rem;
+            font-weight: 900;
+            line-height: 1.2;
+            word-break: keep-all;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            color: #ffffff;
+        }
+
+        .senior-subtext {
+            font-size: 1.1rem;
+            font-weight: 700;
+            opacity: 0.95;
+            margin-top: 0.4rem;
+            color: #ffe8e8;
+        }
+
+        @media (max-width: 600px) {
+            .senior-huge-btn {
+                flex-direction: column;
+                text-align: center;
+                padding: 1.5rem;
+                gap: 1rem;
+                margin: 0 1rem 2rem;
+            }
+            .senior-text-wrapper {
+                text-align: center;
+            }
+            .senior-icon {
+                font-size: 3rem;
+            }
+            .senior-text {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* AI Process Section Grid Layout */
+        .ai-process-section {
+            padding: 4rem 1.5rem;
+            text-align: center;
+        }
+
+        .ai-process-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #1e3c72;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .ai-process-subtitle {
+            font-size: 1.1rem;
+            color: #475569;
+            margin-bottom: 3rem;
+            font-weight: 700;
+        }
+
+        .ai-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 992px) {
+            .ai-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .ai-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+
+        .ai-step-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 1.8rem 1.2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: left;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-step-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(30, 60, 114, 0.12);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .ai-badge {
+            background: #1e3c72;
+            color: #ffffff;
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(30, 60, 114, 0.15);
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #22c55e;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+        }
+
+        .pulse-dot::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+            background-color: #22c55e;
+            animation: pulse-animation 1.5s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(3.5); opacity: 0; }
+        }
+
+        .ai-step-icon {
+            margin-bottom: 1.2rem;
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 8px rgba(0,0,0,0.05);
+        }
+
+        .ai-step-icon img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            user-select: none;
+        }
+
+        .ai-step-header {
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .ai-step-desc {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.5;
+            margin: 0;
+            word-break: keep-all;
+        }
+
+        /* Footer / Enterprise Info */
+        .footer {
+            background: #ffffff;
+            padding: 3rem 1.5rem 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .partners {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .partner-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #334155;
+            padding: 0.8rem 1.5rem;
+            background: #f8fafc;
+            border-radius: 30px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .partner-badge.toss { color: #3182f6; } /* Toss Blue */
+        .partner-badge.solapi { color: #facc15; text-shadow: 0 0 1px rgba(0,0,0,0.1); } /* Solapi Yellow/Orange feel */
+
+        .login-link {
+            display: inline-block;
+            margin-top: 2rem;
+            color: #1e3c72;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+
+    </style>
+    <!-- Add global styles and gate logics -->
+    <link rel="stylesheet" href="/static/css/style.css?v=5">
+    <script src="/static/js/app.js?v=5"></script>
+</head>
+<body>
+    <!-- Hanok Gate Overlay -->
+    <div id="hanok-gate-overlay" style="display: none;">
+        <div class="gate-wrapper" id="gate-wrapper">
+            <div class="gate-container">
+                <div class="gate-half gate-left">
+                    <div class="door-pattern"></div>
+                    <div class="gate-handle"></div>
+                </div>
+                <div class="gate-half gate-right">
+                    <div class="door-pattern"></div>
+                    <div class="gate-handle"></div>
+                </div>
+            </div>
+            
+            <div class="gate-intro">
+                <h1 class="gate-title">탄탄한 동네비서</h1>
+                <p class="gate-desc">"복잡한 앱 대신 말 한마디로."<br>우리 동네 사람들을 잇는 따뜻한 연결 고리</p>
+                <button class="gate-open-btn" onclick="openHanokGate(event)">서비스 바로가기</button>
+            </div>
+        </div>
+    </div>
+
+    <header style="position: fixed; top: 0; left: 0; width: 100%; display: flex; align-items: center; justify-content: center; padding: 12px 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+        <a href="/" style="display: flex; align-items: center; justify-content: center; text-decoration: none; gap: 8px;">
+            <strong style="font-weight: 900; font-size: 1.35rem; color: #1e3c72; letter-spacing: -0.5px;">탄탄한 동네비서</strong>
+        </a>
+    </header>
+
+    <!-- Hero Section -->
+    <header class="hero-section" style="padding-top: calc(4rem + 60px);">
+        <div class="hero-content">
+            <img src="/static/icons/dnbsir-icon-192.png?v=1004" alt="동네비서 로고 앱 설치" onclick="installPWA()" title="클릭하여 모바일 앱 설치하기" style="width: 120px; height: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s ease; border-radius: 20px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <h1 class="hero-title">가장 똑똑하고 따뜻한 디지털 대리인,<br>탄탄한 <span class="highlight">동네비서</span>에 오신 것을 환영합니다.</h1>
+            <p class="hero-subtitle">복잡한 기술은 저희가 다루겠습니다. 농민, 상인, 기사, 시민 누구나 평소 하던 대로 편하게 동네비서를 부려주세요.</p>
+            
+            <!-- Senior Huge Button -->
+            <a href="/silver/courier" class="senior-huge-btn">
+                <div class="senior-icon">🧓📦</div>
+                <div class="senior-text-wrapper">
+                    <div class="senior-text">큰글씨 어르신 전용 택배보내기</div>
+                    <div class="senior-subtext">복잡한 절차 없이, 말 한마디로 쉽게 접수하세요</div>
+                </div>
+            </a>
+
+            <div class="quick-nav-grid">
+                <a href="/farmer/benefits" class="nav-card">
+                    <div class="nav-icon">🚜</div>
+                    <div class="nav-role">[농민]</div>
+                    <div class="nav-title">산지 직송 파트너스<br>농가 혜택 보기</div>
+                </a>
+                <a href="/store/landing" class="nav-card">
+                    <div class="nav-icon">🏪</div>
+                    <div class="nav-role">[상인(사장님)]</div>
+                    <div class="nav-title">매출 증대 솔루션<br>전용 비서 고용하기</div>
+                </a>
+                <a href="/delivery-landing" class="nav-card">
+                    <div class="nav-icon">🚚</div>
+                    <div class="nav-role">[기사(딜리버리)]</div>
+                    <div class="nav-title">지역 기반 배송<br>수익 정산 및 확인</div>
+                </a>
+                <a href="/citizen/home" class="nav-card">
+                    <div class="nav-icon">📦</div>
+                    <div class="nav-role">[시민]</div>
+                    <div class="nav-title">로그인 없는 로컬라이프<br>우리동네 장터/택배</div>
+                </a>
+                
+                <!-- 신규 추가 5번째 카드: 비서야 홈케어 (서비스 준비중) -->
+                <a href="#" onclick="alert('해당 서비스는 현재 준비 중입니다! 곧 만나보실 수 있습니다.'); return false;" class="nav-card span-2">
+                    <div class="nav-icon" style="margin-bottom: 0.2rem; display: flex; justify-content: center; overflow: hidden; height: 75px; align-items: flex-start;">
+                        <img src="/static/images/biseoya_homecare_nobg.png" alt="비서야 홈케어 아이콘" style="width: 80px; height: auto; object-fit: cover; object-position: center top; margin-top: 5px;">
+                    </div>
+                    <div class="nav-role" style="color: #93c5fd;">[비서야 (HOME CARE SERVICE)]</div>
+                    <div class="nav-title">Professional Home Health and Care Service<br><span style="color: #fcd34d; font-size: 0.9em; margin-top: 5px; display: inline-block;">🚀 (서비스 준비중)</span></div>
+                </a>
+            </div>
+
+            <!-- Nationwide Stats Counter -->
+            <div class="stats-container" style="display:flex; justify-content:center; gap:3rem; margin-top:3rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,0.2);">
+                <div>
+                    <div style="font-size:2rem; font-weight:900;" id="stat-shops">12,045+</div>
+                    <div style="font-size:0.9rem; opacity:0.8;">전국 가맹 상점</div>
+                </div>
+                <div>
+                    <div style="font-size:2rem; font-weight:900;" id="stat-deliveries">249,102+</div>
+                    <div style="font-size:0.9rem; opacity:0.8;">누적 배송/예약 처리 건수</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- AI 8-Step Core Feature Section -->
+    <section class="ai-process-section">
+        <h2 class="ai-process-title">세상에서 가장 쉬운 택배 발송 프로세스</h2>
+        <p class="ai-process-subtitle">동네비서 AI의 8단계 핵심 기능이 모든 과정을 실시간으로 케어합니다.</p>
+        
+        <div class="ai-grid">
+            <!-- 1단계 -->
+            <article class="ai-step-card" aria-label="1단계: AI 접수 인식. 사진 한 장으로 AI가 주문 내역 자동 판독">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>🧾</text></svg>" alt="접수 인식" loading="lazy" fetchpriority="high">
+                </div>
+                <h4 class="ai-step-header">AI 접수 인식</h4>
+                <p class="ai-step-desc">사진 한 장으로 AI가 주문 내역 자동 판독.</p>
+            </article>
+
+            <!-- 2단계 -->
+            <article class="ai-step-card" aria-label="2단계: AI 주소 보정. 불완전한 주소를 AI가 표준 주소로 즉시 교정">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>🗺️</text></svg>" alt="주소 보정" loading="lazy" fetchpriority="high">
+                </div>
+                <h4 class="ai-step-header">AI 주소 보정</h4>
+                <p class="ai-step-desc">불완전한 주소를 AI가 표준 주소로 즉시 교정.</p>
+            </article>
+
+            <!-- 3단계 -->
+            <article class="ai-step-card" aria-label="3단계: 최적 운임 계산. AI가 거리와 무게를 계산하여 최저가 운임 적용">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>🧮</text></svg>" alt="운임 계산" loading="lazy">
+                </div>
+                <h4 class="ai-step-header">최적 운임 계산</h4>
+                <p class="ai-step-desc">AI가 거리와 무게를 계산하여 최저가 운임 적용.</p>
+            </article>
+
+            <!-- 4단계 -->
+            <article class="ai-step-card" aria-label="4단계: 로젠 기사 매칭. 동네비서 AI가 인근 로젠택배 기사님께 실시간 호출">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>🚚</text></svg>" alt="기사 매칭" loading="lazy">
+                </div>
+                <h4 class="ai-step-header">로젠 기사 매칭</h4>
+                <p class="ai-step-desc">동네비서 AI가 인근 로젠택배 기사님께 실시간 호출.</p>
+            </article>
+
+            <!-- 5단계 -->
+            <article class="ai-step-card" aria-label="5단계: 방문 시간 확정. AI가 기사님의 동선을 분석해 예상 수거 시간 통보">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>⏰</text></svg>" alt="방문 시간 확정" loading="lazy">
+                </div>
+                <h4 class="ai-step-header">방문 시간 확정</h4>
+                <p class="ai-step-desc">AI가 기사님의 동선을 분석해 예상 수거 시간 통보.</p>
+            </article>
+
+            <!-- 6단계 -->
+            <article class="ai-step-card" aria-label="6단계: 실시간 집하 확인. 문 앞 물품 수거 시 AI가 즉시 알림 발송">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>🤳</text></svg>" alt="집하 확인" loading="lazy">
+                </div>
+                <h4 class="ai-step-header">실시간 집하 확인</h4>
+                <p class="ai-step-desc">문 앞 물품 수거 시 AI가 즉시 알림 발송.</p>
+            </article>
+
+            <!-- 7단계 -->
+            <article class="ai-step-card" aria-label="7단계: 스마트 배송 추적. AI가 배송 경로의 이슈를 실시간 모니터링">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>📡</text></svg>" alt="배송 추적" loading="lazy">
+                </div>
+                <h4 class="ai-step-header">스마트 배송 추적</h4>
+                <p class="ai-step-desc">AI가 배송 경로의 이슈를 실시간 모니터링.</p>
+            </article>
+
+            <!-- 8단계 -->
+            <article class="ai-step-card" aria-label="8단계: AI 정산 보고. 배송 완료 후 상세 내역을 리포트로 자동 생성">
+                <div class="ai-badge">
+                    <span class="pulse-dot" aria-hidden="true"></span>
+                    AI 지능형 개입
+                </div>
+                <div class="ai-step-icon">
+                    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text x='50%25' y='50%25' font-size='50' dominant-baseline='central' text-anchor='middle'>📊</text></svg>" alt="정산 보고" loading="lazy">
+                </div>
+                <h4 class="ai-step-header">AI 정산 보고</h4>
+                <p class="ai-step-desc">배송 완료 후 상세 내역을 리포트로 자동 생성.</p>
+            </article>
+        </div>
+    </section>
+
+    <!-- Footer & Official Partnerships -->
+    <footer class="footer">
+
+
+        <!-- Business Info -->
+        <div>
+            <strong>탄탄한 동네비서</strong><br>
+            상호: 탄탄제작소 | 사업자등록번호: 442-32-01655 | 대표: 이영준<br>
+            주소: 강원특별자치도 태백시 태붐로 54, 1003동 1903호 (황지동, 포레스트 애시앙 1단지)<br>
+            고객센터: 1588-0000 | 이메일: support@dongnebiseo.com<br>
+            출원된 상표(출원번호: 4-2026-023525-4)<br>
+            <br>
+            <div style="font-weight: bold; color: #1e3c72; margin-bottom: 1rem;">"농촌의 땀방울이 도시의 미소가 되는 곳, 탄탄한 동네비서가 함께합니다"</div>
+            &copy; 2026 Dongnae Biseo. All rights reserved.
+        </div>
+
+        <a href="/admin" class="login-link">관리자 로그인 (사장님/기사님) -></a>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            if (typeof checkDailyGate === "function") {
+                checkDailyGate();
+            }
+            // IP Based GeoLocation removed as requested string replaced the geo region
+                
+            // Animate counters
+            function animateValue(id, start, end, duration) {
+                const obj = document.getElementById(id);
+                if (!obj) return;
+                let startTimestamp = null;
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString() + "+";
+                    if (progress < 1) {
+                        window.requestAnimationFrame(step);
+                    }
+                };
+                window.requestAnimationFrame(step);
+            }
+            
+            // Trigger animation
+            animateValue("stat-shops", 0, 12045, 2000);
+            animateValue("stat-deliveries", 0, 249102, 2500);
+        });
+    </script>
+</body>
+</html>

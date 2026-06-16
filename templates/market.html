@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>동네비서 산지직송 마켓</title>
+    <!-- 카카오톡 링크 공유 최적화 Open Graph 메타 태그 -->
+    <meta property="og:title" content="동네비서 산지직송 마켓">
+    <meta property="og:description" content="태백 지역의 신선한 농산물을 안전하게 자택까지 배송해 드립니다.">
+    <meta property="og:image" content="https://dongnebiseo.com/static/images/potato_pack.png">
+    <meta property="og:url" content="https://dongnebiseo.com/market">
+    <meta property="og:type" content="website">
+    <!-- Toss Payments SDK -->
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <!-- Daum Postcode SDK -->
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+
+
+    <!-- Google Fonts Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* 헤더 타이틀 */
+        header {
+            text-align: center;
+            padding: 20px 10px 10px 10px;
+            z-index: 10;
+        }
+
+        .market-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0f172a;
+            font-weight: 900;
+            font-size: 1.1rem;
+            padding: 4px 16px;
+            border-radius: 30px;
+            margin-bottom: 6px;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            letter-spacing: -0.5px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(180deg, #ffffff 0%, #cbd5e1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        /* 지역 검색창 스타일 */
+        .region-search-container {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            width: 95%;
+            max-width: 420px;
+            margin-left: auto;
+            margin-right: auto;
+            box-sizing: border-box;
+        }
+
+        .region-select-premium {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border-radius: 16px;
+            padding: 12px 16px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 14px;
+            padding-right: 38px;
+            flex: 1.2;
+        }
+
+        .region-select-premium:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 4px rgba(251, 191, 38, 0.15);
+        }
+
+        .region-input-premium {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            border-radius: 16px;
+            padding: 12px 16px;
+            font-size: 1.15rem;
+            font-weight: 800;
+            outline: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            flex: 2;
+        }
+
+        .region-input-premium::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 700;
+        }
+
+        .region-input-premium:focus {
+            border-color: #fbbf24;
+            box-shadow: 0 0 0 4px rgba(251, 191, 38, 0.15);
+        }
+
+        .region-search-btn {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border: none;
+            color: #0f172a;
+            border-radius: 16px;
+            padding: 12px 20px;
+            font-size: 1.15rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+            transition: all 0.2s ease;
+            flex: 0.8;
+        }
+
+        .region-search-btn:active {
+            transform: scale(0.96);
+            background: #d97706;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+            .region-search-container {
+                gap: 6px !important;
+                margin-top: 10px !important;
+            }
+            .region-select-premium {
+                padding: 10px 12px !important;
+                font-size: 1rem !important;
+                border-radius: 12px !important;
+                padding-right: 32px !important;
+                background-position: right 10px center !important;
+                background-size: 12px !important;
+            }
+            .region-input-premium {
+                padding: 10px 12px !important;
+                font-size: 1rem !important;
+                border-radius: 12px !important;
+            }
+            .region-search-btn {
+                padding: 10px 14px !important;
+                font-size: 1rem !important;
+                border-radius: 12px !important;
+            }
+        }
+
+        /* Swiper 외부 래퍼 */
+        .slider-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            width: 100%;
+            padding: 10px 0;
+            overflow: hidden;
+        }
+
+        .swiper {
+            width: 100%;
+            height: 100%;
+            max-height: 520px; /* 카드 최대 높이 제한 */
+        }
+
+        .swiper-slide {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+            opacity: 0.4;
+            transform: scale(0.85); /* 엿보기 기법: 비활성 카드는 축소 및 투명하게 */
+        }
+
+        .swiper-slide-active {
+            opacity: 1;
+            transform: scale(1.0); /* 활성 카드는 꽉 차게 */
+        }
+
+        /* 상품 카드 디자인 (Premium Glassmorphism) */
+        .product-card {
+            width: 90%;
+            max-width: 380px;
+            height: 100%;
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 18px;
+            transition: border-color 0.3s;
+        }
+
+        .swiper-slide-active .product-card {
+            border-color: rgba(251, 191, 36, 0.4); /* 활성화 시 금빛 테두리 하이라이트 */
+        }
+
+        /* 상품 이미지 컨테이너 */
+        .image-wrapper {
+            width: 100%;
+            height: 52%; /* 이미지 영역 비율 */
+            min-height: 200px;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.6);
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 물리 화살표 버튼 (큼직하게 배치) */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: rgba(15, 23, 42, 0.75);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            color: #ffffff;
+            font-size: 2.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .nav-btn:active {
+            transform: translateY(-50%) scale(0.85);
+            background: #fbbf24;
+            color: #000000;
+            border-color: #fbbf24;
+        }
+
+        .nav-btn.prev {
+            left: 10px;
+        }
+
+        .nav-btn.next {
+            right: 10px;
+        }
+
+        /* 상품 정보 텍스트 영역 */
+        .info-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px 4px 4px 4px;
+            text-align: center;
+        }
+
+        .product-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: -0.8px;
+            margin-bottom: 6px;
+        }
+
+        .product-price {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #f59e0b;
+            letter-spacing: -0.5px;
+        }
+
+        /* 하단 인디케이터 및 컨트롤 영역 */
+        .control-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 110px; /* 결제하기 버튼 확보용 여백 */
+            z-index: 10;
+        }
+
+        /* 1 / 5 텍스트 카운터 */
+        .page-counter {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #cbd5e1;
+            letter-spacing: 1px;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 4px 18px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .page-counter span {
+            color: #fbbf24;
+        }
+
+        /* ● ○ ○ ○ ○ 점(Dot) 인디케이터 */
+        .dot-indicator {
+            display: flex;
+            gap: 12px;
+        }
+
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: #fbbf24;
+            transform: scale(1.3);
+            box-shadow: 0 0 10px #fbbf24;
+        }
+
+        /* 최하단 결제하기 플로팅 액션 버튼 */
+        .pay-btn-wrapper {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px 16px 20px 16px;
+            background: linear-gradient(to top, rgba(9, 13, 22, 1) 70%, rgba(9, 13, 22, 0) 100%);
+            z-index: 999;
+        }
+
+        .pay-btn {
+            width: 100%;
+            height: 80px;
+            border-radius: 20px;
+            border: none;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0f172a;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s ease;
+        }
+
+        .pay-btn:active {
+            transform: scale(0.96);
+            background: #d97706;
+        }
+
+        /* 배송지 정보 입력 모달 스타일 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 440px;
+            background: #1e293b;
+            border: 2px solid #fbbf24;
+            border-radius: 28px;
+            padding: 30px 24px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fbbf24;
+        }
+
+        .btn-close-modal {
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            font-size: 2.2rem;
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 60px;
+            border-radius: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(15, 23, 42, 0.6);
+            color: #ffffff;
+            font-size: 1.4rem;
+            font-weight: 700;
+            padding: 0 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: #fbbf24;
+        }
+
+        /* 우편번호 입력부 및 찾기 버튼 */
+        .zip-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-zip {
+            height: 60px;
+            padding: 0 20px;
+            border-radius: 14px;
+            border: none;
+            background: #cbd5e1;
+            color: #0f172a;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-zip:active {
+            background: #94a3b8;
+        }
+
+        /* 최종 결제 실행 버튼 */
+        .btn-submit-order {
+            width: 100%;
+            height: 70px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #0f172a;
+            font-size: 1.7rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+            margin-top: 10px;
+        }
+
+        .btn-submit-order:active {
+            transform: scale(0.98);
+            background: #d97706;
+        }
+
+        /* Daum 주소 검색 레이어 */
+        .daum-layer {
+            display: none;
+            position: fixed;
+            z-index: 1100;
+            background: #ffffff;
+            overflow: hidden;
+        }
+
+        /* 수량 조절 및 모달 높이 오버라이드 스타일 추가 */
+        .modal-content {
+            overflow-y: auto !important;
+            max-height: 90vh !important;
+        }
+
+        .qty-control-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .qty-btn {
+            width: 55px;
+            height: 55px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(15, 23, 42, 0.4);
+            color: #ffffff;
+            font-size: 2rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .qty-btn:active {
+            transform: scale(0.85);
+            background: #fbbf24;
+            color: #0f172a;
+            border-color: #fbbf24;
+        }
+
+        .qty-number {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #ffffff;
+            min-width: 45px;
+            text-align: center;
+        }
+
+        /* 모바일 최적화 미디어 쿼리 (max-width: 480px) */
+        @media (max-width: 480px) {
+            * {
+                box-sizing: border-box !important;
+                max-width: 100%;
+            }
+
+            body, html {
+                overflow-x: hidden; /* 가로 스크롤 완전 차단 */
+            }
+
+            /* 헤더 타이틀 축소 */
+            h1 {
+                font-size: 1.6rem !important; /* 화면 폭에 맞춰 크기 축소 */
+            }
+
+            .market-badge {
+                font-size: 0.9rem !important;
+                padding: 3px 12px !important;
+            }
+
+            /* Swiper 및 레이아웃 높이 최적화 */
+            .slider-container {
+                padding: 5px 0 !important;
+            }
+
+            .swiper {
+                max-height: 420px !important; /* 스마트폰 세로 화면에서 잘리지 않도록 카드 최대 높이 축소 */
+            }
+
+            .swiper-slide {
+                transform: scale(0.9) !important; /* 엿보기 비율 조절 */
+            }
+
+            .swiper-slide-active {
+                transform: scale(1.0) !important;
+            }
+
+            /* 상품 카드 크기 및 내부 패딩 축소 */
+            .product-card {
+                padding: 12px 14px !important;
+                border-radius: 20px !important;
+            }
+
+            .image-wrapper {
+                height: 46% !important; /* 이미지 영역 비율 축소 */
+                min-height: 140px !important; /* 최소 높이 축소 */
+                border-radius: 14px !important;
+            }
+
+            /* 상품 정보 및 텍스트 영역 */
+            .info-wrapper {
+                padding: 8px 2px 2px 2px !important;
+                gap: 4px !important;
+            }
+
+            .product-title {
+                font-size: 1.35rem !important; /* 폰트 축소 */
+                margin-bottom: 2px !important;
+            }
+
+            .product-price {
+                font-size: 1.6rem !important; /* 폰트 축소 */
+                margin-bottom: 0 !important;
+            }
+
+            /* 수량 조절 버튼 (독립된 하단 Row에 flex-wrap 적용) */
+            .qty-control-wrapper {
+                margin-top: 6px !important;
+                padding-top: 6px !important;
+                width: 100% !important;
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: wrap !important; /* 줄넘김 방어 */
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 12px !important;
+            }
+
+            .qty-btn {
+                width: 44px !important;
+                height: 44px !important;
+                font-size: 1.5rem !important;
+                border-radius: 10px !important;
+            }
+
+            .qty-number {
+                font-size: 1.7rem !important;
+                min-width: 32px !important;
+            }
+
+            /* 하단 상태 제어반 및 결제하기 버튼 */
+            .control-panel {
+                padding-bottom: 95px !important; /* 결제 버튼 공간 확보 */
+                gap: 6px !important;
+            }
+
+            .page-counter {
+                font-size: 1.2rem !important;
+                padding: 3px 12px !important;
+            }
+
+            .dot-indicator {
+                gap: 8px !important;
+            }
+
+            .dot {
+                width: 10px !important;
+                height: 10px !important;
+            }
+
+            .pay-btn-wrapper {
+                padding: 8px 12px 14px 12px !important;
+            }
+
+            .pay-btn {
+                height: 60px !important;
+                font-size: 1.4rem !important;
+                border-radius: 14px !important;
+            }
+
+            /* 배송지 정보 입력 모달 창 최적화 (모바일 스크롤 및 크기 방어) */
+            .modal-overlay {
+                padding: 10px !important;
+            }
+
+            .modal-content {
+                padding: 18px 14px !important;
+                border-radius: 20px !important;
+                gap: 12px !important;
+                max-height: 95vh !important; /* 화면 스크롤 허용 */
+            }
+
+            .modal-title {
+                font-size: 1.35rem !important;
+            }
+
+            .btn-close-modal {
+                font-size: 1.8rem !important;
+            }
+
+            .form-label {
+                font-size: 1.05rem !important;
+            }
+
+            .form-input {
+                height: 44px !important;
+                font-size: 1.1rem !important;
+                border-radius: 8px !important;
+                padding: 0 10px !important;
+            }
+
+            .zip-container {
+                gap: 6px !important;
+            }
+
+            .btn-zip {
+                height: 44px !important;
+                padding: 0 12px !important;
+                font-size: 1.05rem !important;
+                border-radius: 8px !important;
+            }
+
+            .btn-submit-order {
+                height: 52px !important;
+                font-size: 1.25rem !important;
+                border-radius: 10px !important;
+                margin-top: 4px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 헤더 영역 -->
+    <header>
+        <div class="market-badge">시니어 맞춤 장터</div>
+        <h1>동네비서 산지직송 마켓</h1>
+        
+        <!-- 지역 검색 및 선택 영역 -->
+        <div class="region-search-container">
+            <select id="regionSelect" class="region-select-premium" onchange="filterByRegion()">
+                <option value="all">📍 전체 지역</option>
+                <option value="태백">태백시</option>
+                <option value="삼척">삼척시</option>
+                <option value="정선">정선군</option>
+                <option value="철원">철원군</option>
+            </select>
+            <input type="text" id="regionInput" class="region-input-premium" placeholder="지역 이름 검색" onkeyup="searchRegion(event)">
+            <button onclick="triggerSearch()" class="region-search-btn">검색</button>
+        </div>
+    </header>
+
+    <!-- 스와이프 슬라이더 영역 -->
+    <div class="slider-container">
+        <!-- 엿보기(Peek) 물리적 버튼 (양옆에 크게 고정) -->
+        <div class="nav-btn prev" id="btnPrev">&lt;</div>
+        <div class="nav-btn next" id="btnNext">&gt;</div>
+
+        <div class="swiper">
+            <div class="swiper-wrapper" id="swiperWrapper">
+                <!-- JavaScript에서 동적으로 카드가 바인딩됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 상태 제어반 -->
+    <div class="control-panel">
+        <!-- 큼직한 폰트 1 / 5 카운터 -->
+        <div class="page-counter" id="pageCounter">1 / 5</div>
+
+        <!-- 큰 점(Dot) 인디케이터 -->
+        <div class="dot-indicator" id="dotIndicator">
+            <!-- 동적으로 생성됩니다 -->
+        </div>
+    </div>
+
+    <!-- 최하단 100% 결제하기 버튼 고정 -->
+    <div class="pay-btn-wrapper">
+        <!-- 사업자정보 (카드사 심사 필수) -->
+        <div style="
+            text-align: center;
+            font-size: 0.62rem;
+            color: #475569;
+            line-height: 1.8;
+            padding: 6px 16px 6px;
+        ">
+            상호: 탄탄제작소 &nbsp;|&nbsp; 대표: 이영준 &nbsp;|&nbsp; 사업자등록번호: 442-32-01655<br>
+            통신판매업 신고번호: 제2026-강원태백-0013호 &nbsp;|&nbsp;
+            <a href="/citizen/market/refund" style="color:#fbbf24; text-decoration:none;">환불정책</a>
+        </div>
+        <button class="pay-btn" id="btnPay" onclick="handlePayment()">
+            <span>결제하기</span>
+        </button>
+    </div>
+
+    <!-- 배송지 정보 입력 모달 창 -->
+    <div class="modal-overlay" id="orderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">배송 정보 입력</div>
+                <button class="btn-close-modal" onclick="closeOrderModal()">&times;</button>
+            </div>
+            
+            <!-- 보내는 사람 정보 (송인) -->
+            <div style="border: 2px dashed rgba(251, 191, 36, 0.3); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+                <div style="font-size: 1.4rem; font-weight: 900; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                    <span>📤 보내시는 분 (송인)</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="senderName">성함 또는 상호</label>
+                    <input type="text" class="form-input" id="senderName" value="탄탄제작소" placeholder="예: 탄탄제작소">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="senderPhone">연락처</label>
+                    <input type="tel" class="form-input" id="senderPhone" value="010-2384-7447" placeholder="예: 010-1234-5678">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">주소</label>
+                    <div class="zip-container">
+                        <input type="text" class="form-input" id="senderZip" placeholder="우편번호" readonly value="26027">
+                        <button type="button" class="btn-zip" onclick="searchAddress('sender')">주소 찾기</button>
+                    </div>
+                    <input type="text" class="form-input" id="senderBaseAddr" placeholder="기본 주소" readonly value="강원특별자치도 태백시 태붐로 54" style="margin-top: 8px;">
+                    <input type="text" class="form-input" id="senderDetailAddr" placeholder="상세 주소 입력" value="" style="margin-top: 8px;">
+                </div>
+            </div>
+
+            <!-- 받는 사람 정보 (수인) -->
+            <div style="border: 2px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+                <div style="font-size: 1.4rem; font-weight: 900; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                    <span>📥 받으시는 분 (수인)</span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="orderName">받는 사람 성함</label>
+                    <input type="text" class="form-input" id="orderName" placeholder="예: 홍길동">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="orderPhone">연락처 (휴대폰)</label>
+                    <input type="tel" class="form-input" id="orderPhone" placeholder="예: 010-1234-5678">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">배송 주소</label>
+                    <div class="zip-container">
+                        <input type="text" class="form-input" id="orderZip" placeholder="우편번호" readonly>
+                        <button class="btn-zip" onclick="searchAddress()">주소 찾기</button>
+                    </div>
+                    <input type="text" class="form-input" id="orderBaseAddr" placeholder="기본 주소" readonly style="margin-top: 8px;">
+                    <input type="text" class="form-input" id="orderDetailAddr" placeholder="상세 주소 입력 (예: 101동 101호)" style="margin-top: 8px;">
+                </div>
+            </div>
+
+            <button class="btn-submit-order" onclick="proceedToToss()">결제창 띄우기</button>
+        </div>
+    </div>
+
+    <!-- Daum 우편번호 레이어 -->
+    <div id="daumLayer" class="daum-layer">
+        <div style="position: absolute; right: 0; top: 0; width: 40px; height: 40px; background: #000; color: #fff; text-align: center; line-height: 40px; font-size: 24px; cursor: pointer; z-index: 1200;" onclick="closeDaumPostcode()">&times;</div>
+    </div>
+
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script>
+        // 1. 주력 품목 데이터 상태 (Jinja를 통해 동적으로 로드 및 가공)
+        const dbProducts = {{ products | tojson | safe }};
+        const products = dbProducts.map(p => {
+            // name에서 지역명 추출 (예: '태백 감자 1박스' -> '태백')
+            let region = "태백"; // 기본값
+            const words = p.name.split(" ");
+            if (words.length > 0) {
+                const firstWord = words[0];
+                if (["태백", "정선", "삼척", "철원", "평창", "강릉", "춘천"].includes(firstWord)) {
+                    region = firstWord;
+                }
+            }
+            return {
+                id: p.id,
+                name: p.name,
+                price: p.price,
+                image: p.image_path || "/static/images/potato_pack.png",
+                region: region
+            };
+        });
+
+        let currentProducts = [...products];
+        let activeIndex = 0;
+        const tossPayments = TossPayments('test_ck_PBal2vxj81ND2OPW6a7135RQgOAN');
+
+        // 2. 동적 카드 렌더링
+        const wrapper = document.getElementById("swiperWrapper");
+        const dotIndicator = document.getElementById("dotIndicator");
+
+        let quantities = {};
+
+        // 렌더링 전 이전 상태 배열/객체 초기화 함수 (마운트 시점 엄수)
+        function initQuantitiesState() {
+            quantities = {};
+            products.forEach(prod => {
+                quantities[prod.id] = 0;
+            });
+        }
+
+        function renderProductsList(list) {
+            currentProducts = list;
+            
+            // 렌더링 전 이전 DOM 및 도트 상태 반드시 초기화
+            wrapper.innerHTML = "";
+            dotIndicator.innerHTML = "";
+            
+            // 기존 수량에 해당 상품의 키가 없으면 초기화하여 상태 중복/오버플로우 방지
+            list.forEach(prod => {
+                if (quantities[prod.id] === undefined) {
+                    quantities[prod.id] = 0;
+                }
+            });
+            
+            if (list.length === 0) {
+                wrapper.innerHTML = `
+                    <div class="swiper-slide" style="display: flex; justify-content: center; align-items: center; width: 100% !important;">
+                        <div class="product-card" style="justify-content: center; align-items: center; border-color: rgba(239, 68, 68, 0.3); text-align: center; height: 350px;">
+                            <span style="font-size: 3.5rem; margin-bottom: 15px;">🔍</span>
+                            <div style="font-size: 1.4rem; font-weight: 900; color: #cbd5e1; line-height: 1.5;">해당 지역에 등록된<br>상품이 없습니다.</div>
+                            <div style="font-size: 0.95rem; color: #94a3b8; margin-top: 10px;">다른 지역을 검색하거나 선택해주세요.</div>
+                        </div>
+                    </div>
+                `;
+                document.getElementById("pageCounter").innerHTML = `<span>0</span> / 0`;
+                updateFooterPrice();
+                if (window.swiper) {
+                    window.swiper.update();
+                }
+                return;
+            }
+
+            list.forEach((prod, index) => {
+                const slide = document.createElement("div");
+                slide.className = "swiper-slide";
+                slide.innerHTML = `
+                    <div class="product-card" onclick="location.href='/market/product/${prod.id}'" style="cursor: pointer;">
+                        <!-- 상품 이미지 영역 -->
+                        <div class="image-wrapper">
+                            <img src="${prod.image}" alt="${prod.name}" onerror="this.src='/static/images/potato_pack.png';">
+                        </div>
+                        <!-- 상품 텍스트 및 정보 영역 -->
+                        <div class="info-wrapper">
+                            <div class="product-title">${prod.name}</div>
+                            <div class="product-price">${prod.price.toLocaleString()}원</div>
+                            
+                            <!-- 시니어 전용 큼직한 수량 조절기 -->
+                            <div class="qty-control-wrapper">
+                                <button type="button" class="qty-btn" onclick="changeQty(${prod.id}, -1, event)">-</button>
+                                <span class="qty-number" id="qty-${prod.id}">${quantities[prod.id] || 0}</span>
+                                <button type="button" class="qty-btn" onclick="changeQty(${prod.id}, 1, event)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                wrapper.appendChild(slide);
+
+                // Dot 인디케이터 생성
+                const dot = document.createElement("div");
+                dot.className = `dot ${index === 0 ? 'active' : ''}`;
+                dot.id = `dot-${prod.id}`;
+                dotIndicator.appendChild(dot);
+            });
+
+            updateFooterPrice();
+            if (window.swiper) {
+                window.swiper.update();
+                window.swiper.slideTo(0);
+            }
+            updateUI(0);
+        }
+
+        // 수량 변경 함수 (고유 식별자 PK 기준 수정)
+        function changeQty(prodId, delta, event) {
+            if (event) {
+                event.stopPropagation(); // 스와이프 슬라이드 클릭 이벤트 간섭 방지
+            }
+            let current = quantities[prodId] || 0;
+            let next = current + delta;
+            if (next >= 0) {
+                quantities[prodId] = next;
+                const qtyEl = document.getElementById(`qty-${prodId}`);
+                if (qtyEl) {
+                    qtyEl.innerText = next;
+                }
+                updateFooterPrice();
+            }
+        }
+
+        // 하단 결제 버튼 및 계산 업데이트 (고유 식별자 PK 기준 취합)
+        function updateFooterPrice() {
+            let totalItems = 0;
+            let totalAmount = 0;
+
+            products.forEach(prod => {
+                const qty = quantities[prod.id] || 0;
+                if (qty > 0) {
+                    totalItems += qty;
+                    totalAmount += prod.price * qty;
+                }
+            });
+
+            const btnPay = document.getElementById("btnPay");
+            if (totalItems > 0) {
+                btnPay.innerHTML = `<span>총 ${totalItems}건 / 총 ${totalAmount.toLocaleString()}원 결제하기</span>`;
+                btnPay.disabled = false;
+                btnPay.style.opacity = "1";
+                btnPay.style.cursor = "pointer";
+            } else {
+                btnPay.innerHTML = `<span>상품을 선택해 주세요 (수량 +)</span>`;
+                btnPay.disabled = true;
+                btnPay.style.opacity = "0.6";
+                btnPay.style.cursor = "not-allowed";
+            }
+        }
+
+        // 3. Swiper 초기화 (Peek 요건 반영)
+        window.swiper = new Swiper('.swiper', {
+            slidesPerView: 1.25,      // Partial Peek: 좌우 카드 10~15% 노출
+            centeredSlides: true,     // 활성 카드를 중앙에 배치
+            spaceBetween: 16,         // 카드 간 간격
+            loop: false,              // 무한 루프 제외하여 한방향 전이 유도
+            grabCursor: true,         // 스와이프 직관성 유도
+            on: {
+                slideChange: function () {
+                    activeIndex = this.activeIndex;
+                    updateUI(activeIndex);
+                }
+            }
+        });
+
+        // 4. 물리 버튼 이벤트 연동
+        document.getElementById("btnPrev").addEventListener("click", () => {
+            window.swiper.slidePrev();
+        });
+        document.getElementById("btnNext").addEventListener("click", () => {
+            window.swiper.slideNext();
+        });
+
+        // 5. UI 요소 업데이트 (카운터, 도트 동기화 - 고유 PK 연동)
+        function updateUI(index) {
+            if (currentProducts.length === 0) return;
+            // 큼직한 폰트의 카운터 업데이트
+            document.getElementById("pageCounter").innerHTML = `<span>${index + 1}</span> / ${currentProducts.length}`;
+
+            // 도트 인디케이터 상태 연동
+            currentProducts.forEach((prod, i) => {
+                const dot = document.getElementById(`dot-${prod.id}`);
+                if (dot) {
+                    if (i === index) {
+                        dot.classList.add("active");
+                    } else {
+                        dot.classList.remove("active");
+                    }
+                }
+            });
+        }
+
+        // 지역 선택 변경 처리
+        function filterByRegion() {
+            const select = document.getElementById("regionSelect");
+            const region = select.value;
+            
+            // Clear text input when using dropdown
+            document.getElementById("regionInput").value = "";
+            
+            if (region === "all") {
+                renderProductsList(products);
+            } else {
+                const filtered = products.filter(p => p.region === region);
+                renderProductsList(filtered);
+            }
+        }
+
+        // 엔터 키 검색 연동
+        function searchRegion(event) {
+            if (event && event.key === 'Enter') {
+                triggerSearch();
+            }
+        }
+
+        // 검색 실행
+        function triggerSearch() {
+            const val = document.getElementById("regionInput").value.trim().toLowerCase();
+            if (!val) {
+                filterByRegion();
+                return;
+            }
+            
+            document.getElementById("regionSelect").value = "all";
+            
+            const filtered = products.filter(p => p.region.toLowerCase().includes(val) || p.name.toLowerCase().includes(val));
+            renderProductsList(filtered);
+        }
+
+        // 초기 수량 상태 초기화 후 상품 리스트 렌더링
+        initQuantitiesState();
+        renderProductsList(products);
+
+        // 6. Toss Payments 실전 결제 연동 (배송지 입력 모달 연동)
+        function handlePayment() {
+            // 결제 전 큼직한 배송 정보 입력 모달 창 띄우기
+            document.getElementById("orderModal").style.display = "flex";
+        }
+
+        function closeOrderModal() {
+            document.getElementById("orderModal").style.display = "none";
+        }
+
+        var element_layer = document.getElementById('daumLayer');
+
+        function closeDaumPostcode() {
+            element_layer.style.display = 'none';
+        }
+
+        function searchAddress(type = 'recipient') {
+            new daum.Postcode({
+                oncomplete: function (data) {
+                    var addr = data.address;
+                    var extraAddr = '';
+                    if (data.addressType === 'R') {
+                        if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) extraAddr += data.bname;
+                        if (data.buildingName !== '' && data.apartment === 'Y') extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                        if (extraAddr !== '') extraAddr = ' (' + extraAddr + ')';
+                    }
+                    if (type === 'sender') {
+                        document.getElementById('senderZip').value = data.zonecode;
+                        document.getElementById('senderBaseAddr').value = addr + extraAddr;
+                        document.getElementById('senderDetailAddr').value = '';
+                        document.getElementById('senderDetailAddr').focus();
+                    } else {
+                        document.getElementById('orderZip').value = data.zonecode;
+                        document.getElementById('orderBaseAddr').value = addr + extraAddr;
+                        document.getElementById('orderDetailAddr').value = '';
+                        document.getElementById('orderDetailAddr').focus();
+                    }
+                    element_layer.style.display = 'none';
+                },
+                width: '100%',
+                height: '100%',
+                maxSuggestItems: 5
+            }).embed(element_layer);
+            
+            element_layer.style.display = 'block';
+            
+            // 시니어 눈높이에 맞춰 모달형 중앙 고정 레이아웃 설정
+            const layerWidth = Math.min(window.innerWidth * 0.95, 450);
+            const layerHeight = Math.min(window.innerHeight * 0.8, 500);
+            const left = (window.innerWidth - layerWidth) / 2;
+            const top = (window.innerHeight - layerHeight) / 2;
+            
+            element_layer.style.width = layerWidth + 'px';
+            element_layer.style.height = layerHeight + 'px';
+            element_layer.style.left = left + 'px';
+            element_layer.style.top = top + 'px';
+            element_layer.style.border = '2px solid #fbbf24';
+            element_layer.style.borderRadius = '16px';
+            element_layer.style.boxShadow = '0 20px 40px rgba(0,0,0,0.5)';
+        }
+
+        function proceedToToss() {
+            const senderName = document.getElementById('senderName').value.trim();
+            const senderPhone = document.getElementById('senderPhone').value.trim();
+            
+            const senderZip = document.getElementById('senderZip').value.trim();
+            const senderBase = document.getElementById('senderBaseAddr').value.trim();
+            const senderDetail = document.getElementById('senderDetailAddr').value.trim();
+            const senderAddr = `(${senderZip}) ${senderBase} ${senderDetail}`.trim();
+
+            const name = document.getElementById('orderName').value.trim();
+            const phone = document.getElementById('orderPhone').value.trim();
+            const zip = document.getElementById('orderZip').value.trim();
+            const base = document.getElementById('orderBaseAddr').value.trim();
+            const detail = document.getElementById('orderDetailAddr').value.trim();
+
+            if (!senderName || !senderPhone || !senderAddr) {
+                alert("보내는 사람 정보를 빠짐없이 모두 입력해주세요.");
+                return;
+            }
+
+            if (!name || !phone || !zip || !base || !detail) {
+                alert("받는 사람 배송 정보를 빠짐없이 모두 입력해주세요.");
+                return;
+            }
+
+            // 선택된 복수 상품 취합 (고유 PK 및 전역 products 기준 취합)
+            let items = [];
+            let totalAmount = 0;
+            let totalQty = 0;
+            products.forEach((prod) => {
+                let qty = quantities[prod.id] || 0;
+                if (qty > 0) {
+                    items.push({
+                        id: prod.id,
+                        name: prod.name,
+                        price: prod.price,
+                        qty: qty
+                    });
+                    totalAmount += prod.price * qty;
+                    totalQty += qty;
+                }
+            });
+
+            if (items.length === 0) {
+                alert("선택된 상품이 없습니다. 상품 카드 아래의 [+] 버튼을 눌러 수량을 선택해주세요.");
+                return;
+            }
+
+            // Toss 결제창 상품 설명 텍스트 작성
+            let orderNameSummary = "";
+            if (items.length === 1) {
+                orderNameSummary = `${items[0].name} ${items[0].qty}개`;
+            } else {
+                orderNameSummary = `${items[0].name} ${items[0].qty}개 외 ${items.length - 1}건`;
+            }
+
+            // 고유 주문번호 생성
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const timestamp = now.getTime().toString().slice(-6);
+            const orderId = `MK-${year}${month}${date}-${timestamp}`;
+
+            // 성공 시 복귀할 URL에 복수 상품 내역 및 송/수인 정보를 쿼리로 인코딩하여 전송
+            const successUrl = 'https://dongnebiseo.com/market/success' + 
+                '?customer_name=' + encodeURIComponent(name) +
+                '&phone_number=' + encodeURIComponent(phone) +
+                '&zip_code=' + encodeURIComponent(zip) +
+                '&base_address=' + encodeURIComponent(base) +
+                '&detail_address=' + encodeURIComponent(detail) +
+                '&sender_name=' + encodeURIComponent(senderName) +
+                '&sender_phone=' + encodeURIComponent(senderPhone) +
+                '&sender_address=' + encodeURIComponent(senderAddr) +
+                '&items_json=' + encodeURIComponent(JSON.stringify(items));
+
+            // 모바일 인앱 브라우저 세션 보존형 리다이렉트 기동
+            tossPayments.requestPayment('카드', {
+                amount: totalAmount,
+                orderId: orderId,
+                orderName: orderNameSummary,
+                successUrl: successUrl,
+                failUrl: 'https://dongnebiseo.com/market/fail'
+            }).catch(function (error) {
+                if (error.code === 'USER_CANCEL') {
+                    alert('결제가 취소되었습니다.');
+                } else {
+                    alert('결제창을 여는 도중 오류가 발생했습니다: ' + error.message);
+                }
+            });
+        }
+
+    </script>
+
+    <!-- 사업자정보 푸터 (카드사 심사 필수) -->
+    <div style="
+        width: 100%;
+        background: rgba(9, 13, 22, 0.95);
+        border-top: 1px solid rgba(255,255,255,0.06);
+        padding: 20px 20px 30px;
+        text-align: center;
+        font-family: 'Noto Sans KR', sans-serif;
+        color: #475569;
+        font-size: 0.78rem;
+        line-height: 2;
+        margin-top: 10px;
+    ">
+        <div style="max-width: 480px; margin: 0 auto;">
+            <div style="margin-bottom: 4px; color: #64748b; font-weight: 700;">상호: 탄탄제작소 &nbsp;|&nbsp; 대표: 이영준</div>
+            <div>사업자등록번호: 442-32-01655 &nbsp;|&nbsp; 통신판매업 신고번호: 제2026-강원태백-0013호</div>
+            <div>사업장 주소: 강원특별자치도 태백시 태붐로 54</div>
+            <div>고객센터: 010-2384-7447 &nbsp;|&nbsp; <a href="mailto:support@dongnebiseo.com" style="color:#64748b; text-decoration:none;">support@dongnebiseo.com</a></div>
+            <div style="margin-top: 6px;">
+                <a href="/citizen/market/refund" style="color:#fbbf24; font-size:0.75rem; text-decoration:none;">환불정책 안내 →</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

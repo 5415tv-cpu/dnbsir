@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>농어민 파트너 가입 - 동네비서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f0fdf4; color: #1e293b; }
+
+        .header {
+            background: linear-gradient(135deg, #15803d, #166534);
+            color: white; padding: 20px;
+            text-align: center;
+        }
+        .header .emoji { font-size: 2rem; display: block; margin-bottom: 6px; }
+        .header h1 { font-size: 1.3rem; font-weight: 900; }
+        .header p  { font-size: 0.82rem; opacity: .85; margin-top: 4px; }
+
+        {% if ref %}
+        .referrer-band {
+            background: linear-gradient(90deg, #f59e0b, #d97706);
+            color: white; padding: 10px 20px;
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; font-weight: bold; font-size: 0.92rem;
+        }
+        {% endif %}
+
+        .container { padding: 20px 16px 80px; max-width: 480px; margin: 0 auto; }
+
+        /* ── 카카오 카드 ── */
+        .kakao-card {
+            background: white; border-radius: 20px;
+            padding: 28px 22px 24px;
+            box-shadow: 0 6px 20px rgba(0,0,0,.08);
+            text-align: center; margin-bottom: 14px;
+        }
+        .farmer-badge {
+            display: inline-block; background: #dcfce7;
+            color: #15803d; border: 1px solid #86efac;
+            padding: 5px 16px; border-radius: 20px;
+            font-size: 0.82rem; font-weight: 800; margin-bottom: 16px;
+        }
+        .kakao-card h2 { font-size: 1.5rem; font-weight: 900; color: #0f172a; margin-bottom: 6px; line-height: 1.3; }
+        .kakao-card .sub { color: #64748b; font-size: 0.88rem; line-height: 1.6; margin-bottom: 24px; }
+
+        .benefit-list { display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; text-align: left; }
+        .benefit-item { display: flex; align-items: center; gap: 12px; background: #f0fdf4; border-radius: 12px; padding: 10px 13px; font-size: 0.85rem; color: #475569; border: 1px solid #bbf7d0; }
+        .benefit-item .ico { font-size: 1.2rem; flex-shrink: 0; }
+        .benefit-item strong { display: block; font-size: 0.9rem; color: #166534; }
+
+        .btn-kakao {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            width: 100%; height: 58px; padding: 0 20px;
+            background: #FEE500; color: #3C1E1E;
+            border: none; border-radius: 14px;
+            font-family: 'Noto Sans KR', sans-serif;
+            font-size: 1.08rem; font-weight: 900;
+            cursor: pointer; text-decoration: none;
+            box-shadow: 0 4px 14px rgba(254,229,0,.4);
+            transition: transform .15s, box-shadow .15s;
+        }
+        .btn-kakao:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(254,229,0,.5); }
+        .btn-kakao svg { width: 24px; height: 24px; flex-shrink: 0; }
+        .kakao-note { font-size: 0.76rem; color: #94a3b8; margin-top: 12px; line-height: 1.6; }
+        .kakao-note a { color: #16a34a; text-decoration: none; }
+
+        /* ── 구분선 ── */
+        .divider { display: flex; align-items: center; gap: 12px; margin: 6px 0 12px; }
+        .divider::before, .divider::after { content:''; flex:1; height:1px; background:#d1fae5; }
+        .divider span { font-size: 0.78rem; color: #94a3b8; white-space: nowrap; }
+
+        /* ── 자세히 가입하기 버튼 ── */
+        .toggle-btn {
+            width: 100%; padding: 17px 20px;
+            background: linear-gradient(135deg, #15803d, #166534);
+            border: none; border-radius: 16px;
+            font-size: 1.02rem; font-weight: 900; color: white;
+            cursor: pointer; transition: .2s;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            box-shadow: 0 4px 14px rgba(21,128,61,.3);
+        }
+        .toggle-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+        /* ── 폼 카드 ── */
+        .form-card {
+            background: white; border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: 0 6px 20px rgba(0,0,0,.07);
+            margin-top: 14px; display: none;
+        }
+        .form-card.open { display: block; }
+        .form-card h3 { font-size: 1.05rem; font-weight: 900; color: #15803d; margin-bottom: 18px; }
+
+        /* ── 섹션 헤더 ── */
+        .section-label {
+            font-size: 0.78rem; font-weight: 900;
+            color: #15803d; text-transform: uppercase;
+            letter-spacing: .5px; margin: 22px 0 12px;
+            padding: 6px 12px; background: #f0fdf4;
+            border-radius: 8px; border-left: 3px solid #15803d;
+        }
+
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 800; margin-bottom: 6px; color: #334155; font-size: 0.92rem; }
+        .form-group label .req { color: #ef4444; }
+        .form-group label .opt { color: #94a3b8; font-size: 0.78rem; font-weight: 400; margin-left: 4px; }
+        .form-input {
+            width: 100%; padding: 12px 13px;
+            border: 2px solid #e2e8f0; border-radius: 10px;
+            font-size: 0.95rem; background: #f8fafc;
+            transition: .2s; font-family: 'Noto Sans KR', sans-serif;
+        }
+        .form-input:focus { border-color: #16a34a; outline: none; background: white; box-shadow: 0 0 0 3px rgba(22,163,74,.1); }
+        .form-input::placeholder { color: #94a3b8; }
+        select.form-input { -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+
+        .row { display: flex; gap: 8px; }
+        .action-btn { padding: 12px 15px; border-radius: 10px; font-size: 0.88rem; font-weight: 800; border: none; cursor: pointer; transition: .2s; white-space: nowrap; font-family: 'Noto Sans KR', sans-serif; }
+        .action-btn.green { background: #16a34a; color: white; flex-shrink: 0; }
+        .action-btn.gray  { background: #64748b; color: white; flex-shrink: 0; }
+        .action-btn.primary {
+            width: 100%; background: linear-gradient(135deg, #15803d, #166534);
+            color: white; font-size: 1.05rem; padding: 16px;
+            border-radius: 12px; margin-top: 4px;
+            box-shadow: 0 4px 14px rgba(21,128,61,.3);
+        }
+        .action-btn:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+
+        /* ── 사업자 유무 토글 ── */
+        .biz-toggle-wrap { display: flex; gap: 8px; margin-bottom: 14px; }
+        .biz-toggle {
+            flex: 1; padding: 12px 8px; border-radius: 10px;
+            border: 2px solid #e2e8f0; background: #f8fafc;
+            font-weight: 800; font-size: 0.88rem; cursor: pointer;
+            text-align: center; transition: .2s; color: #64748b;
+        }
+        .biz-toggle.active { border-color: #15803d; background: #f0fdf4; color: #15803d; }
+
+        /* ── 알림 박스 ── */
+        .info-box  { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 13px; border-radius: 10px; font-size: 0.85rem; line-height: 1.6; margin-top: 18px; }
+        .warn-box  { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; padding: 11px; border-radius: 10px; font-size: 0.82rem; line-height: 1.6; margin-bottom: 14px; }
+        .error-msg { display: none; background: #fee2e2; color: #ef4444; padding: 12px; border-radius: 10px; font-weight: bold; text-align: center; margin-bottom: 14px; }
+        .success-text { color: #16a34a; font-weight: bold; margin-top: 6px; display: none; font-size: 0.88rem; }
+        .error-text   { color: #ef4444;  font-weight: bold; margin-top: 6px; display: none; font-size: 0.88rem; }
+        .sep { height: 1px; background: #f1f5f9; margin: 18px 0; }
+
+        /* ── 체크박스 ── */
+        .check-group { padding: 13px; background: #f8fafc; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .check-group label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.88rem; color: #334155; font-weight: 700; }
+        .check-group input[type=checkbox] { width: 18px; height: 18px; margin-top: 1px; accent-color: #15803d; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <span class="emoji">🌾</span>
+    <h1>농어민 파트너 가입</h1>
+    <p>사업자 등록 여부와 관계없이 누구나 가입 가능합니다</p>
+</div>
+
+{% if ref %}
+<div class="referrer-band">
+    <svg viewBox="0 0 24 24" width="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+    <span>{{ referrer_name }} 님의 초대로 접속 중입니다</span>
+</div>
+{% endif %}
+
+<div class="container">
+
+    <!-- 카카오 메인 카드 -->
+    <div class="kakao-card">
+        <div class="farmer-badge">🌾 농어민 파트너 전용</div>
+        <h2>카카오로 3초 만에<br>가입하기</h2>
+        <p class="sub">사업자 등록 없이도 OK<br>카카오 계정 하나로 바로 시작합니다</p>
+
+        <div class="benefit-list">
+            <div class="benefit-item">
+                <span class="ico">📦</span>
+                <div><strong>농수산물 택배 자동화</strong>산지 직송 택배 예약을 AI 비서가 처리</div>
+            </div>
+            <div class="benefit-item">
+                <span class="ico">💰</span>
+                <div><strong>판매 정산 투명 관리</strong>판매액·수수료·순정산액 실시간 확인</div>
+            </div>
+            <div class="benefit-item">
+                <span class="ico">📱</span>
+                <div><strong>24시간 주문 접수</strong>잠든 사이에도 주문이 자동으로 들어옵니다</div>
+            </div>
+        </div>
+
+        <a href="/auth/kakao/login" id="btnKakao" class="btn-kakao" onclick="saveSignupCookies()">
+            <svg viewBox="0 0 24 24" fill="#3C1E1E" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.717 1.6 5.105 4.01 6.51l-1.02 3.78 4.37-2.88C10.42 18.38 11.2 18.5 12 18.5c5.523 0 10-3.477 10-7.7S17.523 3 12 3z"/>
+            </svg>
+            카카오로 3초 만에 가입하기
+        </a>
+
+        <div class="kakao-note">
+            가입 시 <a href="/terms">이용약관</a> 및 <a href="/terms#privacy">개인정보처리방침</a>에 동의합니다.<br>
+            카카오 이름·전화번호만 수집되며 안전하게 보관됩니다.
+        </div>
+    </div>
+
+    <!-- 구분선 -->
+    <div class="divider"><span>또는 직접 입력</span></div>
+
+    <!-- 자세히 가입하기 버튼 -->
+    <button class="toggle-btn" onclick="toggleForm(this)">
+        <span style="font-size:1.2rem">📋</span>
+        <span>자세히 가입하기</span>
+        <span style="font-size:0.8rem;opacity:.75">(전화번호로 직접 가입)</span>
+    </button>
+
+    <!-- 폼 카드 -->
+    <div class="form-card" id="formCard">
+        <h3>🌾 농어민 파트너 정보 입력</h3>
+        <div id="errorMsgBox" class="error-msg"></div>
+
+        <form id="farmerForm" enctype="multipart/form-data">
+            <input type="hidden" name="mode"      value="signup">
+            <input type="hidden" name="ref"       value="{{ ref }}">
+            <input type="hidden" name="tier"      value="{{ tier }}">
+            <input type="hidden" name="role_type" value="farmer">
+
+            <!-- ① 본인 인증 -->
+            <div class="section-label">① 본인 인증</div>
+
+            <div class="form-group">
+                <label>휴대폰 번호 (아이디) <span class="req">*</span></label>
+                <div class="row">
+                    <input type="tel" id="store_id" name="store_id" class="form-input" placeholder="010-XXXX-XXXX" required>
+                    <button type="button" class="action-btn green" onclick="sendOTP()">인증번호</button>
+                </div>
+            </div>
+
+            <div class="form-group" id="authCodeGroup" style="display:none">
+                <label>인증번호 <span class="req">*</span></label>
+                <div class="row">
+                    <input type="text" id="auth_code" class="form-input" placeholder="6자리 입력" maxlength="6">
+                    <button type="button" class="action-btn green" onclick="verifyOTP()">확인</button>
+                </div>
+                <div id="authSuccess" class="success-text">✅ 본인인증 완료</div>
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- ② 기본 정보 -->
+            <div class="section-label">② 기본 정보</div>
+
+            <div class="form-group">
+                <label>이름 (대표자 성함) <span class="req">*</span></label>
+                <input type="text" name="owner_name" class="form-input" placeholder="예: 홍길동" required>
+            </div>
+
+            <div class="form-group">
+                <label>농장 / 어가 이름 <span class="req">*</span></label>
+                <input type="text" name="name" class="form-input" placeholder="예: 탄탄 유기농 농원" required>
+            </div>
+
+            <div class="form-group">
+                <label>생산 품목 <span class="req">*</span></label>
+                <select name="farm_category" class="form-input" required>
+                    <option value="">— 선택하세요 —</option>
+                    <optgroup label="🌾 농업">
+                        <option value="rice">쌀·잡곡</option>
+                        <option value="vegetable">채소류</option>
+                        <option value="fruit">과일류</option>
+                        <option value="mushroom">버섯류</option>
+                        <option value="herb">약초·나물</option>
+                        <option value="flower">화훼·원예</option>
+                        <option value="livestock">축산물</option>
+                        <option value="egg">계란·유제품</option>
+                        <option value="farm_etc">농업 기타</option>
+                    </optgroup>
+                    <optgroup label="🐟 어업">
+                        <option value="fish">생선·어류</option>
+                        <option value="shellfish">조개·패류</option>
+                        <option value="seaweed">해조류(미역·김·다시마)</option>
+                        <option value="shrimp">새우·갑각류</option>
+                        <option value="fish_dry">건어물·젓갈</option>
+                        <option value="sea_etc">어업 기타</option>
+                    </optgroup>
+                    <optgroup label="🥫 가공·기타">
+                        <option value="processed">농수산 가공품</option>
+                        <option value="honey">꿀·벌 제품</option>
+                        <option value="other">기타</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>주소 (농장/어가 위치) <span class="req">*</span></label>
+                <input type="text" name="address" class="form-input" placeholder="예: 전남 해남군 황산면 ○○리" required>
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- ③ 사업자 등록 여부 -->
+            <div class="section-label">③ 사업자 등록 여부</div>
+
+            <div class="warn-box">
+                💡 사업자등록이 없어도 가입이 가능합니다.<br>
+                사업자가 있으면 세금계산서 발행과 정산이 더 편리합니다.
+            </div>
+
+            <div class="biz-toggle-wrap">
+                <div class="biz-toggle active" id="toggleNoBiz" onclick="selectBizType('none')">
+                    📄 사업자 없음<br><small style="font-weight:400;font-size:0.75rem">개인 농어민</small>
+                </div>
+                <div class="biz-toggle" id="toggleHasBiz" onclick="selectBizType('has')">
+                    🏢 사업자 있음<br><small style="font-weight:400;font-size:0.75rem">농업법인·개인사업자</small>
+                </div>
+            </div>
+
+            <!-- 사업자 없음: 주민번호 앞자리 -->
+            <div id="noBizSection">
+                <div class="form-group">
+                    <label>주민등록번호 앞 6자리 <span class="req">*</span> <span class="opt">(정산 신원 확인용)</span></label>
+                    <input type="text" name="id_front" id="id_front" class="form-input" placeholder="예: 800101" maxlength="6" pattern="\d{6}" required>
+                </div>
+                <div class="form-group">
+                    <label>신분증 사진 <span class="req">*</span> <span class="opt">(주민등록증·운전면허증)</span></label>
+                    <input type="file" name="id_photo" id="id_photo" class="form-input" accept="image/*" capture="environment" style="background:white" required>
+                </div>
+            </div>
+
+            <!-- 사업자 있음 -->
+            <div id="hasBizSection" style="display:none">
+                <div class="form-group">
+                    <label>사업자등록번호 <span class="req">*</span></label>
+                    <div class="row">
+                        <input type="text" id="biz_number" name="biz_number" class="form-input" placeholder="숫자 10자리">
+                        <button type="button" class="action-btn gray" onclick="verifyBizNumber()">국세청 조회</button>
+                    </div>
+                    <div id="bizSuccess" class="success-text">✅ 사업자 확인 완료</div>
+                    <div id="bizError"   class="error-text">유효하지 않습니다</div>
+                </div>
+                <div class="form-group">
+                    <label>사업자 유형 <span class="req">*</span></label>
+                    <select name="biz_type" class="form-input">
+                        <option value="">— 선택 —</option>
+                        <option value="individual">개인사업자</option>
+                        <option value="corporation">농업법인</option>
+                        <option value="cooperative">영농조합</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- ④ 정산 계좌 -->
+            <div class="section-label">④ 정산 받을 계좌 <span style="color:#94a3b8;font-weight:400;font-size:0.75rem;text-transform:none">선택 (나중에 입력 가능)</span></div>
+
+            <div class="form-group">
+                <label>은행 <span class="opt">(선택)</span></label>
+                <select name="bank_code" class="form-input">
+                    <option value="">— 나중에 등록 —</option>
+                    <option value="004">KB국민은행</option>
+                    <option value="020">우리은행</option>
+                    <option value="088">신한은행</option>
+                    <option value="081">하나은행</option>
+                    <option value="003">기업은행</option>
+                    <option value="011">농협은행</option>
+                    <option value="012">농협 지역조합</option>
+                    <option value="089">케이뱅크</option>
+                    <option value="090">카카오뱅크</option>
+                    <option value="092">토스뱅크</option>
+                    <option value="035">새마을금고</option>
+                    <option value="007">수협은행</option>
+                    <option value="071">우체국</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>계좌번호 <span class="opt">(선택)</span></label>
+                <input type="text" name="account_number" class="form-input" placeholder="예: 123-456-789012">
+            </div>
+            <div class="form-group">
+                <label>예금주 <span class="opt">(선택)</span></label>
+                <input type="text" name="account_holder" class="form-input" placeholder="예: 홍길동">
+            </div>
+
+            <div class="sep"></div>
+
+            <!-- 동의 체크 -->
+            <div class="check-group" style="margin-bottom:14px">
+                <label>
+                    <input type="checkbox" name="auth_consent" id="auth_consent" required>
+                    [필수] 본인이 직접 농업 또는 어업에 종사하는 농어민임을 확인하며, 제출한 정보가 사실임에 동의합니다.
+                </label>
+            </div>
+            <div class="check-group">
+                <label>
+                    <input type="checkbox" name="marketing_agreed" id="marketing_agreed">
+                    [선택] 동네비서의 파트너 혜택·공지·이벤트 알림을 카카오톡·문자로 받는 것에 동의합니다.
+                </label>
+            </div>
+
+            <br>
+            <button type="submit" class="action-btn primary" id="submitBtn">
+                🌾 농어민 파트너로 가입하기
+            </button>
+        </form>
+
+        <div class="info-box">
+            💡 <b>개인정보 안내</b><br>
+            수집된 신분증·계좌 정보는 정산 처리 목적으로만 사용되며,
+            AES-256 암호화 저장됩니다. 서비스 탈퇴 시 즉시 파기됩니다.
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // 가입 타입 쿠키 저장 (OAuth용)
+    function saveSignupCookies() {
+        var ref  = document.querySelector('[name="ref"]').value;
+        var tier = document.querySelector('[name="tier"]').value;
+        document.cookie = "signup_ref="   + ref    + "; path=/; max-age=3600";
+        document.cookie = "signup_tier="  + tier   + "; path=/; max-age=3600";
+        document.cookie = "signup_type=farmer; path=/; max-age=3600";
+    }
+
+    function toggleForm(btn) {
+        var card = document.getElementById('formCard');
+        var open = card.classList.toggle('open');
+        btn.innerHTML = open
+            ? '<span style="font-size:1.2rem">▲</span><span>직접 입력 접기</span>'
+            : '<span style="font-size:1.2rem">📋</span><span>자세히 가입하기</span><span style="font-size:0.8rem;opacity:.75">(전화번호로 직접 가입)</span>';
+        if (open) card.scrollIntoView({behavior:'smooth'});
+    }
+
+    // ── 사업자 유무 토글 ──
+    var bizType = 'none';
+    function selectBizType(type) {
+        bizType = type;
+        document.getElementById('toggleNoBiz').classList.toggle('active', type === 'none');
+        document.getElementById('toggleHasBiz').classList.toggle('active', type === 'has');
+        document.getElementById('noBizSection').style.display  = type === 'none' ? 'block' : 'none';
+        document.getElementById('hasBizSection').style.display = type === 'has'  ? 'block' : 'none';
+        // required 처리
+        document.getElementById('id_front').required = (type === 'none');
+        document.getElementById('id_photo').required = (type === 'none');
+        var bizNum = document.getElementById('biz_number');
+        if (bizNum) bizNum.required = (type === 'has');
+    }
+
+    // ── OTP ──
+    var isPhoneVerified = false;
+    var isBizVerified   = false;
+
+    async function sendOTP() {
+        var phone = document.getElementById('store_id').value.replace(/-/g,'').trim();
+        if (!phone || phone.length < 10) { alert('정확한 번호를 입력해주세요.'); return; }
+        try {
+            var r = await fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({phone})
+            });
+            var d = await r.json();
+            document.getElementById('authCodeGroup').style.display = 'block';
+            alert(d.debug_code ? '[테스트] 인증번호: ' + d.debug_code : '인증번호가 발송되었습니다.');
+        } catch(e) { alert('오류가 발생했습니다.'); }
+    }
+
+    async function verifyOTP() {
+        var phone = document.getElementById('store_id').value.replace(/-/g,'').trim();
+        var code  = document.getElementById('auth_code').value.trim();
+        if (!code) { alert('인증번호를 입력해주세요.'); return; }
+        try {
+            var r = await fetch('/api/auth/verify-otp', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({phone, code})
+            });
+            var d = await r.json();
+            if (d.success) {
+                isPhoneVerified = true;
+                document.getElementById('authSuccess').style.display = 'block';
+                document.getElementById('store_id').readOnly = true;
+            } else { alert('인증번호가 일치하지 않습니다.'); }
+        } catch(e) { alert('오류가 발생했습니다.'); }
+    }
+
+    // ── 사업자 번호 국세청 조회 ──
+    async function verifyBizNumber() {
+        var biz = document.getElementById('biz_number').value;
+        if (!biz || biz.replace(/-/g,'').length < 10) { alert('사업자 번호 10자리를 입력해주세요.'); return; }
+        try {
+            var fd = new FormData(); fd.append('biz_number', biz);
+            var r  = await fetch('/api/validate_biz', {method:'POST', body:fd});
+            var d  = await r.json();
+            isBizVerified = d.is_valid;
+            document.getElementById('bizSuccess').style.display = d.is_valid ? 'block' : 'none';
+            document.getElementById('bizError').style.display   = d.is_valid ? 'none'  : 'block';
+            if (d.is_valid) document.getElementById('biz_number').readOnly = true;
+        } catch(e) { alert('서버 연결에 실패했습니다.'); }
+    }
+
+    // ── 폼 제출 ──
+    document.getElementById('farmerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        if (!isPhoneVerified) { alert('휴대폰 인증을 먼저 완료해주세요.'); return; }
+        if (bizType === 'has' && !isBizVerified) { alert('사업자 국세청 조회를 먼저 완료해주세요.'); return; }
+
+        var btn      = document.getElementById('submitBtn');
+        var errorBox = document.getElementById('errorMsgBox');
+        btn.textContent = '처리 중...'; btn.disabled = true;
+        errorBox.style.display = 'none';
+
+        try {
+            var r = await fetch('/api/auth/farmer-signup', {
+                method: 'POST',
+                body: new FormData(this)
+            });
+            var d = await r.json();
+            if (d.success || r.redirected || r.status === 303) {
+                alert('🌾 농어민 파트너 가입이 완료되었습니다!\n동네비서 대시보드로 이동합니다.');
+                window.location.href = '/admin/dashboard';
+            } else if (r.status === 409) {
+                errorBox.innerHTML = '이미 등록된 번호입니다. <a href="/admin" style="color:#ef4444;font-weight:bold">로그인 하러 가기</a>';
+                errorBox.style.display = 'block';
+                btn.textContent = '이미 가입됨'; btn.disabled = false;
+            } else {
+                errorBox.textContent = d.error || ('오류가 발생했습니다 (Code: ' + r.status + ')');
+                errorBox.style.display = 'block';
+                btn.textContent = '다시 시도'; btn.disabled = false;
+            }
+        } catch(err) {
+            errorBox.textContent = '네트워크 오류가 발생했습니다.';
+            errorBox.style.display = 'block';
+            btn.textContent = '다시 시도'; btn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

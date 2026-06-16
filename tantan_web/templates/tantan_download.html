@@ -1,0 +1,225 @@
+{% extends "tantan_base.html" %}
+
+{% block title %}동네비서 앱 다운로드 - 탄탄제작소{% endblock %}
+
+{% block content %}
+<style>
+    .download-hero {
+        background: linear-gradient(135deg, #050505 0%, #1a1a1a 100%);
+        border-radius: 20px;
+        padding: 60px 20px;
+        text-align: center;
+        color: white;
+        margin-bottom: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .download-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 15px;
+        color: #fff;
+    }
+
+    .download-subtitle {
+        font-size: 1.2rem;
+        color: #aaa;
+        margin-bottom: 40px;
+        line-height: 1.6;
+    }
+
+    .download-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--main-gold, #ffcc00);
+        color: #000;
+        font-size: 1.3rem;
+        font-weight: 800;
+        padding: 20px 50px;
+        border-radius: 50px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 25px rgba(255, 204, 0, 0.3);
+    }
+
+    .download-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(255, 204, 0, 0.5);
+        background-color: #ffd633;
+    }
+
+    .download-btn svg {
+        width: 24px;
+        height: 24px;
+        margin-right: 12px;
+    }
+
+    .guide-section {
+        background: #fff;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    }
+
+    .guide-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 30px;
+        text-align: center;
+        color: #333;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 15px;
+    }
+
+    .guide-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+    }
+
+    .step-card {
+        background: #f8f9fa;
+        padding: 25px;
+        border-radius: 15px;
+        position: relative;
+    }
+
+    .step-number {
+        position: absolute;
+        top: -15px;
+        left: -15px;
+        background: var(--main-gold, #ffcc00);
+        color: #000;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .step-card h4 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #222;
+        margin-top: 5px;
+    }
+
+    .step-card p {
+        font-size: 1rem;
+        color: #555;
+        line-height: 1.6;
+    }
+
+    .warning-box {
+        background-color: #fff3cd;
+        border-left: 5px solid #ffecb5;
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-top: 30px;
+        font-size: 0.95rem;
+        color: #856404;
+    }
+</style>
+
+<div class="download-hero">
+    <div style="font-size: 4rem; margin-bottom: 20px;">📱</div>
+    <h1 class="download-title">동네비서 다운로드</h1>
+    <p class="download-subtitle">
+        복잡한 앱 마켓 검색 없이, 아래 버튼을 눌러<br>최신 버전의 동네비서 앱을 즉시 설치하세요.
+    </p>
+    <a href="{{ url_for('static', filename='apps/dongnebiseo_latest.apk') }}" class="download-btn" download>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+        </svg>
+        최신 버전 다운로드
+    </a>
+    <p style="margin-top: 20px; color: #888; font-size: 0.9rem;">버전: 1.9.3 (최신 업데이트 - 메뉴 렌더링 수정 및 다이어그램 출력 지원)</p>
+</div>
+
+<div class="guide-section">
+    <h3 class="guide-title">안드로이드(Android) 설치 가이드</h3>
+    
+    <div class="guide-steps">
+        <div class="step-card">
+            <div class="step-number">1</div>
+            <h4>파일 다운로드</h4>
+            <p>위의 노란색 <b>'다운로드'</b> 버튼을 눌러 <code>.apk</code> 파일을 스마트폰에 저장합니다.</p>
+        </div>
+        
+        <div class="step-card">
+            <div class="step-number">2</div>
+            <h4>설치 실행</h4>
+            <p>다운로드가 완료되면 알림창이나 '내 파일' 앱에서 다운로드한 <b>동네비서 APK 파일</b>을 터치합니다.</p>
+        </div>
+        
+        <div class="step-card">
+            <div class="step-number">3</div>
+            <h4>출처 허용 및 설치</h4>
+            <p><b>'출처를 알 수 없는 앱 설치'</b> 경고가 나오면 [설정]을 눌러 <b>'이 출처 허용'</b>을 켜주신 후 설치를 완료합니다.</p>
+        </div>
+        
+        <div class="step-card">
+            <div class="step-number">4</div>
+            <h4>앱 권한 허용</h4>
+            <p>설치 완료 후 스마트폰의 <b>[설정] &gt; [애플리케이션] &gt; [동네비서]</b>로 이동하여 <b>'알림'</b>과 <b>'권한'</b>을 모두 허용해 주세요.</p>
+        </div>
+        
+        <div class="step-card">
+            <div class="step-number">5</div>
+            <h4>기본 앱 설정</h4>
+            <p>뒤로 가기를 눌러 설정 메뉴에서 <b>[기본 앱 선택]</b> 항목을 찾아 들어갑니다.</p>
+        </div>
+        
+        <div class="step-card">
+            <div class="step-number">6</div>
+            <h4>기본 SMS 앱 변경</h4>
+            <p><b>[SMS 앱]</b>을 누른 뒤, 기본 문자 앱을 <b>'동네비서'</b>(또는 탄탄콜 프로)로 선택해 주시면 모든 설정이 완료됩니다.</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 40px; background: #fff5f5; border: 1px solid #ffe3e3; border-radius: 15px; padding: 30px;">
+        <h4 style="font-size: 1.3rem; font-weight: 800; color: #d32f2f; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center;">
+            <svg style="width: 24px; height: 24px; margin-right: 10px;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+            주의: '유해한 앱 차단됨' 경고가 뜨나요?
+        </h4>
+        <p style="font-size: 1rem; line-height: 1.7; color: #555; margin-bottom: 10px;">
+            안드로이드 시스템은 플레이스토어를 거치지 않고 설치되는 <b>문자 발송 전용 비즈니스 앱</b>을 일시적으로 차단합니다. 이는 <b>정상적인 보안 절차</b>입니다.
+        </p>
+        <ul style="font-size: 1rem; line-height: 1.7; color: #555; padding-left: 20px; margin-bottom: 0;">
+            <li>경고창 중간의 <b>[세부정보 더보기]</b>를 누릅니다.</li>
+            <li>숨겨진 <b>[무시하고 설치(Install anyway)]</b> 버튼을 눌러 설치를 계속합니다.</li>
+            <li>만약 버튼이 아예 없다면: Play 스토어 앱 > 내 프로필 > Play 프로텍트 > 우측 상단 톱니바퀴 > <b>'Play 프로텍트로 앱 검사'</b>를 잠시 끄고 다시 설치해 주세요.</li>
+        </ul>
+    </div>
+
+    <div style="margin-top: 20px; background: #fdfaf0; border: 1px solid #f2e3c6; border-radius: 15px; padding: 30px;">
+        <h4 style="font-size: 1.3rem; font-weight: 800; color: #b8860b; margin-top: 0; margin-bottom: 15px; display: flex; align-items: center;">
+            <svg style="width: 24px; height: 24px; margin-right: 10px;" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+            필독: 왜 '기본 SMS 앱' 설정이 필요한가요?
+        </h4>
+        <p style="font-size: 1.05rem; line-height: 1.7; color: #444; margin-bottom: 15px;">
+            <b>동네비서는 단순한 앱이 아닌, 사장님을 대신해 고객에게 맞춤형 문자를 발송하는 '문자 전문 AI 비서'입니다.</b>
+        </p>
+        <p style="font-size: 1rem; line-height: 1.7; color: #555; margin-bottom: 15px;">
+            통화가 끝난 고객에게 가장 정확한 타이밍에 감사 인사나 안내 문자를 자동으로 발송하기 위해서는, 비서가 <b>'통화 종료 시점'과 '고객의 번호(Call Log)'</b>를 정확히 인지할 수 있어야 합니다. 앱 설치 후 <b>반드시 동네비서를 '기본 SMS 앱'으로 지정</b>해 주셔야 즉시 업무를 시작합니다.
+        </p>
+        <div style="background: #fff; border: 1px dashed #ccc; border-radius: 10px; padding: 15px;">
+            <h5 style="margin-top: 0; color: #333;">💡 기본 앱 설정 팝업이 뜨지 않거나 거부된 경우:</h5>
+            <ol style="margin-bottom: 0; padding-left: 20px; font-size: 0.95rem; color: #666; line-height: 1.6;">
+                <li>스마트폰의 <b>[설정]</b> 앱을 엽니다.</li>
+                <li><b>[애플리케이션(앱)]</b>으로 들어갑니다.</li>
+                <li>상단의 <b>[기본 앱 선택]</b>을 누릅니다.</li>
+                <li><b>[SMS 앱]</b> 항목을 터치합니다.</li>
+                <li>목록에서 <b>'동네비서'</b>를 찾아 선택합니다.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

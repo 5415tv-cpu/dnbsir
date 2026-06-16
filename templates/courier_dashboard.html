@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>동네비서 - 60/40 Split Map Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            var(--bg-base: #0f111a);
+            var(--glass-bg: rgba(30, 35, 50, 0.6));
+            var(--accent-blue: #3b82f6);
+            var(--accent-green: #10b981);
+            var(--accent-red: #ef4444);
+            var(--accent-warning: #f59e0b);
+            var(--accent-purple: #8b5cf6);
+            var(--text-main: #f8fafc);
+            var(--text-muted: #94a3b8);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Pretendard', sans-serif;
+        }
+
+        body {
+            background-color: #0f111a;
+            color: #f8fafc;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-list-area {
+            height: 60%;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 2px solid #3b82f6;
+            background: linear-gradient(to bottom, #0f111a, #1a1e2d);
+            position: relative;
+        }
+
+        .header-slim {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(30, 35, 50, 0.8);
+        }
+
+        .header-title {
+            font-weight: 800;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .triple-tabs {
+            display: flex;
+            margin: 10px 15px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .tab-btn.active.delivery {
+            background: #3b82f6;
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .tab-btn.active.pickup {
+            background: #f59e0b;
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
+        }
+
+        .tab-btn.active.return {
+            background: #8b5cf6;
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+        }
+
+        .state-filters {
+            display: flex;
+            gap: 20px;
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 5px;
+        }
+
+        .state-filter {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .state-filter.active {
+            color: #f8fafc;
+        }
+
+        .state-filter.active::after {
+            content: '';
+            position: absolute;
+            bottom: -11px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: #10b981;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .task-card {
+            background: rgba(30, 35, 50, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .task-card.grouped {
+            border-left: 4px solid #10b981;
+        }
+
+        .task-card.failed {
+            border-left: 4px solid #ef4444;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .task-address {
+            font-size: 1.1rem;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .task-badge {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .task-details {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .task-warning {
+            color: #ef4444;
+            font-weight: 700;
+            background: rgba(239, 68, 68, 0.1);
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .contact-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-call {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .btn-sms {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid #3b82f6;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+
+        .btn-complete {
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        .btn-complete.ready {
+            background: #10b981;
+            color: #111;
+        }
+
+        .btn-complete.scanner {
+            background: #f59e0b;
+            color: #000;
+        }
+
+        .btn-complete.fail {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .sync-warning {
+            font-size: 0.8rem;
+            color: #ef4444;
+            font-weight: 700;
+            background: rgba(239, 68, 68, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: none;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .bottom-map-area {
+            height: 40%;
+            position: relative;
+            background: #1e1e1e;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .offline-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(20, 20, 20, 0.95);
+            z-index: 1000;
+        }
+
+        .offline-text {
+            color: #f8fafc;
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .offline-sub {
+            color: #ef4444;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .panning-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 6px 12px;
+            background: rgba(16, 185, 129, 0.9);
+            color: #000;
+            font-weight: 800;
+            font-size: 0.8rem;
+            border-radius: 20px;
+            z-index: 900;
+            pointer-events: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            animation: blink 2s infinite;
+        }
+
+        /* Action Sheet Popup (Reasons / Settings) */
+        .action-sheet-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .action-sheet-overlay.active {
+            display: flex;
+        }
+
+        .action-sheet-overlay.active .action-sheet {
+            transform: translateY(0);
+        }
+
+        .action-sheet {
+            background: #1a1e2d;
+            border-radius: 20px 20px 0 0;
+            padding: 25px 20px 40px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+
+        .as-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #f8fafc;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .as-btn {
+            width: 100%;
+            padding: 18px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .as-reason {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .as-cancel {
+            background: transparent;
+            color: #94a3b8;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        /* Full Screen Scanner Modal */
+        .scanner-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0f111a;
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .scanner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #1a1e2d;
+            font-size: 1.2rem;
+            font-weight: 800;
+            border-bottom: 2px solid #f59e0b;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .bluetooth-scan-ui {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            flex: 1;
+            text-align: center;
+            color: #f8fafc;
+        }
+
+        /* Voice Interaction UI */
+        .voice-fab {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #3b82f6;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
+            border: none;
+            cursor: pointer;
+            z-index: 950;
+        }
+
+        .voice-fab.listening {
+            animation: pulse-voice 1.5s infinite;
+            background: #ef4444;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.5);
+        }
+
+        .voice-fab.disabled {
+            background: #334155;
+            box-shadow: none;
+            opacity: 0.5;
+        }
+
+        @keyframes pulse-voice {
+            0% {
+                transform: translateX(-50%) scale(1);
+            }
+
+            50% {
+                transform: translateX(-50%) scale(1.1);
+            }
+
+            100% {
+                transform: translateX(-50%) scale(1);
+            }
+        }
+
+        .voice-log-toast {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid #3b82f6;
+            border-radius: 12px;
+            padding: 12px 20px;
+            color: #60a5fa;
+            font-weight: 700;
+            z-index: 950;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        /* Settings Typography */
+        .setting-row {
+            margin-bottom: 15px;
+        }
+
+        .setting-label {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .setting-select {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        /* Billing Section */
+        .billing-card {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .billing-card.blocked {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .billing-header {
+            font-size: 0.9rem;
+            color: #10b981;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .billing-card.blocked .billing-header {
+            color: #ef4444;
+        }
+
+        .billing-text {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        .billing-btn {
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #334155;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-list-area">
+        <header class="header-slim">
+            <div class="header-title">📦 동네비서 관제</div>
+            <div class="sync-warning" id="syncWarning">⚠️ 로깅 지연: <span id="unsyncCount">0</span>건</div>
+            <button onclick="openSettings()"
+                style="background:none; border:none; color:#f8fafc; font-size:1.4rem; cursor:pointer;">⚙️</button>
+        </header>
+
+        <!-- Value Report Widget (Premium Only) -->
+        <div id="valueReportWidget"
+            style="background: linear-gradient(90deg, rgba(16,185,129,0.15), rgba(16,185,129,0.05)); border-bottom:1px solid rgba(16,185,129,0.3); padding:10px 15px; display:none; justify-content:space-between; align-items:center; cursor:pointer;"
+            onclick="openSettings()">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:1.4rem;">📊</span>
+                <div style="display:flex; flex-direction:column;">
+                    <span style="color:#10b981; font-weight:800; font-size:0.85rem;">[동네비서 프리미엄 혜택]</span>
+                    <span style="color:#f8fafc; font-weight:700; font-size:0.8rem;">이번 달 비서야 절약 시간: <span
+                            style="color:#f59e0b;">25시간!</span></span>
+                </div>
+            </div>
+            <span
+                style="color:#10b981; font-weight:800; font-size:0.8rem; background:rgba(16,185,129,0.2); padding:4px 8px; border-radius:6px;">관리
+                &gt;</span>
+        </div>
+
+        <div class="triple-tabs">
+            <button class="tab-btn active delivery" onclick="switchMainTab('delivery')" id="tab-delivery">배송
+                (0)</button>
+            <button class="tab-btn" onclick="switchMainTab('pickup')" id="tab-pickup">집하 (0)</button>
+            <button class="tab-btn" onclick="switchMainTab('return')" id="tab-return">반품 (0)</button>
+        </div>
+
+        <div class="state-filters">
+            <div class="state-filter active" onclick="switchStateTab('pending')" id="filter-pending">미처리 (0)</div>
+            <div class="state-filter" onclick="switchStateTab('done')" id="filter-done">방문완료 (0)</div>
+        </div>
+
+        <div class="list-container" id="list-container">
+            <!-- Rendered via JS -->
+        </div>
+
+        <div class="voice-log-toast" id="voiceToast">
+            <div style="font-size:0.8rem; color:#94a3b8;">🎙️ 동네비서 음성 인식</div>
+            <div id="voiceTranscript" style="font-size:1rem; margin-top:4px;">"기사님 말씀하세요."</div>
+        </div>
+    </div>
+
+    <div class="bottom-map-area">
+        <div id="map"></div>
+        <div class="panning-indicator" id="panningIndicator">📡 GPS 자동 추적</div>
+        <div class="offline-ui" id="offlineUI" style="display: none;">
+            <div class="offline-text">📡 오프라인 모드 전환됨</div>
+            <div class="offline-sub" id="offlineLastLocation">마지막 좌표: 대기중...</div>
+            <div style="font-size:0.8rem; color:#94a3b8; margin-top:10px;">데이터 연결 시 지도가 자동 복구됩니다.</div>
+        </div>
+
+        <!-- Voice Assistant Test Wakeup Button (Disabled if unpaid) -->
+        <button class="voice-fab" id="voiceFab" onclick="simulateVoiceControl()">🎙️</button>
+    </div>
+
+    <!-- Smart Intercom Action Sheet (Reasons) -->
+    <div class="action-sheet-overlay" id="reasonOverlay" onclick="closeReason(event)">
+        <div class="action-sheet" onclick="event.stopPropagation()">
+            <div class="as-title" id="reasonTitle">❌ 사유 선택</div>
+            <div id="reasonButtonsContainer"></div>
+            <button class="as-btn as-cancel" onclick="closeReason()">선택 취소</button>
+        </div>
+    </div>
+
+    <!-- Settings Overlay (Scanner + Voice Control + Billing) -->
+    <div class="action-sheet-overlay" id="settingsOverlay" onclick="closeSettings(event)">
+        <div class="action-sheet" onclick="event.stopPropagation()">
+            <div class="as-title">⚙️ 대시보드 환경 설정</div>
+
+            <div class="setting-row">
+                <div class="setting-label">기본 바코드 스캐너 센서</div>
+                <select id="scannerModeSelect" class="setting-select">
+                    <option value="environment" style="color:#000;">카메라 (후면 와이드)</option>
+                    <option value="user" style="color:#000;">카메라 (전면 셀피)</option>
+                    <option value="bluetooth" style="color:#000;">외부 무선 스캐너 (키보드 모드)</option>
+                </select>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;"></div>
+
+            <div class="as-title" style="color:#60a5fa; text-align:left; font-size:1rem;">🎙️ 비서야 보이스 컨트롤</div>
+
+            <div
+                style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); border-radius:12px; padding:15px; margin-bottom:15px; font-size:0.85rem; color:#cbd5e1; line-height:1.5;">
+                <div style="font-weight:800; color:#60a5fa; margin-bottom:5px;">📌 [비서야 사용 가이드]</div>
+                차량 운행 또는 물품 운반 중 화면 터치 없이 음성만으로 업무를 처리하세요.<br><br>
+                <span style="color:#f8fafc; font-weight:700;">1. 스마트 호출:</span> 하단의 보이스 버튼(🎙️)을 누른 후 지시를 내립니다.<br>
+                <span style="color:#f8fafc; font-weight:700;">2. 방문 완료:</span> "102동 홍길동 완료해줘", "방문 완료 처리해"<br>
+                <span style="color:#f8fafc; font-weight:700;">3. SMS 발송:</span> "고객한테 택배 배송했다고 문자 보내줘"<br>
+                <div style="margin-top:8px; font-size:0.75rem; color:#94a3b8;">* 주변 소음(라디오, 트럭 엔진 등)이 클 때는 단문 인식 모드로 사용을
+                    추천합니다.</div>
+            </div>
+
+            <!-- Billing State Card -->
+            <div class="billing-card" id="billingCardUI">
+                <div class="billing-header">🟢 프리미엄 활성화됨</div>
+                <div class="billing-text">결제 정보: KB국민카드 (끝자리 1234)<br>다음 결제 예정일: 2026-05-01 (50,000원)</div>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label">음성 호출 활성화</div>
+                <select id="voiceEnableSelect" class="setting-select">
+                    <option value="on" style="color:#000;">활성화 (항상 대기)</option>
+                    <option value="off" style="color:#000;">비활성화 (배터리 절약)</option>
+                </select>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-label">효율성 튜닝 (GCP FinOps)</div>
+                <select class="setting-select">
+                    <option value="fast" style="color:#000;" selected>단문 감지 모드 (비용 절약, 추천)</option>
+                    <option value="long" style="color:#000;">장문 대기 모드 (느림)</option>
+                </select>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;"></div>
+
+            <div class="as-title" style="color:#f8fafc; text-align:left; font-size:1rem;">💳 결제 수단 및 혜택 관리</div>
+
+            <button class="billing-btn" onclick="openBillingForm()">결제 수단 변경 (보안 토큰 발급)</button>
+            <button class="billing-btn" onclick="alert('가치 체감 리포트: 이번 달 비서야를 통해 단축된 동선 시간은 약 23시간입니다.')">📊 나의 가치 증명 리포트
+                보기</button>
+
+            <button class="as-btn" style="background:#3b82f6; color:#fff; margin-top:20px;" onclick="saveSettings()">안전
+                설정 저장</button>
+            <button class="as-btn as-cancel" onclick="closeSettings()">닫기</button>
+        </div>
+    </div>
+
+    <!-- PG Billing Key Registration Form Mock -->
+    <div class="action-sheet-overlay" id="billingFormOverlay"
+        onclick="document.getElementById('billingFormOverlay').classList.remove('active')">
+        <div class="action-sheet" onclick="event.stopPropagation()">
+            <div class="as-title">💳 빌링키 보안 통신 연동</div>
+            <div style="font-size: 0.85rem; color: #94a3b8; text-align:center; margin-bottom: 20px;">정보는 동네비서 서버에 저장되지
+                않으며<br>카드사에서 발급한 고유 보안 키로만 등록됩니다.</div>
+
+            <input type="text" placeholder="카드번호 16자리 (숫자만 입력)"
+                style="width:100%; padding: 15px; margin-bottom:10px; border-radius: 8px; border:1px solid #334155; background:#0f111a; color:#fff; font-size:1rem;">
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <input type="text" placeholder="유효기간 (MM/YY)"
+                    style="flex:1; padding: 15px; border-radius: 8px; border:1px solid #334155; background:#0f111a; color:#fff; font-size:1rem;">
+                <input type="password" placeholder="비밀번호 앞 2자리"
+                    style="flex:1; padding: 15px; border-radius: 8px; border:1px solid #334155; background:#0f111a; color:#fff; font-size:1rem;">
+            </div>
+
+            <button class="as-btn" style="background:#10b981; color:#111;" onclick="submitBillingKey()">안전하게 결제 연동하기
+                (50,000원)</button>
+        </div>
+    </div>
+
+    <!-- Web Barcode Scanner Modal -->
+    <div class="scanner-modal" id="scannerModal">
+        <div class="scanner-header">
+            <div id="scannerModalTitle">📷 송장 바코드 스캔</div>
+            <button onclick="closeScanner()"
+                style="background:none; border:none; color:#fff; font-size:1.8rem; cursor:pointer;">&times;</button>
+        </div>
+        <div id="reader"></div>
+        <div class="bluetooth-scan-ui" id="bluetoothScanUI">
+            <div style="font-size: 4rem; margin-bottom: 20px;">📟</div>
+            <div style="font-size: 1.2rem; font-weight: 800; margin-bottom: 10px;">외부 스캐너 대기 중...</div>
+            <div style="color: #94a3b8; font-size: 0.9rem;">스캐너 방아쇠를 당겨 바코드를 인식하세요.</div>
+            <input type="text" id="bluetoothInput" placeholder="" style="opacity:0; width:1px; height:1px;"
+                onkeypress="handleBluetoothInput(event)" autocomplete="off">
+        </div>
+        <div style="padding: 20px; margin-top:auto;">
+            <button class="btn-complete scanner"
+                style="width:100%; padding:15px; font-size:1.1rem; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);"
+                onclick="mockScanSuccess()">
+                💡 (테스트) 모의 스캔 성공
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script>
+        // --- Raw Data ---
+        let rawData = [
+            { id: '1', type: 'delivery', courier: '로젠', tracking: '12345678', address: '판교푸르지오 102동 304호', receiver: '홍길동', phone: '010-1111-2222', note: '', status: 'pending', result: '', reason: '', lat: 37.4015, lng: 127.1080 },
+            { id: '2', type: 'delivery', courier: '한진', tracking: '99887766', address: '판교푸르지오 102동 304호', receiver: '김홍길', phone: '010-1111-2222', note: '파손주의', status: 'pending', result: '', reason: '', lat: 37.4015, lng: 127.1080 },
+            { id: '3', type: 'pickup', courier: '-', tracking: '-', address: '테크노밸리 에이스동 402호', receiver: '우리사무', phone: '010-4444-5555', note: '대량집하 30박스', status: 'pending', result: '', reason: '', lat: 37.4000, lng: 127.1095 },
+            { id: '4', type: 'return', courier: '한진', tracking: '55667788', address: '백현마을 201동 502호', receiver: '이순신', phone: '010-6666-7777', note: '사이즈 오배송 반품', status: 'pending', result: '', reason: '', lat: 37.3950, lng: 127.1120 },
+            { id: '5', type: 'delivery', courier: 'CJ', tracking: '11112222', address: '붓들마을 301동 201호', receiver: '강감찬', phone: '010-8888-9999', note: '빠른 배송 요망', status: 'pending', result: '', reason: '', lat: 37.3970, lng: 127.1050 }
+        ];
+
+        let currentMainTab = 'delivery';
+        let currentStateTab = 'pending';
+        let unsyncedCount = 0;
+        let pendingReasonAddress = "";
+
+        // --- Premium Billing State ---
+        let Sub_Active = false; // Mock disabled by default to test flow
+        let expiryDate = new Date().toISOString().split('T')[0]; // Set expiry to "today" for simulation
+
+        function updateBillingUI() {
+            const card = document.getElementById('billingCardUI');
+            const fab = document.getElementById('voiceFab');
+            const widget = document.getElementById('valueReportWidget');
+            if (Sub_Active) {
+                card.className = "billing-card";
+                card.innerHTML = `<div class="billing-header">🟢 프리미엄 활성화됨</div>
+                                  <div class="billing-text">결제 정보: PG 자동 보안 결제 승인됨 (**** 1234)<br>다음 결제 예정일: 2026-05-01 (50,000원)</div>`;
+                fab.classList.remove('disabled');
+                if (widget) widget.style.display = 'flex';
+            } else {
+                card.className = "billing-card blocked";
+                card.innerHTML = `<div class="billing-header">🔴 비활성화됨 (결제 만료)</div>
+                                  <div class="billing-text">자동 결제 실패: PG 토큰 만료됨.<br>아래 버튼을 눌러 결제 수단을 안전하게 재등록해주세요.</div>`;
+                fab.classList.add('disabled');
+                if (widget) widget.style.display = 'none';
+            }
+        }
+
+        // --- Settings Management ---
+        let currentScannerMode = 'environment';
+        let voiceEnable = 'on';
+
+        function openSettings() {
+            document.getElementById('scannerModeSelect').value = currentScannerMode;
+            document.getElementById('voiceEnableSelect').value = voiceEnable;
+            document.getElementById('settingsOverlay').classList.add('active');
+        }
+        function closeSettings(e) {
+            if (e && e.target !== e.currentTarget) return;
+            document.getElementById('settingsOverlay').classList.remove('active');
+        }
+        function saveSettings() {
+            currentScannerMode = document.getElementById('scannerModeSelect').value;
+            voiceEnable = document.getElementById('voiceEnableSelect').value;
+            closeSettings();
+        }
+
+        function openBillingForm() {
+            document.getElementById('billingFormOverlay').classList.add('active');
+        }
+        function submitBillingKey() {
+            // Simulated Idempotency Transaction 
+            const transactionId = "TX_" + Date.now();
+            console.log("Mock Transaction ID:", transactionId, "(Idempotency Check)");
+            alert("PG사 빌링키 발급 성공! 시트가 동기화되었습니다.\n[비서야] 엔진이 개방됩니다.");
+            Sub_Active = true;
+            updateBillingUI();
+            document.getElementById('billingFormOverlay').classList.remove('active');
+        }
+
+        function groupDataByAddress(items) {
+            const grouped = {};
+            items.forEach(item => {
+                const key = item.address.trim().replace(/\s+/g, ' ');
+                if (!grouped[key]) { grouped[key] = { address: key, items: [], note: '', couriers: new Set(), result: item.result, reason: item.reason, type: item.type }; }
+                grouped[key].items.push(item);
+                if (item.note) grouped[key].note += (grouped[key].note ? ' / ' : '') + item.note;
+                if (item.result === 'failed') { grouped[key].result = 'failed'; grouped[key].reason = item.reason; }
+                grouped[key].couriers.add(item.courier);
+            });
+            return Object.values(grouped);
+        }
+
+        function renderView() {
+            document.getElementById('tab-delivery').innerText = `배송 (${rawData.filter(x => x.type === 'delivery' && x.status === 'done').length}/${rawData.filter(x => x.type === 'delivery').length})`;
+            document.getElementById('tab-pickup').innerText = `집하 (${rawData.filter(x => x.type === 'pickup' && x.status === 'done').length}/${rawData.filter(x => x.type === 'pickup').length})`;
+            document.getElementById('tab-return').innerText = `반품 (${rawData.filter(x => x.type === 'return' && x.status === 'done').length}/${rawData.filter(x => x.type === 'return').length})`;
+
+            document.getElementById('filter-pending').innerText = `미처리 (${rawData.filter(x => x.type === currentMainTab && x.status === 'pending').length}건)`;
+            document.getElementById('filter-done').innerText = `방문완료 (${rawData.filter(x => x.type === currentMainTab && x.status === 'done').length}건)`;
+
+            const warnEl = document.getElementById('syncWarning');
+            if (unsyncedCount > 0) { warnEl.style.display = 'block'; document.getElementById('unsyncCount').innerText = unsyncedCount; }
+            else { warnEl.style.display = 'none'; }
+
+            const listEl = document.getElementById('list-container');
+            listEl.innerHTML = '';
+
+            const targetItems = rawData.filter(x => x.type === currentMainTab && x.status === currentStateTab);
+            const groupedList = groupDataByAddress(targetItems);
+
+            if (groupedList.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#94a3b8; margin-top:50px;">해당 항목이 없습니다.</div>';
+                updateMapMarkers([]);
+                return;
+            }
+
+            groupedList.forEach(group => {
+                const totalInGroup = group.items.length;
+                const isGrouped = totalInGroup > 1;
+                const phoneTarget = group.items[0].phone || '010-0000-0000';
+
+                let failLabel = "❌ 미배송"; let smsBody = "동네비서입니다. 택배를 문 앞(지정장소)에 보관하였습니다. 감사합니다.";
+                let successBtnClass = "btn-complete ready"; let successLabel = "📦 배송 완료"; let successAction = `optimisticCompleteGroup('${group.address}', 'success')`;
+
+                if (group.type === 'pickup') {
+                    successLabel = "📷 스캔하여 집하"; failLabel = "❌ 미집하"; smsBody = "집하를 위해 방문하였으나 연락이 되지 않습니다.";
+                    successBtnClass = "btn-complete scanner"; successAction = `openScanner('${group.address}')`;
+                } else if (group.type === 'return') {
+                    successLabel = "📷 스캔하여 수거"; failLabel = "❌ 미수거"; smsBody = "반품 수거를 위해 방문하였으나, 물품을 찾을 수 없어 연락드립니다.";
+                    successBtnClass = "btn-complete scanner"; successAction = `openScanner('${group.address}')`;
+                }
+
+                const failBadgeHTML = group.result === 'failed' ? `<div style="color:#ef4444; font-weight:800; font-size:0.9rem; margin-top:4px;">${failLabel}: ${group.reason}</div>` : '';
+
+                let actionButtonsHTML = '';
+                if (currentStateTab === 'pending') {
+                    actionButtonsHTML = `
+                        <div style="display:flex; gap:6px;">
+                            <button class="${successBtnClass}" onclick="${successAction}">${successLabel}</button>
+                            <button class="btn-complete fail" onclick="openReasonPopup('${group.address}', '${group.type}')">${failLabel}</button>
+                        </div>
+                    `;
+                } else { actionButtonsHTML = `<button class="btn-complete" onclick="rollbackStatus('${group.address}')" style="background:rgba(255,255,255,0.1); color:#f8fafc;">↩️ 취소</button>`; }
+
+                const trackingListHTML = group.items.map(i => `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="color:#3b82f6; font-weight:800; border:1px solid rgba(59,130,246,0.3); background:rgba(59,130,246,0.1); padding:2px 6px; border-radius:4px; font-size:0.75rem;">${i.courier}</span>
+                            <span style="color:#f8fafc; font-family:monospace; font-size:0.95rem; font-weight:600;">${i.tracking}</span>
+                        </div>
+                        <span style="color:#94a3b8; font-size:0.8rem;">${i.receiver}(*${i.phone.slice(-4)})</span>
+                    </div>
+                `).join('<div style="height:1px; background:rgba(255,255,255,0.05); margin:4px 0;"></div>');
+
+                const div = document.createElement('div');
+                div.className = `task-card ${isGrouped ? 'grouped' : ''} ${group.result === 'failed' ? 'failed' : ''}`;
+                div.id = `card-${group.address.replace(/\s+/g, '')}`;
+                div.innerHTML = `
+                    <div class="task-header">
+                        <div class="task-address" onclick="focusMap(${group.items[0].lat}, ${group.items[0].lng})" style="cursor:pointer;">${group.address} 📍</div>
+                        ${isGrouped ? `<div class="task-badge">${totalInGroup}건 병합</div>` : ''}
+                    </div>
+                    
+                    <div class="task-details" style="gap:6px; margin: 4px 0;">
+                        <div style="background:rgba(255,255,255,0.03); padding:8px 10px; border-radius:8px; display:flex; flex-direction:column; gap:4px;">${trackingListHTML}</div>
+                        ${group.note ? `<span class="task-warning" style="align-self:flex-start; margin-top:2px;">${group.note}</span>` : ''}
+                        ${failBadgeHTML}
+                    </div>
+
+                    <div class="action-row">
+                        <div class="contact-group">
+                            <a href="tel:${phoneTarget}" class="btn-call">📞 전화</a>
+                            <a href="sms:${phoneTarget}?body=${encodeURIComponent(smsBody)}" class="btn-sms">✉️ 문자</a>
+                        </div>
+                        ${actionButtonsHTML}
+                    </div>
+                `;
+                listEl.appendChild(div);
+            });
+            updateMapMarkers(targetItems);
+        }
+
+        // --- Action Logic ---
+        function switchMainTab(type) {
+            currentMainTab = type;
+            document.getElementById('tab-delivery').className = `tab-btn delivery ${type === 'delivery' ? 'active' : ''}`;
+            document.getElementById('tab-pickup').className = `tab-btn pickup ${type === 'pickup' ? 'active' : ''}`;
+            document.getElementById('tab-return').className = `tab-btn return ${type === 'return' ? 'active' : ''}`;
+            renderView();
+        }
+
+        function switchStateTab(state) {
+            currentStateTab = state;
+            document.getElementById('filter-pending').classList.toggle('active', state === 'pending');
+            document.getElementById('filter-done').classList.toggle('active', state === 'done');
+            renderView();
+        }
+
+        function optimisticCompleteGroup(addressKey, resultType, reasonObj = "") {
+            rawData.forEach(item => {
+                if (item.address === addressKey && item.status === 'pending') {
+                    item.status = 'done'; item.result = resultType; item.reason = reasonObj; unsyncedCount++;
+                }
+            });
+            renderView();
+            setTimeout(() => {
+                unsyncedCount = Math.max(0, unsyncedCount - rawData.filter(i => i.address === addressKey && i.status === 'done').length);
+                renderView();
+            }, 2500);
+        }
+
+        function rollbackStatus(addressKey) { rawData.forEach(item => { if (item.address === addressKey && item.status === 'done') { item.status = 'pending'; item.result = ''; item.reason = ''; } }); renderView(); }
+
+        // --- Voice Assistant Intelligence Engine (TTS Support) ---
+        function speakTTS(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR'; utterance.rate = 1.1; utterance.pitch = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function simulateVoiceControl() {
+            if (!Sub_Active) {
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (expiryDate === todayStr) {
+                    speakTTS("사장님, 이용권이 오늘 만료됩니다. 연장할까요?");
+                } else {
+                    speakTTS("이용권이 만료되었습니다. 결제 수단을 연장해주세요.");
+                }
+                alert("🔴 비서야 이용권이 당일 만료되었습니다. 결제 수단을 확인해 주세요.");
+                openSettings(); openBillingForm(); return;
+            }
+            if (voiceEnable === 'off') { alert("설정 메뉴에서 '비서야 보이스 컨트롤'을 활성화해주세요."); return; }
+
+            const fab = document.getElementById('voiceFab');
+            const toast = document.getElementById('voiceToast');
+            const transcript = document.getElementById('voiceTranscript');
+
+            fab.classList.add('listening');
+            toast.style.display = 'block';
+            transcript.innerText = "네 말씀하세요, 기사님.";
+            playBeep(400);
+
+            const pendingGroups = groupDataByAddress(rawData.filter(x => x.type === currentMainTab && x.status === 'pending'));
+            if (pendingGroups.length === 0) {
+                setTimeout(() => { transcript.innerText = "현재 처리할 목록이 없습니다."; resetVoiceUI(); }, 1500); return;
+            }
+
+            const targetGroup = pendingGroups[0];
+            document.getElementById(`card-${targetGroup.address.replace(/\s+/g, '')}`).style.border = "2px solid #ef4444";
+            document.getElementById(`card-${targetGroup.address.replace(/\s+/g, '')}`).scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            setTimeout(() => {
+                const isSMS = Math.random() > 0.5;
+                if (isSMS) {
+                    transcript.innerText = `[인식됨] "고객한테 문자 하나 남겨"`;
+                    setTimeout(() => {
+                        logToSheet(transcript.innerText, `TARGET: ${targetGroup.address} -> Action: SMS Opened`);
+                        playBeep(600);
+                        const phoneTarget = targetGroup.items[0].phone;
+                        window.location.href = `sms:${phoneTarget}?body=${encodeURIComponent("동네비서입니다. 잠시 후 방문 예정입니다.")}`;
+                        resetVoiceUI(targetGroup.address);
+                    }, 1000);
+                } else {
+                    transcript.innerText = `[인식됨] "완료 처리해"`;
+                    setTimeout(() => {
+                        logToSheet(transcript.innerText, `TARGET: ${targetGroup.address} -> Action: Complete(Done)`);
+                        playBeep(600);
+                        optimisticCompleteGroup(targetGroup.address, 'success');
+                        resetVoiceUI(targetGroup.address);
+                    }, 1000);
+                }
+            }, 2500);
+        }
+
+        function resetVoiceUI(address) {
+            if (address) document.getElementById(`card-${address.replace(/\s+/g, '')}`).style.border = "1px solid rgba(255,255,255,0.08)";
+            setTimeout(() => {
+                document.getElementById('voiceFab').classList.remove('listening');
+                document.getElementById('voiceToast').style.display = 'none';
+            }, 1500);
+        }
+
+        function logToSheet(command, action) {
+            console.log(`[Google Sheet Log Request] Command: ${command} | Action Taken: ${action}`);
+            unsyncedCount++;
+            document.getElementById('syncWarning').innerText = `⚠️ 청구 로깅 대기 중...`;
+            document.getElementById('syncWarning').style.display = 'block';
+            setTimeout(() => {
+                unsyncedCount--;
+                document.getElementById('syncWarning').innerText = `⚠️ 미전송: ${unsyncedCount}건`;
+                if (unsyncedCount <= 0) document.getElementById('syncWarning').style.display = 'none';
+            }, 3000);
+        }
+
+        // --- Ext Scanner & Maps ---
+        let html5QrcodeScanner; let pendingScanAddress = "";
+        function handleBluetoothInput(e) { if (e.key === 'Enter') { e.preventDefault(); let val = document.getElementById('bluetoothInput').value; if (val) { document.getElementById('bluetoothInput').value = ''; onScanSuccess(val, null); } } }
+        function openScanner(addressKey) {
+            pendingScanAddress = addressKey; document.getElementById('scannerModal').style.display = 'flex';
+            const readerEl = document.getElementById('reader'); const btUI = document.getElementById('bluetoothScanUI'); const titleEl = document.getElementById('scannerModalTitle');
+            if (currentScannerMode === 'bluetooth') {
+                readerEl.style.display = 'none'; btUI.style.display = 'flex'; titleEl.innerText = "📟 외부 스캐너 사용 중"; setTimeout(() => document.getElementById('bluetoothInput').focus(), 100);
+            } else {
+                readerEl.style.display = 'block'; btUI.style.display = 'none'; titleEl.innerText = "📷 송장 바코드 스캔";
+                html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: { width: 250, height: 250 }, videoConstraints: { facingMode: currentScannerMode } }, false);
+                html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            }
+        }
+        function closeScanner() { if (html5QrcodeScanner && currentScannerMode !== 'bluetooth') { try { html5QrcodeScanner.clear(); } catch (e) { } } document.getElementById('scannerModal').style.display = 'none'; }
+        function onScanSuccess(decodedText, decodedResult) { playBeep(800); closeScanner(); optimisticCompleteGroup(pendingScanAddress, 'success'); }
+        function onScanFailure(error) { }
+        function mockScanSuccess() { playBeep(800); closeScanner(); optimisticCompleteGroup(pendingScanAddress, 'success'); }
+
+        function playBeep(freq = 800) {
+            try {
+                const actx = new (window.AudioContext || window.webkitAudioContext)();
+                if (actx.state === 'suspended') { actx.resume(); }
+                const osc = actx.createOscillator(); const gain = actx.createGain();
+                osc.connect(gain); gain.connect(actx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(freq, actx.currentTime);
+                gain.gain.setValueAtTime(0.1, actx.currentTime); osc.start(); osc.stop(actx.currentTime + 0.15);
+            } catch (e) { }
+        }
+
+        // Reason Popup Control
+        function openReasonPopup(addressKey, type) {
+            pendingReasonAddress = addressKey;
+            const titleEl = document.getElementById('reasonTitle'); const container = document.getElementById('reasonButtonsContainer'); container.innerHTML = '';
+            let reasons = [];
+            if (type === 'delivery') { titleEl.innerText = "❌ 미배송 사유 선택"; reasons = ["고객 부재 (연락 불가)", "수취 거부 및 취소", "주소지 불명확", "비밀번호 오류 (진입 불가)"]; }
+            else if (type === 'pickup') { titleEl.innerText = "❌ 미집하 사유 선택"; reasons = ["고객 부재 / 대면 불가", "신청 취소됨", "포장 불량 (접수 불가)", "물량 초과"]; }
+            else if (type === 'return') { titleEl.innerText = "❌ 반품 미수거 사유 선택"; reasons = ["반품 물품 없음 (미내놓음)", "수거 취소", "타 대리점 수거해감", "포장 불량"]; }
+            reasons.forEach(r => { container.innerHTML += `<button class="as-btn as-reason" onclick="submitReason('${r}')">${r}</button>`; });
+            document.getElementById('reasonOverlay').classList.add('active');
+        }
+        function closeReason(e) { if (e && e.target !== e.currentTarget) return; document.getElementById('reasonOverlay').classList.remove('active'); pendingReasonAddress = ""; }
+        function submitReason(reasonStr) { if (pendingReasonAddress) { optimisticCompleteGroup(pendingReasonAddress, 'failed', reasonStr); closeReason(); } }
+
+        // Map
+        let map; let markersGroup = null;
+        function checkNetworkState() { if (navigator.onLine) { document.getElementById('offlineUI').style.display = 'none'; } else { document.getElementById('offlineUI').style.display = 'flex'; } }
+        window.addEventListener('online', checkNetworkState); window.addEventListener('offline', checkNetworkState);
+        try {
+            map = L.map('map', { zoomControl: false }).setView([37.4011, 127.1086], 15);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 19 }).on('tileerror', function () { document.getElementById('offlineUI').style.display = 'flex'; }).addTo(map);
+            markersGroup = L.layerGroup().addTo(map);
+        } catch (e) { document.getElementById('offlineUI').style.display = 'flex'; }
+
+        function updateMapMarkers(items) {
+            if (!map || !markersGroup) return; markersGroup.clearLayers();
+            const blueIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+            const redIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+            const purpleIcon = new L.Icon({ iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-violet.png', iconSize: [25, 41], iconAnchor: [12, 41] });
+            items.forEach(i => { if (i.lat && i.lng) { let iconSelected = blueIcon; if (i.type === 'pickup') iconSelected = redIcon; if (i.type === 'return') iconSelected = purpleIcon; L.marker([i.lat, i.lng], { icon: iconSelected }).addTo(markersGroup).bindPopup(i.address); } });
+        }
+        function focusMap(lat, lng) { if (map) map.panTo(new L.LatLng(lat, lng)); document.getElementById('offlineLastLocation').innerText = `최근 포커스: 위도 ${lat}, 경도 ${lng}`; }
+        if ('geolocation' in navigator) {
+            navigator.geolocation.watchPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+                    if (map) { map.panTo(new L.LatLng(lat, lng)); document.getElementById('panningIndicator').style.display = 'block'; }
+                    document.getElementById('offlineLastLocation').innerText = `최근 위치: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+                }, (err) => { }, { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+            );
+        }
+
+        // Initial setup
+        updateBillingUI();
+        renderView(); checkNetworkState();
+    </script>
+</body>
+
+</html>

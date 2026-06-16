@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">상세 안내</div>
+    <div class="page-title">택배 사장님</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+    <div style="background: #fff; padding: 26px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.08);">
+        <div style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 10px;">
+            송장 한 글자 실수가, 더는 사장님 책임이 되지 않게.
+        </div>
+        <div style="color: #555; line-height: 1.7; margin-bottom: 18px;">
+            돋보기 없이 안 보이는 글씨와 오타는 배송 사고로 이어집니다. 단골비서는 오차를 먼저 잡아냅니다.
+        </div>
+
+        <div style="font-weight: 900; margin-bottom: 6px;">문제 진단</div>
+        <div style="color: #555; line-height: 1.7; margin-bottom: 18px;">
+            오타 한 줄이 클레임으로 돌아옵니다. 입력 누락은 곧 환불로 이어집니다.
+        </div>
+
+        <div style="font-weight: 900; margin-bottom: 10px;">핵심 기능</div>
+        <div style="display: grid; gap: 10px; margin-bottom: 18px;">
+            <div style="background: #f7f7f7; border-radius: 10px; padding: 12px;">
+                <div style="font-weight: 900;">송장 인식</div>
+                <div style="color: #555; margin-top: 6px;">Vision AI로 주소를 읽고 표준 주소 DB와 대조합니다.</div>
+            </div>
+            <div style="background: #f7f7f7; border-radius: 10px; padding: 12px;">
+                <div style="font-weight: 900;">오류 차단</div>
+                <div style="color: #555; margin-top: 6px;">흐린 사진은 재촬영 안내, 형식 오류는 저장 전 차단합니다.</div>
+            </div>
+            <div style="background: #f7f7f7; border-radius: 10px; padding: 12px;">
+                <div style="font-weight: 900;">기록 자동화</div>
+                <div style="color: #555; margin-top: 6px;">입력값을 자동 기록해 문제 발생 시 추적이 가능합니다.</div>
+            </div>
+        </div>
+
+        <div style="font-weight: 900; margin-bottom: 6px;">기술적 보증</div>
+        <div style="color: #555; line-height: 1.7; margin-bottom: 18px;">
+            미국 서버 기반 인프라와 현직 택배 기사 노하우가 결합된 구조입니다.
+        </div>
+
+        <div style="font-weight: 900; margin-bottom: 6px;">3분 정석 이용법</div>
+        <div style="color: #555; line-height: 1.7;">
+            시작 전 핵심 가이드 확인 → 촬영 각도 툴팁 → 심화 매뉴얼로 원리/FAQ 확인
+        </div>
+    </div>
+</div>
+{% endblock %}

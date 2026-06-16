@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - 내 지갑</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 pb-20">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-gray-800 flex items-center gap-2">
+                💰 내 포인트 지갑
+            </h1>
+            <a href="/admin" class="text-gray-500">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-6">
+
+        <!-- Balance Card -->
+        <div
+            class="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
+            <div class="absolute right-[-20px] top-[-20px] bg-white/10 w-32 h-32 rounded-full"></div>
+            <p class="text-blue-100 text-sm font-medium">현재 잔액</p>
+            <h2 class="text-4xl font-bold mt-1">{{ "{:,.0f}".format(details.current_points | default(0)) }} <span
+                    class="text-xl font-normal">P</span></h2>
+            <div class="mt-6 flex gap-3">
+                <button onclick="openPaymentModal()"
+                    class="bg-white text-blue-600 px-4 py-2 rounded-lg font-bold text-sm shadow active:scale-95 transition">
+                    + 충전하기
+                </button>
+                <button onclick="openAutoCharge()"
+                    class="bg-blue-700 text-white px-4 py-2 rounded-lg font-bold text-sm shadow active:scale-95 transition">
+                    자동충전 설정
+                </button>
+            </div>
+        </div>
+
+        <!-- Today's Usage -->
+        <h3 class="font-bold text-gray-800 mb-3">오늘 사용량 📊</h3>
+        <div class="grid grid-cols-2 gap-3 mb-8">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-xs text-gray-400">AI 상담 (토큰)</p>
+                <p class="text-lg font-bold text-gray-800 mt-1">{{ "{:,.0f}".format(details.ai_usage_today.tokens |
+                    default(0)) }}
+                </p>
+                <p class="text-xs text-red-500 mt-1">-{{ "{:,.0f}".format(details.ai_usage_today.cost | default(0)) }} P
+                </p>
+            </div>
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                <p class="text-xs text-gray-400">문자 발송 (건)</p>
+                <p class="text-lg font-bold text-gray-800 mt-1">{{ "{:,.0f}".format(details.sms_usage_today.count |
+                    default(0)) }}
+                </p>
+                <p class="text-xs text-red-500 mt-1">-{{ "{:,.0f}".format(details.sms_usage_today.cost | default(0)) }}
+                    P</p>
+            </div>
+        </div>
+
+        <!-- Transaction History -->
+        <h3 class="font-bold text-gray-800 mb-3">최근 이용 내역</h3>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <ul class="divide-y divide-gray-100">
+                {% for log in details.wallet_logs %}
+                <li class="p-4 flex justify-between items-center">
+                    <div>
+                        <p class="font-medium text-gray-800">{{ log.type }}</p>
+                        <p class="text-xs text-gray-400">{{ log.created_at }}</p>
+                    </div>
+                    <span class="text-red-500 font-bold">-{{ "{:,.0f}".format(log.amount | default(0)) }} P</span>
+                </li>
+                {% else %}
+                <li class="p-8 text-center text-gray-400 text-sm">최근 내역이 없습니다.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </main>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative">
+            <button onclick="closePaymentModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+            <h3 class="text-xl font-bold mb-4">포인트 충전</h3>
+
+            <!-- Amount Selection -->
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <button onclick="selectAmount(100)"
+                    class="amt-btn border border-red-200 rounded-lg p-3 hover:bg-red-50 focus:ring-2 ring-red-500 text-red-600 font-bold text-sm">100원 (심사용)</button>
+                <button onclick="selectAmount(5000)"
+                    class="amt-btn border border-blue-200 rounded-lg p-3 hover:bg-blue-50 focus:ring-2 ring-blue-500 text-blue-700 font-bold text-sm">택배 예약 (5천원)</button>
+                <button onclick="selectAmount(10000)"
+                    class="amt-btn border rounded-lg p-3 hover:bg-blue-50 focus:ring-2 ring-blue-500">1만원</button>
+                <button onclick="selectAmount(30000)"
+                    class="amt-btn border rounded-lg p-3 hover:bg-blue-50 focus:ring-2 ring-blue-500">3만원</button>
+                <button onclick="selectAmount(50000)"
+                    class="amt-btn border rounded-lg p-3 hover:bg-blue-50 focus:ring-2 ring-blue-500">5만원</button>
+            </div>
+            <p class="text-right text-lg font-bold text-blue-600 mb-4" id="selectedAmountDisplay">0원</p>
+
+            <!-- Payment Method Selection -->
+            <div class="mb-4">
+                <label class="block text-sm font-bold text-gray-700 mb-1">결제 수단</label>
+                <select id="paymentMethodSelect" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 bg-white font-bold">
+                    <option value="CARD">💳 신용카드 일반결제</option>
+                    <option value="KAKAOPAY">💛 카카오페이 간편결제</option>
+                </select>
+            </div>
+
+            <button onclick="requestPayment()"
+                class="w-full bg-blue-600 text-white rounded-xl py-3 font-bold shadow-md hover:bg-blue-700 transition mt-2">
+                충전하기
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+        class="fixed inset-0 bg-black bg-opacity-70 hidden flex items-center justify-center z-50 text-white flex-col">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+        <p>결제 승인 중입니다...</p>
+    </div>
+
+    <!-- Mandatory Info Modal (For sign up setup) -->
+    <div id="setupModal" class="fixed inset-0 bg-black bg-opacity-60 hidden flex items-center justify-center z-[60]">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl relative animate-[modalFadeIn_0.3s_ease-out]">
+            <h3 class="text-xl font-bold mb-2 text-gray-800">🎉 판매 등록 완료!</h3>
+            <p class="text-sm text-gray-600 mb-5">원활한 정산을 위해 사업자 정보와 가입비(포인트) 결제가 필요합니다.</p>
+
+            <form id="setupForm" onsubmit="handleSetupSubmit(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">사업자등록번호</label>
+                    <input type="text" id="biz_number" placeholder="예: 123-45-67890" required
+                        class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                </div>
+                <div class="mb-5">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">정산 은행 및 계좌번호</label>
+                    <div class="flex gap-2">
+                        <select id="bank_name" class="border border-gray-300 rounded-lg p-3 text-sm flex-1 focus:ring-2 focus:ring-blue-500 bg-white" required>
+                            <option value="">은행 선택</option>
+                            <option value="농협">농협</option>
+                            <option value="국민">KB국민</option>
+                            <option value="신한">신한</option>
+                            <option value="우리">우리</option>
+                            <option value="하나">하나</option>
+                            <option value="기업">IBK기업</option>
+                            <option value="새마을">새마을금고</option>
+                            <option value="카카오">카카오뱅크</option>
+                            <option value="토스">토스뱅크</option>
+                            <option value="케이">케이뱅크</option>
+                            <option value="우체국">우체국</option>
+                            <option value="수협">수협</option>
+                            <option value="신협">신협</option>
+                            <option value="SC제일">SC제일</option>
+                            <option value="대구">대구</option>
+                            <option value="부산">부산</option>
+                            <option value="광주">광주</option>
+                            <option value="제주">제주</option>
+                            <option value="전북">전북</option>
+                            <option value="경남">경남</option>
+                            <option value="산업">KDB산업</option>
+                        </select>
+                        <input type="text" id="bank_account" placeholder="- 없이 입력" required
+                            class="w-full border border-gray-300 rounded-lg p-3 text-sm flex-[2] focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-4">
+                    <p class="text-sm font-bold text-blue-800 mb-1">초기 가입비 충전 안내</p>
+                    <p class="text-xs text-blue-600 leading-relaxed">
+                        최초 1회 <b>50,000P 충전</b>이 필요합니다. 충전된 포인트는 문자 발송, AI 상담 등 동네비서 운영 실비로만 사용되며 평생 소멸되지 않습니다.
+                    </p>
+                </div>
+
+                <!-- Payment Method Selection for Setup -->
+                <div class="mb-6">
+                    <label class="block text-sm font-bold text-gray-700 mb-1">결제 수단</label>
+                    <select id="setupPaymentMethodSelect" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 bg-white font-bold">
+                        <option value="CARD">💳 신용카드 일반결제</option>
+                        <option value="KAKAOPAY">💛 카카오페이 간편결제</option>
+                    </select>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-blue-600 text-white rounded-xl py-3.5 font-bold shadow-md hover:bg-blue-700 transition active:scale-95">
+                    정보 저장하고 결제하기 ➜
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toss Payments SDK (Window Mode) -->
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <script>
+        const clientKey = "{{ toss_client_key }}"; // From Server Env
+        let tossPayments = null;
+
+        // Initialize SDK
+        try {
+            tossPayments = TossPayments(clientKey);
+        } catch (e) {
+            console.error("Toss SDK Init Error:", e);
+            alert("결제 모듈 초기화 실패: " + e);
+        }
+
+        let selectedPoints = 0;
+        let paymentAmount = 0;
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function selectAmount(points) {
+            selectedPoints = points;
+            paymentAmount = Math.ceil(points * 1.1); // 10% VAT
+            document.getElementById('selectedAmountDisplay').innerHTML =
+                `<span class="text-sm text-gray-500 font-normal">부가세 포함</span> ` +
+                paymentAmount.toLocaleString() + "원";
+        }
+
+        function requestPayment() {
+            if (selectedPoints === 0) {
+                alert("충전할 금액을 선택해주세요.");
+                return;
+            }
+
+            if (!tossPayments) {
+                alert("결제 모듈이 로드되지 않았습니다. 새로고침 해주세요.");
+                return;
+            }
+
+            // Generate Order ID (Unique)
+            const orderId = "ORD-" + new Date().getTime() + "-" + Math.random().toString(36).substring(2, 7);
+
+            const method = document.getElementById("paymentMethodSelect").value;
+            const paymentOptions = {
+                amount: paymentAmount,
+                orderId: orderId,
+                orderName: "포인트 " + selectedPoints.toLocaleString() + "P 충전",
+                successUrl: window.location.origin + "/admin/wallet",
+                failUrl: window.location.origin + "/admin/wallet",
+                customerEmail: "store@example.com",
+                customerName: "{{ store_id }}",
+                windowTarget: window.innerWidth < 768 ? 'self' : 'iframe'
+            };
+
+            if (method === "KAKAOPAY") {
+                paymentOptions.flowMode = "DIRECT";
+                paymentOptions.easyPay = {
+                    easyPayProvider: "KAKAOPAY"
+                };
+            }
+
+            // Request Payment (Server expects VAT-inclusive amount)
+            tossPayments.requestPayment('카드', paymentOptions).catch(function (error) {
+                if (error.code === 'USER_CANCEL') {
+                    // Canceled
+                } else {
+                    alert(error.message);
+                }
+            });
+        }
+
+        // Auto Charge Placeholder
+        function openAutoCharge() {
+            alert("자동 충전 기능은 준비 중입니다. (COMIMG SOON)");
+        }
+
+        // Handle Setup Form Submit (Mandatory Initial Charge)
+        async function handleSetupSubmit(e) {
+            e.preventDefault();
+            const biz = document.getElementById('biz_number').value;
+            const bankName = document.getElementById('bank_name').value;
+            const bankAccount = document.getElementById('bank_account').value;
+
+            // In a real scenario, we would save the biz info via an API call here.
+            // For now, we proceed to payment. If payment is successful, the store will be fully activated.
+            
+            if (!tossPayments) {
+                alert("결제 모듈이 로드되지 않았습니다. 새로고침 해주세요.");
+                return;
+            }
+
+            const setupPoints = 50000;
+            const setupPaymentAmount = Math.ceil(setupPoints * 1.1); // 10% VAT = 55,000
+            
+            const orderId = "SETUP-" + new Date().getTime() + "-" + Math.random().toString(36).substring(2, 7);
+
+            const method = document.getElementById("setupPaymentMethodSelect").value;
+            const paymentOptions = {
+                amount: setupPaymentAmount,
+                orderId: orderId,
+                orderName: "가입비 및 기본 운영 포인트 (50,000P)",
+                successUrl: window.location.origin + "/admin/wallet?setup_success=true",
+                failUrl: window.location.origin + "/admin/wallet?setup_failed=true",
+                customerEmail: "store@example.com",
+                customerName: "{{ store_id }}",
+                windowTarget: window.innerWidth < 768 ? 'self' : 'iframe'
+            };
+
+            if (method === "KAKAOPAY") {
+                paymentOptions.flowMode = "DIRECT";
+                paymentOptions.easyPay = {
+                    easyPayProvider: "KAKAOPAY"
+                };
+            }
+
+            // Execute Payment Request
+            // If the user aborts, nothing happens, they stay on the setup modal.
+            tossPayments.requestPayment('카드', paymentOptions).catch(function (error) {
+                if (error.code === 'USER_CANCEL') {
+                    // Canceled - Just stop
+                } else {
+                    alert(error.message);
+                }
+            });
+        }
+
+        // Check for Payment Result (Redirected from Toss)
+        window.onload = async function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const paymentKey = urlParams.get("paymentKey");
+            const orderId = urlParams.get("orderId");
+            const amount = urlParams.get("amount");
+            const signupSetup = urlParams.get("signup_setup");
+            const setupSuccess = urlParams.get("setup_success");
+            const setupFailed = urlParams.get("setup_failed");
+
+            if (signupSetup === 'true') {
+                document.getElementById('setupModal').classList.remove('hidden');
+            }
+
+            if (setupSuccess === 'true') {
+                alert("🎉 가입비 결제 및 기본 설정이 모두 완료되었습니다! 이제 자유롭게 이용하실 수 있습니다.");
+            }
+
+            if (setupFailed === 'true') {
+                alert("결제가 실패하거나 취소되었습니다. 설정을 다시 진행해주세요.");
+                document.getElementById('setupModal').classList.remove('hidden');
+            }
+
+            // Attach Auto Charge Alert
+            // Handled via onclick in HTML
+
+            if (paymentKey && orderId && amount) {
+                // Confirm Payment
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+
+                try {
+                    const response = await fetch("/api/payment/confirm", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            paymentKey: paymentKey,
+                            orderId: orderId,
+                            amount: parseInt(amount),
+                            store_id: "{{ store_id }}"
+                        })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        alert("충전이 완료되었습니다!");
+                        window.location.href = "/admin/wallet"; // Clean URL
+                    } else {
+                        alert("충전 실패: " + (result.message || "알 수 없는 오류"));
+                        document.getElementById('loadingOverlay').classList.add('hidden');
+                        fetch("/api/debug_log", { method: "POST", body: JSON.stringify({ error: result, type: "Payment Failed" }) });
+                    }
+                } catch (error) {
+                    alert("시스템 에러: " + error);
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    fetch("/api/debug_log", { method: "POST", body: JSON.stringify({ error: error.toString(), type: "System Error" }) });
+                }
+            }
+        }
+
+        // Show sandbox bypass button if client key is a test key
+        window.addEventListener('DOMContentLoaded', (event) => {
+            if (clientKey.startsWith('test_ck_')) {
+                const bypassContainer = document.createElement('div');
+                bypassContainer.className = 'mt-3 pt-3 border-t border-gray-100';
+                bypassContainer.innerHTML = `
+                    <button onclick="requestBypassPayment()" 
+                        class="w-full bg-emerald-600 text-white rounded-xl py-2.5 font-bold shadow-sm hover:bg-emerald-700 transition text-sm">
+                        🧪 테스트 우회 충전 (결제창 없음)
+                    </button>
+                    <p class="text-[10px] text-emerald-600 text-center mt-1">※ Toss 테스트 키(test_ck_...)가 감지되어 제공되는 개발 전용 기능입니다.</p>
+                `;
+                // Append inside paymentModal container
+                const modalBody = document.querySelector('#paymentModal > div');
+                if (modalBody) {
+                    modalBody.appendChild(bypassContainer);
+                }
+                
+                // Also do it for setup payment if needed
+                const setupForm = document.getElementById('setupForm');
+                if (setupForm) {
+                    const setupBypassContainer = document.createElement('div');
+                    setupBypassContainer.className = 'mt-3 pt-3 border-t border-gray-100';
+                    setupBypassContainer.innerHTML = `
+                        <button type="button" onclick="requestBypassSetupPayment()" 
+                            class="w-full bg-emerald-600 text-white rounded-xl py-2.5 font-bold shadow-sm hover:bg-emerald-700 transition text-sm">
+                            🧪 테스트 우회 가입비 결제 (결제창 없음)
+                        </button>
+                    `;
+                    setupForm.appendChild(setupBypassContainer);
+                }
+            }
+        });
+
+        async function requestBypassPayment() {
+            if (selectedPoints === 0) {
+                alert("충전할 금액을 선택해주세요.");
+                return;
+            }
+            
+            document.getElementById('paymentModal').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            const orderId = "BYPASS-" + new Date().getTime() + "-" + Math.random().toString(36).substring(2, 7);
+            
+            try {
+                const response = await fetch("/api/payment/confirm", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        paymentKey: "bypass_key_" + Math.random().toString(36).substring(2, 10),
+                        orderId: orderId,
+                        amount: paymentAmount,
+                        store_id: "{{ store_id }}"
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert("테스트 우회 충전이 완료되었습니다!");
+                    window.location.href = "/admin/wallet";
+                } else {
+                    alert("충전 실패: " + (result.message || "알 수 없는 오류"));
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                }
+            } catch (error) {
+                alert("시스템 에러: " + error);
+                document.getElementById('loadingOverlay').classList.add('hidden');
+            }
+        }
+        
+        async function requestBypassSetupPayment() {
+            document.getElementById('setupModal').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            
+            const setupPoints = 50000;
+            const setupPaymentAmount = Math.ceil(setupPoints * 1.1); // 55,000
+            const orderId = "BYPASS-SETUP-" + new Date().getTime() + "-" + Math.random().toString(36).substring(2, 7);
+            
+            try {
+                const response = await fetch("/api/payment/confirm", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        paymentKey: "bypass_key_setup_" + Math.random().toString(36).substring(2, 10),
+                        orderId: orderId,
+                        amount: setupPaymentAmount,
+                        store_id: "{{ store_id }}"
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert("🎉 테스트 우회 가입비 결제가 완료되었습니다!");
+                    window.location.href = "/admin/wallet?setup_success=true";
+                } else {
+                    alert("충전 실패: " + (result.message || "알 수 없는 오류"));
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                    document.getElementById('setupModal').classList.remove('hidden');
+                }
+            } catch (error) {
+                alert("시스템 에러: " + error);
+                document.getElementById('loadingOverlay').classList.add('hidden');
+                document.getElementById('setupModal').classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+
+</html>

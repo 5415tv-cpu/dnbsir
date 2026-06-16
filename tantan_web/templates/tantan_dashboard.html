@@ -1,0 +1,2485 @@
+{% extends "tantan_base.html" %}
+
+{% block title %}통합 대시보드 - 탄탄제작소{% endblock %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --secondary: #10b981;
+        --danger: #ef4444;
+        --warning: #f59e0b;
+        --surface: #ffffff;
+        --background: #f8fafc;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --border: #e2e8f0;
+        --radius-lg: 20px;
+        --radius-md: 12px;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        background-color: var(--background);
+        font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    }
+
+    .dashboard-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    /* Dashboard Header */
+    .dash-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 40px;
+    }
+    .dash-header-text h2 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin: 0 0 8px 0;
+        letter-spacing: -0.02em;
+    }
+    .dash-header-text p {
+        font-size: 1.1rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+    .dash-actions {
+        display: flex;
+        gap: 12px;
+    }
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: var(--transition);
+        border: none;
+        text-decoration: none;
+    }
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.39); }
+    .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79, 70, 229, 0.23); }
+    .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: white; transform: translateY(-2px); }
+
+    /* Unified Card System */
+    .grid-container {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 24px;
+    }
+
+    .app-card {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        transition: var(--transition);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .app-card:hover {
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-4px);
+    }
+    
+    .card-col-3 { grid-column: span 3; } /* For KPI cards */
+    .card-col-4 { grid-column: span 4; } /* For 1/3 width */
+    .card-col-6 { grid-column: span 6; } /* For half width */
+    .card-col-8 { grid-column: span 8; } /* For 2/3 width */
+    .card-col-12 { grid-column: span 12; } /* Full width */
+
+    /* Responsive grid */
+    @media (max-width: 1200px) {
+        .card-col-3 { grid-column: span 4; }
+        .card-col-4 { grid-column: span 6; }
+    }
+    @media (max-width: 992px) {
+        .card-col-3 { grid-column: span 6; }
+        .card-col-8 { grid-column: span 12; }
+        .card-col-6 { grid-column: span 12; }
+    }
+    @media (max-width: 768px) {
+        .card-col-3 { grid-column: span 12; }
+        .card-col-4 { grid-column: span 12; }
+        .dash-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+    }
+
+    /* Card Header */
+    .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .icon-blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .icon-green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .icon-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    .icon-orange { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+    .icon-red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 0;
+    }
+    .card-subtitle {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin: 4px 0 0 0;
+    }
+
+    /* KPI Specifics */
+    .kpi-value {
+        font-size: 2.4rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin-top: 10px;
+        line-height: 1;
+    }
+
+    /* Table Styles */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+    }
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+        text-align: left;
+    }
+    .data-table th {
+        background: #f8fafc;
+        padding: 14px 16px;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+    }
+    .data-table td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-main);
+        vertical-align: middle;
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background-color: #f1f5f9; }
+
+    .badge {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .badge-active { background: #dcfce7; color: #166534; }
+    .badge-error { background: #fee2e2; color: #991b1b; }
+    .badge-pending { background: #fef3c7; color: #92400e; }
+
+    /* Inputs & Forms */
+    .input-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .form-input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        font-size: 1rem;
+        outline: none;
+        transition: var(--transition);
+        background: #f8fafc;
+    }
+    .form-input:focus {
+        border-color: var(--primary);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    /* Custom List */
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .info-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 12px;
+        border-bottom: 1px dashed var(--border);
+        font-size: 0.95rem;
+    }
+    .info-list li:last-child { border-bottom: none; padding-bottom: 0; }
+    .info-label { color: var(--text-muted); }
+    .info-value { font-weight: 600; color: var(--text-main); }
+    
+    .profit-box {
+        margin-top: auto;
+        padding: 16px;
+        border-radius: 12px;
+        text-align: center;
+    }
+    .profit-positive { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .profit-negative { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dash-header">
+        <div class="dash-header-text">
+            <h2>HQ Master Dashboard</h2>
+            <p>탄탄제작소 통합 관제 시스템</p>
+        </div>
+        <div class="dash-actions"></div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid-container">
+        
+        <!-- Global Alerts -->
+        {% if stats.db_status == 'warning' %}
+        <div style="grid-column: span 12; background: #fef2f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 5px;">
+            <div style="color: #e11d48; font-size: 1.8rem;">
+                <i class="ri-error-warning-fill"></i>
+            </div>
+            <div>
+                <h4 style="color: #be123c; margin: 0 0 5px 0; font-size: 1rem; font-weight: 700;">시스템 용량 경고 (DB 임계점 접근)</h4>
+                <p style="color: #be123c; margin: 0; font-size: 0.9rem;">{{ stats.db_message }} 현재 로컬 DB 크기: <strong>{{ "%.2f"|format(stats.db_size_mb) }} MB</strong></p>
+            </div>
+            <button onclick="location.href='?tab=finance'" class="btn btn-primary" style="margin-left: auto; background: #e11d48; white-space: nowrap;">상세 확인</button>
+        </div>
+        {% endif %}
+        
+        {% if not current_tab %}
+        <!-- 메인 화면: 우측 상단 햄버거에서 메뉴 선택 안내 -->
+        <div style="grid-column: span 12; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; gap:32px;">
+            <div style="font-size:5rem; line-height:1;">🗂️</div>
+            <div>
+                <h2 style="font-size:2rem; font-weight:800; color:#0f172a; margin:0 0 12px 0;">HQ Master Dashboard</h2>
+                <p style="font-size:1.15rem; color:#64748b; margin:0;">우측 상단 <strong style="color:#4f46e5;">☰ 제어판</strong>에서 항목을 선택하세요</p>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:12px; justify-content:center; max-width:600px;">
+                <a href="/dashboard?tab=stores"     style="padding:10px 20px; background:#eff6ff; color:#1d4ed8; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🏪 가맹 상점</a>
+                <a href="/dashboard?tab=citizens"   style="padding:10px 20px; background:#f0fdf4; color:#166534; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">👥 일반 시민</a>
+                <a href="/dashboard?tab=farmers"    style="padding:10px 20px; background:#fefce8; color:#854d0e; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🌾 농어민</a>
+                <a href="/dashboard?tab=ai"         style="padding:10px 20px; background:#faf5ff; color:#6d28d9; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🤖 AI 응대</a>
+                <a href="/dashboard?tab=reservations" style="padding:10px 20px; background:#f0fdf4; color:#166534; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">📅 예약</a>
+                <a href="/dashboard?tab=sms"        style="padding:10px 20px; background:#fff7ed; color:#9a3412; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">✉️ SMS</a>
+                <a href="/dashboard?tab=deliveries" style="padding:10px 20px; background:#fef2f2; color:#991b1b; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🚚 택배</a>
+                <a href="/dashboard?tab=drivers"    style="padding:10px 20px; background:#eff6ff; color:#1e40af; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🏍️ 배달기사</a>
+                <a href="/dashboard?tab=finance"    style="padding:10px 20px; background:#f8fafc; color:#475569; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">💹 재무/세금</a>
+                <a href="/dashboard?tab=video"      style="padding:10px 20px; background:#fefce8; color:#854d0e; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🎬 비디오</a>
+                <a href="/dashboard?tab=logs"       style="padding:10px 20px; background:#fef2f2; color:#991b1b; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🚨 시스템 로그</a>
+                <a href="/dashboard?tab=settlement" style="padding:10px 20px; background:#faf5ff; color:#6d28d9; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">💰 정산 관리</a>
+            </div>
+        </div>
+
+        <!-- ===== 🚨 시스템 로그 탭 ===== -->
+        {% elif current_tab == 'logs' %}
+        <!-- ===== 상단 헤더 ===== -->
+        <div class="app-card card-col-12" style="padding:20px 24px; margin-bottom:0; border-radius:16px 16px 0 0; border-bottom:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:1.5rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">🚨 탄탄제작소 시스템 모니터링</h2>
+                    <p style="color:#64748b; margin:0; font-size:0.95rem;">동네비서 서버 실시간 에러 로그 &nbsp;|&nbsp; <span id="logLastUpdated" style="color:#94a3b8; font-size:0.85rem;">로딩 중...</span></p>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <button onclick="loadLogs()" id="btnRefresh" class="btn btn-primary" style="padding:10px 20px; font-size:0.9rem; border-radius:10px;">
+                        <i class="ri-refresh-line"></i> 새로고침
+                    </button>
+                    <button onclick="location.href='/dashboard'" class="btn" style="background:#f1f5f9; color:#475569; padding:10px 18px; border-radius:10px;">
+                        <i class="ri-arrow-left-line"></i> 돌아가기
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== KPI 요약 카드 ===== -->
+        <div id="kpiRow" style="grid-column:span 12; display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:0;">
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px;">
+                <div style="width:44px; height:44px; background:#f1f5f9; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">📋</div>
+                <div><div style="font-size:0.8rem; color:#94a3b8; font-weight:600; margin-bottom:2px;">전체 로그</div><div id="kpiTotal" style="font-size:1.6rem; font-weight:800; color:#0f172a;">-</div></div>
+            </div>
+            <div style="background:#fff5f5; border:1px solid #fecaca; border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px;">
+                <div style="width:44px; height:44px; background:#fee2e2; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🔴</div>
+                <div><div style="font-size:0.8rem; color:#ef4444; font-weight:600; margin-bottom:2px;">에러</div><div id="kpiError" style="font-size:1.6rem; font-weight:800; color:#dc2626;">-</div></div>
+            </div>
+            <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px;">
+                <div style="width:44px; height:44px; background:#fef3c7; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🟡</div>
+                <div><div style="font-size:0.8rem; color:#d97706; font-weight:600; margin-bottom:2px;">경고</div><div id="kpiWarn" style="font-size:1.6rem; font-weight:800; color:#d97706;">-</div></div>
+            </div>
+            <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px;">
+                <div style="width:44px; height:44px; background:#dcfce7; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.3rem;">🔵</div>
+                <div><div style="font-size:0.8rem; color:#16a34a; font-weight:600; margin-bottom:2px;">정보</div><div id="kpiInfo" style="font-size:1.6rem; font-weight:800; color:#16a34a;">-</div></div>
+            </div>
+        </div>
+
+        <!-- ===== 필터 + 검색 ===== -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; padding:16px 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;" id="levelFilters">
+                    <button onclick="setFilter('ALL')"     class="lvl-btn active" data-level="ALL"     style="padding:7px 18px; border-radius:20px; border:1.5px solid #4f46e5; background:#4f46e5; color:white; font-weight:700; cursor:pointer; font-size:0.85rem;">전체</button>
+                    <button onclick="setFilter('ERROR')"   class="lvl-btn"        data-level="ERROR"   style="padding:7px 18px; border-radius:20px; border:1.5px solid #e2e8f0; background:white; color:#64748b; font-weight:600; cursor:pointer; font-size:0.85rem;">🔴 에러</button>
+                    <button onclick="setFilter('WARNING')" class="lvl-btn"        data-level="WARNING" style="padding:7px 18px; border-radius:20px; border:1.5px solid #e2e8f0; background:white; color:#64748b; font-weight:600; cursor:pointer; font-size:0.85rem;">🟡 경고</button>
+                    <button onclick="setFilter('INFO')"    class="lvl-btn"        data-level="INFO"    style="padding:7px 18px; border-radius:20px; border:1.5px solid #e2e8f0; background:white; color:#64748b; font-weight:600; cursor:pointer; font-size:0.85rem;">🔵 정보</button>
+                </div>
+                <input id="logSearch" oninput="renderTable()" placeholder="🔍 메시지 / 출처 검색..."
+                    style="padding:8px 16px; border:1.5px solid #e2e8f0; border-radius:20px; font-size:0.88rem; width:240px; outline:none; transition:border-color 0.2s;"
+                    onfocus="this.style.borderColor='#4f46e5'" onblur="this.style.borderColor='#e2e8f0'">
+            </div>
+        </div>
+
+        <!-- ===== 로그 테이블 ===== -->
+        <div class="app-card card-col-12" style="border-radius:0 0 16px 16px; border-top:none; padding:0; overflow:hidden;">
+            <div id="logStatus" style="text-align:center; padding:60px; color:#94a3b8; font-size:1rem;">⏳ 로그를 불러오는 중...</div>
+            <div id="logTableWrap" style="display:none; overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                            <th style="padding:14px 20px; text-align:left; color:#64748b; font-size:0.82rem; font-weight:700; white-space:nowrap; width:175px;">발생 시간</th>
+                            <th style="padding:14px 16px; text-align:center; color:#64748b; font-size:0.82rem; font-weight:700; width:90px;">로그 수준</th>
+                            <th style="padding:14px 16px; text-align:left; color:#64748b; font-size:0.82rem; font-weight:700; width:120px;">시스템 출처</th>
+                            <th style="padding:14px 20px; text-align:left; color:#64748b; font-size:0.82rem; font-weight:700;">상세 내용</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody"></tbody>
+                </table>
+                <div id="logEmpty" style="display:none; text-align:center; padding:40px; color:#94a3b8;">해당 조건의 로그가 없습니다.</div>
+            </div>
+        </div>
+
+        <script>
+        let allLogs = [];
+        let currentFilter = 'ALL';
+
+        function esc(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function parseLog(line) {
+            // 형식: 2026-06-12 14:15:22 KST | ERROR    | 네이버 API | 메시지
+            const parts = line.split(' | ');
+            if (parts.length >= 4) {
+                return {
+                    time: parts[0].trim(),
+                    level: parts[1].trim().replace(/\s+/g,''),
+                    source: parts[2].trim(),
+                    msg: parts.slice(3).join(' | ').trim()
+                };
+            }
+            // 구형식: 2026-06-12 14:15:22 | ERROR | file.py:123 | 메시지
+            if (parts.length === 4) {
+                return { time: parts[0].trim(), level: parts[1].trim().replace(/\s+/g,''), source: parts[2].trim(), msg: parts[3].trim() };
+            }
+            return { time: '', level: 'INFO', source: '시스템', msg: line };
+        }
+
+        function levelBadge(level) {
+            const l = (level||'').toUpperCase();
+            if (l.includes('ERROR') || l.includes('CRITICAL'))
+                return '<span style="display:inline-block;background:#dc2626;color:white;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;white-space:nowrap;">에러</span>';
+            if (l.includes('WARN'))
+                return '<span style="display:inline-block;background:#d97706;color:white;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;white-space:nowrap;">경고</span>';
+            return '<span style="display:inline-block;background:#0369a1;color:white;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;white-space:nowrap;">정보</span>';
+        }
+
+        function rowBg(level) {
+            const l = (level||'').toUpperCase();
+            if (l.includes('ERROR') || l.includes('CRITICAL')) return 'background:rgba(239,68,68,0.04);';
+            if (l.includes('WARN')) return 'background:rgba(234,179,8,0.04);';
+            return '';
+        }
+
+        function msgStyle(level) {
+            const l = (level||'').toUpperCase();
+            if (l.includes('ERROR') || l.includes('CRITICAL')) return 'color:#dc2626; font-weight:600;';
+            if (l.includes('WARN')) return 'color:#92400e;';
+            return 'color:#334155;';
+        }
+
+        function setFilter(level) {
+            currentFilter = level;
+            document.querySelectorAll('.lvl-btn').forEach(b => {
+                const isActive = b.dataset.level === level;
+                b.style.background = isActive ? '#4f46e5' : 'white';
+                b.style.color = isActive ? 'white' : '#64748b';
+                b.style.borderColor = isActive ? '#4f46e5' : '#e2e8f0';
+            });
+            renderTable();
+        }
+
+        function renderTable() {
+            const search = (document.getElementById('logSearch').value || '').toLowerCase();
+            let list = allLogs;
+
+            if (currentFilter !== 'ALL') {
+                list = list.filter(p => {
+                    const l = (p.level||'').toUpperCase();
+                    if (currentFilter === 'ERROR') return l.includes('ERROR') || l.includes('CRITICAL');
+                    if (currentFilter === 'WARNING') return l.includes('WARN');
+                    if (currentFilter === 'INFO') return l === 'INFO';
+                    return true;
+                });
+            }
+            if (search) {
+                list = list.filter(p => (p.msg||'').toLowerCase().includes(search) || (p.source||'').toLowerCase().includes(search));
+            }
+
+            const tbody = document.getElementById('logTableBody');
+            const empty = document.getElementById('logEmpty');
+
+            if (list.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+            } else {
+                empty.style.display = 'none';
+                tbody.innerHTML = list.map(p => `
+                    <tr style="border-bottom:1px solid #f1f5f9; ${rowBg(p.level)} transition:background 0.15s;"
+                        onmouseover="this.style.background='rgba(79,70,229,0.03)'" onmouseout="this.style.background=''">
+                        <td style="padding:13px 20px; font-family:monospace; font-size:0.8rem; color:#94a3b8; white-space:nowrap;">${esc(p.time)}</td>
+                        <td style="padding:13px 16px; text-align:center;">${levelBadge(p.level)}</td>
+                        <td style="padding:13px 16px; font-size:0.85rem; font-weight:600; color:#475569; white-space:nowrap;">${esc(p.source)}</td>
+                        <td style="padding:13px 20px; ${msgStyle(p.level)} word-break:break-all; line-height:1.5;">${esc(p.msg)}</td>
+                    </tr>`).join('');
+            }
+        }
+
+        async function loadLogs() {
+            const btn = document.getElementById('btnRefresh');
+            btn.innerHTML = '<i class="ri-loader-4-line"></i> 로딩...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/logs?lines=500&level=ALL');
+                const data = await res.json();
+                const rawLogs = data.logs || [];
+
+                allLogs = rawLogs.map(parseLog).reverse(); // 최신순
+
+                // KPI
+                const errCnt  = allLogs.filter(p => (p.level||'').toUpperCase().includes('ERROR') || (p.level||'').toUpperCase().includes('CRITICAL')).length;
+                const warnCnt = allLogs.filter(p => (p.level||'').toUpperCase().includes('WARN')).length;
+                const infoCnt = allLogs.filter(p => (p.level||'').toUpperCase() === 'INFO').length;
+
+                document.getElementById('kpiTotal').textContent = allLogs.length;
+                document.getElementById('kpiError').textContent = errCnt;
+                document.getElementById('kpiWarn').textContent  = warnCnt;
+                document.getElementById('kpiInfo').textContent  = infoCnt;
+
+                // 마지막 업데이트 시각
+                const now = new Date();
+                document.getElementById('logLastUpdated').textContent = '마지막 업데이트: ' + now.toLocaleTimeString('ko-KR');
+
+                if (allLogs.length === 0 && data.message) {
+                    document.getElementById('logStatus').textContent = '✅ ' + data.message;
+                    document.getElementById('logStatus').style.display = 'block';
+                    document.getElementById('logTableWrap').style.display = 'none';
+                } else {
+                    document.getElementById('logStatus').style.display = 'none';
+                    document.getElementById('logTableWrap').style.display = 'block';
+                    renderTable();
+                }
+            } catch(e) {
+                document.getElementById('logStatus').textContent = '❌ 로그 로드 실패: ' + e.message;
+                document.getElementById('logStatus').style.display = 'block';
+            } finally {
+                btn.innerHTML = '<i class="ri-refresh-line"></i> 새로고침';
+                btn.disabled = false;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadLogs);
+        // 60초마다 자동 새로고침
+        setInterval(loadLogs, 60000);
+        </script>
+
+        <!-- ===== 📡 콜백 미도달 레이어 추적 시뮬레이터 탭 ===== -->
+        {% elif current_tab == 'callback_trace' %}
+
+        <div class="app-card card-col-12" style="padding:20px 24px; border-radius:16px 16px 0 0; border-bottom:3px solid #dc2626; margin-bottom:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:1.4rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">📡 콜백 미도달 레이어별 추적 시뮬레이터</h2>
+                    <p style="color:#64748b; margin:0; font-size:0.88rem;">로그가 전무할 때 — 외부 플랫폼 · 방화벽 · Nginx · FastAPI 중 어느 레이어에서 차단됐는지 추적</p>
+                </div>
+                <button onclick="location.href='/dashboard'" class="btn" style="background:#f1f5f9; color:#475569; padding:10px 18px; border-radius:10px;">
+                    <i class="ri-arrow-left-line"></i> 돌아가기
+                </button>
+            </div>
+        </div>
+
+        <!-- 실제 서버 진단 결과 (현재 상태) -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:20px 24px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                <div style="width:10px; height:10px; border-radius:50%; background:#f59e0b; animation:pulse 1.5s infinite;"></div>
+                <h3 style="font-size:0.95rem; font-weight:800; color:#0f172a; margin:0;">🔍 현재 서버 실시간 진단 결과 (158.247.241.29)</h3>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;">
+                <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:12px; padding:14px;">
+                    <div style="font-size:0.75rem; font-weight:800; color:#15803d; margin-bottom:6px; text-transform:uppercase;">✅ 포트 80/443</div>
+                    <div style="font-size:0.85rem; color:#166534; font-weight:600;">Nginx 정상 수신 중</div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">0.0.0.0:80, 0.0.0.0:443 LISTEN</div>
+                </div>
+                <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:12px; padding:14px;">
+                    <div style="font-size:0.75rem; font-weight:800; color:#15803d; margin-bottom:6px; text-transform:uppercase;">✅ Nginx → FastAPI</div>
+                    <div style="font-size:0.85rem; color:#166634; font-weight:600;">/webhook/ 경로 매핑 확인됨</div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">proxy_pass 127.0.0.1:8000</div>
+                </div>
+                <div style="background:#f0fdf4; border:2px solid #86efac; border-radius:12px; padding:14px;">
+                    <div style="font-size:0.75rem; font-weight:800; color:#15803d; margin-bottom:6px; text-transform:uppercase;">✅ UFW 방화벽</div>
+                    <div style="font-size:0.85rem; color:#166534; font-weight:600;">80/443만 허용, 나머지 차단</div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">스캐너 봇 정상 차단 중</div>
+                </div>
+                <div style="background:#fef3c7; border:2px solid #fcd34d; border-radius:12px; padding:14px;">
+                    <div style="font-size:0.75rem; font-weight:800; color:#92400e; margin-bottom:6px; text-transform:uppercase;">⚠️ 원인 추정</div>
+                    <div style="font-size:0.85rem; color:#92400e; font-weight:700;">외부 플랫폼 콜백 URL 미설정</div>
+                    <div style="font-size:0.75rem; color:#64748b; margin-top:4px;">Nginx access.log 콜백 흔적 없음</div>
+                </div>
+            </div>
+            <div style="margin-top:12px; padding:12px 16px; background:#fef3c7; border:1px solid #fcd34d; border-radius:10px; font-size:0.85rem; color:#92400e; font-weight:600; line-height:1.6;">
+                ⚠️ <strong>결론:</strong> 서버 인프라(방화벽·Nginx·FastAPI)는 모두 정상입니다. 
+                Nginx access.log에 콜백 흔적이 없다 = 외부 플랫폼(네이버/카카오/토스)이 우리 서버로 요청을 아직 보내지 않았거나, 
+                개발자 센터에 등록된 콜백 URL이 잘못된 것이 유력합니다.
+            </div>
+        </div>
+
+        <!-- 레이어 추적 시뮬레이터 -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:0; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#7f1d1d,#991b1b); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h3 style="color:#fecdd3; font-size:0.98rem; font-weight:700; margin:0 0 3px 0;">🧪 에러 시나리오 선택 → 레이어별 침묵 위치 파악</h3>
+                    <p style="color:#fca5a5; font-size:0.78rem; margin:0;">각 에러 케이스를 선택하면 어느 레이어가 침묵하는지 시각화합니다</p>
+                </div>
+                <button onclick="resetTrace()" style="background:rgba(255,255,255,0.1); color:#fecdd3; border:1px solid rgba(255,255,255,0.2); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.82rem;">↺ 초기화</button>
+            </div>
+
+            <!-- 시나리오 선택 버튼 -->
+            <div style="padding:16px 24px; background:#fff7f7; border-bottom:1px solid #e2e8f0; display:flex; gap:10px; flex-wrap:wrap;">
+                <button onclick="runScenario('normal')" style="padding:9px 18px; border-radius:9px; border:2px solid #86efac; background:#f0fdf4; color:#15803d; font-weight:700; cursor:pointer; font-size:0.85rem;">✅ 정상 수신</button>
+                <button onclick="runScenario('url')" style="padding:9px 18px; border-radius:9px; border:2px solid #fecdd3; background:#fef2f2; color:#dc2626; font-weight:700; cursor:pointer; font-size:0.85rem;">❌ 변수 1: URL 오설정</button>
+                <button onclick="runScenario('firewall')" style="padding:9px 18px; border-radius:9px; border:2px solid #fecdd3; background:#fef2f2; color:#dc2626; font-weight:700; cursor:pointer; font-size:0.85rem;">❌ 변수 2: 방화벽 차단</button>
+                <button onclick="runScenario('nginx')" style="padding:9px 18px; border-radius:9px; border:2px solid #fecdd3; background:#fef2f2; color:#dc2626; font-weight:700; cursor:pointer; font-size:0.85rem;">❌ 변수 3: Nginx 미매핑</button>
+            </div>
+
+            <!-- 레이어 다이어그램 -->
+            <div style="padding:24px; background:#0f172a; overflow-x:auto;">
+                <div style="display:flex; align-items:center; gap:0; min-width:600px; justify-content:center;">
+
+                    <!-- 외부 플랫폼 -->
+                    <div style="text-align:center; width:110px;">
+                        <div id="layer-ext" style="width:80px; height:80px; border-radius:14px; background:#374151; border:2px solid #4b5563; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto; transition:all 0.4s;">🏢</div>
+                        <div style="color:#94a3b8; font-size:0.72rem; margin-top:8px; font-weight:700;">외부 플랫폼<br>(네이버/카카오)</div>
+                        <div id="log-ext" style="font-size:0.68rem; color:#475569; margin-top:4px; font-family:monospace;">대기 중</div>
+                    </div>
+                    <div id="arrow1" style="flex:1; text-align:center; color:#475569; font-size:1.2rem; padding:0 4px; transition:all 0.4s;">──▶</div>
+
+                    <!-- 방화벽 -->
+                    <div style="text-align:center; width:110px;">
+                        <div id="layer-fw" style="width:80px; height:80px; border-radius:14px; background:#374151; border:2px solid #4b5563; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto; transition:all 0.4s;">🛡️</div>
+                        <div style="color:#94a3b8; font-size:0.72rem; margin-top:8px; font-weight:700;">UFW<br>방화벽</div>
+                        <div id="log-fw" style="font-size:0.68rem; color:#475569; margin-top:4px; font-family:monospace;">대기 중</div>
+                    </div>
+                    <div id="arrow2" style="flex:1; text-align:center; color:#475569; font-size:1.2rem; padding:0 4px; transition:all 0.4s;">──▶</div>
+
+                    <!-- Nginx -->
+                    <div style="text-align:center; width:110px;">
+                        <div id="layer-nginx" style="width:80px; height:80px; border-radius:14px; background:#374151; border:2px solid #4b5563; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto; transition:all 0.4s;">⚙️</div>
+                        <div style="color:#94a3b8; font-size:0.72rem; margin-top:8px; font-weight:700;">Nginx<br>리버스 프록시</div>
+                        <div id="log-nginx" style="font-size:0.68rem; color:#475569; margin-top:4px; font-family:monospace;">대기 중</div>
+                    </div>
+                    <div id="arrow3" style="flex:1; text-align:center; color:#475569; font-size:1.2rem; padding:0 4px; transition:all 0.4s;">──▶</div>
+
+                    <!-- FastAPI -->
+                    <div style="text-align:center; width:110px;">
+                        <div id="layer-api" style="width:80px; height:80px; border-radius:14px; background:#374151; border:2px solid #4b5563; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto; transition:all 0.4s;">🐍</div>
+                        <div style="color:#94a3b8; font-size:0.72rem; margin-top:8px; font-weight:700;">FastAPI<br>애플리케이션</div>
+                        <div id="log-api" style="font-size:0.68rem; color:#475569; margin-top:4px; font-family:monospace;">대기 중</div>
+                    </div>
+                    <div id="arrow4" style="flex:1; text-align:center; color:#475569; font-size:1.2rem; padding:0 4px; transition:all 0.4s;">──▶</div>
+
+                    <!-- DB/로그 -->
+                    <div style="text-align:center; width:110px;">
+                        <div id="layer-db" style="width:80px; height:80px; border-radius:14px; background:#374151; border:2px solid #4b5563; display:flex; align-items:center; justify-content:center; font-size:1.8rem; margin:0 auto; transition:all 0.4s;">💾</div>
+                        <div style="color:#94a3b8; font-size:0.72rem; margin-top:8px; font-weight:700;">DB + 로그<br>기록</div>
+                        <div id="log-db" style="font-size:0.68rem; color:#475569; margin-top:4px; font-family:monospace;">대기 중</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 로그 패널 -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-top:1px solid #1e293b;">
+                <div style="background:#0f172a; padding:16px; border-right:1px solid #1e293b;">
+                    <div style="color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; font-family:sans-serif;">Nginx access.log</div>
+                    <div id="nginx-log" style="font-family:monospace; font-size:0.72rem; color:#475569; line-height:1.8;">-- 대기 중</div>
+                </div>
+                <div style="background:#0f172a; padding:16px; border-right:1px solid #1e293b;">
+                    <div style="color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; font-family:sans-serif;">FastAPI error.log</div>
+                    <div id="api-log" style="font-family:monospace; font-size:0.72rem; color:#475569; line-height:1.8;">-- 대기 중</div>
+                </div>
+                <div style="background:#0f172a; padding:16px;">
+                    <div style="color:#64748b; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; font-family:sans-serif;">진단 및 대처법</div>
+                    <div id="diag-msg" style="font-size:0.75rem; color:#64748b; line-height:1.7;">시나리오를 선택하세요</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 체크리스트 -->
+        <div class="app-card card-col-12" style="border-radius:0 0 16px 16px; border-top:none; padding:20px 24px;">
+            <h4 style="font-size:0.9rem; font-weight:800; color:#0f172a; margin:0 0 14px 0;">🔧 콜백 미도달 시 실제 점검 체크리스트</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div style="background:#f8fafc; border-radius:10px; padding:14px;">
+                    <div style="font-weight:700; color:#dc2626; font-size:0.85rem; margin-bottom:8px;">① 외부 플랫폼 개발자 센터 확인</div>
+                    <div style="font-size:0.8rem; color:#64748b; line-height:1.8;">
+                        □ 콜백 URL에 https:// 붙어 있는가?<br>
+                        □ 도메인 오타 없는가? (dongnebiseo.com)<br>
+                        □ 경로가 정확한가? (/webhook/ 등)<br>
+                        □ URL 끝 슬래시(/) 유무 일치하는가?
+                    </div>
+                </div>
+                <div style="background:#f8fafc; border-radius:10px; padding:14px;">
+                    <div style="font-weight:700; color:#dc2626; font-size:0.85rem; margin-bottom:8px;">② Nginx access.log 실시간 확인</div>
+                    <div style="background:#0f172a; border-radius:8px; padding:10px; font-family:monospace; font-size:0.75rem; color:#6ee7b7; margin-top:4px;">
+                        tail -f /var/log/nginx/access.log<br>
+                        <span style="color:#64748b;"># 콜백 발생 시 즉시 표시</span>
+                    </div>
+                </div>
+                <div style="background:#f8fafc; border-radius:10px; padding:14px;">
+                    <div style="font-weight:700; color:#f59e0b; font-size:0.85rem; margin-bottom:8px;">③ curl로 엔드포인트 직접 테스트</div>
+                    <div style="background:#0f172a; border-radius:8px; padding:10px; font-family:monospace; font-size:0.72rem; color:#6ee7b7; margin-top:4px;">
+                        curl -X POST https://dongnebiseo.com<br>
+                        &nbsp;&nbsp;/api/payment/confirm<br>
+                        &nbsp;&nbsp;-H "Content-Type: application/json"<br>
+                        &nbsp;&nbsp;-d '{"test":true}'
+                    </div>
+                </div>
+                <div style="background:#f8fafc; border-radius:10px; padding:14px;">
+                    <div style="font-weight:700; color:#4f46e5; font-size:0.85rem; margin-bottom:8px;">④ 현재 등록된 콜백 엔드포인트</div>
+                    <div style="font-size:0.78rem; color:#64748b; line-height:1.8;">
+                        <span style="color:#4f46e5; font-weight:700;">GET/POST</span> /auth/{provider}/callback<br>
+                        <span style="color:#4f46e5; font-weight:700;">POST</span> /auth/kakao/callback<br>
+                        <span style="color:#4f46e5; font-weight:700;">POST</span> /api/payment/confirm<br>
+                        <span style="color:#4f46e5; font-weight:700;">ALL</span> /webhook/*
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        const layers = ['ext','fw','nginx','api','db'];
+        const arrows = ['arrow1','arrow2','arrow3','arrow4'];
+
+        function setLayer(id, state) {
+            const el = document.getElementById('layer-' + id);
+            const colors = {
+                ok:      ['#052e16', '#86efac'],
+                error:   ['#450a0a', '#fca5a5'],
+                warning: ['#422006', '#fcd34d'],
+                idle:    ['#1e293b', '#334155'],
+                active:  ['#1e3a5f', '#60a5fa'],
+            };
+            el.style.background = colors[state][0];
+            el.style.borderColor = colors[state][1];
+            el.style.boxShadow = state !== 'idle' ? `0 0 16px ${colors[state][1]}44` : 'none';
+        }
+
+        function setArrow(id, ok) {
+            const el = document.getElementById(id);
+            el.style.color = ok ? '#34d399' : '#ef4444';
+            el.innerHTML = ok ? '──▶' : '──✖';
+        }
+
+        function setLog(id, html) {
+            document.getElementById('log-' + id).innerHTML = html;
+        }
+
+        function resetTrace() {
+            layers.forEach(l => { setLayer(l, 'idle'); setLog(l, '<span style="color:#475569;">대기 중</span>'); });
+            arrows.forEach(a => { document.getElementById(a).style.color = '#475569'; document.getElementById(a).innerHTML = '──▶'; });
+            document.getElementById('nginx-log').innerHTML = '-- 대기 중';
+            document.getElementById('api-log').innerHTML = '-- 대기 중';
+            document.getElementById('diag-msg').innerHTML = '시나리오를 선택하세요';
+            document.getElementById('diag-msg').style.color = '#64748b';
+        }
+
+        async function runScenario(type) {
+            resetTrace();
+            await delay(200);
+
+            if (type === 'normal') {
+                // 전부 OK
+                setLayer('ext', 'ok'); setLog('ext', '<span style="color:#34d399;">발송 ✅</span>');
+                await delay(400); setArrow('arrow1', true);
+                await delay(300); setLayer('fw', 'ok'); setLog('fw', '<span style="color:#34d399;">통과 ✅</span>');
+                await delay(400); setArrow('arrow2', true);
+                await delay(300); setLayer('nginx', 'ok'); setLog('nginx', '<span style="color:#34d399;">전달 ✅</span>');
+                await delay(400); setArrow('arrow3', true);
+                await delay(300); setLayer('api', 'ok'); setLog('api', '<span style="color:#34d399;">처리 ✅</span>');
+                await delay(400); setArrow('arrow4', true);
+                await delay(300); setLayer('db', 'ok'); setLog('db', '<span style="color:#34d399;">저장 ✅</span>');
+                document.getElementById('nginx-log').innerHTML =
+                    '<span style="color:#34d399;">158.247.241.29 - POST /webhook/ HTTP/1.1 200</span>';
+                document.getElementById('api-log').innerHTML =
+                    '<span style="color:#34d399;">INFO: 콜백 수신 성공 | 결제 처리 완료</span>';
+                document.getElementById('diag-msg').innerHTML = '✅ 모든 레이어 정상. 콜백 처리 완료.';
+                document.getElementById('diag-msg').style.color = '#16a34a';
+
+            } else if (type === 'url') {
+                setLayer('ext', 'error'); setLog('ext', '<span style="color:#f87171;">발송 실패 ❌</span>');
+                await delay(400); setArrow('arrow1', false);
+                setLayer('fw', 'idle'); setLayer('nginx', 'idle'); setLayer('api', 'idle'); setLayer('db', 'idle');
+                document.getElementById('nginx-log').innerHTML =
+                    '<span style="color:#ef4444;">-- 수신 없음 (로그 전무)</span>';
+                document.getElementById('api-log').innerHTML =
+                    '<span style="color:#ef4444;">-- 수신 없음 (로그 전무)</span>';
+                document.getElementById('diag-msg').innerHTML =
+                    '<span style="color:#dc2626; font-weight:700;">원인: 외부 플랫폼 URL 오설정</span><br>' +
+                    '→ 개발자 센터 콜백 URL 확인<br>' +
+                    '→ http vs https 구분 확인<br>' +
+                    '→ 도메인/경로 오타 확인<br>' +
+                    '→ 현재 서버 상황과 일치 ⚠️';
+                document.getElementById('diag-msg').style.color = '#dc2626';
+
+            } else if (type === 'firewall') {
+                setLayer('ext', 'ok'); setLog('ext', '<span style="color:#34d399;">발송 ✅</span>');
+                await delay(400); setArrow('arrow1', false);
+                await delay(300); setLayer('fw', 'error'); setLog('fw', '<span style="color:#f87171;">DROP ❌</span>');
+                setLayer('nginx', 'idle'); setLayer('api', 'idle'); setLayer('db', 'idle');
+                document.getElementById('nginx-log').innerHTML =
+                    '<span style="color:#ef4444;">-- 수신 없음</span>';
+                document.getElementById('api-log').innerHTML =
+                    '<span style="color:#ef4444;">-- 수신 없음</span>';
+                document.getElementById('diag-msg').innerHTML =
+                    '<span style="color:#dc2626; font-weight:700;">원인: UFW/방화벽 차단</span><br>' +
+                    '→ ufw status verbose 실행<br>' +
+                    '→ 80/443 허용 여부 확인<br>' +
+                    '→ ufw allow 80/tcp && ufw allow 443/tcp<br>' +
+                    '→ Vultr 콘솔 Firewall Group 확인';
+                document.getElementById('diag-msg').style.color = '#dc2626';
+
+            } else if (type === 'nginx') {
+                setLayer('ext', 'ok'); setLog('ext', '<span style="color:#34d399;">발송 ✅</span>');
+                await delay(400); setArrow('arrow1', true);
+                await delay(300); setLayer('fw', 'ok'); setLog('fw', '<span style="color:#34d399;">통과 ✅</span>');
+                await delay(400); setArrow('arrow2', true);
+                await delay(300); setLayer('nginx', 'error'); setLog('nginx', '<span style="color:#f87171;">404 ❌</span>');
+                await delay(400); setArrow('arrow3', false);
+                setLayer('api', 'idle'); setLayer('db', 'idle');
+                document.getElementById('nginx-log').innerHTML =
+                    '<span style="color:#fbbf24;">158.247.241.29 - POST /callback HTTP/1.1 404 --</span><br>' +
+                    '<span style="color:#64748b;">(Nginx access.log에 흔적 있음!)</span>';
+                document.getElementById('api-log').innerHTML =
+                    '<span style="color:#ef4444;">-- 수신 없음 (Nginx 선에서 차단)</span>';
+                document.getElementById('diag-msg').innerHTML =
+                    '<span style="color:#dc2626; font-weight:700;">원인: Nginx 경로 미매핑</span><br>' +
+                    '→ Nginx access.log에 404 흔적 있음<br>' +
+                    '→ /etc/nginx/sites-enabled/ 확인<br>' +
+                    '→ location /callback/ { proxy_pass ... } 추가<br>' +
+                    '→ nginx -t && systemctl reload nginx';
+                document.getElementById('diag-msg').style.color = '#dc2626';
+            }
+        }
+        </script>
+
+        <!-- ===== 🧪 솔라피 발송 직접 테스트 탭 ===== -->
+        {% elif current_tab == 'solapi_test' %}
+
+        <div class="app-card card-col-12" style="padding:20px 24px; border-radius:16px 16px 0 0; border-bottom:3px solid #f59e0b; margin-bottom:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:1.4rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">🧪 솔라피 발송 직접 테스트</h2>
+                    <p style="color:#64748b; margin:0; font-size:0.88rem;">SMS / 알림톡 발송 연결 상태 · 환경변수 · 에러 원인을 즉시 확인</p>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button onclick="reloadSolapiFrame()" style="background:#f59e0b; color:#fff; border:none; padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer; font-size:0.9rem;">
+                        <i class="ri-refresh-line"></i> 재테스트
+                    </button>
+                    <a href="https://tantanfab.com/api/test/solapi" target="_blank" style="background:#f1f5f9; color:#475569; padding:10px 18px; border-radius:10px; font-weight:700; text-decoration:none; font-size:0.9rem;">
+                        <i class="ri-external-link-line"></i> 새 탭에서 열기
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상태 뱃지 -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:16px 24px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:12px;">
+                <div style="background:#fefce8; border:2px solid #fde68a; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.5rem; margin-bottom:4px;">📨</div>
+                    <div style="font-size:0.78rem; font-weight:800; color:#92400e; text-transform:uppercase; margin-bottom:4px;">발송 대상</div>
+                    <div style="font-size:0.95rem; font-weight:700; color:#0f172a; font-family:monospace;">01023847447</div>
+                </div>
+                <div style="background:#fefce8; border:2px solid #fde68a; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.5rem; margin-bottom:4px;">🔑</div>
+                    <div style="font-size:0.78rem; font-weight:800; color:#92400e; text-transform:uppercase; margin-bottom:4px;">API 키</div>
+                    <div style="font-size:0.82rem; color:#64748b;">SOLAPI_API_KEY</div>
+                </div>
+                <div style="background:#fefce8; border:2px solid #fde68a; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.5rem; margin-bottom:4px;">📋</div>
+                    <div style="font-size:0.78rem; font-weight:800; color:#92400e; text-transform:uppercase; margin-bottom:4px;">템플릿 ID</div>
+                    <div style="font-size:0.72rem; color:#64748b; font-family:monospace; word-break:break-all;">KA01TP260319...</div>
+                </div>
+                <div style="background:#fefce8; border:2px solid #fde68a; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.5rem; margin-bottom:4px;">🏢</div>
+                    <div style="font-size:0.78rem; font-weight:800; color:#92400e; text-transform:uppercase; margin-bottom:4px;">채널 PF_ID</div>
+                    <div style="font-size:0.72rem; color:#64748b; font-family:monospace; word-break:break-all;">KA01PF260319...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 테스트 결과 iframe -->
+        <div class="app-card card-col-12" style="border-radius:0 0 16px 16px; border-top:none; padding:0; overflow:hidden;">
+            <div style="background:#0f172a; padding:12px 20px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #1e293b;">
+                <div style="width:10px; height:10px; border-radius:50%; background:#f59e0b; animation:pulse 1.5s infinite;"></div>
+                <span style="color:#94a3b8; font-size:0.82rem; font-family:monospace;">GET https://tantanfab.com/api/test/solapi</span>
+                <span id="iframe-loading" style="margin-left:auto; color:#64748b; font-size:0.78rem;">로딩 중...</span>
+            </div>
+            <iframe
+                id="solapi-frame"
+                src="https://tantanfab.com/api/test/solapi"
+                style="width:100%; height:600px; border:none; background:#0f172a;"
+                onload="document.getElementById('iframe-loading').textContent='완료 ✅';"
+                onerror="document.getElementById('iframe-loading').textContent='연결 실패 ❌';"
+            ></iframe>
+        </div>
+
+        <script>
+        function reloadSolapiFrame() {
+            const frame = document.getElementById('solapi-frame');
+            const loading = document.getElementById('iframe-loading');
+            loading.textContent = '재테스트 중...';
+            frame.src = 'https://tantanfab.com/api/test/solapi?t=' + Date.now();
+        }
+        </script>
+
+        <!-- ===== 🌾 농어민 가입 API 흐름 시뮬레이터 탭 ===== -->
+        {% elif current_tab == 'farmer_api' %}
+
+
+        <div class="app-card card-col-12" style="padding:20px 24px; border-radius:16px 16px 0 0; border-bottom:3px solid #059669; margin-bottom:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:1.4rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">🌾 농어민 가입 API 데이터 흐름 시뮬레이터</h2>
+                    <p style="color:#64748b; margin:0; font-size:0.88rem;">Pydantic 유효성 검사 → AES-256 암호화 → DB 저장까지 전 과정 시각화</p>
+                </div>
+                <button onclick="location.href='/dashboard'" class="btn" style="background:#f1f5f9; color:#475569; padding:10px 18px; border-radius:10px;">
+                    <i class="ri-arrow-left-line"></i> 돌아가기
+                </button>
+            </div>
+        </div>
+
+        <!-- 관심사 분리 원리 설명 -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:20px 24px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.6rem;">📥</div>
+                    <div style="font-weight:800; color:#15803d; font-size:0.85rem; margin:6px 0 4px;">① API 라우터</div>
+                    <div style="font-size:0.75rem; color:#64748b;">요청 수신 + 흐름 제어</div>
+                </div>
+                <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.6rem;">✅</div>
+                    <div style="font-weight:800; color:#15803d; font-size:0.85rem; margin:6px 0 4px;">② Pydantic 검증</div>
+                    <div style="font-size:0.75rem; color:#64748b;">형식 불량 입구 차단</div>
+                </div>
+                <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.6rem;">🔐</div>
+                    <div style="font-weight:800; color:#7c3aed; font-size:0.85rem; margin:6px 0 4px;">③ crypto_service</div>
+                    <div style="font-size:0.75rem; color:#64748b;">AES-256 암호화 전담</div>
+                </div>
+                <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.6rem;">💾</div>
+                    <div style="font-weight:800; color:#1d4ed8; font-size:0.85rem; margin:6px 0 4px;">④ DB 저장 (TEXT)</div>
+                    <div style="font-size:0.75rem; color:#64748b;">암호문만 영구 저장</div>
+                </div>
+                <div style="background:#fefce8; border:1px solid #fde68a; border-radius:12px; padding:14px; text-align:center;">
+                    <div style="font-size:1.6rem;">📋</div>
+                    <div style="font-weight:800; color:#92400e; font-size:0.85rem; margin:6px 0 4px;">⑤ 로그 기록</div>
+                    <div style="font-size:0.75rem; color:#64748b;">이름만 (주민번호 금지)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 시뮬레이터 본체 -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:0; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#064e3b,#065f46); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h3 style="color:#d1fae5; font-size:0.98rem; font-weight:700; margin:0 0 3px 0;">🧪 가입 요청 시뮬레이션</h3>
+                    <p style="color:#6ee7b7; font-size:0.78rem; margin:0;">정상 / 잘못된 주민번호 / 형식 오류 케이스를 직접 제어하세요</p>
+                </div>
+                <button onclick="resetFarmerSim()" style="background:rgba(255,255,255,0.1); color:#d1fae5; border:1px solid rgba(255,255,255,0.2); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.82rem;">↺ 초기화</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; min-height:380px;">
+                <!-- 왼쪽: 입력 폼 -->
+                <div style="padding:22px; border-right:1px solid #e2e8f0; background:#fff; overflow-y:auto;">
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">농장명 / 이름</label>
+                        <input id="f_name" type="text" value="탄탄농원" style="width:100%; padding:9px 13px; border:1.5px solid #d1d5db; border-radius:9px; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#d1d5db'">
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">생산 품목</label>
+                        <input id="f_item" type="text" value="유기농 쌀" style="width:100%; padding:9px 13px; border:1.5px solid #d1d5db; border-radius:9px; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#d1d5db'">
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">주민등록번호 <span style="color:#dc2626;">(핵심 검증 대상)</span></label>
+                        <input id="f_rn" type="text" value="760412-1234567" style="width:100%; padding:9px 13px; border:1.5px solid #d1d5db; border-radius:9px; font-size:0.9rem; font-family:monospace; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#d1d5db'">
+                        <div style="margin-top:6px; display:flex; gap:5px; flex-wrap:wrap;">
+                            <button onclick="document.getElementById('f_rn').value='760412-1234567'" style="padding:3px 9px; border-radius:6px; border:1px solid #d1fae5; background:#f0fdf4; font-size:0.72rem; cursor:pointer; color:#059669; font-weight:700;">✅ 정상</button>
+                            <button onclick="document.getElementById('f_rn').value='7604121234567'" style="padding:3px 9px; border-radius:6px; border:1px solid #fecdd3; background:#fef2f2; font-size:0.72rem; cursor:pointer; color:#dc2626; font-weight:700;">❌ 하이픈 없음</button>
+                            <button onclick="document.getElementById('f_rn').value='760412-5234567'" style="padding:3px 9px; border-radius:6px; border:1px solid #fecdd3; background:#fef2f2; font-size:0.72rem; cursor:pointer; color:#dc2626; font-weight:700;">❌ 성별코드 오류(5)</button>
+                            <button onclick="document.getElementById('f_rn').value='76041-1234567'" style="padding:3px 9px; border-radius:6px; border:1px solid #fecdd3; background:#fef2f2; font-size:0.72rem; cursor:pointer; color:#dc2626; font-weight:700;">❌ 자릿수 부족</button>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:12px; margin-top:12px;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; color:#374151; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em;">정산 계좌번호</label>
+                        <input id="f_acct" type="text" value="110-123-456789" style="width:100%; padding:9px 13px; border:1.5px solid #d1d5db; border-radius:9px; font-size:0.9rem; box-sizing:border-box; outline:none;" onfocus="this.style.borderColor='#059669'" onblur="this.style.borderColor='#d1d5db'">
+                    </div>
+                    <button onclick="runFarmerSim()" style="width:100%; padding:12px; background:linear-gradient(135deg,#059669,#047857); color:white; border:none; border-radius:10px; font-weight:800; font-size:0.95rem; cursor:pointer; margin-top:4px;">
+                        🌾 가입 요청 시뮬레이션 실행
+                    </button>
+                </div>
+
+                <!-- 오른쪽: 처리 로그 -->
+                <div style="background:#0f172a; padding:22px; font-family:'Courier New',monospace; font-size:0.78rem; overflow-y:auto; max-height:420px;">
+                    <div style="color:#475569; margin-bottom:10px; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; font-family:sans-serif;">📡 API 처리 로그 (서버 내부)</div>
+                    <div id="farmerLog" style="color:#94a3b8; line-height:2;">
+                        <span style="color:#475569;">-- POST /api/farmer/register 대기 중</span><br>
+                        <span style="color:#475569;">-- 왼쪽 폼을 채운 뒤 실행하세요</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 패널 -->
+        <div class="app-card card-col-12" style="border-radius:0 0 16px 16px; border-top:none; padding:20px 24px;">
+            <div id="farmerResultArea" style="display:none;">
+                <h4 style="font-size:0.88rem; font-weight:800; color:#374151; margin:0 0 14px 0; text-transform:uppercase; letter-spacing:0.05em;">처리 결과</h4>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px;" id="farmerResultCards"></div>
+                <div id="farmerWarning" style="display:none; margin-top:12px; padding:14px 18px; background:#fef2f2; border:1px solid #fecdd3; border-radius:10px; color:#dc2626; font-size:0.85rem; font-weight:600; line-height:1.6;"></div>
+            </div>
+            <div id="farmerWelcome" style="text-align:center; padding:30px; color:#94a3b8;">
+                <div style="font-size:3rem; margin-bottom:10px;">🌾</div>
+                <div>시뮬레이션을 실행하면 처리 결과가 여기에 표시됩니다</div>
+            </div>
+        </div>
+
+        <script>
+        const FARMER_KEY = "486522bd9c503fa2";  // 시뮬레이션용 (실제 키 아님)
+
+        function resetFarmerSim() {
+            document.getElementById('farmerLog').innerHTML =
+                '<span style="color:#475569;">-- 초기화됨. 시뮬레이션을 실행하세요.</span>';
+            document.getElementById('farmerResultArea').style.display = 'none';
+            document.getElementById('farmerWelcome').style.display = 'block';
+            document.getElementById('farmerWarning').style.display = 'none';
+        }
+
+        function appendFLog(html) {
+            document.getElementById('farmerLog').innerHTML += '<br>' + html;
+        }
+
+        async function aesEncryptSim(plain, key) {
+            const enc = new TextEncoder();
+            const kb = enc.encode(key.padEnd(32,'0').substring(0,32));
+            const iv = enc.encode("DongneBiseo16Byt");
+            const ck = await crypto.subtle.importKey('raw', kb, {name:'AES-CBC'}, false, ['encrypt']);
+            const encrypted = await crypto.subtle.encrypt({name:'AES-CBC', iv}, ck, enc.encode(plain));
+            return btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+        }
+
+        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        async function runFarmerSim() {
+            const name  = document.getElementById('f_name').value.trim();
+            const item  = document.getElementById('f_item').value.trim();
+            const rn    = document.getElementById('f_rn').value.trim();
+            const acct  = document.getElementById('f_acct').value.trim();
+            const log   = document.getElementById('farmerLog');
+
+            if (!name || !rn) { alert('농장명과 주민번호를 입력하세요'); return; }
+
+            log.innerHTML = '<span style="color:#60a5fa;">POST /api/farmer/register HTTP/1.1</span><br>' +
+                '<span style="color:#64748b;">Content-Type: application/json</span>';
+
+            await delay(300);
+            appendFLog('<br><span style="color:#fbbf24;">STEP 1 │ Pydantic 유효성 검사</span>');
+            appendFLog('<span style="color:#94a3b8;">  pattern: ^\d{6}-[1-4]\d{6}$</span>');
+            appendFLog('<span style="color:#94a3b8;">  입력값: "' + rn + '"</span>');
+
+            await delay(400);
+
+            // Pydantic 패턴 검증
+            const rnPattern = /^\d{6}-[1-4]\d{6}$/;
+            const isValid = rnPattern.test(rn);
+
+            if (!isValid) {
+                appendFLog('<span style="color:#f87171;">  ❌ VALIDATION ERROR (422 Unprocessable Entity)</span>');
+                appendFLog('<span style="color:#f87171;">  "주민등록번호 형식이 올바르지 않습니다."</span>');
+                appendFLog('<br><span style="color:#f87171;">-- 암호화 단계로 진입하지 않음 (입구 차단)</span>');
+
+                document.getElementById('farmerWelcome').style.display = 'none';
+                document.getElementById('farmerResultArea').style.display = 'block';
+                document.getElementById('farmerResultCards').innerHTML =
+                    '<div style="background:#fef2f2; border:2px solid #fecdd3; border-radius:12px; padding:20px; grid-column:1/-1;">' +
+                    '<div style="font-size:1.4rem; margin-bottom:8px;">🚫</div>' +
+                    '<div style="font-weight:800; color:#dc2626; font-size:0.95rem;">422 Validation Error</div>' +
+                    '<div style="margin-top:8px; font-size:0.85rem; color:#64748b;">입력값: "' + rn + '"<br>' +
+                    '패턴: ^\d{6}-[1-4]\d{6}$<br><br>' +
+                    '<strong style="color:#dc2626;">에러 변수 1 방어 성공:</strong> 잘못된 형식의 주민번호가 암호화 단계로 넘어가지 않았습니다.</div>' +
+                    '</div>';
+                document.getElementById('farmerWarning').style.display = 'none';
+                return;
+            }
+
+            appendFLog('<span style="color:#34d399;">  ✅ 형식 검증 통과</span>');
+
+            // STEP 2: 암호화
+            await delay(400);
+            appendFLog('<br><span style="color:#fbbf24;">STEP 2 │ crypto_service.encrypt_resident_number()</span>');
+            appendFLog('<span style="color:#94a3b8;">  알고리즘: AES-256-CBC</span>');
+            appendFLog('<span style="color:#94a3b8;">  KEY: .env[ENCRYPTION_KEY] (메모리 전용)</span>');
+
+            const encrypted = await aesEncryptSim(rn, FARMER_KEY);
+            await delay(300);
+            appendFLog('<span style="color:#34d399;">  ✅ 암호화 완료: ' + encrypted.substring(0,30) + '...</span>');
+            appendFLog('<span style="color:#64748b;">  원본 " ' + rn + '" 은 메모리에서 즉시 폐기</span>');
+
+            // STEP 3: DB 저장
+            await delay(400);
+            appendFLog('<br><span style="color:#fbbf24;">STEP 3 │ INSERT INTO farmers</span>');
+            appendFLog('<span style="color:#94a3b8;">  business_name:       "' + name + '"</span>');
+            appendFLog('<span style="color:#94a3b8;">  produce_item:        "' + item + '"</span>');
+            appendFLog('<span style="color:#f472b6;">  secure_resident_id:  "' + encrypted.substring(0,22) + '..." (TEXT 컬럼)</span>');
+            appendFLog('<span style="color:#94a3b8;">  account_number:      "' + acct + '"</span>');
+            await delay(300);
+            appendFLog('<span style="color:#34d399;">  ✅ COMMIT 완료 | new_id: 1</span>');
+
+            // STEP 4: 로그
+            await delay(300);
+            appendFLog('<br><span style="color:#fbbf24;">STEP 4 │ logger.info()</span>');
+            appendFLog('<span style="color:#34d399;">  "농어민 파트너 가입 성공 | ID=1 | ' + name + '"</span>');
+            appendFLog('<span style="color:#64748b;">  ※ 주민번호는 절대 로그에 기록하지 않음</span>');
+
+            // STEP 5: 응답
+            await delay(300);
+            appendFLog('<br><span style="color:#34d399;">HTTP 201 Created</span>');
+            appendFLog('<span style="color:#94a3b8;">{"status":"success","id":1,"message":"가입 완료"}</span>');
+
+            // 결과 패널
+            document.getElementById('farmerWelcome').style.display = 'none';
+            document.getElementById('farmerResultArea').style.display = 'block';
+            document.getElementById('farmerResultCards').innerHTML =
+                '<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:16px;">' +
+                '<div style="font-size:0.72rem; color:#64748b; font-weight:700; margin-bottom:8px; text-transform:uppercase;">입력 원본</div>' +
+                '<div style="font-size:0.9rem; font-weight:700;">' + name + '</div>' +
+                '<div style="font-size:0.8rem; color:#64748b;">' + rn + ' | ' + item + '</div>' +
+                '</div>' +
+                '<div style="background:#1e1b4b; border:2px solid #4f46e5; border-radius:12px; padding:16px;">' +
+                '<div style="font-size:0.72rem; color:#a5b4fc; font-weight:700; margin-bottom:8px; text-transform:uppercase;">DB 저장값 (암호문)</div>' +
+                '<div style="font-family:monospace; font-size:0.75rem; color:#c7d2fe; word-break:break-all;">' + encrypted + '</div>' +
+                '<div style="margin-top:6px; font-size:0.7rem; color:#6b7280;">' + encrypted.length + '자 (TEXT 컬럼 무제한 저장)</div>' +
+                '</div>' +
+                '<div style="background:#f0fdf4; border:2px solid #86efac; border-radius:12px; padding:16px;">' +
+                '<div style="font-size:0.72rem; color:#166534; font-weight:700; margin-bottom:8px; text-transform:uppercase;">HTTP 응답</div>' +
+                '<div style="font-family:monospace; font-size:0.8rem; color:#15803d;">{"status": "success"<br>"id": 1<br>"message": "가입 완료"}</div>' +
+                '<div style="margin-top:6px; font-size:0.72rem; color:#166534;">✅ 응답에 주민번호/암호문 미포함</div>' +
+                '</div>';
+            document.getElementById('farmerWarning').style.display = 'none';
+        }
+        </script>
+
+        <!-- ===== 🔐 암호화 시뮬레이터 탭 ===== -->
+        {% elif current_tab == 'crypto' %}
+
+        <!-- 헤더 -->
+        <div class="app-card card-col-12" style="padding:20px 24px; border-radius:16px 16px 0 0; border-bottom:3px solid #7c3aed; margin-bottom:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:1.4rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">🔐 AES-256 암호화 시뮬레이터</h2>
+                    <p style="color:#64748b; margin:0; font-size:0.88rem;">주민등록번호 · 계좌번호 등 개인정보 암호화/복호화 원리 시각화</p>
+                </div>
+                <button onclick="location.href='/dashboard'" class="btn" style="background:#f1f5f9; color:#475569; padding:10px 18px; border-radius:10px;">
+                    <i class="ri-arrow-left-line"></i> 돌아가기
+                </button>
+            </div>
+        </div>
+
+        <!-- 원리 설명 카드 3개 -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:20px 24px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:0;">
+                <div style="background:#faf5ff; border:1px solid #e9d5ff; border-radius:12px; padding:16px;">
+                    <div style="font-size:1.4rem; margin-bottom:8px;">🔑</div>
+                    <div style="font-weight:800; color:#6d28d9; font-size:0.9rem; margin-bottom:6px;">대칭키 (AES-256)</div>
+                    <div style="font-size:0.82rem; color:#64748b; line-height:1.6;">하나의 비밀키로 잠그고(암호화), 동일한 키로만 열 수(복호화) 있는 구조. 256비트 = 2²⁵⁶가지 조합으로 현존 최강 보안.</div>
+                </div>
+                <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:16px;">
+                    <div style="font-size:1.4rem; margin-bottom:8px;">🧱</div>
+                    <div style="font-weight:800; color:#c2410c; font-size:0.9rem; margin-bottom:6px;">PKCS7 패딩 방어</div>
+                    <div style="font-size:0.82rem; color:#64748b; line-height:1.6;">AES는 16바이트 블록 단위 처리. 짧은 데이터는 자동 패딩 추가, 복호화 시 제거. Base64 변환으로 DB 저장 안전성 확보.</div>
+                </div>
+                <div style="background:#fef2f2; border:1px solid #fecdd3; border-radius:12px; padding:16px;">
+                    <div style="font-size:1.4rem; margin-bottom:8px;">🔥</div>
+                    <div style="font-weight:800; color:#dc2626; font-size:0.9rem; margin-bottom:6px;">키 분리의 원칙</div>
+                    <div style="font-size:0.82rem; color:#64748b; line-height:1.6;">DB와 비밀키는 절대 같은 공간에 두지 않는다. 키는 .env 환경변수에 격리 → 소스코드+DB 유출돼도 복호화 불가.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 시뮬레이터 본체 -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:0; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#2d1b69,#4c1d95); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h3 style="color:#ede9fe; font-size:0.98rem; font-weight:700; margin:0 0 3px 0;">🧪 암호화/복호화 직접 체험</h3>
+                    <p style="color:#c4b5fd; font-size:0.78rem; margin:0;">입력 → 암호화 → DB저장 → 복호화 전 과정을 시뮬레이션합니다</p>
+                </div>
+                <button onclick="resetCrypto()" style="background:rgba(255,255,255,0.1); color:#ede9fe; border:1px solid rgba(255,255,255,0.2); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.82rem;">↺ 초기화</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; min-height:360px;">
+                <!-- 왼쪽: 입력 패널 -->
+                <div style="padding:24px; border-right:1px solid #e2e8f0; background:#fff;">
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block; font-size:0.8rem; font-weight:700; color:#374151; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">평문 입력 (암호화할 데이터)</label>
+                        <input id="cryptoInput" type="text" placeholder="예: 900101-1234567" value="900101-1234567"
+                            style="width:100%; padding:10px 14px; border:1.5px solid #d1d5db; border-radius:9px; font-size:0.95rem; font-family:monospace; box-sizing:border-box; outline:none; transition:border 0.2s;"
+                            onfocus="this.style.borderColor='#7c3aed'" onblur="this.style.borderColor='#d1d5db'">
+                        <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
+                            <button onclick="document.getElementById('cryptoInput').value='900101-1234567'" style="padding:4px 10px; border-radius:6px; border:1px solid #e5e7eb; background:#f9fafb; font-size:0.75rem; cursor:pointer; color:#374151;">주민번호</button>
+                            <button onclick="document.getElementById('cryptoInput').value='110-12-34567'" style="padding:4px 10px; border-radius:6px; border:1px solid #e5e7eb; background:#f9fafb; font-size:0.75rem; cursor:pointer; color:#374151;">사업자번호</button>
+                            <button onclick="document.getElementById('cryptoInput').value='국민은행 12345678901234'" style="padding:4px 10px; border-radius:6px; border:1px solid #e5e7eb; background:#f9fafb; font-size:0.75rem; cursor:pointer; color:#374151;">계좌번호</button>
+                            <button onclick="document.getElementById('cryptoInput').value='탄탄농원 박대표 010-1234-5678'" style="padding:4px 10px; border-radius:6px; border:1px solid #e5e7eb; background:#f9fafb; font-size:0.75rem; cursor:pointer; color:#374151;">연락처</button>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:16px;">
+                        <label style="display:block; font-size:0.8rem; font-weight:700; color:#374151; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.05em;">비밀키 (SECRET_KEY)</label>
+                        <div style="display:flex; gap:8px;">
+                            <input id="cryptoKey" type="text" value="486522bd9c503fa2" maxlength="32"
+                                style="flex:1; padding:10px 14px; border:1.5px solid #7c3aed; border-radius:9px; font-size:0.82rem; font-family:monospace; background:#faf5ff; outline:none;"
+                                placeholder="16~32자 비밀키">
+                            <button onclick="useWrongKey()" style="padding:8px 14px; border-radius:9px; border:none; background:#fef2f2; color:#dc2626; font-size:0.8rem; font-weight:700; cursor:pointer; white-space:nowrap;">잘못된 키</button>
+                            <button onclick="useCorrectKey()" style="padding:8px 14px; border-radius:9px; border:none; background:#f0fdf4; color:#16a34a; font-size:0.8rem; font-weight:700; cursor:pointer; white-space:nowrap;">올바른 키</button>
+                        </div>
+                        <div style="margin-top:6px; font-size:0.75rem; color:#9ca3af;">실제 서버 키: .env의 ENCRYPTION_KEY (메모리에서만 사용)</div>
+                    </div>
+                    <button onclick="runEncrypt()" style="width:100%; padding:12px; background:linear-gradient(135deg,#7c3aed,#6d28d9); color:white; border:none; border-radius:10px; font-weight:800; font-size:0.95rem; cursor:pointer; transition:all 0.2s;">
+                        🔐 암호화 실행 (AES-256-CBC)
+                    </button>
+                </div>
+
+                <!-- 오른쪽: 과정 시각화 -->
+                <div style="background:#0f172a; padding:24px; font-family:'Courier New',monospace; font-size:0.78rem; overflow-y:auto; max-height:400px;">
+                    <div style="color:#475569; margin-bottom:12px; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; font-family:sans-serif;">암호화 처리 과정 (실시간)</div>
+                    <div id="cryptoLog" style="color:#94a3b8; line-height:2;">
+                        <span style="color:#475569;">-- 왼쪽에서 암호화를 실행하세요</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 결과 패널 -->
+        <div class="app-card card-col-12" style="border-radius:0 0 16px 16px; border-top:none; padding:20px 24px;">
+            <div id="cryptoResultArea" style="display:none;">
+                <h4 style="font-size:0.9rem; font-weight:800; color:#374151; margin:0 0 14px 0; text-transform:uppercase; letter-spacing:0.05em;">처리 결과</h4>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                    <!-- 원문 -->
+                    <div style="background:#f8fafc; border-radius:12px; padding:16px; border:1px solid #e2e8f0;">
+                        <div style="font-size:0.72rem; color:#64748b; font-weight:700; margin-bottom:8px; text-transform:uppercase;">1. 원문 (평문)</div>
+                        <div id="resPlain" style="font-family:monospace; font-size:0.95rem; font-weight:700; color:#0f172a; word-break:break-all;"></div>
+                        <div style="margin-top:8px; font-size:0.7rem; color:#94a3b8;">사람이 읽을 수 있는 원본</div>
+                    </div>
+                    <!-- DB 저장값 -->
+                    <div style="background:#1e1b4b; border-radius:12px; padding:16px; border:2px solid #4f46e5;">
+                        <div style="font-size:0.72rem; color:#a5b4fc; font-weight:700; margin-bottom:8px; text-transform:uppercase;">2. DB 저장값 (Base64)</div>
+                        <div id="resEncrypted" style="font-family:monospace; font-size:0.78rem; color:#c7d2fe; word-break:break-all; line-height:1.5;"></div>
+                        <div style="margin-top:8px; font-size:0.7rem; color:#6b7280;">해커가 DB 탈취해도 해독 불가</div>
+                    </div>
+                    <!-- 복호화 결과 -->
+                    <div id="resDecryptedCard" style="background:#f0fdf4; border-radius:12px; padding:16px; border:2px solid #86efac;">
+                        <div style="font-size:0.72rem; color:#166534; font-weight:700; margin-bottom:8px; text-transform:uppercase;">3. 복호화 결과</div>
+                        <div id="resDecrypted" style="font-family:monospace; font-size:0.95rem; font-weight:700; color:#15803d; word-break:break-all;"></div>
+                        <div id="resMatch" style="margin-top:8px; font-size:0.75rem; color:#166534;"></div>
+                    </div>
+                </div>
+                <!-- 에러 변수 경고 -->
+                <div id="cryptoWarning" style="display:none; margin-top:14px; padding:14px 18px; background:#fef2f2; border:1px solid #fecdd3; border-radius:10px; color:#dc2626; font-size:0.85rem; font-weight:600; line-height:1.6;"></div>
+            </div>
+            <div id="cryptoWelcome" style="text-align:center; padding:30px; color:#94a3b8;">
+                <div style="font-size:3rem; margin-bottom:10px;">🔐</div>
+                <div style="font-size:0.95rem;">암호화 버튼을 눌러 시뮬레이션을 시작하세요</div>
+            </div>
+        </div>
+
+        <script>
+        const CORRECT_KEY = "486522bd9c503fa2";
+        const WRONG_KEY   = "WRONGKEY00000000";
+
+        function useCorrectKey() { document.getElementById('cryptoKey').value = CORRECT_KEY; document.getElementById('cryptoKey').style.borderColor = '#7c3aed'; }
+        function useWrongKey()   { document.getElementById('cryptoKey').value = WRONG_KEY;   document.getElementById('cryptoKey').style.borderColor = '#dc2626'; }
+
+        function resetCrypto() {
+            document.getElementById('cryptoLog').innerHTML = '<span style="color:#475569;">-- 초기화됨. 암호화를 실행하세요.</span>';
+            document.getElementById('cryptoResultArea').style.display = 'none';
+            document.getElementById('cryptoWelcome').style.display = 'block';
+            document.getElementById('cryptoWarning').style.display = 'none';
+            useCorrectKey();
+        }
+
+        // 순수 JS AES-CBC 시뮬레이션 (Web Crypto API)
+        async function aesEncrypt(plainText, keyHex) {
+            const enc = new TextEncoder();
+            const keyBytes = enc.encode(keyHex.padEnd(32, '0').substring(0, 32));
+            const iv = enc.encode("DongneBiseo16Byt");
+            const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, {name:'AES-CBC'}, false, ['encrypt','decrypt']);
+            const encrypted = await crypto.subtle.encrypt({name:'AES-CBC', iv}, cryptoKey, enc.encode(plainText));
+            return {cryptoKey, iv, encrypted: btoa(String.fromCharCode(...new Uint8Array(encrypted)))};
+        }
+
+        async function aesDecrypt(base64cipher, keyHex) {
+            const enc = new TextEncoder();
+            const keyBytes = enc.encode(keyHex.padEnd(32, '0').substring(0, 32));
+            const iv = enc.encode("DongneBiseo16Byt");
+            const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, {name:'AES-CBC'}, false, ['encrypt','decrypt']);
+            const cipherBytes = Uint8Array.from(atob(base64cipher), ch => ch.charCodeAt(0));
+            try {
+                const decrypted = await crypto.subtle.decrypt({name:'AES-CBC', iv}, cryptoKey, cipherBytes);
+                return new TextDecoder().decode(decrypted);
+            } catch(e) {
+                return null;
+            }
+        }
+
+        async function runEncrypt() {
+            const plain = document.getElementById('cryptoInput').value.trim();
+            const key   = document.getElementById('cryptoKey').value.trim();
+            const log   = document.getElementById('cryptoLog');
+
+            if (!plain) { alert('평문을 입력하세요'); return; }
+
+            log.innerHTML = '<span style="color:#64748b;">-- 암호화 시작...</span>';
+
+            // Step 1
+            await delay(300);
+            log.innerHTML += '<br><span style="color:#fbbf24;">STEP 1:</span> <span style="color:#94a3b8;">평문을 UTF-8 바이트로 변환</span><br>';
+            log.innerHTML += '&nbsp;&nbsp;<span style="color:#f472b6;">' + [...plain].map(c => '0x' + c.charCodeAt(0).toString(16).padStart(2,'0')).slice(0,6).join(' ') + (plain.length > 6 ? '...' : '') + '</span>';
+
+            // Step 2
+            await delay(400);
+            log.innerHTML += '<br><span style="color:#fbbf24;">STEP 2:</span> <span style="color:#94a3b8;">PKCS7 패딩 추가 (16바이트 블록 맞춤)</span><br>';
+            const padSize = 16 - (new TextEncoder().encode(plain).length % 16);
+            log.innerHTML += '&nbsp;&nbsp;<span style="color:#94a3b8;">원본 ' + new TextEncoder().encode(plain).length + '바이트 + 패딩 ' + padSize + '바이트 = ' + (new TextEncoder().encode(plain).length + padSize) + '바이트</span>';
+
+            // Step 3
+            await delay(400);
+            log.innerHTML += '<br><span style="color:#fbbf24;">STEP 3:</span> <span style="color:#94a3b8;">AES-256-CBC 암호화 실행</span><br>';
+            log.innerHTML += '&nbsp;&nbsp;<span style="color:#a78bfa;">KEY: ' + key.substring(0,8) + '****</span> <span style="color:#64748b;">IV: DongneBiseo16Byt</span>';
+
+            let encBase64 = '';
+            try {
+                const result = await aesEncrypt(plain, key);
+                encBase64 = result.encrypted;
+            } catch(e) {
+                log.innerHTML += '<br><span style="color:#f87171;">-- 암호화 오류: ' + e.message + '</span>';
+                return;
+            }
+
+            await delay(300);
+            log.innerHTML += '<br><span style="color:#34d399;">-- 암호화 완료!</span><br>';
+            log.innerHTML += '<span style="color:#60a5fa;">' + encBase64 + '</span>';
+
+            // Step 4: Base64
+            await delay(300);
+            log.innerHTML += '<br><span style="color:#fbbf24;">STEP 4:</span> <span style="color:#94a3b8;">Base64 인코딩 → DB 저장</span><br>';
+            log.innerHTML += '&nbsp;&nbsp;<span style="color:#34d399;">INSERT INTO users (resident_number) VALUES (</span><span style="color:#f472b6;">'' + encBase64.substring(0,20) + '...'</span><span style="color:#34d399;">)</span>';
+
+            // Step 5: 복호화
+            await delay(500);
+            log.innerHTML += '<br><br><span style="color:#fbbf24;">STEP 5:</span> <span style="color:#94a3b8;">복호화 (올바른 키로만 가능)</span>';
+
+            const decrypted = await aesDecrypt(encBase64, key);
+            const isCorrectKey = (key === CORRECT_KEY || key.substring(0,16) === CORRECT_KEY.substring(0,16));
+
+            if (decrypted !== null) {
+                log.innerHTML += '<br><span style="color:#34d399;">-- 복호화 성공: ' + decrypted + '</span>';
+            } else {
+                log.innerHTML += '<br><span style="color:#f87171;">-- 복호화 실패: 키 불일치 (InvalidPaddingError)</span>';
+            }
+
+            // 결과 패널 업데이트
+            document.getElementById('cryptoWelcome').style.display = 'none';
+            document.getElementById('cryptoResultArea').style.display = 'block';
+            document.getElementById('resPlain').textContent = plain;
+            document.getElementById('resEncrypted').textContent = encBase64;
+
+            const decryptedCard = document.getElementById('resDecryptedCard');
+            const resDecrypted  = document.getElementById('resDecrypted');
+            const resMatch      = document.getElementById('resMatch');
+            const warning       = document.getElementById('cryptoWarning');
+
+            if (decrypted !== null && decrypted === plain) {
+                decryptedCard.style.background = '#f0fdf4';
+                decryptedCard.style.borderColor = '#86efac';
+                resDecrypted.style.color = '#15803d';
+                resDecrypted.textContent = decrypted;
+                resMatch.textContent = '✅ 원문과 100% 일치 — 무결성 확인';
+                resMatch.style.color = '#166534';
+                warning.style.display = 'none';
+            } else {
+                decryptedCard.style.background = '#fef2f2';
+                decryptedCard.style.borderColor = '#fecdd3';
+                resDecrypted.style.color = '#dc2626';
+                resDecrypted.textContent = '[복호화 실패]';
+                resMatch.textContent = '❌ 키 불일치 — InvalidPaddingError 발생';
+                resMatch.style.color = '#dc2626';
+                warning.style.display = 'block';
+                warning.innerHTML = '<strong>⚠️ 에러 변수 2: 키 불일치</strong><br>잘못된 키로는 영원히 복호화 불가능합니다.<br>실제 운영 중 키를 변경하면 DB의 모든 암호화 데이터가 "쓰레기"가 됩니다.<br><strong>마스터 키는 반드시 오프라인 백업 보관하세요.</strong>';
+            }
+        }
+
+        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+        </script>
+
+        <!-- ===== 💰 정산 관리 탭 ===== -->
+        {% elif current_tab == 'settlement' %}
+
+        <!-- 헤더 -->
+        <div class="app-card card-col-12" style="padding:20px 24px; border-radius:16px 16px 0 0; border-bottom:3px solid #4f46e5; margin-bottom:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h2 style="font-size:1.4rem; font-weight:800; color:#0f172a; margin:0 0 4px 0;">💰 정산 관리 시스템</h2>
+                    <p style="color:#64748b; margin:0; font-size:0.88rem;">원자성 트랜잭션 · 상태 머신 · 이중지급 방어 · 정수형 금액 무결성</p>
+                </div>
+                <button onclick="location.href='/dashboard'" class="btn" style="background:#f1f5f9; color:#475569; padding:10px 18px; border-radius:10px;">
+                    <i class="ri-arrow-left-line"></i> 돌아가기
+                </button>
+            </div>
+        </div>
+
+        <!-- 트랜잭션 흐름 시뮬레이터 -->
+        <div class="app-card card-col-12" style="border-radius:0; border-top:none; border-bottom:none; margin-bottom:0; padding:0; overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#1e1b4b,#312e81); padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <h3 style="color:#e0e7ff; font-size:1rem; font-weight:700; margin:0 0 3px 0;">🧪 트랜잭션 흐름 시뮬레이터</h3>
+                    <p style="color:#a5b4fc; font-size:0.8rem; margin:0;">버튼을 순서대로 눌러 정산 무결성 원리를 직접 확인하세요</p>
+                </div>
+                <button onclick="resetSim()" style="background:rgba(255,255,255,0.12); color:#e0e7ff; border:1px solid rgba(255,255,255,0.2); padding:7px 16px; border-radius:8px; cursor:pointer; font-size:0.85rem;">↺ 초기화</button>
+            </div>
+
+            <!-- 상태 머신 진행 표시 -->
+            <div style="background:#1e1b4b; padding:14px 24px; display:flex; align-items:center; gap:0; overflow-x:auto;">
+                <div id="step0" style="display:flex; align-items:center; gap:8px; opacity:1; transition:all 0.3s;">
+                    <div id="step0-dot" style="width:34px; height:34px; border-radius:50%; background:#4f46e5; display:flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800; color:white; flex-shrink:0; transition:all 0.3s;">1</div>
+                    <div style="white-space:nowrap;"><div style="color:#e0e7ff; font-size:0.78rem; font-weight:700;">결제 완료</div><div style="color:#a5b4fc; font-size:0.68rem;">PAID</div></div>
+                </div>
+                <div style="flex:1; height:2px; background:#3730a3; min-width:16px;"></div>
+                <div id="step1" style="display:flex; align-items:center; gap:8px; opacity:0.35; transition:all 0.3s;">
+                    <div id="step1-dot" style="width:34px; height:34px; border-radius:50%; background:#374151; display:flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800; color:#9ca3af; flex-shrink:0; transition:all 0.3s;">2</div>
+                    <div style="white-space:nowrap;"><div style="color:#9ca3af; font-size:0.78rem; font-weight:700;">정산 대기</div><div style="color:#6b7280; font-size:0.68rem;">READY</div></div>
+                </div>
+                <div style="flex:1; height:2px; background:#3730a3; min-width:16px;"></div>
+                <div id="step2" style="display:flex; align-items:center; gap:8px; opacity:0.35; transition:all 0.3s;">
+                    <div id="step2-dot" style="width:34px; height:34px; border-radius:50%; background:#374151; display:flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800; color:#9ca3af; flex-shrink:0; transition:all 0.3s;">3</div>
+                    <div style="white-space:nowrap;"><div style="color:#9ca3af; font-size:0.78rem; font-weight:700;">승인 완료</div><div style="color:#6b7280; font-size:0.68rem;">APPROVED</div></div>
+                </div>
+                <div style="flex:1; height:2px; background:#3730a3; min-width:16px;"></div>
+                <div id="step3" style="display:flex; align-items:center; gap:8px; opacity:0.35; transition:all 0.3s;">
+                    <div id="step3-dot" style="width:34px; height:34px; border-radius:50%; background:#374151; display:flex; align-items:center; justify-content:center; font-size:0.82rem; font-weight:800; color:#9ca3af; flex-shrink:0; transition:all 0.3s;">4</div>
+                    <div style="white-space:nowrap;"><div style="color:#9ca3af; font-size:0.78rem; font-weight:700;">송금 완료</div><div style="color:#6b7280; font-size:0.68rem;">COMPLETED</div></div>
+                </div>
+            </div>
+
+            <!-- 시뮬레이터 본문 (DB 로그 | 금액 스냅샷) -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; min-height:240px;">
+                <div style="background:#0f172a; padding:20px; font-family:'Courier New',monospace; font-size:0.8rem; overflow-y:auto; max-height:260px; border-right:1px solid #1e293b;">
+                    <div style="color:#475569; margin-bottom:10px; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; font-family:sans-serif;">📋 DB 트랜잭션 로그</div>
+                    <div id="simDbLog" style="color:#94a3b8; line-height:1.9;"><span style="color:#475569;">-- 시뮬레이터 대기 중...</span><br><span style="color:#475569;">-- 1단계 버튼을 클릭하세요</span></div>
+                </div>
+                <div style="padding:20px; background:#fafafa; display:flex; flex-direction:column; gap:10px;">
+                    <div style="color:#64748b; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">💾 금액 스냅샷 (정수형 원화, 소수점 없음)</div>
+                    <div id="simAmountBox" style="flex:1;">
+                        <div style="background:#f1f5f9; border-radius:10px; padding:20px; text-align:center; color:#94a3b8; font-size:0.9rem;">결제가 발생하면<br>금액이 여기에 확정됩니다</div>
+                    </div>
+                    <div id="simMessage" style="padding:11px 14px; border-radius:10px; font-size:0.85rem; display:none; line-height:1.5;"></div>
+                </div>
+            </div>
+
+            <!-- 액션 버튼 -->
+            <div style="background:#f8fafc; padding:14px 20px; border-top:1px solid #e2e8f0; display:flex; gap:8px; flex-wrap:wrap;">
+                <button onclick="simStep1()" id="simBtn1" style="padding:9px 18px; background:#4f46e5; color:white; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-size:0.85rem; transition:all 0.2s;">1단계: 결제 발생</button>
+                <button onclick="simStep2()" id="simBtn2" style="padding:9px 18px; background:#e2e8f0; color:#94a3b8; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-size:0.85rem;" disabled>2단계: 정산 생성 (BEGIN)</button>
+                <button onclick="simStep3()" id="simBtn3" style="padding:9px 18px; background:#e2e8f0; color:#94a3b8; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-size:0.85rem;" disabled>3단계: 관리자 승인</button>
+                <button onclick="simStep4()" id="simBtn4" style="padding:9px 18px; background:#e2e8f0; color:#94a3b8; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-size:0.85rem;" disabled>4단계: 송금 완료</button>
+                <button onclick="simError()" id="simBtnErr" style="padding:9px 18px; background:#e2e8f0; color:#94a3b8; border:none; border-radius:9px; font-weight:700; cursor:pointer; font-size:0.85rem;" disabled>⚡ 강제 에러 + 롤백</button>
+            </div>
+        </div>
+
+        <!-- 실제 정산 내역 테이블 -->
+        <div class="app-card card-col-12" style="border-radius:0 0 16px 16px; border-top:none; padding:20px 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <h3 style="font-size:1.05rem; font-weight:800; color:#0f172a; margin:0;">실제 정산 내역</h3>
+                <div style="display:flex; gap:7px; flex-wrap:wrap;">
+                    <button onclick="filterStatus('ALL')"         id="btn-ALL"         class="sf" style="padding:6px 14px; border-radius:20px; border:1.5px solid #4f46e5; background:#4f46e5; color:white; font-weight:700; cursor:pointer; font-size:0.8rem;">전체</button>
+                    <button onclick="filterStatus('PENDING')"     id="btn-PENDING"     class="sf" style="padding:6px 14px; border-radius:20px; border:1.5px solid #e2e8f0; background:white; color:#92400e; font-weight:600; cursor:pointer; font-size:0.8rem;">⏳ 대기</button>
+                    <button onclick="filterStatus('APPROVED')"    id="btn-APPROVED"    class="sf" style="padding:6px 14px; border-radius:20px; border:1.5px solid #e2e8f0; background:white; color:#1d4ed8; font-weight:600; cursor:pointer; font-size:0.8rem;">✅ 승인</button>
+                    <button onclick="filterStatus('TRANSFERRED')" id="btn-TRANSFERRED" class="sf" style="padding:6px 14px; border-radius:20px; border:1.5px solid #e2e8f0; background:white; color:#166534; font-weight:600; cursor:pointer; font-size:0.8rem;">🏦 완료</button>
+                </div>
+            </div>
+            <div id="settleSummary" style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;"></div>
+            <div id="settleStatus" style="text-align:center; padding:40px; color:#94a3b8;">⏳ 정산 데이터 불러오는 중...</div>
+            <div id="settleTableWrap" style="display:none; overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.88rem;">
+                    <thead>
+                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                            <th style="padding:11px 14px; text-align:left; color:#64748b; font-size:0.78rem; font-weight:700; white-space:nowrap;">상점 / 대표자</th>
+                            <th style="padding:11px 14px; text-align:right; color:#64748b; font-size:0.78rem; font-weight:700; white-space:nowrap;">결제금액</th>
+                            <th style="padding:11px 14px; text-align:right; color:#64748b; font-size:0.78rem; font-weight:700; white-space:nowrap;">수수료</th>
+                            <th style="padding:11px 14px; text-align:right; color:#4f46e5; font-size:0.78rem; font-weight:800; white-space:nowrap;">순정산액</th>
+                            <th style="padding:11px 14px; text-align:center; color:#64748b; font-size:0.78rem; font-weight:700; white-space:nowrap;">상태</th>
+                            <th style="padding:11px 14px; text-align:center; color:#64748b; font-size:0.78rem; font-weight:700; white-space:nowrap;">등록일</th>
+                            <th style="padding:11px 14px; text-align:center; color:#64748b; font-size:0.78rem; font-weight:700; white-space:nowrap;">처리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="settleTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+        // ─── 시뮬레이터 ────────────────────────────────────────────
+        let simPhase = 0, simAmt = 0, simPF = 0, simSF = 0, simNet = 0;
+
+        function appendLog(html) { document.getElementById('simDbLog').innerHTML += '<br>' + html; }
+
+        function setMsg(msg, type) {
+            const el = document.getElementById('simMessage');
+            el.style.display = 'block';
+            const styles = {
+                red:    ['#fef2f2', '#dc2626'],
+                green:  ['#f0fdf4', '#16a34a'],
+                yellow: ['#fefce8', '#92400e']
+            };
+            el.style.background = styles[type][0];
+            el.style.color = styles[type][1];
+            el.innerHTML = msg;
+        }
+
+        function activateStep(n) {
+            for (let i = 0; i <= 3; i++) {
+                const wrap = document.getElementById('step' + i);
+                const dot  = document.getElementById('step' + i + '-dot');
+                if (i <= n) {
+                    wrap.style.opacity = '1';
+                    dot.style.background = i === n ? '#10b981' : '#4f46e5';
+                    dot.style.color = 'white';
+                } else {
+                    wrap.style.opacity = '0.35';
+                    dot.style.background = '#374151';
+                    dot.style.color = '#9ca3af';
+                }
+            }
+        }
+
+        function enableBtn(id, on, danger) {
+            const b = document.getElementById(id);
+            b.disabled = !on;
+            b.style.background = on ? (danger ? '#dc2626' : '#4f46e5') : '#e2e8f0';
+            b.style.color = on ? 'white' : '#94a3b8';
+            b.style.cursor = on ? 'pointer' : 'default';
+        }
+
+        function simStep1() {
+            simAmt = 150000;
+            simPF  = Math.floor(simAmt * 33 / 1000);   // 3.3% 정수 나눗셈
+            simSF  = Math.floor(simAmt * 20 / 1000);   // 2.0%
+            simNet = simAmt - simPF - simSF;
+
+            document.getElementById('simDbLog').innerHTML =
+                '<span style="color:#64748b;">-- ① 결제 완료 이벤트 수신</span><br>' +
+                '<span style="color:#fbbf24;">INSERT INTO orders</span><br>' +
+                '&nbsp;&nbsp;(order_id, user_id, total_amount, platform_type, payment_status)<br>' +
+                '&nbsp;&nbsp;<span style="color:#34d399;">VALUES</span>(' +
+                "'ORD-2026-001', 47, <span style='color:#f472b6;'>" + simAmt + "</span>, 'NAVER', 'PAID');<br>" +
+                '<span style="color:#34d399;">-- COMMIT ✅</span>';
+
+            document.getElementById('simAmountBox').innerHTML =
+                '<div style="display:grid; gap:8px;">' +
+                '<div style="display:flex; justify-content:space-between; padding:9px 13px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">' +
+                    '<span style="color:#64748b; font-size:0.83rem;">총 결제금액</span>' +
+                    '<span style="font-weight:800; color:#0f172a;">' + simAmt.toLocaleString() + '원</span></div>' +
+                '<div style="display:flex; justify-content:space-between; padding:9px 13px; background:#fef2f2; border-radius:8px;">' +
+                    '<span style="color:#ef4444; font-size:0.83rem;">네이버 수수료 (3.3%)</span>' +
+                    '<span style="font-weight:700; color:#dc2626;">-' + simPF.toLocaleString() + '원</span></div>' +
+                '<div style="display:flex; justify-content:space-between; padding:9px 13px; background:#fef2f2; border-radius:8px;">' +
+                    '<span style="color:#ef4444; font-size:0.83rem;">동네비서 수수료 (2.0%)</span>' +
+                    '<span style="font-weight:700; color:#dc2626;">-' + simSF.toLocaleString() + '원</span></div>' +
+                '<div style="display:flex; justify-content:space-between; padding:11px 13px; background:#eff6ff; border-radius:8px; border:2px solid #bfdbfe;">' +
+                    '<span style="color:#1d4ed8; font-size:0.88rem; font-weight:700;">📌 확정 정산액 (INTEGER)</span>' +
+                    '<span style="font-weight:900; color:#1d4ed8; font-size:1.05rem;">' + simNet.toLocaleString() + '원</span></div>' +
+                '</div>';
+
+            setMsg('✅ <strong>부동소수점 방어:</strong> Math.floor() 정수 나눗셈으로 0.30000000000000004 오차 원천 차단.', 'green');
+            activateStep(0);
+            enableBtn('simBtn1', false); enableBtn('simBtn2', true); enableBtn('simBtnErr', true, true);
+        }
+
+        function simStep2() {
+            appendLog('<br><span style="color:#64748b;">-- ② 정산 레코드 생성 (원자성)</span><br>' +
+                '<span style="color:#fbbf24;">BEGIN;</span><br>' +
+                '<span style="color:#fbbf24;">INSERT INTO settlements</span><br>' +
+                '&nbsp;&nbsp;(order_id, user_id, total_amount, platform_fee, service_fee, net_amount, status)<br>' +
+                '&nbsp;&nbsp;<span style="color:#34d399;">VALUES</span>(' +
+                "'ORD-2026-001', 47, " +
+                '<span style="color:#f472b6;">' + simAmt + ', ' + simPF + ', ' + simSF + ', ' + simNet + "</span>, <span style='color:#a78bfa;'>'READY'</span>);<br>" +
+                '<span style="color:#fbbf24;">COMMIT;</span> <span style="color:#34d399;">-- 원자성 보장 ✅</span>');
+            setMsg('🔒 <strong>BEGIN ~ COMMIT:</strong> 결제 기록 + 정산 생성을 단일 트랜잭션으로 묶어 "데이터 고아" 원천 차단.', 'yellow');
+            activateStep(1);
+            enableBtn('simBtn2', false); enableBtn('simBtn3', true); enableBtn('simBtnErr', false);
+        }
+
+        function simStep3() {
+            appendLog('<br><span style="color:#64748b;">-- ③ 관리자 승인 (이중지급 방어)</span><br>' +
+                '<span style="color:#fbbf24;">BEGIN;</span><br>' +
+                '<span style="color:#60a5fa;">SELECT</span> * FROM settlements<br>' +
+                "&nbsp;&nbsp;WHERE id = 1 AND status = <span style='color:#a78bfa;'>'READY'</span><br>" +
+                '&nbsp;&nbsp;<span style="color:#f472b6;">FOR UPDATE;</span> <span style="color:#64748b;">← 비관적 락 (Race Condition 차단)</span><br>' +
+                '<span style="color:#fbbf24;">UPDATE</span> settlements<br>' +
+                "&nbsp;&nbsp;SET status = <span style='color:#a78bfa;'>'APPROVED'</span>, processed_at = NOW()<br>" +
+                '&nbsp;&nbsp;WHERE id = 1;<br>' +
+                '<span style="color:#fbbf24;">COMMIT;</span> <span style="color:#34d399;">-- 상태 READY → APPROVED ✅</span>');
+            setMsg('🛡️ <strong>SELECT FOR UPDATE:</strong> 관리자 2명이 동시에 승인해도 DB 락이 이중지급을 원천 차단합니다.', 'yellow');
+            activateStep(2);
+            enableBtn('simBtn3', false); enableBtn('simBtn4', true);
+        }
+
+        function simStep4() {
+            appendLog('<br><span style="color:#64748b;">-- ④ 계좌이체 완료 후 상태 확정</span><br>' +
+                '<span style="color:#fbbf24;">BEGIN;</span><br>' +
+                '<span style="color:#fbbf24;">UPDATE</span> settlements<br>' +
+                "&nbsp;&nbsp;SET status = <span style='color:#a78bfa;'>'COMPLETED'</span>, processed_at = NOW()<br>" +
+                "&nbsp;&nbsp;WHERE id = 1 AND status = <span style='color:#a78bfa;'>'APPROVED'</span>;<br>" +
+                '<span style="color:#fbbf24;">COMMIT;</span><br>' +
+                '<span style="color:#34d399;">-- 🎉 ' + simNet.toLocaleString() + '원 지급 확정 완료!</span>');
+            setMsg('🎉 <strong>정산 완료!</strong> ' + simNet.toLocaleString() + '원 지급 확정.<br><small>감사 추적: READY → APPROVED → COMPLETED (불변 이력 보존)</small>', 'green');
+            activateStep(3);
+            enableBtn('simBtn4', false);
+        }
+
+        function simError() {
+            appendLog('<br><span style="color:#64748b;">-- ⚡ 강제 에러 발생 시나리오</span><br>' +
+                '<span style="color:#fbbf24;">BEGIN;</span><br>' +
+                '<span style="color:#fbbf24;">INSERT INTO settlements</span> ... <span style="color:#34d399;">-- 1번 쿼리 성공</span><br>' +
+                '<span style="color:#f87171;">-- [ERROR] 네트워크 단절! 서버 다운!</span><br>' +
+                '<span style="color:#f87171;">-- 2번 쿼리 실행 불가 → 중간 상태 위험</span><br>' +
+                '<span style="color:#fbbf24;">ROLLBACK;</span> <span style="color:#34d399;">← 자동 실행</span><br>' +
+                '<span style="color:#34d399;">-- ✅ 1번 쿼리도 취소. 데이터 무결성 보존.</span>');
+            setMsg('⚡ <strong>자동 롤백 성공!</strong> 에러 발생 시 BEGIN 이후 모든 작업이 취소되어 "데이터 고아" 없이 원상복구됩니다.', 'red');
+            document.getElementById('step1').style.opacity = '0.35';
+            document.getElementById('step1-dot').style.background = '#7f1d1d';
+            enableBtn('simBtnErr', false); enableBtn('simBtn2', true);
+        }
+
+        function resetSim() {
+            simPhase = 0;
+            document.getElementById('simDbLog').innerHTML = '<span style="color:#475569;">-- 초기화됨. 1단계를 클릭하세요.</span>';
+            document.getElementById('simAmountBox').innerHTML = '<div style="background:#f1f5f9; border-radius:10px; padding:20px; text-align:center; color:#94a3b8;">결제가 발생하면 금액이 확정됩니다</div>';
+            document.getElementById('simMessage').style.display = 'none';
+            for (let i = 0; i <= 3; i++) {
+                document.getElementById('step' + i).style.opacity = i === 0 ? '1' : '0.35';
+                document.getElementById('step' + i + '-dot').style.background = i === 0 ? '#4f46e5' : '#374151';
+                document.getElementById('step' + i + '-dot').style.color = i === 0 ? 'white' : '#9ca3af';
+            }
+            enableBtn('simBtn1', true); enableBtn('simBtn2', false);
+            enableBtn('simBtn3', false); enableBtn('simBtn4', false); enableBtn('simBtnErr', false);
+        }
+
+        // ─── 실제 정산 테이블 ───────────────────────────────────────
+        let allSettlements = [], currentFilter = 'ALL';
+
+        async function loadSettlements() {
+            try {
+                const res = await fetch('/api/settlement/list');
+                const data = await res.json();
+                allSettlements = data.settlements || [];
+                renderSettlements();
+            } catch(e) {
+                document.getElementById('settleStatus').textContent = '❌ 정산 데이터 로드 실패: ' + e.message;
+            }
+        }
+
+        function filterStatus(status) {
+            currentFilter = status;
+            document.querySelectorAll('.sf').forEach(b => {
+                const active = b.id === 'btn-' + status;
+                b.style.background = active ? '#4f46e5' : 'white';
+                b.style.color = active ? 'white' : '#64748b';
+                b.style.borderColor = active ? '#4f46e5' : '#e2e8f0';
+            });
+            renderSettlements();
+        }
+
+        function renderSettlements() {
+            const list = currentFilter === 'ALL' ? allSettlements : allSettlements.filter(s => s.status === currentFilter);
+            const pending  = allSettlements.filter(s => s.status === 'PENDING').reduce((a,s) => a + (s.net_amount||0), 0);
+            const approved = allSettlements.filter(s => s.status === 'APPROVED').reduce((a,s) => a + (s.net_amount||0), 0);
+            document.getElementById('settleSummary').innerHTML =
+                '<span style="background:#fef3c7;color:#92400e;padding:5px 13px;border-radius:20px;font-size:0.8rem;font-weight:700;">⏳ 미승인: ' + pending.toLocaleString() + '원</span>' +
+                '<span style="background:#dbeafe;color:#1d4ed8;padding:5px 13px;border-radius:20px;font-size:0.8rem;font-weight:700;">✅ 미송금: ' + approved.toLocaleString() + '원</span>';
+            if (!list.length) {
+                document.getElementById('settleStatus').style.display = 'block';
+                document.getElementById('settleStatus').textContent = '해당 상태의 정산 내역이 없습니다.';
+                document.getElementById('settleTableWrap').style.display = 'none';
+                return;
+            }
+            document.getElementById('settleStatus').style.display = 'none';
+            document.getElementById('settleTableWrap').style.display = 'block';
+            const badge = {
+                PENDING:     '<span style="background:#fef3c7;color:#92400e;padding:3px 9px;border-radius:20px;font-size:0.76rem;font-weight:700;">⏳ 대기</span>',
+                APPROVED:    '<span style="background:#dbeafe;color:#1d4ed8;padding:3px 9px;border-radius:20px;font-size:0.76rem;font-weight:700;">✅ 승인</span>',
+                TRANSFERRED: '<span style="background:#dcfce7;color:#166534;padding:3px 9px;border-radius:20px;font-size:0.76rem;font-weight:700;">🏦 완료</span>',
+                FAILED:      '<span style="background:#fef2f2;color:#dc2626;padding:3px 9px;border-radius:20px;font-size:0.76rem;font-weight:700;">❌ 실패</span>',
+            };
+            const btn = s => {
+                if (s.status === 'PENDING')  return '<button onclick="doApprove(' + s.id + ')" style="background:#4f46e5;color:white;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:0.78rem;font-weight:700;">정산 승인</button>';
+                if (s.status === 'APPROVED') return '<button onclick="doTransfer(' + s.id + ')" style="background:#10b981;color:white;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-size:0.78rem;font-weight:700;">송금 완료</button>';
+                return '<span style="color:#94a3b8;font-size:0.78rem;">처리완료</span>';
+            };
+            document.getElementById('settleTableBody').innerHTML = list.map(s =>
+                '<tr style="border-bottom:1px solid #f1f5f9;">' +
+                '<td style="padding:12px 14px;"><div style="font-weight:700;">' + (s.store_name||'-') + '</div><div style="font-size:0.78rem;color:#64748b;">' + (s.owner_name||'') + ' · ' + s.store_id + '</div></td>' +
+                '<td style="padding:12px 14px;text-align:right;font-weight:600;">' + (s.amount||0).toLocaleString() + '원</td>' +
+                '<td style="padding:12px 14px;text-align:right;color:#ef4444;">-' + (s.fee||0).toLocaleString() + '원</td>' +
+                '<td style="padding:12px 14px;text-align:right;font-weight:900;color:#4f46e5;font-size:0.98rem;">' + (s.net_amount||0).toLocaleString() + '원</td>' +
+                '<td style="padding:12px 14px;text-align:center;">' + (badge[s.status]||s.status) + '</td>' +
+                '<td style="padding:12px 14px;text-align:center;color:#94a3b8;font-size:0.78rem;">' + (s.created_at||'') + '</td>' +
+                '<td style="padding:12px 14px;text-align:center;">' + btn(s) + '</td></tr>'
+            ).join('');
+        }
+
+        async function doApprove(id) {
+            if (!confirm('정산 승인하시겠습니까? (SELECT FOR UPDATE 락으로 이중지급 방어)')) return;
+            const r = await fetch('/api/settlement/approve', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id})});
+            const d = await r.json();
+            d.success ? (alert('✅ 승인 완료'), loadSettlements()) : alert('❌ ' + (d.error||'승인 실패'));
+        }
+
+        async function doTransfer(id) {
+            if (!confirm('실제 계좌 이체 완료 후 처리하시겠습니까?')) return;
+            const r = await fetch('/api/settlement/transfer', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id})});
+            const d = await r.json();
+            d.success ? (alert('🏦 송금완료 처리됨'), loadSettlements()) : alert('❌ ' + (d.error||'처리 실패'));
+        }
+
+        document.addEventListener('DOMContentLoaded', loadSettlements);
+        </script>
+
+
+        {% elif current_tab in ['stores', 'citizens', 'farmers'] %}
+        <div class="app-card card-col-12" style="margin-bottom: 20px;">
+            <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; margin-bottom: 15px;">
+                <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+            </button>
+            <div class="card-header">
+                <div class="card-icon icon-blue"><i class="ri-group-line"></i></div>
+                <div>
+                    <h3 class="card-title">가입자 현황 상세 보기</h3>
+                    <p class="card-subtitle">
+                        {% if current_tab == 'stores' %}가맹 상점 리스트
+                        {% elif current_tab == 'citizens' %}일반 시민 리스트
+                        {% elif current_tab == 'farmers' %}농어민 리스트
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            {% if stats.all_stores %}
+            <div class="table-container" style="max-height: 400px;">
+                <table class="data-table">
+                    <thead style="position: sticky; top: 0; z-index: 1;">
+                        <tr>
+                            <th>가입유형 (Role)</th>
+                            <th>상호명 / 성함</th>
+                            <th>연락처 (ID)</th>
+                            <th>충전 잔액 (포인트)</th>
+                            <th>계정 상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for store in stats.all_stores %}
+                        <tr>
+                            <td>
+                                {% if store.role == 'citizen' %}
+                                <span class="badge" style="background: #e0f2fe; color: #0284c7;">일반 시민</span>
+                                {% elif store.role == 'farmer' %}
+                                <span class="badge" style="background: #dcfce7; color: #166534;">농어민</span>
+                                {% else %}
+                                <span class="badge" style="background: #fef9c3; color: #854d0e;">가맹 상점</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong style="display: block;">{{ store.name }}</strong>
+                                <span style="color: var(--text-muted); font-size: 0.85rem;">{{ store.owner_name }}</span>
+                            </td>
+                            <td style="font-family: monospace; letter-spacing: 0.05em;">{{ store.store_id }}</td>
+                            <td><strong style="color: #ea580c;">{{ "{:,}".format(store.wallet_balance|default(store.points|default(0))) }} P</strong></td>
+                            <td>
+                                {% if (store.wallet_balance|default(store.points|default(0))) > 0 or store.role in ['citizen', 'farmer'] %}
+                                <span class="badge badge-active">정상 (Active)</span>
+                                {% else %}
+                                <span class="badge badge-error">잔액부족 (Suspended)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state"><i class="ri-inbox-line" style="font-size: 2rem;"></i><br>등록된 가입자가 없습니다.</div>
+            {% endif %}
+        </div>
+
+        <!-- AI Logs Table -->
+        {% elif current_tab == 'ai' %}
+        <div class="app-card card-col-12">
+            <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; margin-bottom: 15px;">
+                <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+            </button>
+            <div class="card-header">
+                <div class="card-icon icon-purple"><i class="ri-customer-service-2-line"></i></div>
+                <div>
+                    <h3 class="card-title">실시간 AI 전화 응대 상세</h3>
+                    <p class="card-subtitle">모든 AI 통화 기록 요약</p>
+                </div>
+            </div>
+            
+            {% if stats.recent_ai_logs %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>상점/고객</th>
+                            <th>통화 요약</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in stats.recent_ai_logs %}
+                        <tr>
+                            <td>
+                                <div style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted);">{{ log.store_id }}</div>
+                                <strong>{{ log.customer_phone }}</strong>
+                            </td>
+                            <td>
+                                <div style="color: var(--text-main); font-size: 0.9rem;">{{ log.summary[:25] }}...</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">{{ log.created_at[5:16] if log.created_at else '' }}</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">통화 내역이 없습니다.</div>
+            {% endif %}
+        </div>
+
+        <!-- SMS Logs Table -->
+        {% elif current_tab == 'sms' %}
+        <div class="app-card card-col-12" style="margin-bottom: 20px;">
+            <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; margin-bottom: 15px;">
+                <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+            </button>
+            <div class="card-header">
+                <div class="card-icon icon-orange"><i class="ri-send-plane-fill"></i></div>
+                <div>
+                    <h3 class="card-title">수동 알림톡/문자 발송</h3>
+                    <p class="card-subtitle">시스템 자동 발송 실패 시 수동으로 전송합니다.</p>
+                </div>
+            </div>
+            <div class="input-group">
+                <input type="tel" id="masterSmsPhone" class="form-input" placeholder="01012345678 (숫자만 입력)">
+                <button onclick="sendMasterSms()" class="btn btn-primary" style="background: var(--warning);">
+                    <i class="ri-send-plane-line"></i> 전송
+                </button>
+            </div>
+            <script>
+            async function sendMasterSms() {
+                const phoneInput = document.getElementById('masterSmsPhone');
+                const phone = phoneInput.value.replace(/[^0-9]/g, '');
+                if (phone.length < 10) return alert('전화번호를 정확히 입력해주세요.');
+                
+                if(!confirm(phone + ' 번호로 안내 문자를 발송하시겠습니까?')) return;
+                
+                try {
+                    const res = await fetch('https://dongnebiseo.com/api/admin/manual-sms?kw=admin1234', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({phone: phone})
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        alert('✅ 발송이 완료되었습니다!');
+                        phoneInput.value = '';
+                    } else {
+                        alert('❌ 발송 실패: ' + data.error);
+                    }
+                } catch(e) {
+                    alert('❌ 통신 에러가 발생했습니다.');
+                }
+            }
+            </script>
+        </div>
+
+        <div class="app-card card-col-12">
+            <div class="card-header">
+                <div class="card-icon icon-green"><i class="ri-message-2-line"></i></div>
+                <div>
+                    <h3 class="card-title">안내 문자 발송 현황 상세</h3>
+                    <p class="card-subtitle">시스템 전체 알림톡 및 문자 발송 내역</p>
+                </div>
+            </div>
+            
+            {% if stats.recent_sms_logs %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>수신 번호</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in stats.recent_sms_logs %}
+                        <tr>
+                            <td>
+                                <strong>{{ log.phone }}</strong>
+                                <div style="font-family: monospace; font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">{{ log.store_id }}</div>
+                            </td>
+                            <td>
+                                {% if log.status == 'success' %}
+                                    <span class="badge badge-active">성공</span>
+                                {% else %}
+                                    <span class="badge badge-error">실패</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">문자 발송 내역이 없습니다.</div>
+            {% endif %}
+        </div>
+
+        <!-- Finance and System Settings Tab -->
+        {% elif current_tab == 'finance' %}
+        <div class="app-card card-col-12" style="margin-bottom: 20px; background: transparent; border: none; box-shadow: none; padding: 0;">
+            <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px;">
+                <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+            </button>
+        </div>
+
+        <!-- Admin Billing -->
+        <div class="app-card card-col-3">
+            <div class="card-header">
+                <div class="card-icon icon-red"><i class="ri-error-warning-line"></i></div>
+                <div>
+                    <h3 class="card-title">시스템 유지보수</h3>
+                    <p class="card-subtitle">서버 및 라이선스 비용</p>
+                </div>
+            </div>
+            <ul class="info-list" style="margin-bottom: 20px;">
+                <li><span class="info-label">클라우드 서버:</span> <span class="info-value text-red-600">매월 1일 결제</span></li>
+                <li><span class="info-label">도메인 만료일:</span> <span class="info-value">2027.04.25</span></li>
+                <li><span class="info-label">통신(SMS) 잔여:</span> <span class="info-value" style="color: #f59e0b;">확인 요망</span></li>
+                <li style="border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px;">
+                    <span class="info-label">로컬 DB 용량:</span> 
+                    <span class="info-value {% if stats.db_status == 'warning' %}text-red-600{% else %}text-green-600{% endif %}" style="font-weight: 700;">
+                        {{ "%.2f"|format(stats.db_size_mb) }} MB
+                    </span>
+                </li>
+            </ul>
+            <button onclick="alert('결제 설정 페이지 준비중입니다.')" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: auto; background: var(--danger);">결제 정보 갱신</button>
+        </div>
+
+        <div class="app-card card-col-3">
+            <div class="card-header">
+                <div class="card-icon icon-blue"><i class="ri-wallet-3-line"></i></div>
+                <div>
+                    <h3 class="card-title">가맹점 충전금 총합</h3>
+                    <p class="card-subtitle">가맹점들이 선불 결제한 잔액</p>
+                </div>
+            </div>
+            <ul class="info-list">
+                <li><span class="info-label">결제 가맹점 수:</span> <span class="info-value">{{ "{:,}".format(stats.total_stores|default(0)) }}곳</span></li>
+                <li><span class="info-label">자동 충전 기능:</span> <span class="info-value badge badge-active">활성화됨</span></li>
+            </ul>
+            <div class="profit-box profit-positive" style="margin-top: auto;">
+                <div style="font-size: 0.9rem; margin-bottom: 5px;">총 보유(충전) 포인트</div>
+                <div style="font-size: 1.6rem; font-weight: 800;">{{ "{:,}".format(stats.total_wallet_balance|default(0)) }} <span style="font-size: 1rem;">원</span></div>
+            </div>
+        </div>
+
+        <div class="app-card card-col-3">
+            <div class="card-header">
+                <div class="card-icon icon-green"><i class="ri-line-chart-line"></i></div>
+                <div>
+                    <h3 class="card-title">플랫폼 실시간 이익</h3>
+                    <p class="card-subtitle">발생 원가 대비 순수익 추정치</p>
+                </div>
+            </div>
+            <ul class="info-list" style="margin-bottom: 15px;">
+                <li><span class="info-label">AI 처리 원가:</span> <span class="info-value">-{{ "{:,}".format(stats.est_ai_cost|default(0)) }}원</span></li>
+                <li><span class="info-label">SMS 발송 원가:</span> <span class="info-value">-{{ "{:,}".format(stats.est_sms_cost|default(0)) }}원</span></li>
+            </ul>
+            {% set is_profit = stats.net_profit and stats.net_profit > 0 %}
+            <div class="profit-box {% if is_profit %}profit-positive{% else %}profit-negative{% endif %}" style="margin-bottom: 15px;">
+                <div style="font-size: 0.9rem; margin-bottom: 5px;">추정 영업이익</div>
+                <div style="font-size: 1.6rem; font-weight: 800;">{{ "{:,}".format(stats.net_profit|default(0)) }} <span style="font-size: 1rem;">원</span></div>
+            </div>
+
+            <div style="margin-top: auto; padding-top: 15px; border-top: 1px dashed var(--border);">
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;">수기 손익 장부 입력 (원)</div>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-direction: column;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 0.85rem; color: #475569; width: 40px;">매출</span>
+                        <input type="number" id="manualRevenue" class="form-input" placeholder="수기 매출액" value="{{ stats.manual_revenue|default(0) }}" style="flex:1; padding: 8px; font-size: 0.9rem;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 0.85rem; color: #475569; width: 40px;">지출</span>
+                        <input type="number" id="manualExpense" class="form-input" placeholder="수기 지출액" value="{{ stats.manual_expense|default(0) }}" style="flex:1; padding: 8px; font-size: 0.9rem;">
+                    </div>
+                </div>
+                <button onclick="saveManualLedger()" class="btn btn-primary" style="width: 100%; padding: 8px; font-size: 0.9rem; justify-content: center;">장부 반영하기</button>
+            </div>
+            
+            <script>
+            async function saveManualLedger() {
+                const rev = document.getElementById('manualRevenue').value || 0;
+                const exp = document.getElementById('manualExpense').value || 0;
+                
+                try {
+                    const res = await fetch('/api/admin/ledger', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({manual_revenue: rev, manual_expense: exp})
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        alert('수기 장부가 업데이트되었습니다.');
+                        location.reload();
+                    } else {
+                        alert('저장 실패: ' + data.error);
+                    }
+                } catch(e) {
+                    alert('통신 에러');
+                }
+            }
+            </script>
+        </div>
+
+        <div class="app-card card-col-3">
+            <div class="card-header">
+                <div class="card-icon icon-purple"><i class="ri-scales-3-line"></i></div>
+                <div>
+                    <h3 class="card-title">예상 세금 (Tax)</h3>
+                    <p class="card-subtitle">국세청 종합소득세 과세표준 반영</p>
+                </div>
+            </div>
+            <ul class="info-list" style="margin-bottom: 15px;">
+                <li>
+                    <span class="info-label">예상 부가세 <span style="font-size: 0.75rem;">(매출-지출 10%)</span>:</span> 
+                    <span class="info-value text-red-600">{{ "{:,}".format(stats.est_vat|default(0)) }}원</span>
+                </li>
+                <li>
+                    <span class="info-label">종합소득세 <span style="font-size: 0.75rem;">(누진공제액 반영)</span>:</span> 
+                    <span class="info-value text-red-600">{{ "{:,}".format(stats.est_income_tax|default(0)) }}원</span>
+                </li>
+            </ul>
+            <div class="profit-box" style="margin-top: auto; background: #fff1f2; border: 1px solid #fecdd3; color: #be123c;">
+                <div style="font-size: 0.9rem; margin-bottom: 5px;">납부 예상 총액</div>
+                <div style="font-size: 1.6rem; font-weight: 800;">{{ "{:,}".format((stats.est_vat|default(0)) + (stats.est_income_tax|default(0))) }} <span style="font-size: 1rem;">원</span></div>
+            </div>
+        </div>
+
+        <!-- 지점별 정산 및 지급 현황 (플랫폼 관리자용) -->
+        <div class="app-card card-col-12" style="margin-top: 24px;">
+            <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="card-icon icon-purple" style="background: rgba(139, 92, 246, 0.1);"><i class="ri-hand-coin-line"></i></div>
+                    <div>
+                        <h3 class="card-title">지점별 정산 및 지급 대상 현황</h3>
+                        <p class="card-subtitle">플랫폼에서 지점(가맹점)에 정산/지급해 주어야 할 택배비, 직판, 위탁판매 대금 목록</p>
+                    </div>
+                </div>
+                <button onclick="alert('전체 지점 정산 자료를 Excel로 다운로드합니다.')" class="btn" style="background: #10b981; color: white; border: none; font-size: 0.85rem; padding: 8px 14px;">
+                    <i class="ri-file-excel-2-line"></i> 정산 대장 다운로드
+                </button>
+            </div>
+            
+            {% if stats.branch_settlements %}
+            <div class="table-container" style="margin-top: 15px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>지점명 (ID)</th>
+                            <th>대표자</th>
+                            <th>연락처</th>
+                            <th style="text-align: right;">지급할 택배비</th>
+                            <th style="text-align: right;">지급할 직판금</th>
+                            <th style="text-align: right;">지급할 위탁판매금</th>
+                            <th style="text-align: right; color: var(--primary); font-weight: 800;">총 지급 예정액</th>
+                            <th style="text-align: center;">상태</th>
+                            <th style="text-align: center;">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for b in stats.branch_settlements %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--text-main);">{{ b.name }}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">{{ b.store_id }}</div>
+                            </td>
+                            <td>{{ b.owner_name }}</td>
+                            <td>{{ b.phone }}</td>
+                            <td style="text-align: right; font-weight: 600; color: #ef4444;">{{ "{:,}".format(b.courier_payout) }}원</td>
+                            <td style="text-align: right; font-weight: 600; color: #10b981;">{{ "{:,}".format(b.direct_sales) }}원</td>
+                            <td style="text-align: right; font-weight: 600; color: #f59e0b;">{{ "{:,}".format(b.consignment_sales) }}원</td>
+                            <td style="text-align: right; font-weight: 800; color: #4f46e5; font-size: 1.05rem;">{{ "{:,}".format(b.total_payout) }}원</td>
+                            <td style="text-align: center;">
+                                {% if b.total_payout > 0 %}
+                                    <span class="badge" style="background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">미지급 (대기)</span>
+                                {% else %}
+                                    <span class="badge" style="background: #f1f5f9; color: #94a3b8; padding: 4px 8px; border-radius: 20px; font-size: 0.75rem; font-weight: bold;">정산 대상 없음</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: center;">
+                                {% if b.total_payout > 0 %}
+                                    <button onclick="if(confirm('{{ b.name }} 지점에 {{ '{:,}'.format(b.total_payout) }}원 지급 처리를 완료하셨습니까?')) alert('지급 완료 처리되었습니다. (실제 이체는 등록된 지점 계좌로 실행해 주세요.)');" class="btn" style="background: var(--primary); color: white; border: none; font-size: 0.75rem; padding: 6px 10px; border-radius: 6px; font-weight: bold;">
+                                        송금 완료 처리
+                                    </button>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state" style="padding: 40px; text-align: center; color: var(--text-muted);">
+                조회된 지점 정보가 없습니다.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Reservations Table -->
+        {% elif current_tab == 'reservations' %}
+        <div class="app-card card-col-12">
+            <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; margin-bottom: 15px;">
+                <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+            </button>
+            <div class="card-header">
+                <div class="card-icon icon-green" style="background: rgba(16, 185, 129, 0.1);"><i class="ri-calendar-check-line"></i></div>
+                <div>
+                    <h3 class="card-title">예약 접수 내역 상세</h3>
+                    <p class="card-subtitle">최근 접수된 전체 예약건 현황</p>
+                </div>
+            </div>
+            
+            {% if stats.recent_reservations %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>가맹점 (ID)</th>
+                            <th>고객명</th>
+                            <th>예약일시</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for res in stats.recent_reservations %}
+                        <tr>
+                            <td><div style="font-family: monospace; font-size: 0.85rem;">{{ res.store_id }}</div></td>
+                            <td><strong>{{ res.customer_name }}</strong></td>
+                            <td>{{ res.res_date }} {{ res.res_time }}</td>
+                            <td>
+                                {% if res.status == 'confirmed' %}
+                                    <span class="badge badge-active">확정</span>
+                                {% else %}
+                                    <span class="badge" style="background: var(--bg-main); color: var(--text-muted);">{{ res.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">최근 예약 내역이 없습니다.</div>
+            {% endif %}
+        </div>
+
+        <!-- Deliveries Table -->
+        {% elif current_tab == 'deliveries' %}
+        <div class="app-card card-col-12">
+            <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; margin-bottom: 15px; width: fit-content;">
+                <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+            </button>
+            <div class="card-header">
+                <div class="card-icon icon-red"><i class="ri-truck-line"></i></div>
+                <div>
+                    <h3 class="card-title">택배 배송 처리 내역</h3>
+                    <p class="card-subtitle">시스템 전체 누적 배달 처리 기록</p>
+                </div>
+            </div>
+            
+            {% if stats.recent_deliveries %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>가맹점 (ID)</th>
+                            <th>보내는 분</th>
+                            <th>받는 분</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for del in stats.recent_deliveries %}
+                        <tr>
+                            <td><div style="font-family: monospace; font-size: 0.85rem;">{{ del.store_id }}</div></td>
+                            <td>{{ del.sender_name }}</td>
+                            <td><strong>{{ del.receiver_name }}</strong> <br><span style="font-size:0.8rem; color:var(--text-muted);">{{ del.receiver_phone }}</span></td>
+                            <td>
+                                {% if del.status == 'delivered' %}
+                                    <span class="badge badge-active">배송완료</span>
+                                {% else %}
+                                    <span class="badge" style="background: var(--bg-main); color: var(--text-muted);">{{ del.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">최근 배달 내역이 없습니다.</div>
+            {% endif %}
+        </div>
+
+        <!-- Drivers Table -->
+        {% elif current_tab == 'drivers' %}
+        <div class="app-card card-col-12">
+            <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; margin-bottom: 15px; width: fit-content;">
+                <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+            </button>
+            <div class="card-header">
+                <div class="card-icon icon-blue" style="background: rgba(59, 130, 246, 0.1);"><i class="ri-ebike-2-line"></i></div>
+                <div>
+                    <h3 class="card-title">등록 배달 기사 현황</h3>
+                    <p class="card-subtitle">시스템에 가입된 기사 및 라이더 목록</p>
+                </div>
+            </div>
+            
+            {% if stats.recent_drivers %}
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>기사 ID</th>
+                            <th>이름</th>
+                            <th>연락처</th>
+                            <th>유형</th>
+                            <th>상태</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for driver in stats.recent_drivers %}
+                        <tr>
+                            <td><div style="font-family: monospace; font-size: 0.85rem;">{{ driver.driver_id }}</div></td>
+                            <td><strong>{{ driver.name }}</strong></td>
+                            <td>{{ driver.phone }}</td>
+                            <td>
+                                {% if driver.type == '택배기사' %}
+                                    <span class="badge" style="background: #e0f2fe; color: #0284c7;">{{ driver.type }}</span>
+                                {% else %}
+                                    <span class="badge" style="background: #ffedd5; color: #ea580c;">{{ driver.type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if driver.status == 'active' %}
+                                    <span class="badge badge-active">활동중</span>
+                                {% else %}
+                                    <span class="badge" style="background: var(--bg-main); color: var(--text-muted);">{{ driver.status|default('대기') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
+        {% elif current_tab == 'video' %}
+        <div class="app-card card-col-12">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button onclick="location.href='/dashboard'" class="btn" style="background: #f1f5f9; color: #475569; border: none; padding: 8px 16px; width: fit-content;">
+                    <i class="ri-arrow-left-line"></i> 대시보드 메인으로 돌아가기
+                </button>
+                <button onclick="location.href='/documentary-dashboard'" class="btn" style="background: #10b981; color: white; border: none; padding: 8px 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); width: fit-content;">
+                    <i class="ri-film-line"></i> 내생애 다큐 관제센터로 이동
+                </button>
+            </div>
+            <div class="card-header">
+                <div class="card-icon icon-orange" style="background: rgba(255, 204, 0, 0.2); color: #f59e0b;"><i class="ri-movie-2-line"></i></div>
+                <div>
+                    <h3 class="card-title">동네비서 비디오 솔루션 (생성 엔진)</h3>
+                    <p class="card-subtitle">NotebookLM + Veo + Gemini 하이브리드 워크플로우</p>
+                </div>
+            </div>
+            
+            <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <h4 style="margin: 0 0 15px 0; color: var(--text-main); font-size: 1.1rem;"><i class="ri-settings-4-line"></i> 시스템 프롬프트 (System Instruction)</h4>
+                <div style="background: #1e293b; color: #f8fafc; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; line-height: 1.6; white-space: pre-wrap;">너는 탄탄제작소의 '동네비서 비디오 솔루션' 총괄 에이전트다.
+
+[모드 1: 다큐멘터리형 콘텐츠 (Documentary-style)]
+- 영상을 "우리 가게 물건 좋아요"가 아닌, "우리 가게는 이런 마음으로 일합니다"를 보여주는 '기록'으로 정의하라.
+- 과정의 기록: 완성된 상품보다 연탄불, 배송 박스를 테이핑하는 사장님의 '손' 등 땀방울을 비추라.
+- 오디오의 힘: 사장님의 진심이 담긴 떨리는 실제 목소리를 배경에 깔아라.
+- 자막의 절제: 상업적 문구 대신 "오늘도 태백의 새벽을 엽니다" 같은 감성 문구를 사용하라.
+
+[모드 2: 개그맨/B급 예능형 콘텐츠 (Comedy-style)]
+- 유머 데이터베이스: 인기 개그맨들의 콩트 대본과 재치 있는 밈(Meme)을 활용하여 영상을 기획하라.
+- 인텐트 매핑(Intent Mapping): 점주가 "배송이 빨라요"라고 요청하면, "비행기보다 빠른 건 아니지만, 우리 동네에서는 빛보다 빠릅니다"와 같은 유머러스한 카피로 자동 변환하라.
+- 오디오/비주얼 매칭: 개그맨의 유쾌한 톤을 모사한 오디오(TTS)와 우스꽝스럽거나 정감 가는 텍스트 애니메이션 및 효과음을 적극 매칭하라.
+
+모든 과정은 멀티 채널(마켓, 유튜브, 숏폼 등) 공유를 위해 9:16 모바일 최적화 규격을 엄수할 것.</div>
+            </div>
+
+            <!-- 대기 중인 비디오 요청 (실시간 알림) -->
+            <div style="background: #fff; border: 2px solid #ef4444; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0; color: #ef4444; font-size: 1.2rem; font-weight: bold;"><i class="ri-notification-3-line"></i> 🚨 실시간 요청 대기열</h4>
+                    <span id="pending-count" style="background: #ef4444; color: #fff; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">0건</span>
+                </div>
+                <div id="video-request-list" style="max-height: 200px; overflow-y: auto;">
+                    <p style="color: #64748b; text-align: center; margin: 20px 0;">대기 중인 요청이 없습니다.</p>
+                </div>
+            </div>
+            <audio id="alert-sound" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+            
+            <script>
+            let lastRequestIds = [];
+            
+            async function fetchPendingRequests() {
+                try {
+                    const res = await fetch('/api/video/requests');
+                    const data = await res.json();
+                    if(data.success) {
+                        const reqs = data.requests;
+                        const currentIds = reqs.map(r => r.id);
+                        
+                        // 새로운 요청이 있는지 확인
+                        const newRequests = currentIds.filter(id => !lastRequestIds.includes(id));
+                        if(lastRequestIds.length > 0 && newRequests.length > 0) {
+                            // 새 요청 알림
+                            document.getElementById('alert-sound').play().catch(e=>console.log(e));
+                            alert('🚨 [동네비서] 새로운 비디오 솔루션 요청이 접수되었습니다! 즉시 작업을 시작해 주세요.');
+                        }
+                        lastRequestIds = currentIds;
+                        
+                        // UI 업데이트
+                        document.getElementById('pending-count').innerText = reqs.length + '건';
+                        const listDiv = document.getElementById('video-request-list');
+                        
+                        if(reqs.length === 0) {
+                            listDiv.innerHTML = '<p style="color: #64748b; text-align: center; margin: 20px 0;">대기 중인 요청이 없습니다.</p>';
+                        } else {
+                            listDiv.innerHTML = reqs.map(r => {
+                                let imgHtml = '';
+                                try {
+                                    if(r.images) {
+                                        const imgArr = JSON.parse(r.images);
+                                        imgHtml = imgArr.map(src => `<img src="${src}" style="height: 60px; width: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #cbd5e1;">`).join('');
+                                    }
+                                } catch(e) {}
+                                
+                                return `
+                                <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                                        <div>
+                                            <strong style="color: #1e293b; font-size: 1.1rem;">${r.store_name}</strong>
+                                            <span style="color: #64748b; font-size: 0.85rem; margin-left: 10px;">ID: ${r.store_id}</span>
+                                        </div>
+                                        <div style="color: #3b82f6; font-size: 0.85rem; font-weight: bold;">요청일시: ${r.requested_at}</div>
+                                    </div>
+                                    <div style="display: flex; gap: 15px;">
+                                        <div style="flex: 1;">
+                                            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 5px; font-weight: bold;">요청 스토리 / 강조 내용</div>
+                                            <div style="background: #fff; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 0.9rem; color: #334155; min-height: 60px; white-space: pre-wrap;">${r.story || '입력된 내용 없음'}</div>
+                                        </div>
+                                        <div style="width: 200px;">
+                                            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 5px; font-weight: bold;">첨부 사진</div>
+                                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                                ${imgHtml || '<span style="font-size: 0.85rem; color: #94a3b8;">사진 없음</span>'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+                            }).join('');
+                        }
+                    }
+                } catch(e) {
+                    console.log('Error fetching requests:', e);
+                }
+            }
+            
+            // 페이지 로드 시 즉시 1회 실행 후 5초마다 반복
+            fetchPendingRequests();
+            setInterval(fetchPendingRequests, 5000);
+            </script>
+
+            <div style="display: flex; flex-direction: column; gap: 20px; padding-bottom: 10px;">
+                <!-- Step 1 -->
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-left: 6px solid #3b82f6;">
+                    <div style="flex: 2; min-width: 300px;">
+                        <h4 style="margin: 0 0 10px 0; color: #3b82f6; font-size: 1.2rem; font-weight: 800; line-height: 1.4;">[1단계] 지능형 맥락 분석</h4>
+                        <p style="font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.6;">
+                            <strong>담당 AI:</strong> Gemini (NotebookLM) &nbsp;|&nbsp;
+                            <strong>동작:</strong> 30분 오디오 스크립트 + 현장 사진 입력. 30초 분량 6개 시나리오 추출.
+                        </p>
+                    </div>
+                    <div style="flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px;">
+                        <input type="file" accept="audio/*" style="font-size: 0.8rem; width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <input type="file" accept="image/*" multiple style="font-size: 0.8rem; width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                    </div>
+                    <div style="width: 150px;">
+                        <button style="width: 100%; height: 100%; padding: 15px; font-size: 1rem; font-weight: bold; background: #5a67d8; color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 14px rgba(90,103,216,0.4);" onclick="callVideoApi('/api/video/analyze', this, '✅ 1단계 완료: Gemini 맥락 분석 및 시나리오 추출 성공!')">분석 시작</button>
+                    </div>
+                </div>
+                
+                <!-- Step 2 -->
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-left: 6px solid #f59e0b;">
+                    <div style="flex: 2; min-width: 300px;">
+                        <h4 style="margin: 0 0 10px 0; color: #d97706; font-size: 1.2rem; font-weight: 800; line-height: 1.4;">[2단계] 비주얼 소스 생성</h4>
+                        <p style="font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.6;">
+                            <strong>담당 AI:</strong> Veo &nbsp;|&nbsp;
+                            <strong>동작:</strong> 글자 없는 5초 세로형 영상 클립 6개 생성.<br>
+                            <span style="color: #ef4444; font-weight: 600;">※ Style Fix 적용 (일관성 유지)</span>
+                        </p>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;"></div>
+                    <div style="width: 150px;">
+                        <button style="width: 100%; height: 100%; padding: 15px; font-size: 1rem; font-weight: bold; background: #f59e0b; color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 14px rgba(245,158,11,0.4);" onclick="callVideoApi('/api/video/generate', this, '✅ 2단계 완료: Veo 시각 클립 6개 생성 성공!')">영상 생성 (Veo)</button>
+                    </div>
+                </div>
+                
+                <!-- Step 3 -->
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-left: 6px solid #10b981;">
+                    <div style="flex: 2; min-width: 300px;">
+                        <h4 style="margin: 0 0 10px 0; color: #059669; font-size: 1.2rem; font-weight: 800; line-height: 1.4;">[3단계] 레이어 합성 보정</h4>
+                        <p style="font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.6;">
+                            <strong>담당:</strong> Python / FFmpeg &nbsp;|&nbsp;
+                            <strong>동작:</strong> 동네비서 로고 + 한글 자막 정확한 합성.<br>
+                            <span style="color: #ef4444; font-weight: 600;">※ 밀리초(ms) 단위 타임스탬프 매핑</span>
+                        </p>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;"></div>
+                    <div style="width: 150px;">
+                        <button style="width: 100%; height: 100%; padding: 15px; font-size: 1rem; font-weight: bold; background: #10b981; color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 14px rgba(16,185,129,0.4);" onclick="callVideoApi('/api/video/synthesize', this, '✅ 3단계 완료: FFmpeg 자막/로고 합성 성공!')">자막 합성 실행</button>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-left: 6px solid #8b5cf6;">
+                    <div style="flex: 2; min-width: 300px;">
+                        <h4 style="margin: 0 0 10px 0; color: #6d28d9; font-size: 1.2rem; font-weight: 800; line-height: 1.4;">[4단계] 최종 검수 배포</h4>
+                        <p style="font-size: 0.95rem; color: #64748b; margin: 0; line-height: 1.6;">
+                            <strong>담당 AI:</strong> Gemini (Vision) &nbsp;|&nbsp;
+                            <strong>동작:</strong> 오타 및 부자연스러운 움직임 QC, 승인 요청
+                        </p>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;"></div>
+                    <div style="width: 150px;">
+                        <button style="width: 100%; height: 100%; padding: 15px; font-size: 1rem; font-weight: bold; background: #8b5cf6; color: #fff; border: none; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 14px rgba(139,92,246,0.4);" onclick="callVideoApi('/api/video/qc', this, '✅ 4단계 완료: QC 통과 및 최종본 배포 준비 완료!')">QC & 승인 배포</button>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+            async function callVideoApi(endpoint, btn, successMsg) {
+                const originalText = btn.innerText;
+                btn.innerText = "처리 중...";
+                btn.disabled = true;
+                btn.style.opacity = '0.7';
+                try {
+                    const res = await fetch(endpoint, { method: 'POST' });
+                    const data = await res.json();
+                    if (data.success) {
+                        alert(successMsg + '\n\n시스템 메시지: ' + data.message);
+                    } else {
+                        alert('❌ 오류 발생: ' + data.error);
+                    }
+                } catch(e) {
+                    alert('❌ 서버 통신 오류가 발생했습니다.');
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }
+            }
+            </script>
+        </div>
+
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

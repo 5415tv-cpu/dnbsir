@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #fff; }
+        #wrap { width: 100%; height: 100vh; position: relative; }
+    </style>
+</head>
+<body>
+    <div id="wrap"></div>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <script>
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name) || '';
+        }
+
+        window.onload = function() {
+            var searchQuery = getQueryParam('q');
+            
+            new daum.Postcode({
+                width: '100%',
+                height: '100%',
+                oncomplete: function(data) {
+                    var fullRoadAddr = data.roadAddress;
+                    var extraRoadAddr = '';
+                    
+                    if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
+                        extraRoadAddr += data.bname;
+                    }
+                    if (data.buildingName !== '' && data.apartment === 'Y') {
+                        extraRoadAddr += (extraRoadAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                    }
+                    if (extraRoadAddr !== '') {
+                        extraRoadAddr = ' (' + extraRoadAddr + ')';
+                    }
+                    if (fullRoadAddr !== '') {
+                        fullRoadAddr += extraRoadAddr;
+                    }
+                    
+                    // Android JavascriptInterface로 데이터 전달
+                    if (window.Android) {
+                        window.Android.processAddress(data.zonecode, fullRoadAddr, data.jibunAddress);
+                    }
+                }
+            }).embed(document.getElementById('wrap'), {
+                q: searchQuery, // 스캔된 검색어 자동 기입
+                autoClose: false
+            });
+        };
+    </script>
+</body>
+</html>

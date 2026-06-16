@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>📦 단계별 택배 접수</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0f14;
+      --panel: #181c27;
+      --accent: #4f8ef7;
+      --accent2: #7c5cfc;
+      --gold: #f5c842;
+      --text: #e0e6f0;
+      --muted: #6b7a99;
+      --border: #252c3f;
+      --success: #2ec4b6;
+      --danger: #ff4d4d;
+      --radius: 18px;
+    }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* ── 전체 레이아웃 ── */
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 100px;
+    }
+
+    /* ── 상단 타이틀 ── */
+    .page-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      text-align: center;
+      margin-bottom: 6px;
+    }
+    .step-indicator {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .step-indicator span {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* ── AI 카메라/마이크 중앙 블록 ── */
+    .ai-center {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    /* 카메라 뷰파인더 */
+    .cam-ring {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: #11151e;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 0 0 6px rgba(79,142,247,0.08), 0 0 40px rgba(79,142,247,0.12);
+    }
+    .cam-ring video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .cam-ring .cam-off-msg {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .cam-ring .cam-off-msg .icon { font-size: 32px; }
+
+    /* AI 링 애니메이션 (active 시) */
+    .cam-ring.ai-active {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 6px rgba(79,142,247,0.18), 0 0 50px rgba(79,142,247,0.25);
+      animation: ring-pulse 2s ease-in-out infinite;
+    }
+    .cam-ring.listening {
+      border-color: #f5a623;
+      box-shadow: 0 0 0 6px rgba(245,166,35,0.2), 0 0 50px rgba(245,166,35,0.3);
+      animation: ring-pulse-gold 0.8s ease-in-out infinite alternate;
+    }
+    @keyframes ring-pulse {
+      0%,100% { box-shadow: 0 0 0 6px rgba(79,142,247,0.18), 0 0 50px rgba(79,142,247,0.25); }
+      50% { box-shadow: 0 0 0 10px rgba(79,142,247,0.08), 0 0 70px rgba(79,142,247,0.18); }
+    }
+    @keyframes ring-pulse-gold {
+      from { box-shadow: 0 0 0 6px rgba(245,166,35,0.2), 0 0 40px rgba(245,166,35,0.2); }
+      to   { box-shadow: 0 0 0 14px rgba(245,166,35,0.06), 0 0 80px rgba(245,166,35,0.35); }
+    }
+
+    /* 마이크 버튼 */
+    .mic-btn {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--panel);
+      font-size: 28px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    .mic-btn.active {
+      background: linear-gradient(135deg, #f5a623, #e8850a);
+      border-color: #f5a623;
+      box-shadow: 0 0 20px rgba(245,166,35,0.5);
+      animation: mic-pop 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes mic-pop {
+      from { transform: scale(1); }
+      to   { transform: scale(1.08); }
+    }
+
+    /* AI 상태 레이블 */
+    .ai-status {
+      font-size: 13px;
+      color: var(--muted);
+      text-align: center;
+      min-height: 20px;
+      transition: color 0.3s;
+    }
+    .ai-status.listening { color: #f5a623; font-weight: 700; }
+    .ai-status.active    { color: var(--accent); font-weight: 700; }
+
+    /* ── 단계 카드 ── */
+    .step-card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      display: none;
+      animation: slideUp 0.35s ease;
+    }
+    .step-card.active { display: block; }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .step-q {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      line-height: 1.5;
+    }
+    .step-q em { color: var(--accent); font-style: normal; }
+    .step-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    /* 인풋 */
+    .inp {
+      width: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 15px;
+      padding: 13px 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .inp:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,142,247,0.12); }
+    .inp::placeholder { color: var(--muted); }
+    .inp.err { border-color: var(--danger); }
+    .inp[readonly] { color: var(--muted); cursor: default; }
+
+    /* 우편번호 행 */
+    .addr-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .addr-row .inp { flex: 1; }
+    .btn-postcode {
+      flex-shrink: 0;
+      background: transparent;
+      border: 1.5px solid var(--accent);
+      border-radius: 12px;
+      color: var(--accent);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0 14px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .btn-postcode:hover { background: var(--accent); color: #fff; }
+
+    /* 박스 크기 선택 칩 */
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+    .chip {
+      padding: 8px 16px;
+      border-radius: 24px;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip.selected, .chip:hover { border-color: var(--accent); background: rgba(79,142,247,0.12); color: var(--accent); }
+
+    /* 수량 조절 */
+    .qty-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+    .qty-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .qty-val { font-size: 22px; font-weight: 900; color: #fff; min-width: 36px; text-align: center; }
+    .qty-label { font-size: 12px; color: var(--muted); }
+
+    /* 다음 버튼 */
+    .btn-next {
+      width: 100%;
+      max-width: 420px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 16px;
+      color: #fff;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 16px;
+      cursor: pointer;
+      margin-top: 8px;
+      box-shadow: 0 6px 20px rgba(79,142,247,0.25);
+      transition: all 0.2s;
+      display: none;
+    }
+    .btn-next.show { display: block; }
+    .btn-next:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(79,142,247,0.35); }
+    .btn-next:active { transform: translateY(0); }
+    .btn-next:disabled { background: var(--border); box-shadow: none; cursor: not-allowed; transform: none; }
+
+    /* 제출/완료 버튼 */
+    .btn-submit {
+      width: 100%;
+      max-width: 420px;
+      background: linear-gradient(135deg, var(--gold), #e8a800);
+      border: none;
+      border-radius: 16px;
+      color: #0d0f14;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 16px;
+      font-weight: 900;
+      padding: 16px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(245,200,66,0.35);
+      transition: all 0.2s;
+      display: none;
+    }
+    .btn-submit.show { display: block; }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(245,200,66,0.5); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { background: var(--border); color: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+    /* 스피너 */
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 완료 패널 */
+    .done-panel {
+      width: 100%;
+      max-width: 420px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+      padding: 32px 20px;
+      animation: slideUp 0.4s ease;
+    }
+    .done-panel.show { display: flex; }
+    .done-icon { font-size: 60px; }
+    .done-panel h2 { font-size: 22px; font-weight: 900; color: #fff; }
+    .done-panel p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .waybill-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 24px;
+      width: 100%;
+    }
+    .waybill-box .label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .waybill-box .code { font-size: 24px; font-weight: 900; color: var(--gold); letter-spacing: 2px; }
+    .btn-print {
+      width: 100%;
+      background: var(--gold);
+      border: none;
+      border-radius: 14px;
+      color: #0d0f14;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 15px;
+      font-weight: 900;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-print:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(245,200,66,0.3); }
+    /* ── 엑셀 대량등록 섹션 ── */
+    .excel-toggle {
+      width: 100%;
+      background: var(--panel);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      color: #fff;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 14px 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .excel-toggle:hover { border-color: var(--accent); }
+    .excel-toggle.open  { border-color: var(--accent); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+
+    .excel-panel {
+      background: var(--panel);
+      border: 1.5px solid var(--accent);
+      border-top: none;
+      border-radius: 0 0 var(--radius) var(--radius);
+      padding: 16px;
+      animation: slideUp 0.25s ease;
+    }
+
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(79,142,247,0.06);
+    }
+
+    .btn-sample {
+      background: transparent;
+      border: 1px solid var(--muted);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-sample:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-excel-upload {
+      width: 100%;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      font-weight: 900;
+      padding: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 14px rgba(34,197,94,0.25);
+    }
+    .btn-excel-upload:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn-excel-upload:disabled { background: var(--border); color: var(--muted); box-shadow: none; cursor: not-allowed; }
+
+    #excel-result-body tr:nth-child(even) { background: rgba(255,255,255,0.03); }
+    #excel-result-body td { padding: 7px 10px; color: var(--text); border-bottom: 1px solid var(--border); }
+    #excel-result-body .ok  { color: var(--success); }
+    #excel-result-body .err { color: var(--danger); }
+  </style>
+</head>
+<body>
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://js.tosspayments.com/v1/payment"></script>
+
+<div class="page">
+
+  <!-- 타이틀 -->
+  <div class="page-title">📦 단계별 택배 접수</div>
+  <div class="step-indicator" id="step-indicator">단계 <span id="cur-step">1</span> / <span id="total-steps">7</span></div>
+
+  <!-- Step 1: 받는 분 이름 -->
+  <div class="step-card active" id="step-1">
+    <div class="step-q">1. <em>받으실 분의</em><br>이름을 입력해 주세요.</div>
+    <div class="step-sub">택배를 받으실 분의 성함 또는 상호명</div>
+    <input class="inp" id="receiver_name" type="text" placeholder="예: 홍길동" oninput="onInput()">
+  </div>
+
+  <!-- Step 2: 받는 분 연락처 -->
+  <div class="step-card" id="step-2">
+    <div class="step-q">2. <em>받으실 분의</em><br>연락처를 입력해 주세요.</div>
+    <div class="step-sub">택배 수령 시 연락 가능한 번호</div>
+    <input class="inp" id="receiver_phone" type="tel" placeholder="010-0000-0000" oninput="onInput()">
+  </div>
+
+  <!-- Step 3: 받는 주소 -->
+  <div class="step-card" id="step-3">
+    <div class="step-q">3. <em>받으실 주소</em>를<br>입력해 주세요.</div>
+    <div class="step-sub">배송지 주소 (도로명 기준)</div>
+    <div class="addr-row">
+      <input class="inp" id="receiver_postcode" type="text" placeholder="우편번호" readonly>
+      <button class="btn-postcode" onclick="searchAddr('receiver')">🔍 주소 검색</button>
+    </div>
+    <input class="inp" id="receiver_addr" type="text" placeholder="기본 주소" readonly style="margin-bottom:10px">
+    <input class="inp" id="receiver_detail" type="text" placeholder="상세 주소 (동·호수 등)" oninput="onInput()">
+  </div>
+
+  <!-- Step 4: 보내는 분 이름 -->
+  <div class="step-card" id="step-4">
+    <div class="step-q">4. <em>보내실 분의</em><br>이름을 입력해 주세요.</div>
+    <div class="step-sub">보내시는 분의 성함 또는 상호명</div>
+    <input class="inp" id="sender_name" type="text" placeholder="예: 이영준" oninput="onInput()">
+  </div>
+
+  <!-- Step 5: 보내는 분 연락처 -->
+  <div class="step-card" id="step-5">
+    <div class="step-q">5. <em>보내실 분의</em><br>연락처를 입력해 주세요.</div>
+    <div class="step-sub">수거 시 연락 가능한 번호</div>
+    <input class="inp" id="sender_phone" type="tel" placeholder="010-0000-0000" oninput="onInput()">
+  </div>
+
+  <!-- Step 6: 보내는 주소 -->
+  <div class="step-card" id="step-6">
+    <div class="step-q">6. <em>수거 주소</em>를<br>입력해 주세요.</div>
+    <div class="step-sub">택배를 가지러 방문할 주소</div>
+    <div class="addr-row">
+      <input class="inp" id="sender_postcode" type="text" placeholder="우편번호" readonly>
+      <button class="btn-postcode" onclick="searchAddr('sender')">🔍 주소 검색</button>
+    </div>
+    <input class="inp" id="sender_addr" type="text" placeholder="기본 주소" readonly style="margin-bottom:10px">
+    <input class="inp" id="sender_detail" type="text" placeholder="상세 주소 (동·호수 등)" oninput="onInput()">
+  </div>
+
+  <!-- Step 7: 박스 크기 + 수량 -->
+  <div class="step-card" id="step-7">
+    <div class="step-q">7. <em>박스 크기와 수량</em>을<br>선택해 주세요.</div>
+    <div class="step-sub">여러 크기를 동시에 선택할 수 있습니다</div>
+
+    <div id="box-list"></div><!-- JS로 렌더 -->
+  </div>
+
+  <!-- ══ AI 마이크 + 카메라 (입력 필드 바로 아래) ══ -->
+  <div class="ai-center" id="ai-center">
+    <div class="cam-ring" id="camRing" style="width:160px;height:160px;cursor:pointer;" onclick="toggleCamera()" title="탭하면 카메라 켜짐/꺼짐">
+      <video id="camVideo" autoplay muted playsinline></video>
+      <div class="cam-off-msg" id="camOffMsg">
+        <span class="icon">📷</span>
+        <span>탭하면 카메라 켜짐</span>
+      </div>
+    </div>
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+    <div class="ai-status" id="aiStatus">📷 탭 → 카메라 | 🎤 탭 → 음성 입력</div>
+  </div>
+
+  <!-- ══ 엑셀 대량등록 (카메라 아래) ══ -->
+  <div class="excel-section" id="excel-section" style="width:100%;max-width:420px;margin-bottom:20px;margin-top:16px;">
+    <button class="excel-toggle" id="excel-toggle" onclick="toggleExcel()">
+      📊 엑셀 대량등록
+      <span id="excel-arrow" style="margin-left:auto;transition:transform 0.25s;">▼</span>
+    </button>
+    <div class="excel-panel" id="excel-panel" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <span style="font-size:12px;color:var(--muted);">양식 파일을 먼저 받아 작성하세요.</span>
+        <button class="btn-sample" onclick="downloadSample()">⬇ 양식 다운로드</button>
+      </div>
+      <div class="drop-zone" id="drop-zone"
+           onclick="document.getElementById('excel-file').click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="handleDrop(event)">
+        <div style="font-size:32px;margin-bottom:6px;">📂</div>
+        <div style="font-size:14px;font-weight:700;color:#fff;">파일을 끌어오거나 탭해서 선택</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;">.xlsx / .xls / .csv 지원</div>
+        <div id="excel-filename" style="font-size:12px;color:var(--accent);margin-top:6px;display:none;"></div>
+      </div>
+      <input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="onFileSelected(this)">
+      <button class="btn-excel-upload" id="btn-excel-upload" onclick="uploadExcel()" disabled>
+        ✅ 일괄 접수 시작
+      </button>
+      <div id="excel-progress" style="display:none;margin-top:12px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;" id="excel-progress-text">업로드 중...</div>
+        <div style="background:var(--border);border-radius:8px;height:6px;overflow:hidden;">
+          <div id="excel-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width 0.3s;border-radius:8px;"></div>
+        </div>
+      </div>
+      <div id="excel-result" style="display:none;margin-top:14px;">
+        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;" id="excel-result-summary"></div>
+        <div style="max-height:200px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:var(--border);color:var(--muted);">
+                <th style="padding:8px 10px;text-align:left;">행</th>
+                <th style="padding:8px 10px;text-align:left;">보내는분</th>
+                <th style="padding:8px 10px;text-align:left;">받는분</th>
+                <th style="padding:8px 10px;text-align:left;">송장번호</th>
+              </tr>
+            </thead>
+            <tbody id="excel-result-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div><!-- /excel-section -->
+
+  <!-- 다음 버튼 -->
+  <button class="btn-next show" id="btn-next" onclick="nextStep()">다음 →</button>
+
+  <!-- 접수 완료 버튼 (마지막 단계) -->
+  <button class="btn-submit" id="btn-submit" onclick="submitRequest()">💳 결제하고 접수하기</button>
+
+  <!-- 완료 패널 -->
+  <div class="done-panel" id="done-panel">
+    <div class="done-icon">🎉</div>
+    <h2>접수 완료!</h2>
+    <p id="done-msg">담당 기사님이 곧 방문 예정입니다.</p>
+    <div class="waybill-box">
+      <div class="label">송장 번호</div>
+      <div class="code" id="waybill-code">—</div>
+    </div>
+    <button class="btn-print" onclick="printWaybill()">🖨️ 송장 출력</button>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ──────────────────────────────────────────────
+// 상태
+// ──────────────────────────────────────────────
+const TOTAL_STEPS = 7;
+let curStep = 1;
+let micActive = false;
+let recognition = null;
+let camStream = null;
+
+// 토스 클라이언트 키 (서버에서 주입)
+const TOSS_CLIENT_KEY = '{{ toss_client_key }}';
+
+// 박스 크기별 수량 (소/중/대)
+const SIZES = [
+  { key: 'small',  label: '소형',  price: '5,000원',  unitPrice: 5000, qty: 0 },
+  { key: 'medium', label: '중형',  price: '7,000원',  unitPrice: 7000, qty: 0 },
+  { key: 'large',  label: '대형',  price: '9,000원',  unitPrice: 9000, qty: 0 },
+];
+
+// ──────────────────────────────────────────────
+// 카메라 — 탭하면 켜고, 다시 탭하면 끔
+// ──────────────────────────────────────────────
+let camOn = false;
+
+async function toggleCamera() {
+  if (camOn) {
+    stopCamera();
+  } else {
+    await startCamera();
+  }
+}
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+    camStream = stream;
+    camOn = true;
+    const vid = document.getElementById('camVideo');
+    vid.srcObject = stream;
+    vid.style.display = 'block';
+    document.getElementById('camOffMsg').style.display = 'none';
+    document.getElementById('camRing').classList.add('ai-active');
+    setStatus('카메라 켜짐 — 마이크를 눌러 말씀해 주세요', 'active');
+  } catch(e) {
+    document.getElementById('camOffMsg').innerHTML = '<span class="icon">📷</span><span>카메라 권한 필요</span>';
+    setStatus('카메라 권한을 허용해 주세요', '');
+    console.warn('Camera:', e);
+  }
+}
+
+function stopCamera() {
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+  }
+  camOn = false;
+  const vid = document.getElementById('camVideo');
+  if (vid) { vid.srcObject = null; vid.style.display = 'none'; }
+  const offMsg = document.getElementById('camOffMsg');
+  if (offMsg) { offMsg.innerHTML = '<span class="icon">📷</span><span>탭하면 카메라 켜짐</span>'; offMsg.style.display = 'flex'; }
+  document.getElementById('camRing').classList.remove('ai-active');
+  setStatus('마이크를 눌러 말씀해 주세요', '');
+}
+
+
+// ──────────────────────────────────────────────
+// 마이크 (음성 인식)
+// ──────────────────────────────────────────────
+function toggleMic() {
+  if (micActive) {
+    stopMic();
+  } else {
+    startMic();
+  }
+}
+
+function startMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    setStatus('이 브라우저는 음성인식을 지원하지 않습니다.', '');
+    return;
+  }
+  recognition = new SpeechRecognition();
+  recognition.lang = 'ko-KR';
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  recognition.onstart = () => {
+    micActive = true;
+    document.getElementById('micBtn').classList.add('active');
+    document.getElementById('camRing').classList.add('listening');
+    document.getElementById('camRing').classList.remove('ai-active');
+    setStatus('듣고 있습니다...', 'listening');
+  };
+
+  recognition.onresult = (e) => {
+    const text = e.results[0][0].transcript;
+    fillCurrentInput(text);
+    setStatus(`"${text}" 입력됨`, 'active');
+  };
+
+  recognition.onend = () => {
+    micActive = false;
+    document.getElementById('micBtn').classList.remove('active');
+    document.getElementById('camRing').classList.remove('listening');
+    document.getElementById('camRing').classList.add('ai-active');
+    if (document.getElementById('aiStatus').textContent.includes('듣고')) {
+      setStatus('마이크를 눌러 말씀해 주세요', '');
+    }
+  };
+
+  recognition.onerror = (e) => {
+    micActive = false;
+    document.getElementById('micBtn').classList.remove('active');
+    setStatus('다시 시도해 주세요', '');
+  };
+
+  recognition.start();
+}
+
+function stopMic() {
+  if (recognition) { recognition.stop(); recognition = null; }
+  micActive = false;
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('camRing').classList.remove('listening');
+  document.getElementById('camRing').classList.add('ai-active');
+  setStatus('마이크를 눌러 말씀해 주세요', '');
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('aiStatus');
+  el.textContent = msg;
+  el.className = 'ai-status ' + (cls || '');
+}
+
+// 현재 단계 입력 필드에 음성 텍스트 채우기
+function fillCurrentInput(text) {
+  const map = {
+    1: 'receiver_name',
+    2: 'receiver_phone',
+    3: 'receiver_detail',
+    4: 'sender_name',
+    5: 'sender_phone',
+    6: 'sender_detail',
+  };
+  if (map[curStep]) {
+    const el = document.getElementById(map[curStep]);
+    if (el) { el.value = text; onInput(); }
+  }
+}
+
+// ──────────────────────────────────────────────
+// 단계 진행
+// ──────────────────────────────────────────────
+function updateStepUI() {
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    const card = document.getElementById(`step-${i}`);
+    if (card) card.classList.toggle('active', i === curStep);
+  }
+  document.getElementById('cur-step').textContent = curStep;
+  document.getElementById('total-steps').textContent = TOTAL_STEPS;
+
+  const isLast = curStep === TOTAL_STEPS;
+  document.getElementById('btn-next').classList.toggle('show', !isLast);
+  document.getElementById('btn-submit').classList.toggle('show', isLast);
+}
+
+function onInput() {
+  // 실시간 자동 초점 이동은 하지 않음 (UX)
+}
+
+function nextStep() {
+  if (!validateStep(curStep)) return;
+  if (curStep < TOTAL_STEPS) {
+    curStep++;
+    updateStepUI();
+    // 다음 카드의 첫 번째 input에 포커스
+    const card = document.getElementById(`step-${curStep}`);
+    if (card) {
+      const inp = card.querySelector('.inp:not([readonly])');
+      if (inp) setTimeout(() => inp.focus(), 350);
+    }
+  }
+}
+
+function validateStep(step) {
+  const validators = {
+    1: () => checkFilled('receiver_name', '받으실 분 이름'),
+    2: () => checkFilled('receiver_phone', '받으실 분 연락처'),
+    3: () => checkFilled('receiver_postcode', '받으실 주소 (주소 검색 버튼 클릭)') && checkFilled('receiver_detail', '상세 주소'),
+    4: () => checkFilled('sender_name', '보내실 분 이름'),
+    5: () => checkFilled('sender_phone', '보내실 분 연락처'),
+    6: () => checkFilled('sender_postcode', '수거 주소 (주소 검색 버튼 클릭)') && checkFilled('sender_detail', '상세 주소'),
+    7: () => {
+      const total = SIZES.reduce((s, sz) => s + sz.qty, 0);
+      if (total === 0) { alert('박스 수량을 1개 이상 선택해 주세요.'); return false; }
+      return true;
+    }
+  };
+  return validators[step] ? validators[step]() : true;
+}
+
+function checkFilled(id, label) {
+  const el = document.getElementById(id);
+  if (!el || !el.value.trim()) {
+    if (el) { el.classList.add('err'); el.focus(); }
+    alert(`[필수] ${label}을(를) 입력해 주세요.`);
+    return false;
+  }
+  if (el) el.classList.remove('err');
+  return true;
+}
+
+// ──────────────────────────────────────────────
+// 박스 선택 UI (Step 7) — 수량·가격 실시간 표시
+// ──────────────────────────────────────────────
+function renderBoxList() {
+  const container = document.getElementById('box-list');
+  container.innerHTML = SIZES.map((sz, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);">
+      <div style="min-width:80px;">
+        <div style="font-weight:700;color:#fff;font-size:15px;">${sz.label}</div>
+        <div style="font-size:12px;color:var(--muted);">개당 ${sz.price}</div>
+      </div>
+      <div class="qty-row" style="flex:1;justify-content:center;">
+        <button class="qty-btn" onclick="changeQty(${i}, -1)">−</button>
+        <span class="qty-val" id="qty-${i}">${sz.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${i}, 1)">+</button>
+      </div>
+      <div style="min-width:72px;text-align:right;">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);" id="sub-${i}">
+          ${sz.qty > 0 ? (sz.unitPrice * sz.qty).toLocaleString() + '원' : '—'}
+        </div>
+        <div style="font-size:10px;color:var(--muted);">소계</div>
+      </div>
+    </div>
+  `).join('') + `
+    <div id="total-bar" style="display:flex;align-items:center;justify-content:space-between;
+         margin-top:14px;padding:14px 16px;border-radius:12px;
+         background:linear-gradient(135deg,rgba(79,142,247,0.12),rgba(124,92,252,0.12));
+         border:1.5px solid rgba(79,142,247,0.3);">
+      <div style="font-size:13px;font-weight:700;color:var(--muted);">합계</div>
+      <div id="total-price" style="font-size:20px;font-weight:900;color:#fff;">0원</div>
+    </div>
+  `;
+  updateTotal();
+}
+
+function changeQty(i, delta) {
+  SIZES[i].qty = Math.max(0, SIZES[i].qty + delta);
+  document.getElementById(`qty-${i}`).textContent = SIZES[i].qty;
+  const sub = document.getElementById(`sub-${i}`);
+  if (sub) sub.textContent = SIZES[i].qty > 0
+    ? (SIZES[i].unitPrice * SIZES[i].qty).toLocaleString() + '원' : '—';
+  updateTotal();
+}
+
+function updateTotal() {
+  const total = SIZES.reduce((s, sz) => s + sz.unitPrice * sz.qty, 0);
+  const el = document.getElementById('total-price');
+  if (el) el.textContent = total > 0 ? total.toLocaleString() + '원' : '0원';
+}
+
+// ──────────────────────────────────────────────
+// 주소 검색
+// ──────────────────────────────────────────────
+function searchAddr(target) {
+  new daum.Postcode({
+    oncomplete: function(data) {
+      const road = data.roadAddress || data.jibunAddress;
+      if (target === 'receiver') {
+        document.getElementById('receiver_postcode').value = data.zonecode;
+        document.getElementById('receiver_addr').value = road;
+        document.getElementById('receiver_detail').focus();
+      } else {
+        document.getElementById('sender_postcode').value = data.zonecode;
+        document.getElementById('sender_addr').value = road;
+        document.getElementById('sender_detail').focus();
+      }
+    }
+  }).open();
+}
+
+// ──────────────────────────────────────────────
+// URL 쿼리에서 ref 자동 채우기
+// ──────────────────────────────────────────────
+function applyRef() {
+  const params = new URLSearchParams(location.search);
+  const ref = params.get('ref') || '{{ ref }}';
+  if (ref && ref !== '{{ ref }}') {
+    const el = document.getElementById('sender_phone');
+    if (el && !el.value) el.value = ref.replace(/[^0-9]/g, '').replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+  }
+}
+
+// ──────────────────────────────────────────────
+// 최종 접수 제출 (토스 결제 연동)
+// ──────────────────────────────────────────────
+async function submitRequest() {
+  if (!validateStep(TOTAL_STEPS)) return;
+
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> 처리 중...';
+
+  // 크기별 수량 배열 구성
+  const sizesOrdered = SIZES
+    .filter(s => s.qty > 0)
+    .map(s => ({ size: s.key, qty: s.qty }));
+
+  const totalAmount = SIZES.reduce((s, sz) => s + sz.unitPrice * sz.qty, 0);
+  const boxItems = SIZES.filter(s => s.qty > 0).map(s => `${s.label} ${s.qty}개`).join(' + ');
+
+  const senderPhone = document.getElementById('sender_phone').value.trim();
+  const receiverPhone = document.getElementById('receiver_phone').value.trim();
+
+  const recvBaseAddr = document.getElementById('receiver_addr').value.trim();
+  const recvDetail   = document.getElementById('receiver_detail').value.trim();
+
+  const payload = {
+    sender_name:           document.getElementById('sender_name').value.trim(),
+    sender_phone:          senderPhone,
+    sender_postcode:       document.getElementById('sender_postcode').value.trim(),
+    sender_base_address:   document.getElementById('sender_addr').value.trim(),
+    sender_addr:           document.getElementById('sender_addr').value.trim(),
+    sender_detail_address: document.getElementById('sender_detail').value.trim(),
+    receiver_name:         document.getElementById('receiver_name').value.trim(),
+    receiver_phone:        receiverPhone,
+    receiver_addr:         `${recvBaseAddr} ${recvDetail}`.trim(),  // ← 필수 필드
+    postcode:              document.getElementById('receiver_postcode').value.trim(),
+    address:               recvBaseAddr,
+    detail_address:        recvDetail,
+    item_type:             boxItems || '일반 택배',
+    sizes_ordered:         sizesOrdered,
+    weight:                sizesOrdered.length > 0 ? sizesOrdered[0].size : 'small',
+    quantity:              sizesOrdered.reduce((s, i) => s + i.qty, 0),
+    pay_type:              'prepaid',
+  };
+
+  try {
+    // 1단계: PENDING 임시 저장
+    const res = await fetch('/api/citizen/courier/pending-reservation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+
+    if (!res.ok || !result.success) {
+      alert('접수 오류: ' + (result.detail || '입력값을 다시 확인해 주세요.'));
+      btn.disabled = false;
+      btn.innerHTML = '💳 결제하고 접수하기';
+      return;
+    }
+
+    const orderId   = result.order_id;
+    const amount    = result.amount;
+    const orderName = result.order_name || `택배 ${boxItems}`;
+
+    // 2단계: 토스 결제창 호출
+    const tossPayments = TossPayments(TOSS_CLIENT_KEY);
+    await tossPayments.requestPayment('카드', {
+      amount:     amount,
+      orderId:    orderId,
+      orderName:  orderName,
+      customerName: payload.sender_name,
+      customerMobilePhone: senderPhone.replace(/-/g, ''),
+      successUrl: window.location.origin + '/api/pay/success',
+      failUrl:    window.location.origin + '/delivery/request?error=payment_failed&ref=' + encodeURIComponent(senderPhone),
+    });
+    // ↑ 결제 성공 시 토스가 successUrl로 리다이렉트하므로 이하 코드는 실행되지 않음
+
+  } catch(e) {
+    // 사용자가 결제창을 닫거나 취소한 경우
+    if (e.code === 'USER_CANCEL') {
+      alert('결제가 취소되었습니다.');
+    } else {
+      console.error(e);
+      alert('오류가 발생했습니다. 잠시 후 다시 시도해 주세요.\n' + (e.message || ''));
+    }
+    btn.disabled = false;
+    btn.innerHTML = '💳 결제하고 접수하기';
+  }
+}
+
+// ──────────────────────────────────────────────
+// 송장 출력 → 카메라 종료
+// ──────────────────────────────────────────────
+function printWaybill() {
+  const code = document.getElementById('waybill-code').textContent;
+  // 실제 출력 로직
+  const printWin = window.open('', '_blank', 'width=400,height=300');
+  printWin.document.write(`
+    <html><body style="font-family:monospace;text-align:center;padding:40px;">
+    <h2>📦 동네비서 송장</h2>
+    <p style="font-size:28px;font-weight:bold;letter-spacing:4px;">${code}</p>
+    <script>window.print(); window.close();<\/script>
+    </body></html>
+  `);
+  printWin.document.close();
+
+  // ★ 송장 출력 후 카메라 종료
+  stopCamera();
+  document.getElementById('camRing').classList.remove('ai-active');
+  document.getElementById('camRing').innerHTML = '<div class="cam-off-msg"><span class="icon">✅</span><span>접수 완료</span></div>';
+}
+
+// ──────────────────────────────────────────────
+// 초기화
+// ──────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  applyRef();
+  renderBoxList();
+  updateStepUI();
+  // 카메라는 자동으로 켜지지 않음 — 카메라 링을 탭하면 켜짐
+});
+
+// ──────────────────────────────────────────────
+// 엑셀 대량등록
+// ──────────────────────────────────────────────
+let excelFile = null;
+
+function toggleExcel() {
+  const panel  = document.getElementById('excel-panel');
+  const toggle = document.getElementById('excel-toggle');
+  const arrow  = document.getElementById('excel-arrow');
+  const open   = panel.style.display === 'none';
+  panel.style.display  = open ? 'block' : 'none';
+  toggle.classList.toggle('open', open);
+  arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+
+function onFileSelected(input) {
+  const f = input.files[0];
+  if (!f) return;
+  excelFile = f;
+  const nameEl = document.getElementById('excel-filename');
+  nameEl.textContent = `📄 ${f.name}`;
+  nameEl.style.display = 'block';
+  document.getElementById('btn-excel-upload').disabled = false;
+  document.getElementById('excel-result').style.display = 'none';
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (!f) return;
+  // 직접 처리
+  const dt = new DataTransfer();
+  dt.items.add(f);
+  const input = document.getElementById('excel-file');
+  input.files = dt.files;
+  onFileSelected(input);
+}
+
+async function uploadExcel() {
+  if (!excelFile) return;
+  const btn = document.getElementById('btn-excel-upload');
+  btn.disabled = true;
+  btn.textContent = '⏳ 접수 중...';
+
+  const prog = document.getElementById('excel-progress');
+  const progBar = document.getElementById('excel-progress-bar');
+  const progText = document.getElementById('excel-progress-text');
+  prog.style.display = 'block';
+  progBar.style.width = '30%';
+  progText.textContent = '파일 업로드 중...';
+
+  const fd = new FormData();
+  fd.append('file', excelFile);
+
+  try {
+    progBar.style.width = '60%';
+    const res = await fetch('/api/delivery/bulk-excel', { method: 'POST', body: fd });
+    progBar.style.width = '100%';
+    const data = await res.json();
+
+    if (!res.ok) { alert('오류: ' + (data.detail || '알 수 없는 오류')); return; }
+
+    // 결과 표시
+    document.getElementById('excel-result-summary').textContent =
+      `총 ${data.total}건 | ✅ 성공 ${data.success}건 | ❌ 실패 ${data.failed}건`;
+
+    const tbody = document.getElementById('excel-result-body');
+    tbody.innerHTML = data.results.map(r => r.success
+      ? `<tr><td>${r.row}</td><td class="ok">${r.sender||'-'}</td><td class="ok">${r.receiver||'-'}</td><td class="ok" style="font-size:11px;">${r.tracking_code}</td></tr>`
+      : `<tr><td>${r.row}</td><td colspan="3" class="err">❌ ${r.error}</td></tr>`
+    ).join('');
+
+    document.getElementById('excel-result').style.display = 'block';
+    progText.textContent = '완료!';
+  } catch(e) {
+    alert('네트워크 오류. 잠시 후 다시 시도해 주세요.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✅ 일괄 접수 시작';
+  }
+}
+
+function downloadSample() {
+  const BOM = '\uFEFF';
+  const header = '보내는분이름,보내는분연락처,보내는분주소,보내는분상세주소,받는분이름,받는분연락처,받는분주소,받는분상세주소,물품명';
+  const sample = '홍길동,010-1234-5678,서울시 강남구 테헤란로 1,101동 201호,이영준,010-8765-4321,부산시 해운대구 해운대로 100,302호,의류';
+  const csv = BOM + header + '\n' + sample;
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = '동네비서_택배대량등록_양식.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">농산물 시세</div>
+    <div class="page-title">실시간 경매 시세 분석</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; padding-bottom: 50px;">
+    <!-- Search Section -->
+    <div class="card" style="margin-bottom: 20px;">
+        <h3 style="margin-top:0; font-weight: 800;">🔍 어떤 품목의 시세가 궁금하신가요?</h3>
+        <p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">품목을 유추하여 공공데이터포털의 가장 정확한 농수산물 DB를 매핑합니다.</p>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="itemName" placeholder="예: 고추, 말린고추, 사과..." style="flex:1; padding: 15px; border-radius: 8px; border: 2px solid #ccc; font-size: 1.1rem;" onkeypress="if(event.key==='Enter') fetchAuctionData()">
+            <button onclick="fetchAuctionData()" class="btn-primary" style="padding: 0 25px; border-radius: 8px; font-weight: bold; background: #1a1a1a; color: white;">시세 조회</button>
+        </div>
+    </div>
+
+    <!-- Error/Notice Section -->
+    <div id="noticeArea" style="display:none; padding: 15px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 8px; margin-bottom: 20px; font-weight: 600;">
+        <!-- notice message goes here -->
+    </div>
+
+    <!-- AI Insight Section -->
+    <div id="aiInsightArea" style="display:none; padding: 25px; background: linear-gradient(135deg, #f0f8ff, #e6f2ff); border: 2px solid #b8daff; border-radius: 12px; margin-bottom: 25px;">
+        <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 15px;">
+            <span style="font-size: 1.5rem;">🤖</span>
+            <span style="font-weight: 800; color: #004085; font-size: 1.2rem;">오늘의 출하 전략 (NotebookLM 분석)</span>
+        </div>
+        <p id="aiSummary" style="font-size: 1.2rem; color: #0f172a; font-weight: 700; line-height: 1.5; margin: 0; word-break: keep-all;"></p>
+    </div>
+
+    <!-- Results Table -->
+    <div id="resultArea" style="display:none;">
+        <h3 style="font-weight: 800; margin-bottom: 15px;">📊 등급별 경매 낙찰가 현황</h3>
+        <p id="resolvedNameInfo" style="font-size: 0.95rem; color: #475569; margin-bottom: 10px; font-weight: 600;"></p>
+        <div style="background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #eee;">
+            <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                    <tr>
+                        <th style="padding: 15px; font-weight: 700; color: #475569;">지역/공판장</th>
+                        <th id="headerSpecial" style="padding: 15px; font-weight: 700; color: #d32f2f;">특 등급</th>
+                        <th id="headerHigh" style="padding: 15px; font-weight: 700; color: #1976d2;">상 등급</th>
+                        <th id="headerNormal" style="padding: 15px; font-weight: 700; color: #2e7d32;">보통 등급</th>
+                    </tr>
+                </thead>
+                <tbody id="priceTableBody">
+                    <!-- Data rows go here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Loading Skeleton (Modern Native App Style) -->
+    <div id="loadingArea" style="display:none; padding: 20px;">
+        <div class="skeleton-container">
+            <div class="skeleton-header"></div>
+            <div class="skeleton-table">
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+                <div class="skeleton-row"></div>
+            </div>
+            <div class="skeleton-box"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Modern Skeleton Loader UI */
+.skeleton-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+.skeleton-header {
+    width: 60%;
+    height: 32px;
+    background: #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    animation: shimmer 1.5s infinite linear;
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+}
+.skeleton-table {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 24px;
+}
+.skeleton-row {
+    height: 48px;
+    border-bottom: 1px solid #f1f5f9;
+    animation: shimmer 1.5s infinite linear;
+    background: linear-gradient(90deg, #f1f5f9 25%, #ffffff 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+}
+.skeleton-row:nth-child(even) { animation-delay: 0.1s; }
+.skeleton-row:nth-child(odd) { animation-delay: 0.2s; }
+
+.skeleton-box {
+    width: 100%;
+    height: 100px;
+    border-radius: 12px;
+    animation: shimmer 1.5s infinite linear;
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Base Styles improvements */
+.btn-primary {
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+.btn-primary:active {
+    transform: translateY(2px);
+}
+</style>
+
+<script>
+async function fetchAuctionData() {
+    const itemName = document.getElementById('itemName').value.trim();
+    if(!itemName) {
+        alert("분석하려는 품목명을 입력해주세요.");
+        return;
+    }
+
+    // Reset UI
+    document.getElementById('noticeArea').style.display = 'none';
+    document.getElementById('aiInsightArea').style.display = 'none';
+    document.getElementById('resultArea').style.display = 'none';
+    document.getElementById('loadingArea').style.display = 'block';
+
+    try {
+        const response = await fetch('/api/market/auction/data', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ item_name: itemName })
+        });
+        
+        const data = await response.json();
+        document.getElementById('loadingArea').style.display = 'none';
+
+        if(data.success) {
+            // Check for maintenance notice (Warning variable from backend)
+            if(data.is_maintenance) {
+                const notice = document.getElementById('noticeArea');
+                notice.style.display = 'block';
+                notice.innerHTML = '⚠️ <b>공공 API 점검 중:</b> 현재 실시간 시세 서버 지연으로 인해 <b>어제 최종 낙찰가</b>를 기준으로 안내합니다.';
+            }
+
+            document.getElementById('resolvedNameInfo').innerHTML = 
+                `📌 <b>AI 분석 결과:</b> '${itemName}'을(를) 표준 품목명 <b>'${data.resolved_name}'</b>(으)로 분석하여 전국 시세(<b>${data.unit}</b> 기준)를 조회했습니다.`;
+
+            document.getElementById('headerSpecial').innerHTML = `특 등급<br><span style="font-size:0.8rem; font-weight:500; color:#ef4444;">(${data.unit})</span>`;
+            document.getElementById('headerHigh').innerHTML = `상 등급<br><span style="font-size:0.8rem; font-weight:500; color:#3b82f6;">(${data.unit})</span>`;
+            document.getElementById('headerNormal').innerHTML = `보통 등급<br><span style="font-size:0.8rem; font-weight:500; color:#22c55e;">(${data.unit})</span>`;
+
+            // Populate Table
+            const tbody = document.getElementById('priceTableBody');
+            tbody.innerHTML = '';
+            
+            data.prices.forEach(p => {
+                const isTaebaek = p.market.includes('태백');
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #eee';
+                
+                // 지역별 특성 태백 우선 시각화 강조
+                if(isTaebaek) row.style.background = '#fffbeb'; 
+                
+                row.innerHTML = `
+                    <td style="padding: 15px; font-weight: ${isTaebaek?'800':'500'}; color: ${isTaebaek?'#b45309':'#333'};">
+                        ${p.market} 
+                        ${isTaebaek?'<br><span style="font-size:0.75rem; background:#fde68a; padding:2px 6px; border-radius:4px; margin-top:4px; display:inline-block;">우선추천 지역</span>':''}
+                    </td>
+                    <td style="padding: 15px; font-weight: 700; color:#d32f2f; font-size:1.1rem;">${p.price_special ? p.price_special.toLocaleString()+'원' : '-'}</td>
+                    <td style="padding: 15px; font-weight: 700; color:#1976d2; font-size:1.1rem;">${p.price_high ? p.price_high.toLocaleString()+'원' : '-'}</td>
+                    <td style="padding: 15px; font-weight: 700; color:#2e7d32; font-size:1.1rem;">${p.price_normal ? p.price_normal.toLocaleString()+'원' : '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Show AI Insight (NotebookLM Summary)
+            document.getElementById('aiSummary').innerText = data.ai_strategy;
+            
+            document.getElementById('aiInsightArea').style.display = 'block';
+            document.getElementById('resultArea').style.display = 'block';
+
+        } else {
+            alert("조회 실패: " + data.error);
+        }
+    } catch(err) {
+        document.getElementById('loadingArea').style.display = 'none';
+        alert("서버 연결에 실패했습니다. (공공 API 연동 문제 발생 가능성)");
+    }
+}
+
+// 초기 접속 시 미리 데이터 불러오기 (빈 화면 방지)
+setTimeout(() => {
+    const input = document.getElementById('itemName');
+    if(input && !input.value) {
+        input.value = '고추';
+        fetchAuctionData();
+    }
+}, 300);
+</script>
+{% endblock %}

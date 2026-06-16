@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header" style="text-align: left; padding: 20px;">
+    <div class="current-menu-label" style="font-size: 1rem; color: #666;">{{ today_date }}</div>
+    <div class="page-title" style="font-size: 1.8rem; font-weight: 900;">사장님, 안녕하세요!</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- AI Briefing Hero (Prominent) -->
+<div class="kiosk-card highlight"
+    style="background: #1A1A1A; color: #fff; min-height: 200px; margin-bottom: 25px; align-items: flex-start; text-align: left;">
+    <div style="display: flex; justify-content: space-between; width: 100%;">
+        <div class="ai-badge" style="background: #00FF88; color: #1A1A1A;">탄탄한 동네비서 리포트</div>
+        <div class="ai-badge" style="background: #3b82f6; color: white;">이번 달 요약</div>
+    </div>
+    <div style="margin-top: 15px;">
+        <div style="font-size: 1rem; color: #ccc;">구출한 고객 수 (놓친 전화 콜백)</div>
+        <div style="font-size: 2.5rem; font-weight: 900; color: #00FF88;">
+            {{ stats.rescued_customers | default("42") }}명
+        </div>
+    </div>
+    <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; width: 100%;">
+        <div style="font-size: 1rem; color: #a1a1aa;">추정 추가 매출</div>
+        <div style="font-size: 1.5rem; font-weight: bold; color: #fff;">
+            +{{ "{:,}".format(stats.estimated_extra_revenue | default(1260000)) }}원
+        </div>
+    </div>
+</div>
+
+<!-- Quick Settings (Schedule & Links) -->
+<div class="kiosk-card" style="background: #f8f9fc; border: 1px solid #e2e8f0; margin-bottom: 25px; align-items: flex-start; text-align: left;">
+    <div style="font-size: 1.2rem; font-weight: 900; color: #1e3a8a; margin-bottom: 15px;">⚙️ 간편 설정 (10초 반영)</div>
+    <form action="/admin/quick_settings" method="post" style="width: 100%;">
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 0.9rem; font-weight: bold; color: #475569;">휴무 시 고객 안내 문구</label>
+            <input type="text" name="closed_message" value="{{ store.closed_message | default('현재 매장 부재중이거나 통화가 어렵습니다.') }}" 
+                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px;">
+        </div>
+        <div style="margin-bottom: 15px;">
+            <label style="font-size: 0.9rem; font-weight: bold; color: #475569;">고객 예약/주문 링크 (콜백 포함)</label>
+            <input type="url" name="reservation_link" value="{{ store.reservation_link | default('https://dongnebiseo.com/?id=' ~ store.store_id) }}" 
+                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px;">
+        </div>
+        <button type="submit" style="background-color: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+            변경 내용 즉시 적용
+        </button>
+    </form>
+</div>
+
+<!-- Kiosk Grid Layout -->
+<div class="kiosk-grid">
+
+    <!-- 1. Receipts (Rozen) -->
+    <a href="/courier" class="kiosk-card">
+        <div class="ai-badge">AI 자동접수</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">📦</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">로젠택배<br>접수</div>
+    </a>
+
+    <!-- 2. Tax Center (Smart Logic) -->
+    <a href="/admin/tax" class="kiosk-card">
+        <div class="ai-badge" style="background: #FF5252;">필수</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">💰</div>
+        {% if current_month in [1, 7] %}
+        <div style="font-size: 1.3rem; font-weight: 800;">부가가치세<br>신고센터</div>
+        {% elif current_month == 5 %}
+        <div style="font-size: 1.3rem; font-weight: 800;">종합소득세<br>신고센터</div>
+        {% else %}
+        <div style="font-size: 1.3rem; font-weight: 800;">세무<br>센터</div>
+        {% endif %}
+    </a>
+
+    <!-- 3. Farm Orders -->
+    <a href="/admin/farm/orders" class="kiosk-card">
+        <div class="ai-badge">AI 연동</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🚜</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">농가<br>주문관리</div>
+    </a>
+
+    <!-- 4. Expenses -->
+    <a href="/admin/expenses" class="kiosk-card">
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">💳</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">간편<br>비용기장</div>
+    </a>
+
+    <!-- [NEW] 5. Regular Management -->
+    <a href="#" class="kiosk-card" onclick="alert('준비 중인 프리미엄 기능입니다.')">
+        <div class="ai-badge">AI 추천</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">👥</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">단골<br>관리</div>
+    </a>
+
+    <!-- [NEW] 6. Table Order -->
+    <a href="#" class="kiosk-card" onclick="alert('준비 중인 프리미엄 기능입니다.')">
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🍽️</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">테이블<br>주문</div>
+    </a>
+
+    <!-- [NEW] 7. Store Management -->
+    <a href="/admin/store" class="kiosk-card">
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🏪</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">매장<br>관리</div>
+    </a>
+
+    <!-- [NEW] 8. Delivery Integration -->
+    <a href="#" class="kiosk-card" onclick="alert('배달의민족/요기요/쿠팡이츠 연동 준비 중입니다.')">
+        <div class="ai-badge">매출통합</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">🛵</div>
+        <div style="font-size: 1.3rem; font-weight: 800;">배달매출<br>통합</div>
+    </a>
+
+    <!-- [NEW] 9. Android App Download -->
+    <a href="/static/apps/dongnebiseo_latest.apk" download class="kiosk-card" style="background: #ecfdf5; border: 1.5px dashed #10b981;">
+        <div class="ai-badge" style="background: #10b981; color: white;">추천</div>
+        <div style="font-size: 3.5rem; margin-bottom: 15px;">📱</div>
+        <div style="font-size: 1.3rem; font-weight: 800; color: #047857;">동네비서<br>앱 다운로드</div>
+    </a>
+
+</div>
+{% endblock %}

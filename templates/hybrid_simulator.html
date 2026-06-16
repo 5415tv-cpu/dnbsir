@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - DB 연동형 동적 메뉴 시뮬레이터</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Outfit:wght@500;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0b0f19;
+            --card-dark: #151d30;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(21, 29, 48, 0.7);
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        header {
+            background: rgba(21, 29, 48, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.2rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .container {
+            max-width: 1380px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 2rem;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 2.2rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+        }
+
+        .card-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fbbf24;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .input-field {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1.5px solid var(--border-color);
+            color: var(--text-main);
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .switch-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            margin-top: 5px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .3s;
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            color: #0b0f19;
+            border: none;
+            border-radius: 14px;
+            padding: 0.85rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        /* DB Table */
+        .db-table-wrapper {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            font-weight: 700;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-icon-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        /* Phone Mockup Frame */
+        .device-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 0;
+        }
+
+        .phone-mockup {
+            width: 340px;
+            height: 620px;
+            background: #000000;
+            border: 10px solid #2e3035;
+            border-radius: 42px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.05);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .phone-speaker {
+            width: 60px;
+            height: 4px;
+            background: #4b5563;
+            border-radius: 2px;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+
+        .phone-screen {
+            flex: 1;
+            background: #0f172a;
+            padding: 24px 16px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Simulated Kiosk App UI */
+        .kiosk-header {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .kiosk-title {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #fbbf24;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .kiosk-network-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .kiosk-network-badge.offline {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .kiosk-screen-banner {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px dashed rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.75rem;
+            color: #fca5a5;
+            text-align: center;
+            display: none;
+            line-height: 1.4;
+        }
+
+        .kiosk-menu-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .kiosk-menu-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .kiosk-menu-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #fbbf24;
+            transform: translateY(-1px);
+        }
+
+        .kiosk-menu-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .kiosk-menu-name {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-main);
+        }
+
+        .kiosk-menu-url {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: monospace;
+        }
+
+        .kiosk-menu-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            font-size: 0.7rem;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+        }
+
+        .kiosk-footer {
+            margin-top: auto;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            padding-top: 10px;
+        }
+
+        /* Console */
+        .console-container {
+            background: #050811;
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 1.2rem;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            font-family: 'Consolas', monospace;
+            font-size: 0.8rem;
+            color: #10b981;
+            margin-top: 1.5rem;
+            line-height: 1.4;
+            scroll-behavior: smooth;
+        }
+
+        .console-line {
+            display: flex;
+            gap: 8px;
+        }
+
+        .console-time {
+            color: #475569;
+            flex-shrink: 0;
+        }
+
+        /* Toast notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .toast {
+            background: rgba(245, 158, 11, 0.95);
+            color: #0b0f19;
+            padding: 1rem 1.5rem;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            border-radius: 14px;
+            padding: 0.6rem 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--text-muted);
+            color: var(--text-main);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-text">
+            <span>⚙️</span> DB 연동형 동적 메뉴 시뮬레이터
+        </div>
+        <a href="/market" class="btn-back">동네마켓 화면으로 가기</a>
+    </header>
+
+    <div class="container">
+        <!-- 1. 제어 컨트롤 (왼쪽) -->
+        <div class="card">
+            <h2 class="card-title">🛡️ 관리자 메뉴 통합 관리 패널</h2>
+            
+            <!-- 입력 폼 -->
+            <div class="form-section">
+                <div style="font-size: 0.95rem; font-weight: 800; color: var(--text-main); margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;" id="form-header">
+                    ➕ 새 메뉴 정보 등록 (DB Schema 제약 반영)
+                </div>
+                
+                <input type="hidden" id="menu-id" value="">
+
+                <div class="form-row">
+                    <div class="control-group">
+                        <label class="control-label" for="menu-name">메뉴 이름 (menu_name)</label>
+                        <input type="text" id="menu-name" class="input-field" placeholder="예: 택배보내기" required>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label" for="sort-order">정렬 순서 (sort_order)</label>
+                        <input type="number" id="sort-order" class="input-field" placeholder="정수값만 허용" step="1" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="control-group">
+                        <label class="control-label" for="landing-url">이동 페이지 주소 (landing_url)</label>
+                        <input type="text" id="landing-url" class="input-field" placeholder="예: /parcel, /market" required>
+                    </div>
+                    <div class="control-group">
+                        <label class="control-label">활성화 여부 (is_active)</label>
+                        <label class="switch-wrapper">
+                            <span class="switch">
+                                <input type="checkbox" id="is-active" checked>
+                                <span class="slider"></span>
+                            </span>
+                            <span style="font-size: 0.9rem; font-weight: 700; color: var(--text-main);" id="status-label">노출 활성화</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 1.2rem;">
+                    <button class="btn-action" onclick="submitMenu()" style="flex: 1;">
+                        <span id="btn-submit-text">메뉴 등록하기</span>
+                    </button>
+                    <button class="btn-action" onclick="resetForm()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); display:none;" id="btn-cancel">
+                        취소
+                    </button>
+                </div>
+            </div>
+
+            <!-- 통신 상태 제어 -->
+            <div class="form-section" style="background: rgba(251, 191, 36, 0.02); border-color: rgba(251, 191, 36, 0.15);">
+                <div class="control-group">
+                    <label class="control-label" style="color: #fbbf24;">⚡ 네트워크 통신 및 DB 상태 제어</label>
+                    <label class="switch-wrapper" style="margin-top: 10px;">
+                        <span class="switch">
+                            <input type="checkbox" id="network-status" checked onchange="toggleNetwork(this)">
+                            <span class="slider"></span>
+                        </span>
+                        <span style="font-size: 0.95rem; font-weight: 800; color: var(--text-main);" id="network-label">정상 연결 (Online)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- DB 테이블 -->
+            <h3 class="control-label" style="margin-bottom: 0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                <span>💾 시뮬레이션 백엔드 메뉴 DB 테이블 (products_menu)</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight:normal;">sort_order ASC 정렬됨</span>
+            </h3>
+            <div class="db-table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 8%">ID</th>
+                            <th style="width: 25%">메뉴이름</th>
+                            <th style="width: 12%">순서</th>
+                            <th style="width: 25%">이동주소</th>
+                            <th style="width: 15%">상태</th>
+                            <th style="width: 15%">관리</th>
+                        </tr>
+                    </thead>
+                    <tbody id="db-table-body">
+                        <!-- Dynamic lines -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 2. 시뮬레이션 결과 화면 (오른쪽) -->
+        <div class="device-container">
+            <h3 class="control-label" style="margin-bottom: 1rem;">📱 키오스크 사용자 스마트폰 미리보기 (kiosk UI)</h3>
+            
+            <div class="phone-mockup">
+                <div class="phone-speaker"></div>
+                <div class="phone-screen">
+                    <div class="kiosk-header">
+                        <div class="kiosk-title">
+                            <span>🛎️</span> 동네비서 키오스크
+                        </div>
+                        <div class="kiosk-network-badge" id="kiosk-net">LTE</div>
+                    </div>
+
+                    <!-- 장애 경고 배너 -->
+                    <div class="kiosk-screen-banner" id="kiosk-fallback-banner">
+                        ⚠️ 통신 연결 끊김 (DB 장애 감지)<br><b>안전 폴백(Fallback JSON) 작동 중</b>
+                    </div>
+
+                    <!-- 동적 메뉴 렌더링 컨테이너 -->
+                    <div class="kiosk-menu-container" id="kiosk-menu-list">
+                        <!-- Dynamic Menu Buttons -->
+                    </div>
+
+                    <div class="kiosk-footer">
+                        동네비서 Kiosk System v1.95
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logcat Console -->
+            <div style="width: 340px; box-sizing: border-box;">
+                <div class="console-container" id="console">
+                    <!-- Dynamic Log lines -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script>
+        // 1. Database initial data (menu schema requirements)
+        let db_menus = [
+            { id: 1, menu_name: "택배보내기", sort_order: 1, is_active: true, landing_url: "/parcel" },
+            { id: 2, menu_name: "산지직송 마켓", sort_order: 2, is_active: true, landing_url: "/market" },
+            { id: 3, menu_name: "동네 혜택 조회", sort_order: 3, is_active: true, landing_url: "/citizen/benefits" },
+            { id: 4, menu_name: "어르신 일자리", sort_order: 4, is_active: false, landing_url: "/silver/jobs" }
+        ];
+
+        // 2. Hardcoded fallback data (kiosk safety requirement)
+        const fallback_menus = [
+            { id: 101, menu_name: "택배보내기 (폴백)", sort_order: 1, is_active: true, landing_url: "/parcel" },
+            { id: 102, menu_name: "산지직송 마켓 (폴백)", sort_order: 2, is_active: true, landing_url: "/market" },
+            { id: 103, menu_name: "고객 센터 (폴백)", sort_order: 3, is_active: true, landing_url: "/support" }
+        ];
+
+        let is_online = true;
+
+        // UI Helpers
+        function logConsole(message, type = 'info') {
+            const consoleElem = document.getElementById('console');
+            const time = new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '.' + String(Date.now() % 1000).padStart(3, '0').substring(0, 2);
+            
+            let color = '#38bdf8'; // blue
+            if (type === 'warn') color = '#f59e0b'; // orange
+            if (type === 'error') color = '#ef4444'; // red
+            if (type === 'success') color = '#10b981'; // green
+
+            const line = document.createElement('div');
+            line.className = 'console-line';
+            line.innerHTML = `<span class="console-time">[${time}]</span><span style="color: ${color}">${message}</span>`;
+            consoleElem.appendChild(line);
+            consoleElem.scrollTop = consoleElem.scrollHeight;
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span>🔔</span> ${message}`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = "slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) reverse forwards";
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Auto shifting implementation
+        function autoShiftOrders(newOrder, excludeId = null) {
+            // Sort database by sort_order
+            db_menus.sort((a, b) => a.sort_order - b.sort_order);
+            
+            // Check if there is an item with the same sort_order
+            let duplicateExists = db_menus.some(m => m.sort_order === newOrder && m.id !== excludeId);
+            if (duplicateExists) {
+                logConsole(`[DB Validation] 정렬 순서 ${newOrder}번이 중복 감지되었습니다. 자동 조정을 가동합니다.`, 'warn');
+                showToast("이미 사용 중인 순서입니다. 자동으로 조정합니다.");
+                
+                // Shift all subsequent orders
+                let currentTarget = newOrder;
+                db_menus.forEach(m => {
+                    if (m.id !== excludeId && m.sort_order >= currentTarget) {
+                        m.sort_order = currentTarget + 1;
+                        currentTarget = m.sort_order;
+                    }
+                });
+            }
+        }
+
+        function renderAll() {
+            // Sort array
+            db_menus.sort((a, b) => a.sort_order - b.sort_order);
+
+            // Render Table (Admin DB View)
+            const tableBody = document.getElementById('db-table-body');
+            tableBody.innerHTML = '';
+            
+            db_menus.forEach(menu => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${menu.id}</b></td>
+                    <td>${menu.menu_name}</td>
+                    <td><span style="font-weight: 800; color: #fbbf24;">${menu.sort_order}</span></td>
+                    <td style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted);">${menu.landing_url}</td>
+                    <td>
+                        <span class="status-badge ${menu.is_active ? 'status-active' : 'status-inactive'}">
+                            ${menu.is_active ? '활성(ON)' : '비활성(OFF)'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="btn-icon-group">
+                            <button class="btn-icon" onclick="editMenu(${menu.id})" title="수정">✏️</button>
+                            <button class="btn-icon btn-delete" onclick="deleteMenu(${menu.id})" title="삭제">❌</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            // Render Kiosk UI Screen
+            const kioskList = document.getElementById('kiosk-menu-list');
+            const banner = document.getElementById('kiosk-fallback-banner');
+            const kioskNet = document.getElementById('kiosk-net');
+            kioskList.innerHTML = '';
+
+            if (is_online) {
+                banner.style.display = 'none';
+                kioskNet.innerText = 'LTE (정상)';
+                kioskNet.className = 'kiosk-network-badge';
+
+                // Display active products sorted by sort_order
+                const activeMenus = db_menus.filter(m => m.is_active);
+                
+                if (activeMenus.length === 0) {
+                    kioskList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2rem 0;">노출할 메뉴가 없습니다.</div>`;
+                } else {
+                    activeMenus.forEach(menu => {
+                        const div = document.createElement('div');
+                        div.className = 'kiosk-menu-item';
+                        div.onclick = () => logConsole(`[Kiosk Interaction] 메뉴 '${menu.menu_name}' 클릭 -> URL: ${menu.landing_url}`, 'success');
+                        div.innerHTML = `
+                            <div class="kiosk-menu-info">
+                                <span class="kiosk-menu-name">${menu.menu_name}</span>
+                                <span class="kiosk-menu-url">${menu.landing_url}</span>
+                            </div>
+                            <div class="kiosk-menu-badge">${menu.sort_order}</div>
+                        `;
+                        kioskList.appendChild(div);
+                    });
+                }
+            } else {
+                // Offline fallback mode
+                banner.style.display = 'block';
+                kioskNet.innerText = '오프라인';
+                kioskNet.className = 'kiosk-network-badge offline';
+
+                // Load hardcoded fallback default JSON
+                fallback_menus.forEach(menu => {
+                    const div = document.createElement('div');
+                    div.className = 'kiosk-menu-item';
+                    div.onclick = () => logConsole(`[Kiosk Fallback Click] 안전 폴백 메뉴 '${menu.menu_name}' 클릭 -> URL: ${menu.landing_url}`, 'success');
+                    div.innerHTML = `
+                        <div class="kiosk-menu-info">
+                            <span class="kiosk-menu-name">${menu.menu_name}</span>
+                            <span class="kiosk-menu-url">${menu.landing_url}</span>
+                        </div>
+                        <div class="kiosk-menu-badge">${menu.sort_order}</div>
+                    `;
+                    kioskList.appendChild(div);
+                });
+            }
+        }
+
+        // Form operations
+        function submitMenu() {
+            const idVal = document.getElementById('menu-id').value;
+            const name = document.getElementById('menu-name').value.trim();
+            const orderRaw = document.getElementById('sort-order').value;
+            const url = document.getElementById('landing-url').value.trim();
+            const active = document.getElementById('is-active').checked;
+
+            if (!name || !orderRaw || !url) {
+                alert("모든 필수 입력 항목을 채워주세요.");
+                return;
+            }
+
+            // Force integer validation
+            const order = parseInt(orderRaw);
+            if (isNaN(order) || order !== parseFloat(orderRaw)) {
+                logConsole("[Validation Error] 정렬 순서값은 반드시 정수(Integer)만 입력 가능합니다.", "error");
+                alert("정렬 순서는 정수값으로 입력해야 합니다.");
+                return;
+            }
+
+            const menuId = idVal ? parseInt(idVal) : null;
+
+            // Trigger Shifting check
+            autoShiftOrders(order, menuId);
+
+            if (menuId) {
+                // Update
+                const item = db_menus.find(m => m.id === menuId);
+                if (item) {
+                    item.menu_name = name;
+                    item.sort_order = order;
+                    item.is_active = active;
+                    item.landing_url = url;
+                    logConsole(`[DB Transaction] 메뉴 ID ${menuId} ('${name}') 업데이트 성공.`, 'success');
+                }
+            } else {
+                // Insert
+                const newId = db_menus.length > 0 ? Math.max(...db_menus.map(m => m.id)) + 1 : 1;
+                db_menus.push({
+                    id: newId,
+                    menu_name: name,
+                    sort_order: order,
+                    is_active: active,
+                    landing_url: url
+                });
+                logConsole(`[DB Transaction] 신규 메뉴 ID ${newId} ('${name}') 삽입 완료.`, 'success');
+            }
+
+            resetForm();
+            renderAll();
+        }
+
+        function editMenu(id) {
+            const item = db_menus.find(m => m.id === id);
+            if (!item) return;
+
+            document.getElementById('menu-id').value = item.id;
+            document.getElementById('menu-name').value = item.menu_name;
+            document.getElementById('sort-order').value = item.sort_order;
+            document.getElementById('landing-url').value = item.landing_url;
+            document.getElementById('is-active').checked = item.is_active;
+
+            document.getElementById('form-header').innerHTML = `✏️ 메뉴 수정 (ID: ${item.id})`;
+            document.getElementById('btn-submit-text').innerText = "변경 사항 저장";
+            document.getElementById('btn-cancel').style.display = "block";
+            
+            logConsole(`[Admin Panel] 수정 모드 시작: 메뉴 ID ${item.id}`, 'info');
+        }
+
+        function deleteMenu(id) {
+            const item = db_menus.find(m => m.id === id);
+            if (!item) return;
+
+            if (confirm(`메뉴 '${item.menu_name}'을(를) 삭제하시겠습니까?`)) {
+                db_menus = db_menus.filter(m => m.id !== id);
+                logConsole(`[DB Transaction] 메뉴 ID ${id} 삭제 완료.`, 'success');
+                renderAll();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('menu-id').value = "";
+            document.getElementById('menu-name').value = "";
+            document.getElementById('sort-order').value = "";
+            document.getElementById('landing-url').value = "";
+            document.getElementById('is-active').checked = true;
+
+            document.getElementById('form-header').innerHTML = `➕ 새 메뉴 정보 등록 (DB Schema 제약 반영)`;
+            document.getElementById('btn-submit-text').innerText = "메뉴 등록하기";
+            document.getElementById('btn-cancel').style.display = "none";
+        }
+
+        // Toggle network online/offline state
+        function toggleNetwork(checkbox) {
+            is_online = checkbox.checked;
+            const label = document.getElementById('network-label');
+            
+            if (is_online) {
+                label.innerText = "정상 연결 (Online)";
+                label.style.color = "var(--text-main)";
+                logConsole("[Network Shell] 통신 채널이 재연결되었습니다. 백엔드 DB 연동형 동적 메뉴를 정상 호출합니다.", "success");
+            } else {
+                label.innerText = "네트워크 단절 (Offline)";
+                label.style.color = "var(--danger)";
+                logConsole("[Network Shell] 통신 연결 끊김 감지! 백엔드 API 장애로 앱 내부의 안전 폴백(Fallback JSON) 구조를 즉시 활성화합니다.", "error");
+            }
+            renderAll();
+        }
+
+        // Initial setup
+        window.addEventListener('DOMContentLoaded', () => {
+            logConsole("[Kiosk Boot] System initialized. Fetching products_menu schema details...", "info");
+            logConsole("[API Call] GET /api/store/test_store/menu -> status: 200 OK", "success");
+            renderAll();
+        });
+    </script>
+</body>
+</html>

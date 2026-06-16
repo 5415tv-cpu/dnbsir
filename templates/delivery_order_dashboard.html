@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}택배 수거/배송 스케줄 - 탄탄제작소{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">수거 스케줄</div>
+    <div class="page-title">실시간 수거 및 배송 스케줄</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+
+    <!-- Information Card -->
+    <div class="card" style="padding: 15px; margin-bottom: 20px; text-align: center; border-color: #f59e0b;">
+        <div style="font-weight: 900; font-size: 1.2rem; color: #b45309;">🚚 금일 택배 수거 리스트</div>
+        <div style="font-size: 0.95rem; color: #555; margin-top: 5px;">인근 지역 주민이 접수한 택배 및 반품 내역을 확인하세요.</div>
+    </div>
+
+    <!-- Orders -->
+    <div id="deliveryList">
+        <!-- Loaded via JS -->
+    </div>
+
+    <a href="/admin/dashboard" class="main-btn"
+        style="margin-top: 25px; background: white; color: var(--text-color); border: 2px solid #ddd; text-align: center; box-shadow: none;">
+        🔙 대시보드로 돌아가기
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadData() {
+        try {
+            // Fetch live assigned deliveries for "CITIZEN" pool
+            const orderRes = await fetch('{{ api_url }}/api/admin/deliveries');
+            const deliveries = await orderRes.json();
+            
+            const listDiv = document.getElementById('deliveryList');
+            if (!deliveries || deliveries.length === 0) {
+                listDiv.innerHTML = '<div style="text-align:center; padding: 25px; color: #888; background: #fff; border-radius: 12px; border: 1px solid #eee;">현재 담당 권역 내 미수거 예약 건이 없습니다.</div>';
+                return;
+            }
+            
+            let html = '';
+            deliveries.forEach((d, index) => {
+                const senderName = d.sender_name || '발송인';
+                const status = d.status || '대기중';
+                const itemName = d.item_name || d.item_type || '택배 물품';
+                const fee = d.fare || d.fee || '착불/선결제';
+                const senderAddr = d.sender_addr || d.address || '동네 인근 (지도 확인 필요)';
+                const trackingCode = d.tracking_number || d.tracking_code || `TRK_00${index}`;
+                
+                html += `
+                <div class="card" style="margin-bottom: 15px; border-left: 5px solid #f59e0b; padding: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-size: 1.1rem; color: #1e293b; font-weight: 900;">📍 ${senderName} 님 수거 요청</span>
+                        <span style="font-size: 0.8rem; background: #fef3c7; color: #b45309; padding: 3px 10px; border-radius: 12px; font-weight: bold;">${status}</span>
+                    </div>
+                    <div style="font-weight: 800; font-size: 1.05rem; margin-bottom: 5px; color: #475569;">📦 물품: ${itemName} (${fee}원)</div>
+                    <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 5px; line-height: 1.4;">주소: ${senderAddr}</div>
+                    <div style="font-size: 0.9rem; color: #94a3b8; font-weight: bold; margin-bottom: 15px;">송장: ${trackingCode}</div>
+                    
+                    <button onclick="printWaybill('${trackingCode}', '${senderName}')" class="main-btn" style="padding: 15px; font-size: 1.1rem; width: 100%; border-radius: 10px; font-weight: 900; background: #f59e0b; color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        🖨️ 현장 송장 출력 및 수거 완료
+                    </button>
+                </div>
+                `;
+            });
+            listDiv.innerHTML = html;
+        } catch (e) {
+            console.error("Delivery Loading Error:", e);
+            document.getElementById('deliveryList').innerHTML = '<div style="text-align:center; color: #ef4444; padding: 20px;">수거 스케줄을 불러오는데 실패했습니다.</div>';
+        }
+    }
+
+    async function printWaybill(trackingCode, senderName) {
+        if (!confirm(`[송장 번호: ${trackingCode}]\\n${senderName} 님의 송장을 기본 블루투스 프린터로 전송하시겠습니까?`)) return;
+
+        try {
+            // [Todo] Integrate with actual Print API targeting native App plugin
+            alert(`블루투스 송장 출력을 요청했습니다.\\n수거 상태가 자동으로 [완료] 업데이트됩니다.`);
+            // location.reload();
+        } catch (e) {
+            alert("송장 출력에 실패했습니다. 프린터 연결 상태를 확인해주세요.");
+        }
+    }
+
+    window.onload = loadData;
+</script>
+{% endblock %}

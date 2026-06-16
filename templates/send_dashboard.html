@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f4f7f6 !important;
+        font-family: 'Noto Sans KR', sans-serif;
+    }
+    
+    .send-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+        min-height: 100vh;
+    }
+
+    .hero-title {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .hero-title h1 {
+        font-size: 2.8rem;
+        font-weight: 900;
+        color: #1a1a1a;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .hero-title p {
+        font-size: 1.4rem;
+        color: #e53935;
+        font-weight: 800;
+        margin-top: 0.5rem;
+    }
+
+    /* Giant Buttons */
+    .huge-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 2.5rem 1.5rem;
+        border-radius: 20px;
+        border: none;
+        font-size: 2rem;
+        font-weight: 900;
+        margin-bottom: 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transition: transform 0.2s;
+        text-align: left;
+    }
+
+    .huge-btn:active {
+        transform: translateY(4px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    .btn-photo {
+        background: #1e3c72;
+        color: #fff;
+    }
+
+    .btn-voice {
+        background: #ffea00;
+        color: #000;
+    }
+
+    .btn-pay {
+        background: #39ff14;
+        color: #000;
+    }
+
+    .btn-icon {
+        font-size: 2.5rem;
+        margin-right: 1.5rem;
+    }
+
+    /* Checkboxes */
+    .option-bar {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        border: 2px solid #ddd;
+        display: flex;
+        justify-content: space-around;
+    }
+
+    .huge-checkbox-label {
+        font-size: 1.4rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        color: #333;
+    }
+
+    .huge-checkbox-label input {
+        width: 25px;
+        height: 25px;
+        margin-right: 10px;
+        accent-color: #e53935;
+    }
+
+    /* Hidden inputs to store state */
+    .hidden {
+        display: none !important;
+    }
+
+    /* Toast */
+    #sendToast {
+        visibility: hidden;
+        min-width: 250px;
+        background-color: #333;
+        color: #fff;
+        text-align: center;
+        border-radius: 10px;
+        padding: 1.5rem;
+        position: fixed;
+        z-index: 1000;
+        left: 50%;
+        bottom: 30px;
+        transform: translateX(-50%);
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    #sendToast.show {
+        visibility: visible;
+        animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+
+    @keyframes fadein {
+        from {bottom: 0; opacity: 0;}
+        to {bottom: 30px; opacity: 1;}
+    }
+
+    @keyframes fadeout {
+        from {bottom: 30px; opacity: 1;}
+        to {bottom: 0; opacity: 0;}
+    }
+</style>
+
+<div class="send-container">
+    
+    <div class="hero-title">
+        <img src="{{ static_url('icons/dnbsir-icon-192.png') }}" alt="동네비서 메인 캐릭터" onclick="installPWA()" title="클릭하여 PC/모바일 앱 설치하기" style="width: 120px; height: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s ease; border-radius: 20px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h1>보내기 비서</h1>
+        <p>태백 사과/곰취 통합 접수처</p>
+    </div>
+
+    <form id="sendForm">
+        <!-- Hidden Lat Lng -->
+        <input type="hidden" id="lat" name="lat">
+        <input type="hidden" id="lng" name="lng">
+        
+        <!-- Address Modal placeholder for text/voice -->
+        <input type="hidden" id="finalAddress" name="address">
+
+        <div class="option-bar">
+            <label class="huge-checkbox-label">
+                <input type="checkbox" name="fragile" value="1"> 파손 주의 💥
+            </label>
+            <label class="huge-checkbox-label">
+                <input type="checkbox" name="fresh" value="1"> 신선 식품 🍎
+            </label>
+        </div>
+
+        <!-- 1. Photo -->
+        <label class="huge-btn btn-photo">
+            <span class="btn-icon">📸</span> 
+            <span>보낼 물건<br>사진 찍기</span>
+            <input type="file" id="itemPhoto" accept="image/*" capture="environment" class="hidden" onchange="handlePhoto()">
+        </label>
+        <div id="photoCheck" style="text-align: center; color: #1e3c72; font-weight: 800; font-size: 1.2rem; margin-top: -1rem; margin-bottom: 1.5rem; display: none;">✅ 사진 첨부 완료!</div>
+
+        <!-- 2. Voice/Address -->
+        <button type="button" class="huge-btn btn-voice" onclick="openAddressCatcher()">
+            <span class="btn-icon">🎙️</span>
+            <span>받으실 분<br>주소 말하기</span>
+        </button>
+        <div id="addressCheck" style="text-align: center; color: #d84315; font-weight: 800; font-size: 1.2rem; margin-top: -1rem; margin-bottom: 1.5rem; display: none;">✅ 주소 입력 완료!</div>
+
+        <!-- 3. Payment -->
+        <button type="button" id="payBtn" class="huge-btn btn-pay" onclick="submitReservation()" disabled style="opacity: 0.5;">
+            <span class="btn-icon">💸</span>
+            <span>택배비<br>바로 결제</span>
+        </button>
+    </form>
+
+</div>
+
+<!-- Address Catcher Modal -->
+<div id="addressModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #fff; width: 100%; max-width: 500px; padding: 2rem; border-radius: 20px;">
+        <h2 style="font-size: 1.8rem; font-weight: 900; margin-top: 0; color: #1a1a1a;">🎙️ 음성 또는 문자 복사</h2>
+        <p style="font-size: 1.2rem; color: #666; font-weight: bold; margin-bottom: 1.5rem;">
+            "태백시 황지동 00번지 홍길동" 이라고 말씀하시거나 문자를 그대로 붙여넣어주세요.
+        </p>
+
+        <textarea id="aiInputText" rows="4" style="width: 100%; padding: 1rem; font-size: 1.5rem; border: 2px solid #ccc; border-radius: 10px; margin-bottom: 1rem;" placeholder="여기에 입력되거나 붙여넣으세요..."></textarea>
+        
+        <div style="display: flex; gap: 10px;">
+            <button onclick="startVoiceRecognition()" style="flex: 1; padding: 1.5rem; font-size: 1.3rem; font-weight: 900; background: #ffea00; border: none; border-radius: 10px; cursor: pointer;">🎙️ 음성 인식 (말하기)</button>
+            <button onclick="confirmAddress()" style="flex: 1; padding: 1.5rem; font-size: 1.3rem; font-weight: 900; background: #1a1a1a; color: #fff; border: none; border-radius: 10px; cursor: pointer;">확인 완료</button>
+        </div>
+        <button onclick="document.getElementById('addressModal').style.display='none'" style="width: 100%; margin-top: 10px; padding: 1rem; font-size: 1.2rem; background: transparent; color: #888; border: none;">닫기</button>
+    </div>
+</div>
+
+<div id="sendToast">메시지</div>
+
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(255,255,255,0.9); z-index: 99999; flex-direction: column; justify-content: center; align-items: center;">
+    <span style="font-size: 4rem; animation: spin 1.5s linear infinite;">⏳</span>
+    <h1 style="color: #1a1a1a; font-weight: 900; margin-top: 2rem;">기사님을 부르는 중...</h1>
+</div>
+<style>
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+
+<!-- Toss Payments Widget Script -->
+<script src="https://js.tosspayments.com/v1"></script>
+
+<script>
+    let photoAdded = false;
+    let addressAdded = false;
+    const tossClientKey = "{{ toss_client_key }}";
+
+    // Request GPS early on page load
+    document.addEventListener("DOMContentLoaded", () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(pos => {
+                document.getElementById('lat').value = pos.coords.latitude;
+                document.getElementById('lng').value = pos.coords.longitude;
+            }, err => {
+                console.warn("GPS Permission denied or unavailable.");
+            });
+        }
+    });
+
+    function showToast(msg) {
+        const toast = document.getElementById("sendToast");
+        toast.innerText = msg;
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+
+    function checkReady() {
+        if (photoAdded && addressAdded) {
+            document.getElementById('payBtn').disabled = false;
+            document.getElementById('payBtn').style.opacity = '1';
+        }
+    }
+
+    function handlePhoto() {
+        const el = document.getElementById('itemPhoto');
+        if (el.files && el.files.length > 0) {
+            photoAdded = true;
+            document.getElementById('photoCheck').style.display = 'block';
+            showToast("📸 사진이 첨부되었습니다!");
+            checkReady();
+        }
+    }
+
+    function openAddressCatcher() {
+        document.getElementById('addressModal').style.display = 'flex';
+    }
+
+    function startVoiceRecognition() {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert("음성 인식을 지원하지 않는 브라우저입니다. 직접 타이핑해주세요.");
+            return;
+        }
+        
+        const recognition = new webkitSpeechRecognition();
+        recognition.lang = 'ko-KR';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        showToast("마이크를 허용하고 말씀해주세요...");
+
+        recognition.start();
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('aiInputText').value += transcript + " ";
+        };
+
+        recognition.onerror = function(event) {
+            alert("음성 인식 오류: " + event.error);
+        };
+    }
+
+    function confirmAddress() {
+        const txt = document.getElementById('aiInputText').value.trim();
+        if (txt.length < 5) {
+            alert("주소를 조금 더 길게 입력해주세요.");
+            return;
+        }
+        document.getElementById('finalAddress').value = txt;
+        document.getElementById('addressModal').style.display = 'none';
+        
+        addressAdded = true;
+        document.getElementById('addressCheck').style.display = 'block';
+        document.getElementById('addressCheck').innerText = "✅ 입력된 주소: " + txt.substring(0, 10) + "...";
+        showToast("🎙️ 주소가 입력되었습니다!");
+        checkReady();
+    }
+
+    async function submitReservation() {
+        // [중복 방지 자물쇠 로직 (Frontend Validation)]
+        const formAddress = document.getElementById('finalAddress').value;
+        const lastAddress = localStorage.getItem('last_send_address');
+        const lastTime = localStorage.getItem('last_send_time');
+        
+        if (lastAddress === formAddress && lastTime) {
+            const diffMin = (new Date().getTime() - parseInt(lastTime)) / 60000;
+            if (diffMin < 5) {
+                alert("⚠️ 방금 이미 결제/접수하신 주소입니다! (기사님이 중복 출동할 수 있습니다. 5분 후 다시 시도해주세요.)");
+                return;
+            }
+        }
+
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.style.display = 'flex';
+
+        // Fake AI Processing Time
+        setTimeout(async () => {
+            overlay.style.display = 'none';
+            // Toss Payments
+            executeTossPayment();
+        }, 1200);
+    }
+
+    function executeTossPayment() {
+        // [결제 자물쇠] 토스 결제가 완료되어야만 서버로 POST 전송
+        const tossPayments = TossPayments(tossClientKey);
+        
+        // Random Order ID
+        const orderId = 'SEND_' + Math.random().toString(36).substr(2, 9);
+        const fee = 6000; // 예상 택배비 (어르신 고정 혹은 추후 백엔드 산출)
+
+        tossPayments.requestPayment('카드', {
+            amount: fee,
+            orderId: orderId,
+            orderName: '농산물 직송 택배비 및 시스템 사용료',
+            customerName: '농장주/개인고객',
+            taxFreeAmount: 0,  // 전액 과세(부가세 대상) 처리하여 국세청 자동 신고 연동
+            successUrl: window.location.origin + '/send/payment-success?address=' + encodeURIComponent(document.getElementById('finalAddress').value),
+            failUrl: window.location.origin + '/citizen/send'
+        }).catch(function (error) {
+            if (error.code === 'USER_CANCEL') {
+                alert("결제를 취소하셨습니다.");
+            } else {
+                alert(error.message);
+            }
+        });
+    }
+</script>
+{% endblock %}

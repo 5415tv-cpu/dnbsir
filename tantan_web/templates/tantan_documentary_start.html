@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 인생 기록관 - 탄탄제작소</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --text-main: #1e293b;
+            --text-sub: #475569;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Pretendard Variable', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; }
+
+        .header { background: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .logo { font-size: 1.5rem; font-weight: 800; color: #000; text-decoration: none; display: flex; align-items: center; gap: 8px; }
+        .logo i { color: var(--primary); }
+
+        .container { max-width: 1000px; margin: 60px auto; padding: 0 20px; }
+        .hero { text-align: center; margin-bottom: 40px; }
+        .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 15px; letter-spacing: -1px; }
+        .hero p { font-size: 1.2rem; color: var(--text-sub); word-break: keep-all; }
+
+        /* Category Tabs */
+        .category-tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 30px; justify-content: flex-start; scrollbar-width: none; -ms-overflow-style: none; }
+        .category-tabs::-webkit-scrollbar { display: none; }
+        
+        .tab-btn { background: white; border: 1px solid var(--border); padding: 12px 24px; border-radius: 30px; font-size: 1.05rem; font-weight: 600; color: var(--text-sub); cursor: pointer; white-space: nowrap; transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .tab-btn:hover { border-color: #cbd5e1; color: var(--text-main); }
+        .tab-btn.active { background: var(--text-main); color: white; border-color: var(--text-main); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        .card-grid { display: flex; flex-direction: column; gap: 20px; }
+        
+        .topic-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 30px; cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; display: none; }
+        .topic-card.show { display: block; animation: fadeIn 0.5s ease; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .topic-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-color: #cbd5e1; }
+        .topic-card.active { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        
+        .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .card-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; }
+        
+        .card-title { font-size: 1.4rem; font-weight: 700; }
+        .card-hook { font-size: 1.15rem; color: var(--text-sub); font-weight: 500; }
+        .card-mood-badge { font-size: 0.8rem; background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 12px; margin-left: auto; font-weight: 600; }
+
+        /* Color Themes */
+        .theme-roots .card-icon { background: linear-gradient(135deg, #84cc16, #4d7c0f); }
+        .theme-youth .card-icon { background: linear-gradient(135deg, #f59e0b, #b45309); }
+        .theme-work .card-icon { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+        .theme-love .card-icon { background: linear-gradient(135deg, #ec4899, #be185d); }
+        .theme-wisdom .card-icon { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+        .theme-space .card-icon { background: linear-gradient(135deg, #0ea5e9, #0369a1); }
+        .theme-future .card-icon { background: linear-gradient(135deg, #64748b, #334155); }
+
+        .input-area { display: none; margin-top: 25px; padding-top: 20px; border-top: 1px dashed var(--border); animation: fadeInDown 0.4s ease; }
+        .topic-card.active .input-area { display: block; }
+        
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        textarea { width: 100%; height: 160px; padding: 20px; font-size: 1.1rem; border: 1px solid var(--border); border-radius: 12px; resize: none; background: #f8fafc; transition: all 0.2s; color: var(--text-main); }
+        textarea:focus { outline: none; border-color: var(--primary); background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        .guide-text { font-size: 0.95rem; color: #64748b; margin-top: 12px; display: flex; align-items: flex-start; gap: 8px; font-weight: 500; background: #f1f5f9; padding: 12px; border-radius: 8px; }
+        .guide-text i { color: var(--primary); font-size: 1.2rem; }
+        
+        .bottom-actions { display: flex; gap: 10px; margin-top: 20px; align-items: center; }
+        .submit-btn { flex: 1; display: inline-flex; align-items: center; gap: 8px; background: var(--text-main); color: white; padding: 16px 20px; font-size: 1.1rem; font-weight: bold; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; text-decoration: none; justify-content: center; margin-top: 0; }
+        .submit-btn:hover { background: #0f172a; transform: translateY(-2px); }
+        
+        .upload-btn { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: white; border: 1px solid var(--border); color: var(--text-main); padding: 16px 20px; font-size: 1.3rem; font-weight: 600; border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+        .upload-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .upload-btn.camera { background: #fef2f2; border-color: #fecaca; color: #dc2626; }
+        .upload-btn.camera:hover { background: #fee2e2; }
+        
+        .preview-gallery { display: flex; gap: 10px; overflow-x: auto; margin-top: 15px; padding-bottom: 5px; }
+        .preview-gallery::-webkit-scrollbar { height: 6px; }
+        .preview-gallery::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .preview-item { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); }
+        .preview-wrapper { position: relative; display: inline-block; flex-shrink: 0; }
+        .remove-btn { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        .draft-status { font-size: 0.9rem; color: var(--primary); font-weight: bold; display: flex; align-items: center; gap: 5px; opacity: 0; transition: opacity 0.3s; margin-top: 15px; justify-content: flex-end; }
+        .draft-status.show { opacity: 1; }
+
+        /* Q18 특화 프리뷰 */
+        .q18-preview {
+            margin-top: 20px;
+            height: 250px;
+            border-radius: 12px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+        .q18-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1544928147-79a2dbc1f389?q=80&w=800&auto=format&fit=crop'); /* 사용자 사진 임시 mock */
+            background-size: cover;
+            background-position: center;
+            filter: grayscale(100%) blur(3px) brightness(0.3);
+            transition: all 0.5s ease;
+        }
+        .q18-text {
+            position: relative;
+            z-index: 10;
+            color: #f8fafc;
+            font-family: 'Nanum Myeongjo', 'Batang', serif;
+            font-size: 4rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            text-shadow: 0 10px 30px rgba(0,0,0,0.9);
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="/" class="logo"><i class="ri-movie-2-line"></i> 탄탄제작소</a>
+        <a href="/dashboard" style="color: var(--text-sub); text-decoration: none; font-weight: 500;">관리자 페이지</a>
+    </header>
+
+    <div class="container">
+        <div class="hero">
+            <h1>당신의 진짜 이야기를 들려주세요</h1>
+            <p>20가지 질문 중 마음이 끌리는 것을 선택하고, 생각나는 대로 편하게 적어보세요.<br>AI가 당신의 답변을 바탕으로 아름다운 한 편의 인생 다큐멘터리를 기획합니다.</p>
+        </div>
+
+        <div class="category-tabs">
+            <button class="tab-btn active" onclick="filterCategory('all', this)">전체 보기 (20)</button>
+            <button class="tab-btn" onclick="filterCategory('roots', this)">뿌리와 어린 시절</button>
+            <button class="tab-btn" onclick="filterCategory('youth', this)">청춘과 도전</button>
+            <button class="tab-btn" onclick="filterCategory('work', this)">가업과 일</button>
+            <button class="tab-btn" onclick="filterCategory('love', this)">사랑과 인연</button>
+            <button class="tab-btn" onclick="filterCategory('wisdom', this)">지혜와 성찰</button>
+            <button class="tab-btn" onclick="filterCategory('space', this)">공간과 시간</button>
+            <button class="tab-btn" onclick="filterCategory('future', this)">미래와 유산</button>
+            <button class="tab-btn" onclick="filterCategory('promo', this)" style="background: #eef2ff; color: #4338ca; border-color: #c7d2fe;">가게 홍보 (롱폼)</button>
+        </div>
+
+        <div class="card-grid" id="card-container">
+            <!-- JavaScript will populate cards here -->
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            // 뿌리와 어린 시절 (roots)
+            { id: 1, category: 'roots', icon: 'ri-leaf-line', title: '이름의 기원', hook: '당신의 이름에 담긴 뜻과, 그 이름을 처음 지어주신 분의 마음을 아시나요?', mood: 'warm-watercolor', moodLabel: '따뜻한 수채화풍', placeholder: '예: 할아버지가 지어주신 이름인데, 밝게 빛나라는 뜻이었죠...' },
+            { id: 2, category: 'roots', icon: 'ri-run-line', title: '어린 시절의 골목길', hook: '어린 시절, 동네 어귀에서 친구들과 시간 가는 줄 모르고 놀았던 가장 즐거운 기억은 무엇인가요?', mood: 'nostalgic-sepia', moodLabel: '향수를 자극하는 세피아톤', placeholder: '예: 1970년대 종로구 골목에서 딱지치기 하던 시절...' },
+            { id: 3, category: 'roots', icon: 'ri-restaurant-line', title: '그리운 밥상', hook: '어머니 혹은 아버지를 떠올릴 때 가장 먼저 생각나는 음식과 그에 얽힌 사연이 있나요?', mood: 'kitchen-warmth', moodLabel: '따뜻한 주방 소음', placeholder: '예: 어머니가 비 오는 날마다 해주시던 김치부침개 냄새...' },
+            
+            // 청춘과 도전 (youth)
+            { id: 4, category: 'youth', icon: 'ri-sun-line', title: '찬란했던 20대', hook: '20대의 당신, 세상을 다 가질 것 같았던 가장 용감했던 순간은 언제였나요?', mood: 'bright-energetic', moodLabel: '활기찬 템포와 밝은 조명', placeholder: '예: 대학 졸업하고 무작정 서울로 상경했던 스물셋의 봄...' },
+            { id: 5, category: 'youth', icon: 'ri-wallet-3-line', title: '첫 월급의 기억', hook: '첫 월급을 타던 날, 가장 먼저 무엇을 하셨는지 기억나시나요?', mood: 'photo-overlap', moodLabel: '과거 사진 오버랩', placeholder: '예: 내의 사서 부모님 갖다 드리고, 시장에서 통닭 한 마리 샀지...' },
+            { id: 6, category: 'youth', icon: 'ri-compasses-2-line', title: '운명적인 만남', hook: '인생의 길을 잃었다고 느꼈을 때, 당신을 다시 움직이게 한 운명적인 만남이 있었나요?', mood: 'dramatic-contrast', moodLabel: '드라마틱한 명암 대비', placeholder: '예: 사업 망하고 길바닥에 나앉았을 때 손 내밀어준 친구 한 명...' },
+            
+            // 가업과 일 (work)
+            { id: 7, category: 'work', icon: 'ri-store-2-line', title: '가게의 첫인상', hook: '이 가게(또는 일)를 시작하며 처음 손님을 맞이했던 그 순간의 공기를 기억하시나요?', mood: 'ambient-noise', moodLabel: '현장감 있는 생활 소음', placeholder: '예: 개업 첫날 아침 8시, 문을 열고 마시던 믹스커피의 맛...' },
+            { id: 8, category: 'work', icon: 'ri-award-line', title: '나만의 원칙', hook: '수십 년간 한 길을 걸어오며, "이것만큼은 내가 최고다"라고 자부하는 당신만의 원칙은 무엇인가요?', mood: 'macro-detail', moodLabel: '작업 도구의 디테일 샷', placeholder: '예: 아무리 바빠도 재료 손질만큼은 남한테 안 맡기고 내가 직접 하는 것...' },
+            { id: 9, category: 'work', icon: 'ri-hand-heart-line', title: '불황을 넘어서', hook: '가장 힘들었던 불황의 시기, 당신을 버티게 해준 단골 손님의 한 마디가 있었나요?', mood: 'serious-interview', moodLabel: '진지한 인터뷰 톤', placeholder: '예: 97년 IMF 때, 단골 할머니가 와서 손을 꼭 잡으시며...' },
+            
+            // 사랑과 인연 (love)
+            { id: 10, category: 'love', icon: 'ri-emotion-happy-line', title: '첫 만남의 설렘', hook: '평생의 반려자를 처음 만난 날, 그 사람의 첫인상은 어떠했나요?', mood: 'soft-focus', moodLabel: '부드러운 포커스 아웃', placeholder: '예: 친구 소개로 다방에서 처음 봤는데, 노란색 원피스가 참 잘 어울렸어...' },
+            { id: 11, category: 'love', icon: 'ri-parent-line', title: '탄생의 순간', hook: '자녀가 태어나 처음 당신의 손가락을 꽉 잡았던 그날의 감동을 기억하시나요?', mood: 'emotional-piano', moodLabel: '감성적인 피아노 선율', placeholder: '예: 산부인과 밖에서 밤새워 기다리다 처음 안아보던 그 작고 따뜻한 온기...' },
+            { id: 12, category: 'love', icon: 'ri-star-line', title: '그리운 얼굴', hook: '이제는 만날 수 없지만, 꿈속에서라도 꼭 한번 다시 보고 싶은 그리운 얼굴이 있나요?', mood: 'fade-inout', moodLabel: '아스라한 페이드 인/아웃', placeholder: '예: 일찍 돌아가신 우리 아버지, 지금 내 모습을 보면 참 좋아하셨을텐데...' },
+            
+            // 지혜와 성찰 (wisdom)
+            { id: 13, category: 'wisdom', icon: 'ri-lightbulb-flash-line', title: '인생의 나침반', hook: '인생이라는 긴 여정에서 당신이 얻은 가장 값진 교훈 하나만 후배들에게 전한다면 무엇인가요?', mood: 'voiceover-focus', moodLabel: '나레이션 중심의 연출', placeholder: '예: 굽은 나무가 선산을 지킨다고, 화려하지 않아도 묵묵히 버티면...' },
+            { id: 14, category: 'wisdom', icon: 'ri-thumb-up-line', title: '최고의 선택', hook: '"그때 참 잘했어"라며 과거의 자신을 칭찬해주고 싶은 결정적인 선택은 무엇인가요?', mood: 'stable-frame', moodLabel: '안정감 있는 구도', placeholder: '예: 남들 다 안된다고 할 때 과감하게 이 동네에 가게 터를 잡은 것...' },
+            { id: 15, category: 'wisdom', icon: 'ri-refresh-line', title: '다시 태어난다면', hook: '다시 태어나도 지금의 직업을 선택하시겠나요? 그 이유는 무엇인가요?', mood: 'deep-interview', moodLabel: '깊이 있는 인터뷰 톤', placeholder: '예: 고생은 했어도 다시 태어나도 이 길을 걸을 겁니다. 왜냐하면...' },
+            
+            // 공간과 시간 (space)
+            { id: 16, category: 'space', icon: 'ri-home-4-line', title: '삶의 터전', hook: '당신이 가장 오래 머문 이 장소(동네/집)는 당신에게 어떤 의미를 갖는 공간인가요?', mood: 'drone-broll', moodLabel: '드론 및 전경 촬영 B-Roll', placeholder: '예: 40년을 살아온 이 동네는 내게 탯줄 같은 곳이죠...' },
+            { id: 17, category: 'space', icon: 'ri-landscape-line', title: '나만의 비밀 장소', hook: '계절이 바뀔 때마다 당신의 마음을 설레게 하는 당신만의 "비밀 장소"가 있나요?', mood: 'nature-beauty', moodLabel: '자연경관의 수려한 영상', placeholder: '예: 가을만 되면 꼭 혼자 찾아가서 캔커피 하나 마시는 동네 뒷산 정자...' },
+            
+            // 미래와 유산 (future)
+            { id: 18, category: 'future', icon: 'ri-text-spacing', title: '한 단어의 정의', hook: '당신의 삶을 한 단어로 정의한다면, 어떤 단어를 선택하시겠나요?', mood: 'text-animation', moodLabel: '텍스트 애니메이션 강조', placeholder: '예: 오뚝이 (아무리 쓰러져도 다시 일어났던 내 인생)' },
+            { id: 19, category: 'future', icon: 'ri-film-line', title: '100년 후의 관객', hook: '100년 후의 후손들이 당신의 다큐를 본다면, 당신을 어떤 사람으로 기억해주길 바라나요?', mood: 'ending-credits', moodLabel: '여운이 남는 엔딩 크레딧', placeholder: '예: 요령 피우지 않고 참 정직하게 살다 간 듬직한 어른으로 기억되었으면...' },
+            { id: 20, category: 'future', icon: 'ri-sun-cloudry-line', title: '지금 이 순간', hook: '지금 이 순간, 당신을 가장 행복하게 만드는 사소한 일상의 조각은 무엇인가요?', mood: 'bright-ending', moodLabel: '밝고 경쾌한 마무리', placeholder: '예: 저녁에 일 마치고 손녀딸이랑 영상통화 할 때 들리는 웃음소리...' },
+            
+            // 가게 홍보 (promo)
+            { id: 21, category: 'promo', icon: 'ri-video-add-fill', title: '가게 홍보 롱폼 만들기', hook: '10분 분량의 완성도 높은 홍보 다큐멘터리를 위해, 가게의 역사와 철학, 메뉴 특징을 최대한 자세히 적어주세요. 앨범에서 사진을 최대한 많이 고르실수록 AI가 더 다채롭고 영화처럼 연출합니다!', mood: 'energetic', moodLabel: '에너제틱 홍보 영상', placeholder: '예: 우리 식당은 1998년에 개업해서 2대째 이어져 오고 있습니다. 매일 새벽 4시에 일어나 직접 재료를 고르며, 대표 메뉴는 24시간 푹 끓여 깊은 맛이 납니다. 특히 비 오는 날 단골손님과의 잊지 못할 추억이 있는데...' }
+        ];
+
+        const container = document.getElementById('card-container');
+        
+        function renderCards() {
+            container.innerHTML = '';
+            questions.forEach(q => {
+                const cardHTML = `
+                    <div class="topic-card theme-${q.category} show" data-category="${q.category}" id="card-${q.id}" onclick="toggleCard(${q.id})">
+                        <div class="card-header">
+                            <div class="card-icon"><i class="${q.icon}"></i></div>
+                            <div class="card-title">${q.title}</div>
+                            <div class="card-mood-badge"><i class="ri-movie-2-line"></i> ${q.moodLabel}</div>
+                        </div>
+                        <div class="card-hook">${q.hook}</div>
+                        
+                        <div class="input-area" onclick="event.stopPropagation();">
+                            <textarea id="text-${q.id}" placeholder="${q.placeholder}" oninput="saveDraft(${q.id})"></textarea>
+                            
+                            <div class="guide-text">
+                                <i class="ri-magic-line"></i>
+                                <span><b>AI 가이드:</b> 구체적인 장소, 연도, 감각적인 단어(냄새, 소리, 색감)를 적어주시면 다큐멘터리 영상이 더욱 영화처럼 정교해집니다. 완벽한 문장이 아니어도 괜찮습니다.</span>
+                            </div>
+                            <div class="preview-gallery" id="gallery-${q.id}"></div>
+                            <div class="draft-status" id="draft-${q.id}"><i class="ri-save-line"></i> 자동 저장됨</div>
+                            
+                            <div class="bottom-actions">
+                                <input type="file" id="camera-${q.id}" accept="image/*" capture="environment" style="display:none" onchange="handleFiles(event, ${q.id})">
+                                <input type="file" id="album-${q.id}" accept="image/*" multiple style="display:none" onchange="handleFiles(event, ${q.id})">
+                                
+                                <button class="upload-btn camera" title="사진 촬영" onclick="document.getElementById('camera-${q.id}').click()"><i class="ri-camera-fill"></i></button>
+                                <button class="upload-btn" title="앨범에서 선택" onclick="document.getElementById('album-${q.id}').click()"><i class="ri-image-add-line"></i></button>
+                                <button class="submit-btn" onclick="submitDocumentary(${q.id}, '${q.mood}')">다큐멘터리 제작하기 <i class="ri-arrow-right-line"></i></button>
+                            </div>
+                            <div style="text-align: right; margin-top: 10px; font-size: 0.85rem; color: #ef4444; font-weight: bold;">
+                                ※ AI 렌더링에 대규모 자원이 소모되므로, 최종 제작 완료까지 최소 3일에서 최대 1주일이 소요됩니다.
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        let uploadedFiles = {};
+
+        function handleFiles(event, qId) {
+            const files = Array.from(event.target.files);
+            if (!uploadedFiles[qId]) uploadedFiles[qId] = [];
+            uploadedFiles[qId] = uploadedFiles[qId].concat(files);
+            
+            renderGallery(qId);
+            event.target.value = '';
+        }
+
+        function renderGallery(qId) {
+            const gallery = document.getElementById('gallery-' + qId);
+            gallery.innerHTML = '';
+            if(!uploadedFiles[qId]) return;
+            
+            uploadedFiles[qId].forEach((file, index) => {
+                const url = URL.createObjectURL(file);
+                const wrapper = document.createElement('div');
+                wrapper.className = 'preview-wrapper';
+                
+                const img = document.createElement('img');
+                img.src = url;
+                img.className = 'preview-item';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.onclick = () => {
+                    uploadedFiles[qId].splice(index, 1);
+                    renderGallery(qId);
+                };
+                
+                wrapper.appendChild(img);
+                wrapper.appendChild(removeBtn);
+                gallery.appendChild(wrapper);
+            });
+        }
+
+        renderCards();
+        renderGlobalPromoButton();
+
+        // 페이지 로드 시 localStorage에서 임시 저장된 글 불러오기
+        window.onload = () => {
+            let hasDraft = false;
+            for(let i=1; i<=20; i++) {
+                const saved = localStorage.getItem('tantan_draft_' + i);
+                if(saved) {
+                    const textarea = document.getElementById('text-' + i);
+                    if (textarea) textarea.value = saved;
+                    if(!hasDraft) {
+                        toggleCard(i);
+                        hasDraft = true;
+                    }
+                }
+            }
+        };
+
+        function filterCategory(category, btn) {
+            // 버튼 활성화 처리
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // 카드 필터링
+            document.querySelectorAll('.topic-card').forEach(card => {
+                // 부드러운 전환을 위해 show 클래스 제거 후 다시 추가
+                card.classList.remove('show');
+                
+                setTimeout(() => {
+                    if (category === 'all' || card.getAttribute('data-category') === category) {
+                        card.style.display = 'block';
+                        // 브라우저 렌더링 사이클 확보 후 클래스 추가
+                        setTimeout(() => card.classList.add('show'), 10);
+                    } else {
+                        card.style.display = 'none';
+                        card.classList.remove('active'); // 숨겨질 때 열려있던 창도 닫기
+                    }
+                }, 100);
+            });
+        }
+
+        let typingTimer;
+        
+        function toggleCard(id) {
+            document.querySelectorAll('.topic-card').forEach(card => {
+                if (card.id !== 'card-' + id) {
+                    card.classList.remove('active');
+                }
+            });
+            
+            const target = document.getElementById('card-' + id);
+            target.classList.toggle('active');
+            
+            if (target.classList.contains('active')) {
+                document.getElementById('text-' + id).focus();
+            }
+        }
+
+        function saveDraft(id) {
+            const text = document.getElementById('text-' + id).value;
+            localStorage.setItem('tantan_draft_' + id, text);
+            
+            if (id === 18) {
+                const previewText = document.getElementById('q18-preview-text');
+                if (previewText) {
+                    const word = text.split(' ')[0] || "당신의 단어";
+                    previewText.innerText = word.substring(0, 10);
+                }
+            }
+            
+            clearTimeout(typingTimer);
+            const statusIcon = document.getElementById('draft-' + id);
+            statusIcon.classList.remove('show');
+            
+            typingTimer = setTimeout(() => {
+                statusIcon.classList.add('show');
+                setTimeout(() => {
+                    statusIcon.classList.remove('show');
+                }, 2000);
+            }, 800);
+        }
+
+        async function submitDocumentary(id, mood) {
+            const text = document.getElementById('text-' + id).value;
+            if (!text.trim()) {
+                alert("당신의 이야기를 조금이라도 적어주세요!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('text', text);
+            formData.append('theme', 'q' + id);
+            formData.append('mood', mood);
+            
+            if (uploadedFiles[id]) {
+                uploadedFiles[id].forEach(file => {
+                    formData.append('photos', file);
+                });
+            }
+
+            const btn = document.querySelector(`#card-${id} .submit-btn`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> 사진과 함께 서버로 전송 중...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/api/documentary/request', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    clearDraft(id);
+                    window.location.href = `/documentary-dashboard?theme=q${id}&mood=${mood}&job_id=${data.job_id}`;
+                } else {
+                    alert("서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                console.error(err);
+                alert("네트워크 오류가 발생했습니다.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+        function clearDraft(id) {
+            localStorage.removeItem('tantan_draft_' + id);
+        }
+    </script>
+</body>
+</html>

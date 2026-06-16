@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>시스템 모니터링 - 동네비서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+
+        /* ── 상단 헤더 ── */
+        .header {
+            background: #1e293b;
+            border-bottom: 2px solid #334155;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header h1 { font-size: 1.3rem; font-weight: 900; display: flex; align-items: center; gap: 10px; }
+        .header .live-dot {
+            width: 10px; height: 10px; background: #22c55e;
+            border-radius: 50%; animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+        /* ── 컨트롤 바 ── */
+        .controls {
+            background: #1e293b;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid #334155;
+        }
+        .controls select, .controls input[type=number] {
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.15s;
+        }
+        .btn-refresh { background: #3b82f6; color: white; }
+        .btn-refresh:hover { background: #2563eb; }
+        .btn-files { background: #334155; color: #94a3b8; }
+        .btn-files:hover { background: #475569; color: white; }
+        .btn-back { background: #334155; color: #94a3b8; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+        .btn-back:hover { background: #475569; color: white; }
+
+        .stats-bar {
+            display: flex; gap: 16px; margin-left: auto; flex-wrap: wrap;
+        }
+        .stat-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .chip-total { background: #1e3a5f; color: #60a5fa; }
+        .chip-error { background: #450a0a; color: #f87171; }
+        .chip-shown { background: #14532d; color: #4ade80; }
+
+        /* ── 상태 메시지 ── */
+        .status-box {
+            text-align: center;
+            padding: 60px 24px;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .status-loading { color: #60a5fa; }
+        .status-error { color: #f87171; }
+        .status-empty { color: #64748b; }
+
+        /* ── 로그 테이블 ── */
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        thead tr {
+            background: #1e293b;
+            border-bottom: 2px solid #334155;
+        }
+        thead th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 900;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #94a3b8;
+            white-space: nowrap;
+        }
+        tbody tr {
+            border-bottom: 1px solid #1e293b;
+            transition: background 0.1s;
+        }
+        tbody tr:hover { background: #1e293b; }
+        tbody td { padding: 10px 16px; vertical-align: top; }
+
+        /* 위험도별 행 색상 */
+        .row-error   { background: rgba(239,68,68,0.07); }
+        .row-warning { background: rgba(234,179,8,0.06); }
+        .row-info    { }
+
+        /* 위험도 배지 */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+        }
+        .badge-ERROR   { background: #dc2626; color: white; }
+        .badge-WARNING { background: #d97706; color: white; }
+        .badge-INFO    { background: #0369a1; color: white; }
+        .badge-OTHER   { background: #475569; color: white; }
+
+        .col-time     { white-space: nowrap; color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .col-location { color: #a78bfa; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; white-space: nowrap; }
+        .col-message  { word-break: break-all; color: #e2e8f0; }
+        .col-message.error-msg { color: #fca5a5; font-weight: 700; }
+
+        /* 파일 목록 패널 */
+        .file-panel {
+            display: none;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            margin: 16px 24px;
+            padding: 20px;
+        }
+        .file-panel h3 { font-size: 1rem; font-weight: 900; margin-bottom: 14px; color: #94a3b8; }
+        .file-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #334155;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+        .file-item:last-child { border-bottom: none; }
+        .file-size { color: #64748b; font-size: 0.78rem; }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<div class="header">
+    <h1>
+        <span class="live-dot"></span>
+        🚨 시스템 모니터링 (에러 로그)
+    </h1>
+    <a href="/admin/dashboard" class="btn btn-back">← 대시보드</a>
+</div>
+
+<!-- 컨트롤 바 -->
+<div class="controls">
+    <label style="color:#94a3b8; font-size:0.85rem; font-weight:700;">레벨 필터</label>
+    <select id="levelFilter">
+        <option value="ALL">전체</option>
+        <option value="ERROR">🔴 ERROR</option>
+        <option value="WARNING">🟡 WARNING</option>
+        <option value="INFO">🔵 INFO</option>
+    </select>
+
+    <label style="color:#94a3b8; font-size:0.85rem; font-weight:700;">최근</label>
+    <input type="number" id="lineCount" value="100" min="10" max="1000" style="width:80px;">
+    <label style="color:#94a3b8; font-size:0.85rem; font-weight:700;">줄</label>
+
+    <button class="btn btn-refresh" onclick="fetchLogs()">🔄 새로고침</button>
+    <button class="btn btn-files" onclick="toggleFilePanel()">📁 보관 파일 목록</button>
+
+    <div class="stats-bar">
+        <span class="stat-chip chip-total" id="statTotal">전체: -</span>
+        <span class="stat-chip chip-error" id="statError">에러: -</span>
+        <span class="stat-chip chip-shown" id="statShown">표시: -</span>
+    </div>
+</div>
+
+<!-- 파일 패널 -->
+<div class="file-panel" id="filePanel">
+    <h3>📅 날짜별 보관 로그 파일</h3>
+    <div id="fileList"><span style="color:#64748b;">불러오는 중...</span></div>
+</div>
+
+<!-- 로그 테이블 -->
+<div id="statusBox" class="status-box status-loading">⏳ 로그를 불러오는 중입니다...</div>
+
+<div class="table-wrap" id="tableWrap" style="display:none;">
+    <table>
+        <thead>
+            <tr>
+                <th style="width:160px;">발생 시간</th>
+                <th style="width:90px; text-align:center;">수준</th>
+                <th style="width:200px;">발생 위치</th>
+                <th>상세 메시지</th>
+            </tr>
+        </thead>
+        <tbody id="logBody"></tbody>
+    </table>
+</div>
+
+<script>
+    // ── 로그 한 줄 파싱 ──
+    // 형태: "2026-06-12 05:39:00 | ERROR    | [main.py:10] | DB 연결 실패"
+    function parseLogLine(line) {
+        const parts = line.split(' | ');
+        if (parts.length < 4) return { raw: line };
+        return {
+            time:     parts[0].trim(),
+            level:    parts[1].trim(),
+            location: parts[2].trim(),
+            message:  parts.slice(3).join(' | ').trim()
+        };
+    }
+
+    // ── 배지 HTML ──
+    function badgeHtml(level) {
+        const cls = ['ERROR','WARNING','INFO'].includes(level) ? level : 'OTHER';
+        return `<span class="badge badge-${cls}">${level}</span>`;
+    }
+
+    // ── 로그 데이터 요청 ──
+    async function fetchLogs() {
+        const level = document.getElementById('levelFilter').value;
+        const lines = document.getElementById('lineCount').value;
+
+        document.getElementById('statusBox').style.display = 'block';
+        document.getElementById('statusBox').className = 'status-box status-loading';
+        document.getElementById('statusBox').textContent = '⏳ 로그를 불러오는 중입니다...';
+        document.getElementById('tableWrap').style.display = 'none';
+
+        try {
+            const res = await fetch(`/api/admin/system-logs?lines=${lines}&level=${level}`);
+            if (!res.ok) {
+                if (res.status === 403) throw new Error('403 – 마스터 관리자만 접근 가능합니다.');
+                throw new Error(`서버 오류: HTTP ${res.status}`);
+            }
+
+            const data = await res.json();
+            const logs = data.logs || [];
+
+            // 통계 업데이트
+            const errorCount = logs.filter(l => l.includes('| ERROR')).length;
+            document.getElementById('statTotal').textContent = `전체: ${data.total ?? '-'}줄`;
+            document.getElementById('statError').textContent = `에러: ${errorCount}건`;
+            document.getElementById('statShown').textContent = `표시: ${logs.length}줄`;
+
+            if (logs.length === 0) {
+                document.getElementById('statusBox').className = 'status-box status-empty';
+                document.getElementById('statusBox').textContent = '✅ 해당 조건의 로그가 없습니다.';
+                return;
+            }
+
+            // 테이블 렌더링
+            const tbody = document.getElementById('logBody');
+            tbody.innerHTML = '';
+            logs.forEach((line, i) => {
+                const p = parseLogLine(line);
+                if (p.raw) {
+                    tbody.innerHTML += `<tr><td colspan="4" class="col-message">${escHtml(p.raw)}</td></tr>`;
+                    return;
+                }
+                const lvl = p.level.replace(/\s+/g,'');
+                const rowCls = lvl === 'ERROR' ? 'row-error' : lvl === 'WARNING' ? 'row-warning' : 'row-info';
+                const msgCls = lvl === 'ERROR' ? 'col-message error-msg' : 'col-message';
+                tbody.innerHTML += `
+                <tr class="${rowCls}">
+                    <td class="col-time">${escHtml(p.time)}</td>
+                    <td style="text-align:center;">${badgeHtml(lvl)}</td>
+                    <td class="col-location">${escHtml(p.location)}</td>
+                    <td class="${msgCls}">${escHtml(p.message)}</td>
+                </tr>`;
+            });
+
+            document.getElementById('statusBox').style.display = 'none';
+            document.getElementById('tableWrap').style.display = 'block';
+
+        } catch (err) {
+            document.getElementById('statusBox').className = 'status-box status-error';
+            document.getElementById('statusBox').textContent = `❌ ${err.message}`;
+        }
+    }
+
+    // ── 파일 목록 패널 토글 ──
+    async function toggleFilePanel() {
+        const panel = document.getElementById('filePanel');
+        if (panel.style.display === 'block') {
+            panel.style.display = 'none';
+            return;
+        }
+        panel.style.display = 'block';
+        try {
+            const res = await fetch('/api/admin/system-logs/files');
+            const data = await res.json();
+            const files = data.files || [];
+            if (files.length === 0) {
+                document.getElementById('fileList').innerHTML = '<span style="color:#64748b;">보관된 파일이 없습니다.</span>';
+                return;
+            }
+            document.getElementById('fileList').innerHTML = files.map(f =>
+                `<div class="file-item">
+                    <span>${escHtml(f.name)}</span>
+                    <span class="file-size">${f.size_kb} KB</span>
+                </div>`
+            ).join('');
+        } catch (e) {
+            document.getElementById('fileList').innerHTML = '<span style="color:#f87171;">파일 목록 로드 실패</span>';
+        }
+    }
+
+    // XSS 방지
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // 페이지 로드 시 자동 실행
+    document.addEventListener('DOMContentLoaded', fetchLogs);
+
+    // 레벨/줄수 변경 시 자동 새로고침
+    document.getElementById('levelFilter').addEventListener('change', fetchLogs);
+</script>
+
+</body>
+</html>

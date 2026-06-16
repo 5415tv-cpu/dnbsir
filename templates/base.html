@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#F0F2F5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>동네비서 - 공식 홈페이지</title>
+    <meta name="description" content="우리 동네 사업자와 이웃이 '말 한마디'로 연결되게 돕는 가장 성실하고 정확한 지역 밀착형 AI 비서 대리인입니다.">
+    <meta name="keywords" content="동네비서, 동네비서 공식 홈페이지, AI 비서, 소상공인 AI, 지역 상권, 디지털 대행, 실전 AI">
+    <meta property="og:title" content="동네비서 - 공식 홈페이지">
+    <meta property="og:description" content="복잡한 앱 접속이나 검색 없이, 우리 동네 사람들을 '말 한마디'로 안전하고 따뜻하게 연결해 줍니다.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://dongnebiseo.com{{ static_url('icons/dnbsir-icon-512.png') }}">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://dongnebiseo.com{{ static_url('icons/dnbsir-icon-512.png') }}">
+    <meta name="twitter:title" content="동네비서 - 공식 홈페이지">
+    <link rel="manifest" href="{{ static_url('manifest.json') }}">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/service-worker.js');
+        }
+    </script>
+    <link rel="icon" href="{{ static_url('favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ static_url('icons/dnbsir-icon-192.png') }}">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ static_url('css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+    
+    <!-- AI Status Bar (Fixed Top) -->
+    <div class="ai-status-bar">
+        <div class="ai-pulse"></div>
+        AI 동네비서가 실시간 관리 중
+    </div>
+
+    <div class="main-container" style="padding-bottom: 15vh;"> <!-- Padding for taller nav -->
+
+        <!-- Sticky Header -->
+        {% block header %}
+        {% if request.url.path.startswith('/admin') or request.url.path.startswith('/delivery') or request.url.path.startswith('/courier') %}
+        <header class="sticky-header" style="top: 45px; display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky;"> <!-- Adjust for AI Bar -->
+            <a href="/" style="display: flex; align-items: center; text-decoration: none; gap: 8px;">
+                <strong style="font-weight: 900; font-size: 1.35rem; color: #1e3c72; letter-spacing: -0.5px;">탄탄한 동네비서</strong>
+            </a>
+            <button id="dashboard-hamburger-btn" onclick="toggleDashboardSidebar(true)" style="background: none; border: none; font-size: 1.8rem; color: #1e3c72; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                ☰
+            </button>
+        </header>
+        {% else %}
+        <header class="sticky-header" style="top: 45px; display: flex; align-items: center; justify-content: center; padding: 10px 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky;"> <!-- Adjust for AI Bar -->
+            <a href="/" style="display: flex; align-items: center; justify-content: center; text-decoration: none; gap: 8px;">
+                <strong style="font-weight: 900; font-size: 1.35rem; color: #1e3c72; letter-spacing: -0.5px;">탄탄한 동네비서</strong>
+            </a>
+        </header>
+        {% endif %}
+        {% endblock %}
+
+        {% block page_header %}
+        <!-- Override in child -->
+        {% endblock %}
+
+        <!-- Main Content -->
+        <div class="content-area">
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- Global Footer -->
+        <footer style="text-align: center; padding: 30px 20px; font-size: 0.85rem; opacity: 0.7; margin-top: 40px; border-top: 1px solid rgba(150, 150, 150, 0.3); line-height: 1.8;">
+            <p style="margin: 0; font-weight: 800; font-size: 0.95rem;">상호명: 탄탄제작소</p>
+            <p style="margin: 0;">대표자: 이영준</p>
+            <p style="margin: 0;">사업자등록번호: 442-32-01655</p>
+            <p style="margin: 0;">주소: 강원특별자치도 태백시 (상세주소)</p>
+            <p style="margin: 0;">연락처: 010-2384-7447</p>
+            <p style="margin: 0;">통신판매업 신고번호: 제2026-강원태백-0013호</p>
+            <p style="margin: 0;">출원된 상표(출원번호: 4-2026-023525-4)</p>
+            <p style="margin: 15px 0 0 0; font-size: 0.75rem; opacity: 0.8;">Copyright 2026. Tantan Studio all rights reserved.</p>
+        </footer>
+
+        {% if request.url.path.startswith('/admin') or request.url.path.startswith('/delivery') or request.url.path.startswith('/courier') %}
+        <!-- Sidebar Styling for Admin Dashboard Actions -->
+        <style>
+            .sidebar-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                padding: 0.9rem 1rem;
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.08);
+                border: 1px solid rgba(255, 255, 255, 0.15);
+                color: #ffffff;
+                font-size: 0.95rem;
+                font-weight: 800;
+                cursor: pointer;
+                transition: all 0.2s;
+                text-decoration: none;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+                box-sizing: border-box;
+            }
+            .sidebar-btn:hover {
+                background: rgba(255, 255, 255, 0.15);
+                transform: translateY(-2px);
+            }
+        </style>
+        <!-- Dashboard Hamburger Slide-out Sidebar -->
+        <div id="dashboard-sidebar-overlay" onclick="toggleDashboardSidebar(false)" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 10000; opacity: 0; transition: opacity 0.3s ease;">
+            <div style="max-width: 600px; width: 100%; height: 100%; margin: 0 auto; position: relative; overflow: hidden; pointer-events: none;">
+                <div id="dashboard-sidebar-menu" onclick="event.stopPropagation()" style="position: absolute; top: 0; right: -320px; width: 320px; max-width: 85%; height: 100%; background: #1e293b; color: #fff; box-shadow: -5px 0 25px rgba(0,0,0,0.3); box-sizing: border-box; padding: 2rem 1.5rem; display: flex; flex-direction: column; transition: right 0.3s ease; overflow-y: auto; gap: 1.5rem; border-left: 1px solid rgba(255,255,255,0.1); pointer-events: auto;">
+                <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.15); padding-bottom: 1rem; margin-bottom: 0.5rem;">
+                    <span style="font-weight: 900; font-size: 1.25rem; color: #ffcc00;">⚙️ 동네비서 설정/기능</span>
+                    <button onclick="toggleDashboardSidebar(false)" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; outline: none;">✕</button>
+                </div>
+                
+                <!-- Home/Clock Standby Shortcut (Absolute First Item) -->
+                <button class="sidebar-btn" onclick="location.href='/admin/dashboard'" style="background: #1e3c72; border: 2px solid #ffd700; color: #ffd700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.15rem; padding: 14px; margin-bottom: 1rem; width: 100%; box-sizing: border-box; font-weight: 900; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                    ⏰ 홈 / 대기화면 (시계)
+                </button>
+                
+                <!-- COURIER INTEGRATION SETTINGS -->
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 1.2rem;">
+                    <h4 style="margin: 0 0 12px 0; color: #39ff14; font-size: 1.05rem; font-weight: 900; display: flex; align-items: center; gap: 6px;">
+                        🚚 택배사 자동 연동 설정
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                        <div>
+                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">연동 택배사 선택</label>
+                            <select id="courier-carrier-select" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                                <option value="kr.logen">로젠택배 (Logen)</option>
+                                <option value="kr.hanjin">한진택배 (Hanjin)</option>
+                                <option value="kr.cjlogistics">CJ대한통운 (CJ Logistics)</option>
+                                <option value="kr.lotte">롯데택배 (Lotte)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">택배사 시스템 아이디 (사번)</label>
+                            <input type="text" id="courier-id-input" placeholder="예: 79802 또는 영업소 코드" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">택배사 비밀번호 (Password)</label>
+                            <input type="password" id="courier-pw-input" placeholder="택배사 시스템 비밀번호" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">차량번호 (4자리)</label>
+                            <input type="text" id="courier-car-input" placeholder="예: 5016" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                        </div>
+                        <button onclick="saveCourierSettings()" style="width: 100%; padding: 10px; background: #39ff14; color: #000; font-weight: 900; font-size: 0.9rem; border: none; border-radius: 8px; cursor: pointer; margin-top: 5px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                            연동 설정 저장하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MANUAL SMS SENDER -->
+                <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 14px; padding: 1.2rem;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 1.05rem; color: #ffeb3b; font-weight: 900; display: flex; align-items: center; gap: 6px;">
+                        📨 수동 콜백/알림톡 발송
+                    </h4>
+                    <p style="font-size: 0.8rem; color: #cbd5e1; margin: 0 0 10px 0; line-height: 1.4; text-align: left;">
+                        자동 발송 앱이 작동하지 않을 때, 이곳에 고객 번호를 입력하시면 동일한 알림톡/문자가 발송됩니다.
+                    </p>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="tel" id="manualSmsPhone" placeholder="예: 01012345678" style="flex: 1; padding: 8px; border-radius: 8px; border: none; font-size: 0.9rem; font-weight: bold; background: rgba(255,255,255,0.9); color: #000; outline: none;">
+                        <button onclick="sendManualSms()" style="padding: 0 12px; background: #39ff14; color: #000; border: none; border-radius: 8px; font-weight: 900; font-size: 0.85rem; cursor: pointer;">
+                            전송
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PREMIUM OCR UPLOAD -->
+                <div style="background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.25); border-radius: 14px; padding: 1.2rem; text-align: center; cursor: pointer;" onclick="document.getElementById('receiptUpload').click();">
+                    <div style="font-size: 2rem; margin-bottom: 0.3rem;">🧾</div>
+                    <div style="font-size: 0.75rem; color: #ffd700; font-weight: 800; margin-bottom: 0.2rem;">[사장님 전용]</div>
+                    <h4 style="margin: 0; color: #ffffff; font-size: 0.95rem; font-weight: 700; line-height: 1.3;">영수증 & 배달집계표 촬영 시<br>매출·매입 즉시 자동 계산</h4>
+                    <input type="file" id="receiptUpload" accept="image/*" capture="environment" style="display: none;" onchange="uploadReceipt(this)">
+                </div>
+
+                <!-- SIDEBAR NAVIGATION & ACTIONS -->
+                <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                    <button class="sidebar-btn" onclick="runSidebarQuery('이달 정산 수수료 얼마야?')" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.25); color: #60a5fa; font-weight: 800;">
+                        📊 이달 정산 수수료 확인
+                    </button>
+                    <button class="sidebar-btn" onclick="runSidebarQuery('단골들에게 특가 감자 알림톡 보내줘')" style="background: rgba(139, 92, 246, 0.15); border-color: rgba(139, 92, 246, 0.25); color: #c084fc; font-weight: 800;">
+                        💬 단골 특가 알림톡 발송
+                    </button>
+                    <button class="sidebar-btn" onclick="location.href='/admin/tax'" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.25); color: #10b981;">
+                        📊 위탁·직판 통합 장부 (세무)
+                    </button>
+                    <button class="sidebar-btn" onclick="location.href='/admin/product/register'">
+                        🍏 농산물 사입·판매 등록
+                    </button>
+                    <button class="sidebar-btn" onclick="location.href='/admin/reservations'">
+                        📝 실시간 예약 현황
+                    </button>
+                    <button class="sidebar-btn" onclick="location.href='/admin/calls'">
+                        ☎️ 미수신 전화 목록
+                    </button>
+                    <button class="sidebar-btn" onclick="location.href='/admin/auto-reply'">
+                        💬 알림톡 발송 설정
+                    </button>
+                    <button class="sidebar-btn" onclick="location.href='/delivery-dashboard'" style="background: rgba(30, 144, 255, 0.15); border-color: rgba(30, 144, 255, 0.25); color: #60a5fa;">
+                        🚚 배달·수거 현황 (기사앱)
+                    </button>
+                    <button class="sidebar-btn" onclick="if(confirm('소상공인 맞춤형 지원금 및 대출 상담을 받아보시겠습니까?')) { location.href='/subsidy'; }">
+                        🏦 소상공인 지원금 확인
+                    </button>
+                    <button class="sidebar-btn" onclick="toggleVideoForm()" id="btn-video-req" style="background: rgba(255, 204, 0, 0.15); border-color: rgba(255, 204, 0, 0.25); color: #ffd700;">
+                        🎬 동네비서 비디오 솔루션
+                    </button>
+                    <button class="sidebar-btn" onclick="if(confirm('로그아웃 하시겠습니까?')) { location.href='/logout'; }" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.25); color: #f87171; margin-top: 10px;">
+                        🔓 로그아웃
+                    </button>
+                </div>
+
+                <!-- Video solutions form inside sidebar -->
+                <div id="video-req-form" style="display: none; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-top: 10px; border: 1px solid rgba(255, 204, 0, 0.25); text-align: left;">
+                    <h4 style="margin: 0 0 10px 0; color: #ffd700; font-size: 0.9rem;">🎥 홍보 영상 제작 요청서</h4>
+                    
+                    <div style="background: rgba(255, 255, 255, 0.05); padding: 8px; border-radius: 6px; margin-bottom: 12px; border-left: 4px solid #3b82f6;">
+                        <p style="margin: 0; font-size: 0.75rem; color: #94a3b8; line-height: 1.4;">
+                            어떤 분위기의 영상을 원하시나요? 감동 다큐부터 예능까지, AI가 제작해 드립니다.
+                        </p>
+                    </div>
+
+                    <label style="display: block; margin-bottom: 4px; color: #e2e8f0; font-size: 0.8rem;">1. 영상 컨셉(Vibe) 선택</label>
+                    <select id="video-vibe" style="width: 100%; margin-bottom: 12px; background: #0f172a; color: #fff; padding: 8px; border-radius: 4px; border: 1px solid #475569; font-size: 0.8rem; outline: none;">
+                        <option value="[모드 1: 다큐멘터리]">🎬 감동적인 다큐멘터리 (진정성/기록)</option>
+                        <option value="[모드 2: 개그맨/B급 예능]">🤣 유쾌한 개그맨/B급 예능 (재치/유머)</option>
+                    </select>
+
+                    <label style="display: block; margin-bottom: 4px; color: #e2e8f0; font-size: 0.8rem;">2. 작업 사진 (2장 이상)</label>
+                    <input type="file" id="video-images" multiple accept="image/*" style="width: 100%; margin-bottom: 12px; background: #0f172a; color: #fff; padding: 6px; border-radius: 4px; border: 1px solid #475569; font-size: 0.75rem; box-sizing: border-box;">
+                    
+                    <label style="display: block; margin-bottom: 4px; color: #e2e8f0; font-size: 0.8rem;">3. 사장님의 이야기 (진심)</label>
+                    <textarea id="video-story" placeholder="예: 매일 가마솥에 불을 지피며 10년째 이어가고 있습니다..." style="width: 100%; height: 60px; padding: 8px; border-radius: 4px; margin-bottom: 12px; background: #0f172a; color: #fff; border: 1px solid #475569; font-family: inherit; font-size: 0.8rem; resize: vertical; box-sizing: border-box;"></textarea>
+                    
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="toggleVideoForm()" style="flex: 1; padding: 8px; background: #475569; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">취소</button>
+                        <button onclick="submitVideoRequest()" id="btn-video-submit" style="flex: 1.5; padding: 8px; background: #ffd700; color: #000; font-weight: bold; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">전송하기</button>
+                    </div>
+                </div>
+
+                <!-- 내 비디오 보관함 -->
+                {% if video_requests %}
+                <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 12px; text-align: left;">
+                    <h5 style="margin: 0 0 10px 0; color: #fff; font-size: 0.9rem;">🎬 내 비디오 보관함</h5>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% for req in video_requests %}
+                        {% if req.status == 'completed' %}
+                        <div style="background: rgba(0,0,0,0.4); border-radius: 6px; padding: 10px; border: 1px solid #3b82f6;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: #60a5fa; font-weight: bold; font-size: 0.8rem;">✅ 제작 완료</span>
+                                <span style="color: #94a3b8; font-size: 0.75rem;">{{ req.completed_at }}</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                <button onclick="alert('동네비서 마켓 홍보영상으로 등록되었습니다.');" style="background: #ffcc00; color: #000; border: none; padding: 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">마켓 업로드</button>
+                                <button onclick="alert('스마트스토어 연동 완료!');" style="background: #03c75a; color: #fff; border: none; padding: 6px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">스토어 업로드</button>
+                            </div>
+                        </div>
+                        {% elif req.status == 'pending' %}
+                        <div style="background: rgba(0,0,0,0.4); border-radius: 6px; padding: 10px; border: 1px solid #f59e0b; font-size: 0.75rem;">
+                            <span style="color: #fbbf24; font-weight: bold;">⏳ 제작 중...</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+
+    {% if not hide_bottom_nav %}
+    <!-- Bottom Navigation (Kiosk Style) -->
+    <nav class="bottom-nav">
+        <a href="/admin/dashboard" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">홈</div>
+        </a>
+        <a href="/citizen/market" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-text">마켓</div>
+        </a>
+        <a href="/admin/reservations" class="nav-item">
+            <div class="nav-icon">📅</div>
+            <div class="nav-text">예약</div>
+        </a>
+        <a href="/admin/tax" class="nav-item">
+            <div class="nav-icon">📒</div>
+            <div class="nav-text">장부</div>
+        </a>
+    </nav>
+    {% endif %}
+
+
+
+    <!-- Scripts -->
+    <script src="{{ static_url('js/app.js') }}"></script>
+    {% if request.url.path.startswith('/admin') or request.url.path.startswith('/delivery') or request.url.path.startswith('/courier') %}
+    <script>
+        function toggleDashboardSidebar(open) {
+            const overlay = document.getElementById('dashboard-sidebar-overlay');
+            const menu = document.getElementById('dashboard-sidebar-menu');
+            if (!overlay || !menu) return;
+            
+            if (open) {
+                overlay.style.display = 'block';
+                setTimeout(() => {
+                    overlay.style.opacity = '1';
+                    menu.style.right = '0';
+                }, 20);
+            } else {
+                menu.style.right = '-320px';
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        function runSidebarQuery(queryText) {
+            toggleDashboardSidebar(false);
+            if (window.location.pathname === '/admin/dashboard') {
+                const input = document.getElementById('chatbotInput');
+                if (input) {
+                    input.value = queryText;
+                    sendChatMessage();
+                }
+            } else {
+                window.location.href = '/admin/dashboard?query=' + encodeURIComponent(queryText);
+            }
+        }
+
+        async function saveCourierSettings() {
+            const carrier = document.getElementById('courier-carrier-select').value;
+            const id = document.getElementById('courier-id-input').value.trim();
+            const pw = document.getElementById('courier-pw-input').value.trim();
+            const carNo = document.getElementById('courier-car-input').value.trim();
+            
+            localStorage.setItem('courier_carrier', carrier);
+            localStorage.setItem('courier_id', id);
+            localStorage.setItem('courier_pw', pw);
+            localStorage.setItem('courier_car_no', carNo);
+            
+            try {
+                const res = await fetch('/api/admin/courier/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        carrier: carrier,
+                        courier_id: id,
+                        courier_pw: pw,
+                        courier_car_no: carNo
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('✅ 택배사 연동 설정이 저장되었습니다!');
+                } else {
+                    alert('❌ 연동 저장 실패: ' + (data.error || '알 수 없는 오류'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('⚠️ 서버 저장 실패, 로컬에 임시 저장되었습니다.');
+            }
+        }
+
+        async function loadCourierSettings() {
+            const carrierSelect = document.getElementById('courier-carrier-select');
+            const idInput = document.getElementById('courier-id-input');
+            const pwInput = document.getElementById('courier-pw-input');
+            const carInput = document.getElementById('courier-car-input');
+            if (!carrierSelect || !idInput || !pwInput || !carInput) return;
+
+            let carrier = localStorage.getItem('courier_carrier') || 'kr.logen';
+            let id = localStorage.getItem('courier_id') || '';
+            let pw = localStorage.getItem('courier_pw') || '';
+            let carNo = localStorage.getItem('courier_car_no') || '';
+            
+            carrierSelect.value = carrier;
+            idInput.value = id;
+            pwInput.value = pw;
+            carInput.value = carNo;
+            
+            try {
+                const res = await fetch('/api/admin/courier/settings');
+                const data = await res.json();
+                if (data.success) {
+                    if (data.carrier) {
+                        carrierSelect.value = data.carrier;
+                        localStorage.setItem('courier_carrier', data.carrier);
+                    }
+                    if (data.courier_id) {
+                        idInput.value = data.courier_id;
+                        localStorage.setItem('courier_id', data.courier_id);
+                    }
+                    if (data.courier_pw) {
+                        pwInput.value = data.courier_pw;
+                        localStorage.setItem('courier_pw', data.courier_pw);
+                    }
+                    if (data.courier_car_no) {
+                        carInput.value = data.courier_car_no;
+                        localStorage.setItem('courier_car_no', data.courier_car_no);
+                    }
+                }
+            } catch (e) {
+                console.log('Fallback to local storage for courier settings');
+            }
+        }
+
+        async function sendManualSms() {
+            const phoneInput = document.getElementById('manualSmsPhone');
+            if (!phoneInput) return;
+            const phone = phoneInput.value.replace(/[^0-9]/g, '');
+            if (phone.length < 10) return alert('전화번호를 정확히 입력해주세요.');
+            
+            if(!confirm(phone + ' 번호로 안내 문자를 발송하시겠습니까?')) return;
+            
+            try {
+                const res = await fetch('{{ api_url or "" }}/api/admin/manual-sms', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({phone: phone})
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert('✅ 발송이 완료되었습니다!');
+                    phoneInput.value = '';
+                } else {
+                    alert('❌ 발송 실패: ' + data.error);
+                }
+            } catch(e) {
+                alert('❌ 통신 에러가 발생했습니다.');
+            }
+        }
+
+        async function uploadReceipt(input) {
+            if (!input.files || input.files.length === 0) return;
+            
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const overlay = document.createElement('div');
+            overlay.id = 'ocrLoadingOverlay';
+            overlay.style.position = 'fixed';
+            overlay.style.top = '0'; overlay.style.left = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
+            overlay.style.background = 'rgba(0,0,0,0.8)'; overlay.style.color = '#fff'; overlay.style.display = 'flex';
+            overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center'; overlay.style.zIndex = '999999';
+            overlay.style.flexDirection = 'column';
+            overlay.innerHTML = '<h2 style="font-weight: 900; margin-bottom: 10px; text-align: center;">🔍 AI 동네비서가<br>분석 중입니다...</h2><p style="color: #ffeb3b;">정확도 99%의 영수증 처리 엔진</p>';
+            document.body.appendChild(overlay);
+
+            try {
+                const res = await fetch('{{ api_url or "" }}/api/admin/ledger/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                document.body.removeChild(overlay);
+                
+                if (data.success) {
+                    alert(`✅ ${data.type} 등록 완료!\n인식된 금액: ${data.amount.toLocaleString()}원\n장부에 자동 반영되었습니다.`);
+                    location.reload();
+                } else {
+                    alert('❌ 분석에 실패했습니다. 다시 시도해주세요.\n에러: ' + (data.error || '알 수 없음'));
+                }
+            } catch (e) {
+                if (document.getElementById('ocrLoadingOverlay')) {
+                    document.body.removeChild(overlay);
+                }
+                alert('❌ 통신 오류가 발생했습니다.');
+                console.error(e);
+            }
+        }
+
+        function toggleVideoForm() {
+            const form = document.getElementById('video-req-form');
+            if (!form) return;
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        async function submitVideoRequest() {
+            const fileInput = document.getElementById('video-images');
+            const storyInput = document.getElementById('video-story');
+            if (!fileInput || !storyInput) return;
+            
+            if (fileInput.files.length < 2) {
+                alert("최소 2장 이상의 사진을 선택해 주세요.");
+                return;
+            }
+            if (!storyInput.value.trim()) {
+                alert("원하는 스토리나 내용을 입력해 주세요.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-video-submit');
+            const ogText = btn.innerHTML;
+            btn.innerHTML = "전송 중...";
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+
+            try {
+                const formData = new FormData();
+                const vibe = document.getElementById('video-vibe').value;
+                const finalStory = vibe + "\n" + storyInput.value;
+                formData.append('story', finalStory);
+                for(let i = 0; i < fileInput.files.length; i++) {
+                    formData.append('images', fileInput.files[i]);
+                }
+
+                const res = await fetch('/api/admin/video_request', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if(data.success) {
+                    alert('🎬 홍보 영상 제작 요청이 성공적으로 전송되었습니다!\n본사(탄탄제작소)에서 확인 후 신속하게 영상을 제작해 드리겠습니다.');
+                    toggleVideoForm();
+                    fileInput.value = '';
+                    storyInput.value = '';
+                } else {
+                    alert('요청 중 서버 오류가 발생했습니다.');
+                }
+            } catch(e) {
+                alert('네트워크 오류가 발생했습니다. 사진 크기가 너무 클 수 있습니다.');
+            } finally {
+                btn.innerHTML = ogText;
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCourierSettings();
+        });
+    </script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

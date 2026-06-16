@@ -1,0 +1,17 @@
+[database]
+# "sqlite" 또는 "postgres"
+backend = "sqlite"
+
+[postgres]
+host = "158.247.241.29"
+port = 5432
+user = "tandan"
+password = "대표님비밀번호"
+dbname = "dongnebiseo"
+
+[sqlite]
+path = "database.db"
+
+[admin]
+username = "admin8705"
+password = "Aass12!!"

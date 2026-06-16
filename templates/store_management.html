@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header" style="text-align: left; padding: 20px;">
+    <div class="current-menu-label" style="font-size: 1rem; color: #666;">내 가게 정보</div>
+    <div class="page-title" style="font-size: 1.8rem; font-weight: 900;">매장 관리</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="kiosk-grid" style="grid-template-columns: 1fr;">
+
+    <!-- Store Info Form -->
+    <div class="kiosk-card" style="align-items: flex-start; text-align: left; padding: 30px; cursor: default;">
+
+        <form id="storeForm" style="width: 100%;">
+
+            <!-- Basic Info -->
+            <h3
+                style="font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                기본 정보</h3>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 10px;">상호명</label>
+                <input type="text" name="name" value="{{ store.name }}" class="login-input" required>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 10px;">대표자명</label>
+                <input type="text" name="owner_name" value="{{ store.owner_name }}" class="login-input">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 10px;">연락처</label>
+                <input type="tel" name="phone" value="{{ store.phone }}" class="login-input">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 10px;">업종 (카테고리)</label>
+                <select name="category" class="login-input" style="background: #fff;">
+                    <option value="식당" {% if store.category=='식당' %}selected{% endif %}>식당</option>
+                    <option value="카페" {% if store.category=='카페' %}selected{% endif %}>카페</option>
+                    <option value="편의점" {% if store.category=='편의점' %}selected{% endif %}>편의점/마트</option>
+                    <option value="미용실" {% if store.category=='미용실' %}selected{% endif %}>미용실</option>
+                    <option value="기타" {% if store.category=='기타' %}selected{% endif %}>기타</option>
+                </select>
+            </div>
+
+            <!-- Detail Info -->
+            <h3
+                style="font-size: 1.2rem; font-weight: 800; margin: 40px 0 20px 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                매장 상세</h3>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 10px;">매장 소개 (AI 응답용)</label>
+                <textarea name="info" class="login-input"
+                    style="height: 100px; resize: none;">{{ store.info }}</textarea>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 700; margin-bottom: 10px;">대표 메뉴 (텍스트)</label>
+                <textarea name="menu_text" class="login-input" style="height: 80px; resize: none;"
+                    placeholder="예: 김치찌개 8000원, 된장찌개 7000원">{{ store.menu_text }}</textarea>
+            </div>
+
+            <button type="submit" class="main-btn" style="margin-top: 20px;">저장하기</button>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+    document.getElementById('storeForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = '저장 중...';
+
+        try {
+            const formData = new FormData(this);
+            // Convert FormData to JSON
+            const data = Object.fromEntries(formData.entries());
+
+            const response = await fetch('{{ api_url }}/api/admin/store/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert('매장 정보가 저장되었습니다.');
+                window.location.reload();
+            } else {
+                alert('저장에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('오류가 발생했습니다.');
+        } finally {
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    });
+</script>
+{% endblock %}

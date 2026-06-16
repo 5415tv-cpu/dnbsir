@@ -1,0 +1,885 @@
+{% extends "tantan_base.html" %}
+
+{% block title %}AI 인생 기록관 관제 대시보드 - 탄탄제작소{% endblock %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+<style>
+    :root {
+        --docu-bg: #f8fafc;
+        --card-bg: #ffffff;
+        --border-color: #e2e8f0;
+        --primary: #10b981;
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        
+        --status-pending: #cbd5e1;
+        --status-running: #3b82f6;
+        --status-done: #10b981;
+        --status-error: #ef4444;
+    }
+
+    body {
+        background-color: var(--docu-bg);
+        font-family: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    .docu-dashboard {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .docu-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .docu-header h2 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin: 0 0 8px 0;
+        color: var(--text-main);
+    }
+    .docu-header p {
+        margin: 0;
+        color: var(--text-muted);
+        font-size: 1.1rem;
+    }
+    .btn-back {
+        background: #f1f5f9;
+        color: #475569;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .section-card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 0 0 20px 0;
+        color: var(--text-main);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* ① 6단계 타임라인 스테이션 */
+    .timeline-station {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+    }
+    .timeline-station::before {
+        content: '';
+        position: absolute;
+        top: 24px;
+        left: 40px;
+        right: 40px;
+        height: 4px;
+        background: var(--border-color);
+        z-index: 1;
+    }
+    .step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 2;
+        width: 120px;
+    }
+    .step-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: var(--card-bg);
+        border: 4px solid var(--status-pending);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        color: var(--text-muted);
+        transition: all 0.3s ease;
+        margin-bottom: 12px;
+    }
+    .step-name {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: var(--text-main);
+        text-align: center;
+    }
+    .step-status {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
+
+    /* Status Classes */
+    .is-done .step-icon { border-color: var(--status-done); color: var(--status-done); background: rgba(16,185,129,0.1); }
+    .is-running .step-icon { border-color: var(--status-running); color: var(--status-running); background: rgba(59,130,246,0.1); box-shadow: 0 0 15px rgba(59,130,246,0.4); animation: pulse 1.5s infinite; }
+    .is-error .step-icon { border-color: var(--status-error); color: var(--status-error); background: rgba(239,68,68,0.1); }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    /* ② 실시간 프리뷰 캔버스 */
+    .canvas-container {
+        display: flex;
+        gap: 20px;
+        min-height: 350px;
+    }
+    .canvas-box {
+        flex: 1;
+        background: #1e293b;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+    .canvas-title {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: bold;
+        z-index: 10;
+    }
+    
+    /* Noise Simulation for RTX 4070 rendering */
+    .noise-layer {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+        opacity: 0.15;
+        mix-blend-mode: overlay;
+        pointer-events: none;
+    }
+    
+    .loading-spinner {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        color: #fff;
+        gap: 15px;
+    }
+    .spinner-circle {
+        width: 40px; height: 40px;
+        border: 4px solid rgba(255,255,255,0.3);
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* ③ 기술 로그 콘솔 */
+    .console-box {
+        background: #000;
+        color: #4ade80; /* Green */
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.9rem;
+        padding: 20px;
+        border-radius: 12px;
+        height: 250px;
+        overflow-y: auto;
+        line-height: 1.5;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+    }
+    .log-line {
+        margin-bottom: 4px;
+        word-break: break-all;
+    }
+    .log-error { color: #ef4444; }
+    .log-warn { color: #facc15; }
+    .log-info { color: #60a5fa; }
+    
+    .console-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+</style>
+
+<div class="docu-dashboard">
+    <div class="docu-header">
+        <div>
+            <h2>🎥 AI 인생 기록관 관제 센터</h2>
+            <p>16:9 고화질 롱폼 다큐멘터리 실시간 렌더링 파이프라인 (RTX 4070 연동)</p>
+        </div>
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: #fff; padding: 10px 15px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <input type="checkbox" id="observer-toggle" onchange="toggleObserverMode()" style="width: 18px; height: 18px; cursor: pointer;">
+                <span style="font-weight: bold; color: #3b82f6;"><i class="ri-microscope-line"></i> 정밀 관찰 모드 켜기</span>
+            </label>
+            <a href="/dashboard" class="btn-back"><i class="ri-arrow-left-line"></i> 대시보드 메인</a>
+        </div>
+    </div>
+
+    <div style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 15px 20px; border-radius: 12px; font-size: 0.95rem; display: flex; align-items: center; gap: 10px; margin-bottom: 24px;">
+        <i class="ri-information-fill" style="font-size: 1.2rem;"></i>
+        <strong>시스템 안내:</strong> 롱폼 다큐멘터리 워크플로우는 기존 숏폼과 철저히 분리된 독립된 렌더링 서버 자원을 사용합니다. 브라우저를 최소화하면 리소스 절약을 위해 렌더링이 일시 중단(Heartbeat)됩니다.
+    </div>
+
+    <!-- 완료된 비디오 영상 목록 -->
+    <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h4 style="margin: 0; color: #0f172a; font-size: 1.2rem; font-weight: bold;"><i class="ri-video-check-line"></i> 생성 완료된 동네비서 영상</h4>
+            <span style="background: #f1f5f9; color: #475569; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem;">최근 50건</span>
+        </div>
+        
+        {% if stats and stats.recent_video_requests %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+            {% for req in stats.recent_video_requests %}
+            {% if req.status == 'completed' and req.url %}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;">
+                <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: bold; color: #1e293b; font-size: 0.95rem;">{{ req.store_name }}</div>
+                        <div style="color: #64748b; font-size: 0.8rem;">{{ req.requested_at[:16] }}</div>
+                    </div>
+                    <span class="badge badge-active" style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;">완료</span>
+                </div>
+                <div style="padding: 12px; flex: 1; display: flex; flex-direction: column;">
+                    <video src="{{ req.url }}" controls loop muted style="width: 100%; border-radius: 6px; background: #000; margin-bottom: 10px; height: 160px; object-fit: cover;"></video>
+                    <a href="{{ req.url }}" download class="btn" style="background: #3b82f6; color: white; text-decoration: none; text-align: center; justify-content: center; width: 100%; padding: 8px; border-radius: 6px; font-size: 0.9rem;">영상 다운로드</a>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="color: #64748b; text-align: center; margin: 20px 0;">생성 완료된 영상이 없습니다.</p>
+        {% endif %}
+    </div>
+
+    <!-- ① 상단: 6단계 타임라인 스테이션 -->
+    <div class="section-card">
+        <h3 class="section-title"><i class="ri-git-commit-line"></i> 6단계 타임라인 스테이션 (Pipeline Station)</h3>
+        <div class="timeline-station" id="timeline">
+            <div class="step-item" id="step-1">
+                <div class="step-icon"><i class="ri-file-text-line"></i></div>
+                <div class="step-name">1. 기획/서사</div>
+                <div class="step-status">대기 중</div>
+            </div>
+            <div class="step-item" id="step-2">
+                <div class="step-icon"><i class="ri-user-smile-line"></i></div>
+                <div class="step-name">2. 인물 고정</div>
+                <div class="step-status">대기 중</div>
+            </div>
+            <div class="step-item" id="step-3">
+                <div class="step-icon"><i class="ri-cpu-line"></i></div>
+                <div class="step-name">3. 영상 렌더링</div>
+                <div class="step-status">대기 중</div>
+            </div>
+            <div class="step-item" id="step-4">
+                <div class="step-icon"><i class="ri-mic-line"></i></div>
+                <div class="step-name">4. 시니어 더빙</div>
+                <div class="step-status">대기 중</div>
+            </div>
+            <div class="step-item" id="step-5">
+                <div class="step-icon"><i class="ri-scissors-cut-line"></i></div>
+                <div class="step-name">5. 합성/편집</div>
+                <div class="step-status">대기 중</div>
+            </div>
+            <div class="step-item" id="step-6">
+                <div class="step-icon"><i class="ri-bard-line"></i></div>
+                <div class="step-name">6. 마스터링</div>
+                <div class="step-status">대기 중</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 정밀 관찰 모드 패널 (기본 숨김) -->
+    <div id="observer-panel" style="display: none; flex-direction: column; gap: 24px;">
+        
+        <!-- 전처리 모니터 -->
+        <div style="display: flex; gap: 20px;">
+            <div class="section-card" style="flex: 1; border-color: #8b5cf6;">
+                <h3 class="section-title" style="color: #7c3aed; font-size: 1.1rem; margin-bottom: 15px;"><i class="ri-user-search-line"></i> 인물 에셋 분석창 (Asset Analysis)</h3>
+                <div style="background: #f8fafc; border-radius: 8px; padding: 15px; display: flex; align-items: center; gap: 15px;">
+                    <div style="width: 80px; height: 80px; background: #e2e8f0; border-radius: 8px; position: relative; overflow: hidden;">
+                        <!-- 모의 랜드마크 그리드 -->
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(#cbd5e1 1px, transparent 1px), linear-gradient(90deg, #cbd5e1 1px, transparent 1px); background-size: 10px 10px; opacity: 0.5;"></div>
+                        <i class="ri-user-fill" style="font-size: 4rem; color: #94a3b8; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -40%);"></i>
+                    </div>
+                    <div style="flex: 1; font-family: monospace; font-size: 0.9rem; color: #334155; line-height: 1.6;">
+                        <div id="obs-landmark">> 얼굴 특징점(Landmarks) 추출 98% 완료...</div>
+                        <div id="obs-skin">> 피부 톤 매핑 중 (Type: #f5d0b5)...</div>
+                        <div id="obs-lighting" style="color: #eab308; display: none;">> [경고] 사진 밝기(Exposure)가 낮아 노이즈 발생 가능성 감지됨.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-card" style="flex: 1; border-color: #ec4899;">
+                <h3 class="section-title" style="color: #db2777; font-size: 1.1rem; margin-bottom: 15px;"><i class="ri-voiceprint-line"></i> 음성 스펙트럼 분석 (Voice Spectrum)</h3>
+                <div style="background: #1e293b; border-radius: 8px; padding: 15px; height: 110px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <!-- CSS 애니메이션 스펙트럼 -->
+                    <div style="display: flex; gap: 4px; align-items: flex-end; height: 50px;" id="audio-bars">
+                        <div style="width: 15%; background: #ec4899; transition: height 0.2s;" class="bar"></div>
+                        <div style="width: 15%; background: #ec4899; transition: height 0.2s;" class="bar"></div>
+                        <div style="width: 15%; background: #ec4899; transition: height 0.2s;" class="bar"></div>
+                        <div style="width: 15%; background: #ec4899; transition: height 0.2s;" class="bar"></div>
+                        <div style="width: 15%; background: #ec4899; transition: height 0.2s;" class="bar"></div>
+                        <div style="width: 15%; background: #ec4899; transition: height 0.2s;" class="bar"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; color: #94a3b8; font-family: monospace; font-size: 0.8rem;">
+                        <span>주파수: 44.1kHz</span>
+                        <span id="obs-noise">노이즈 비중: 2.1% (클린)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 신경망 세밀 관찰창 -->
+        <div class="section-card" style="border-color: #3b82f6;">
+            <h3 class="section-title" style="color: #2563eb; font-size: 1.1rem; margin-bottom: 15px;"><i class="ri-eye-2-line"></i> 신경망 렌더링 세밀 관찰창 (Neural Rendering Micro-Observer)</h3>
+            <div style="display: flex; gap: 20px;">
+                <!-- 프롬프트 어텐션 맵 -->
+                <div style="flex: 1; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px;">프롬프트 가중치 (Attention Map)</div>
+                    <div style="font-family: monospace; font-size: 0.95rem; color: #334155; line-height: 1.6; background: white; padding: 10px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+                        "30년 전통 <span id="att-1" style="background: rgba(59,130,246,0.2); padding: 0 4px; border-radius: 4px;">가마솥</span>을 지켜온 <span id="att-2" style="background: rgba(16,185,129,0.2); padding: 0 4px; border-radius: 4px;">어머니</span>의 일생, 따뜻한 <span id="att-3" style="background: rgba(245,158,11,0.2); padding: 0 4px; border-radius: 4px;">햇살</span>이 비추는 주방..."
+                    </div>
+                    <div style="margin-top: 8px; font-size: 0.75rem; color: #94a3b8;">* 색상이 진할수록 현재 프레임 렌더링에 강하게 개입 중임을 의미합니다.</div>
+                </div>
+                
+                <!-- VRAM 히트맵 -->
+                <div style="flex: 1; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px;">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: #64748b; margin-bottom: 8px;">VRAM 메모리 구조 맵 (12GB)</div>
+                    <div style="width: 100%; height: 24px; background: #e2e8f0; border-radius: 12px; overflow: hidden; display: flex;">
+                        <div id="vram-sora" style="height: 100%; background: #3b82f6; width: 45%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: bold; transition: width 0.3s;">모델 (Sora)</div>
+                        <div id="vram-encoder" style="height: 100%; background: #10b981; width: 15%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: bold; transition: width 0.3s;">인코더</div>
+                        <div id="vram-buffer" style="height: 100%; background: #f59e0b; width: 25%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.7rem; font-weight: bold; transition: width 0.3s;">버퍼</div>
+                    </div>
+                    <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 0.8rem; font-family: monospace; color: #475569;">
+                        <span>여유 메모리: <span id="vram-free">1.8GB</span></span>
+                        <span>총 점유율: <span id="vram-total" style="font-weight: bold;">85%</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 립싱크 세밀 관찰창 -->
+        <div class="section-card" style="border-color: #f59e0b;">
+            <h3 class="section-title" style="color: #d97706; font-size: 1.1rem; margin-bottom: 15px;"><i class="ri-speak-line"></i> 립싱크 공정 정밀 관찰창 (Lip-Sync Micro-Inspector)</h3>
+            <div style="display: flex; gap: 20px;">
+                <!-- 음성-시각 매핑 -->
+                <div style="flex: 1.5; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 0.85rem; font-weight: bold; color: #64748b;">음성-시각 매핑 뷰어</span>
+                        <span id="ls-phoneme" style="background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-family: monospace;">인식 음소: [ㅏ]</span>
+                    </div>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <div style="width: 70px; height: 70px; background: #e2e8f0; border-radius: 8px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                            <!-- 얼굴 랜드마크 묘사 -->
+                            <div style="position: absolute; border: 1px dashed #94a3b8; width: 40px; height: 40px; border-radius: 50%;"></div>
+                            <div id="ls-mesh" style="position: absolute; border: 2px solid #d97706; width: 20px; height: 10px; border-radius: 10px; transition: all 0.1s;"></div>
+                        </div>
+                        <div style="flex: 1; height: 40px; display: flex; align-items: center; gap: 2px; overflow: hidden;" id="ls-waveform">
+                            <!-- 파형 동적 생성 영역 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 동기화 오차 & 수동 제어 -->
+                <div style="flex: 1; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.85rem; font-weight: bold; color: #64748b;">동기화 오차 측정 (Offset)</span>
+                        <span id="ls-offset" style="font-family: monospace; font-weight: bold; color: #10b981; font-size: 1.1rem;">+2.0ms</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; margin: 10px 0; position: relative;">
+                        <div id="ls-offset-bar" style="position: absolute; top:0; left: 50%; height: 100%; width: 4px; background: #10b981; transition: all 0.2s;"></div>
+                        <div style="position: absolute; top: -4px; left: 50%; width: 2px; height: 14px; background: #94a3b8;"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                        <button onclick="pauseAndInspectFrame()" style="flex: 1; background: #334155; color: white; border: none; border-radius: 6px; padding: 6px; font-size: 0.8rem; cursor: pointer;"><i class="ri-pause-circle-line"></i> 프레임 정지 점검</button>
+                    </div>
+                    
+                    <div style="margin-top: 10px; font-size: 0.8rem; color: #475569;">
+                        강제 싱크 보정 (Manual Sync):
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 5px;">
+                            <span style="font-size: 0.7rem;">-0.5s</span>
+                            <input type="range" min="-0.5" max="0.5" step="0.1" value="0" onchange="adjustSyncManual(this.value)" style="flex: 1; cursor: pointer;">
+                            <span style="font-size: 0.7rem;">+0.5s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ② 중앙: 실시간 프리뷰 캔버스 -->
+    <div class="section-card">
+        <h3 class="section-title"><i class="ri-live-line"></i> 실시간 프리뷰 캔버스 (Live Preview Canvas)</h3>
+        <div class="canvas-container">
+            <!-- Left: 현재 생성 중 프레임 -->
+            <div class="canvas-box" style="background: linear-gradient(45deg, #1e293b, #334155);">
+                <div class="canvas-title">현재 렌더링 스트리밍 (RTX 4070)</div>
+                <div class="noise-layer"></div>
+                
+                <!-- 레이턴시 로딩 UI -->
+                <div class="loading-spinner" id="canvas-loading">
+                    <div class="spinner-circle"></div>
+                    <div style="font-weight: bold; letter-spacing: 1px;">서버와 연결 확인 중...</div>
+                </div>
+                
+                <!-- 임시 썸네일 (모의) -->
+                <div id="canvas-content" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                    <i class="ri-loader-2-line" style="font-size: 3rem; color: #475569; margin-bottom: 15px; animation: spin 2s linear infinite;"></i>
+                    <p style="color: #94a3b8; font-size: 0.9rem;">작업 대기 중...</p>
+                </div>
+            </div>
+
+            <!-- Right: 이전 단계 결과물 -->
+            <div class="canvas-box" style="background: #0f172a; border: 1px solid #334155;">
+                <div class="canvas-title" style="background: rgba(16,185,129,0.8);">이전 단계 (인물 고정) 결과물</div>
+                <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                    <div style="width: 120px; height: 120px; border-radius: 50%; border: 3px dashed #10b981; display: flex; align-items: center; justify-content: center; margin-bottom: 15px;">
+                        <i class="ri-user-star-line" style="font-size: 3rem; color: #10b981;"></i>
+                    </div>
+                    <p style="color: #cbd5e1; font-size: 0.9rem;">입력된 원본 사진 데이터 매핑 완료</p>
+                    <p style="color: #64748b; font-size: 0.8rem;">Seed: 8492011, LoRA Weight: 0.85</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ③ 하단: 기술 로그 콘솔 및 실시간 제어부 -->
+    <div class="section-card">
+        <div style="display: flex; gap: 20px;">
+            <!-- 좌측: 터미널 -->
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <div class="console-header">
+                    <h3 class="section-title" style="margin:0;"><i class="ri-terminal-box-line"></i> 기술 로그 콘솔 (Technical Logic Console)</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="toggle-log-btn" onclick="toggleLogs()" style="background: #e2e8f0; border: none; padding: 4px 12px; border-radius: 6px; font-size: 0.85rem; cursor: pointer;">로그 일시정지</button>
+                    </div>
+                </div>
+                <div class="console-box" id="log-console">
+                    <div class="log-line">시스템 초기화 완료. 새로운 작업을 대기 중입니다...</div>
+                </div>
+            </div>
+            
+            <!-- 우측: 수동 개입 컨트롤 -->
+            <div style="width: 300px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 20px;">
+                <h4 style="margin: 0; color: #334155; font-size: 1.05rem;"><i class="ri-equalizer-line"></i> 파라미터 제어 (Human-in-the-Loop)</h4>
+                
+                <!-- CFG Scale Slider -->
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 0.95rem; font-weight: bold; color: #475569;">가이던스 (CFG Scale)</span>
+                        <span id="cfg-value" style="font-size: 0.85rem; background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-weight: bold;">7.5</span>
+                    </div>
+                    <input type="range" id="cfg-slider" min="1.0" max="15.0" step="0.5" value="7.5" style="width: 100%; cursor: pointer;" oninput="updateCfgScale(this.value)" onchange="applyCfgScale(this.value)">
+                    <p style="margin: 0; font-size: 0.8rem; color: #94a3b8; line-height: 1.4;">* 수치를 낮추면 AI의 창의성이 극대화되며, 높이면 프롬프트를 엄격히 따릅니다.</p>
+                </div>
+
+                <div style="flex: 1;"></div>
+
+                <!-- Stage 4: Senior Dubbing Configuration -->
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; margin-bottom: 5px;">
+                    <h5 style="margin: 0 0 10px 0; color: #475569; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;"><i class="ri-mic-line"></i> Stage 4: 시니어 더빙</h5>
+                    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.8rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748b;">톤 (Tone)</span>
+                            <span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #334155; font-weight: bold;">친근/밝음 (Lv.4)</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748b;">대상 연령</span>
+                            <span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #334155; font-weight: bold;">시니어 맞춤 (명료도↑)</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748b;">자막 위치</span>
+                            <span style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; color: #334155; font-weight: bold;">하단 중앙</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #64748b;">제약 사항</span>
+                            <span style="background: #dcfce7; color: #166534; padding: 2px 6px; border-radius: 4px; font-weight: bold;">정확도 우선 (Accuracy)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Stop -->
+                <button onclick="emergencyStop()" style="width: 100%; background: #ef4444; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3); transition: all 0.2s;">
+                    <i class="ri-alert-fill"></i> 긴급 중지 (KILL)
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 모의 동작 스크립트 (Simulation Scripts) -->
+<script>
+    // 1. Real-time Log Console Integration (SSE)
+    const logConsole = document.getElementById('log-console');
+    let isLogPaused = false;
+    let logCount = 0;
+    const maxLogs = 50;
+    
+    // Add missing variables for compatibility with post-rendering and observer scripts
+    let cudaErrorCount = 0;
+    const MAX_CUDA_ERRORS = 3;
+
+    const eventSource = new EventSource('/api/gpu/stream');
+    
+    eventSource.onmessage = function(event) {
+        if (isLogPaused) return;
+
+        const data = JSON.parse(event.data);
+        
+        // Handle VRAM Telemetry
+        if (data.type === 'metrics') {
+            const vramUsed = data.vram_used;
+            const vramTotal = data.vram_total || 12282; // Default to 12GB RTX 4070 Ti if unknown
+            const vramPercent = (vramUsed / vramTotal) * 100;
+            
+            // Allocate VRAM distribution reasonably based on total usage
+            const soraPercent = vramPercent * 0.65; // ~65% goes to Main Engine (Sora/ComfyUI)
+            const encPercent = vramPercent * 0.15;  // ~15% Encoder
+            const bufPercent = vramPercent * 0.20;  // ~20% Buffer
+            
+            document.getElementById('vram-sora').style.width = `${soraPercent}%`;
+            document.getElementById('vram-encoder').style.width = `${encPercent}%`;
+            document.getElementById('vram-buffer').style.width = `${bufPercent}%`;
+            
+            const freeMem = ((vramTotal - vramUsed) / 1024).toFixed(1);
+            document.getElementById('vram-free').innerText = `${freeMem}GB`;
+            document.getElementById('vram-total').innerText = `${vramPercent.toFixed(1)}%`;
+            return;
+        }
+
+        const timeStr = new Date().toTimeString().split(' ')[0];
+        const logElement = document.createElement('div');
+        logElement.className = 'log-line';
+        
+        let formattedMessage = data.message || `[Job ID: ${data.job_id}] Status changed to ${data.status}`;
+        
+        if (data.status === 'RUNNING') {
+            logElement.innerHTML = `[${timeStr}] <span style="color: #3b82f6;"><b>[Engine Active]</b> ${formattedMessage}</span>`;
+            document.getElementById('step-3').classList.add('is-running');
+            document.getElementById('step-3').querySelector('.step-status').innerText = '렌더링 진행 중';
+        } else if (data.status === 'COMPLETED') {
+            let msgObj = null;
+            let displayMsg = formattedMessage;
+            try { 
+                msgObj = JSON.parse(data.message); 
+                if(msgObj && msgObj.message) { displayMsg = msgObj.message; }
+            } catch(e) {}
+            
+            logElement.innerHTML = `[${timeStr}] <span style="color: #10b981;"><b>[Success]</b> ${displayMsg}</span>`;
+            document.getElementById('step-3').classList.remove('is-running');
+            document.getElementById('step-3').classList.add('is-completed');
+            document.getElementById('step-3').querySelector('.step-status').innerText = '렌더링 완료';
+            
+            if (msgObj && msgObj.url) {
+                const canvasContent = document.getElementById('canvas-content');
+                // Remove loading elements
+                document.getElementById('canvas-loading').style.display = 'none';
+                
+                const isVideo = msgObj.url.endsWith('.mp4') || msgObj.url.endsWith('.webm');
+                if (isVideo) {
+                    canvasContent.innerHTML = `<video src="${msgObj.url}" autoplay loop muted controls style="max-width:100%; max-height:100%; border-radius:12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);"></video>`;
+                } else {
+                    canvasContent.innerHTML = `<img src="${msgObj.url}" style="max-width:100%; max-height:100%; border-radius:12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">`;
+                }
+            }
+        } else if (data.status === 'FAILED') {
+            logElement.innerHTML = `[${timeStr}] <span class="log-error"><b>[Error]</b> ${formattedMessage}</span>`;
+            document.getElementById('step-3').classList.remove('is-running');
+            document.getElementById('step-3').classList.add('is-error');
+            document.getElementById('step-3').querySelector('.step-status').innerText = '오류 발생';
+        } else {
+            logElement.innerHTML = `[${timeStr}] ${formattedMessage}`;
+        }
+        
+        logConsole.appendChild(logElement);
+        logCount++;
+        
+        if (logCount > maxLogs) {
+            logConsole.removeChild(logConsole.firstChild);
+            logCount--;
+        }
+        logConsole.scrollTop = logConsole.scrollHeight;
+    };
+
+    eventSource.onerror = function() {
+        if (isLogPaused) return;
+        const timeStr = new Date().toTimeString().split(' ')[0];
+        const logElement = document.createElement('div');
+        logElement.className = 'log-line log-error';
+        logElement.innerHTML = `[${timeStr}] <b>[System] 코어 렌더링 서버(Vultr/Local)와의 연결이 유실되었습니다. 재연결을 시도합니다...</b>`;
+        logConsole.appendChild(logElement);
+        logConsole.scrollTop = logConsole.scrollHeight;
+    };
+
+
+
+    function toggleLogs() {
+
+        isLogPaused = !isLogPaused;
+        document.getElementById('toggle-log-btn').innerText = isLogPaused ? '로그 재개' : '로그 일시정지';
+        if(isLogPaused) {
+            const el = document.createElement('div');
+            el.className = 'log-line log-warn';
+            el.innerText = '--- 로그 출력이 일시 정지되었습니다 ---';
+            logConsole.appendChild(el);
+        }
+    }
+
+    // 2. Latency Loop / Heartbeat Interruption Simulation
+    const canvasContent = document.getElementById('canvas-content');
+    const loadingSpinner = document.getElementById('canvas-loading');
+
+    // 브라우저 탭 활성화 상태 감지 (Heartbeat)
+    document.addEventListener("visibilitychange", () => {
+        if (cudaErrorCount >= MAX_CUDA_ERRORS) return; // 이미 중단된 상태면 Heartbeat 처리 생략
+
+        if (document.hidden) {
+            isLogPaused = true;
+            document.getElementById('step-3').classList.remove('is-running');
+            const el = document.createElement('div');
+            el.className = 'log-line log-error';
+            el.innerText = '[Heartbeat Failed] 사용자 브라우저 비활성화. GPU 렌더링 일시 정지 (리소스 보호).';
+            logConsole.appendChild(el);
+            logConsole.scrollTop = logConsole.scrollHeight;
+            canvasContent.style.opacity = '0.3';
+        } else {
+            canvasContent.style.display = 'none';
+            loadingSpinner.style.display = 'flex';
+            
+            setTimeout(() => {
+                loadingSpinner.style.display = 'none';
+                canvasContent.style.display = 'flex';
+                canvasContent.style.opacity = '1';
+                isLogPaused = false;
+                document.getElementById('step-3').classList.add('is-running');
+                
+                const el = document.createElement('div');
+                el.className = 'log-line log-info';
+                el.innerText = '[Heartbeat Resumed] 서버 연결 재확인 완료. 렌더링을 이어갑니다.';
+                logConsole.appendChild(el);
+                logConsole.scrollTop = logConsole.scrollHeight;
+            }, 1500);
+        }
+    });
+
+    // 3. Human-in-the-Loop Control Functions
+    function updateCfgScale(val) {
+        document.getElementById('cfg-value').innerText = val;
+    }
+    
+    function applyCfgScale(val) {
+        
+        const el = document.createElement('div');
+        el.className = 'log-line log-info';
+        const timeStr = new Date().toTimeString().split(' ')[0];
+        el.innerHTML = `[${timeStr}] <b>[User Override] CFG Scale 수치가 ${val}로 수동 조정되었습니다. 즉시 프레임 렌더링 파라미터에 반영됩니다.</b>`;
+        logConsole.appendChild(el);
+        logConsole.scrollTop = logConsole.scrollHeight;
+    }
+
+    function emergencyStop() {
+        if (isLogPaused) {
+            alert("이미 렌더링이 중단된 상태입니다.");
+            return;
+        }
+        
+        isLogPaused = true;
+        
+        const timeStr = new Date().toTimeString().split(' ')[0];
+        const criticalEl = document.createElement('div');
+        criticalEl.className = 'log-line log-error';
+        criticalEl.innerHTML = `[${timeStr}] <b>[EMERGENCY STOP] 사용자의 개입(Human-in-the-Loop)에 의해 렌더링 파이프라인이 긴급 중단(KILL) 되었습니다.</b>`;
+        logConsole.appendChild(criticalEl);
+        
+        const step3 = document.getElementById('step-3');
+        step3.classList.remove('is-running');
+        step3.classList.add('is-error');
+        step3.querySelector('.step-status').innerText = '긴급 중지됨';
+        step3.querySelector('.step-icon').innerHTML = '<i class="ri-stop-circle-line"></i>';
+        
+        document.getElementById('canvas-content').style.opacity = '0.3';
+        logConsole.scrollTop = logConsole.scrollHeight;
+        
+        alert("🚨 긴급 중지 완료\n\n모든 렌더링 프로세스가 강제 종료되었습니다.\n영상의 창의성(CFG Scale)이나 프롬프트를 수정한 후 다시 시작해주세요.");
+    }
+
+    // 4. Selective Micro-Observer Mode Logic
+    let observerInterval = null;
+    let observerModeActive = false;
+
+    function toggleObserverMode() {
+        const toggle = document.getElementById('observer-toggle');
+        const panel = document.getElementById('observer-panel');
+        
+        observerModeActive = toggle.checked;
+        
+        if (observerModeActive) {
+            panel.style.display = 'flex';
+            
+            // Add a log
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            const el = document.createElement('div');
+            el.className = 'log-line log-warn';
+            el.innerHTML = `[${timeStr}] <span style="color: #ec4899;"><b>[Observer] 정밀 관찰 모드 활성화. 데이터 스트리밍 채널 오픈. (브라우저 부하에 주의하십시오)</b></span>`;
+            logConsole.appendChild(el);
+            logConsole.scrollTop = logConsole.scrollHeight;
+
+            startObserverStreaming();
+        } else {
+            panel.style.display = 'none';
+            if (observerInterval) clearInterval(observerInterval);
+            
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            const el = document.createElement('div');
+            el.className = 'log-line log-info';
+            el.innerHTML = `[${timeStr}] <b>[Observer] 정밀 관찰 모드 해제. 스트리밍 채널을 닫고 리소스를 반환합니다.</b>`;
+            logConsole.appendChild(el);
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+    }
+
+    function startObserverStreaming() {
+        if (observerInterval) clearInterval(observerInterval);
+        
+        observerInterval = setInterval(() => {
+            if (isLogPaused || !observerModeActive || cudaErrorCount >= MAX_CUDA_ERRORS) return;
+
+            // 1. Audio Spectrum Animation
+            const bars = document.querySelectorAll('#audio-bars .bar');
+            bars.forEach(bar => {
+                const height = Math.floor(Math.random() * 80) + 10;
+                bar.style.height = `${height}%`;
+            });
+            const noise = (Math.random() * 3 + 1).toFixed(1);
+            document.getElementById('obs-noise').innerText = `노이즈 비중: ${noise}% ${noise > 3.5 ? '(주의)' : '(클린)'}`;
+
+            // 2. Lighting Warning Logic
+            if (Math.random() < 0.1) {
+                document.getElementById('obs-lighting').style.display = 'block';
+                setTimeout(() => { document.getElementById('obs-lighting').style.display = 'none'; }, 3000);
+            }
+
+            // 3. Attention Map Highlight Animation
+            const attentions = ['att-1', 'att-2', 'att-3'];
+            attentions.forEach(id => {
+                document.getElementById(id).style.background = 'transparent';
+            });
+            const focusTarget = attentions[Math.floor(Math.random() * attentions.length)];
+            const focusColors = {'att-1': 'rgba(59,130,246,0.3)', 'att-2': 'rgba(16,185,129,0.3)', 'att-3': 'rgba(245,158,11,0.3)'};
+            document.getElementById(focusTarget).style.background = focusColors[focusTarget];
+
+            // 4. VRAM Heatmap Stream (REMOVED: Now handled by real nvidia-smi SSE telemetry)
+            // Real telemetry is processed in eventSource.onmessage (data.type === 'metrics')
+            
+            // 5. Lip Sync Phoneme & Mesh Animation
+            if (!isLipSyncPaused) {
+                const phonemes = ['ㅏ', 'ㅗ', 'ㅂ', 'ㅡ', 'ㅣ'];
+                const p = phonemes[Math.floor(Math.random() * phonemes.length)];
+                document.getElementById('ls-phoneme').innerText = `인식 음소: [${p}]`;
+                
+                const mesh = document.getElementById('ls-mesh');
+                if (p === 'ㅏ') { mesh.style.height = '18px'; mesh.style.width = '18px'; }
+                else if (p === 'ㅗ') { mesh.style.height = '12px'; mesh.style.width = '10px'; }
+                else if (p === 'ㅂ') { mesh.style.height = '4px'; mesh.style.width = '24px'; }
+                else { mesh.style.height = '10px'; mesh.style.width = '20px'; }
+
+                // Waveform mock
+                const waveform = document.getElementById('ls-waveform');
+                waveform.innerHTML = '';
+                for(let i=0; i<30; i++) {
+                    const h = Math.random() * 35 + 5;
+                    waveform.innerHTML += `<div style="width: 3px; background: #cbd5e1; height: ${h}px; border-radius: 1px;"></div>`;
+                }
+
+                // Offset meter
+                offsetValue += (Math.random() * 10 - 5);
+                if (offsetValue > 30) offsetValue = 30;
+                if (offsetValue < -30) offsetValue = -30;
+                
+                const offsetEl = document.getElementById('ls-offset');
+                const offsetBar = document.getElementById('ls-offset-bar');
+                offsetEl.innerText = `${offsetValue > 0 ? '+' : ''}${offsetValue.toFixed(1)}ms`;
+                
+                if (Math.abs(offsetValue) > 20) {
+                    offsetEl.style.color = '#ef4444';
+                    offsetBar.style.background = '#ef4444';
+                } else {
+                    offsetEl.style.color = '#10b981';
+                    offsetBar.style.background = '#10b981';
+                }
+                
+                // mapped from -30~30 to left% relative to 50%
+                const leftPos = 50 + (offsetValue / 30 * 40); // bounds 10% to 90%
+                offsetBar.style.left = `${leftPos}%`;
+            }
+
+        }, 800);
+    }
+    
+    // Lip Sync Variables & Manual Controls
+    let isLipSyncPaused = false;
+    let offsetValue = 2.0;
+    
+    function pauseAndInspectFrame() {
+        if (cudaErrorCount >= MAX_CUDA_ERRORS) return;
+        isLipSyncPaused = !isLipSyncPaused;
+        
+        if (isLipSyncPaused) {
+            const timeStr = new Date().toTimeString().split(' ')[0];
+            const frameNum = Math.floor(Math.random() * 500) + 1000;
+            const el = document.createElement('div');
+            el.className = 'log-line log-warn';
+            el.innerHTML = `[${timeStr}] <b>[User Action] 프레임 정지됨 (Frame ${frameNum}). 랜드마크 분석 데이터: [x:142.3, y:95.1], [x:156.0, y:96.2] ...</b>`;
+            logConsole.appendChild(el);
+            logConsole.scrollTop = logConsole.scrollHeight;
+        }
+    }
+
+    function adjustSyncManual(val) {
+        if (cudaErrorCount >= MAX_CUDA_ERRORS) return;
+        const timeStr = new Date().toTimeString().split(' ')[0];
+        const el = document.createElement('div');
+        el.className = 'log-line log-info';
+        el.innerHTML = `[${timeStr}] <b>[User Override] 립싱크 오프셋이 수동으로 ${val > 0 ? '+'+val : val}s 강제 조정되었습니다.</b>`;
+        logConsole.appendChild(el);
+        logConsole.scrollTop = logConsole.scrollHeight;
+        
+        // 시각적 오프셋 값을 중앙으로 재조정 (사용자가 개입하여 싱크를 맞췄다고 가정)
+        offsetValue = 0;
+    }
+
+</script>
+
+{% endblock %}

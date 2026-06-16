@@ -1,0 +1,898 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header" style="display:flex; align-items:center; gap:10px;">
+    <button onclick="history.back()" style="background:none; border:none; color:#1a1a1a; font-size:1.5rem; cursor:pointer;">←</button>
+    <div class="page-title">상품 상세정보</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto; padding-bottom: 100px; background: #f1f5f9;">
+    <!-- Product Image -->
+    <div style="width: 100%; height: 400px; background: #f4f4f5; position: relative; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid #e4e4e7;">
+        <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #a1a1aa; z-index: 1;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px; opacity: 0.6;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+            <span style="font-weight: 800; font-size: 1.1rem;">노이미지</span>
+        </div>
+        
+        {% set display_img = product.image_path %}
+
+        {% if display_img and display_img != 'None' and display_img != '' %}
+        <img src="{% if display_img.startswith('http') %}{{ display_img }}{% else %}{{ display_img.replace('//', '/') if display_img.startswith('/') else '/' ~ display_img }}{% endif %}" loading="lazy"
+            onerror="this.style.display='none';"
+            alt="{{ product.name }}" style="width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; background: #fff;">
+        {% endif %}
+    </div>
+
+    <!-- Product Title & Price -->
+    <div style="padding: 25px 20px; background: #fff; margin-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items:flex-start; margin-bottom: 10px;">
+            <div style="font-size: 1rem; color: #3182f6; font-weight: 900;">산지직송 100% 보장</div>
+            <div style="color: #f59e0b; font-size: 0.95rem; font-weight: 800;">★★★★★ <span style="color:#64748b; font-weight: 600;">(1,245)</span></div>
+        </div>
+        <div style="font-size: 2rem; font-weight: 900; margin-bottom: 15px; color: #1e293b; line-height: 1.35; word-break: keep-all;">{{ product.name }}</div>
+        
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span style="font-size: 2.5rem; font-weight: 900; color: #b91c1c; letter-spacing:-1px;">{{ "{:,}".format(product.price) }}</span><span style="font-size: 1.3rem; font-weight: 800; color:#1e293b;">원</span>
+            </div>
+            {% if product.inventory > 0 %}
+            <button onclick="openOrderModal({{ product.id }}, '{{ product.name }}', {{ product.price }})" style="background:#3182f6; color:#fff; border:none; border-radius:12px; padding: 14px 28px; font-size:1.15rem; font-weight:800; cursor:pointer; box-shadow: 0 4px 6px rgba(49,130,246,0.3); transition: all 0.2s;">
+                🛒 바로 결제하기
+            </button>
+            {% else %}
+            <button disabled style="background:#cbd5e1; color:#fff; border:none; border-radius:12px; padding: 14px 28px; font-size:1.15rem; font-weight:800;">품절</button>
+            {% endif %}
+        </div>
+
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; font-size: 0.95rem; color: #334155; font-weight: 600; display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.4rem;">🚀</span> 
+            <div>
+                <strong style="color:#0f172a;">내일 도착 보장</strong> (오후 11시 전 주문 시)<br>
+                <span style="color:#64748b; font-size:0.85rem;">무료배송 | 안전포장 안심 환불 보장</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sticky Tabs -->
+    <div style="position: sticky; top: 0; z-index: 50; background: #fff; display: flex; border-bottom: 1px solid #e2e8f0; font-weight: 700; font-size: 1rem; color: #64748b; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="flex: 1; text-align: center; padding: 18px 0; border-bottom: 3px solid #1e293b; color: #1e293b; font-weight: 900; cursor: pointer;">상품상세</div>
+        <div style="flex: 1; text-align: center; padding: 18px 0; cursor: pointer;">상품평(1,245)</div>
+        <div style="flex: 1; text-align: center; padding: 18px 0; cursor: pointer;">상품문의</div>
+        <div style="flex: 1; text-align: center; padding: 18px 0; cursor: pointer;">배송/교환</div>
+    </div>
+
+    <!-- Edited Kurly/Coupang Style Detail Page -->
+    <div style="background: #fff; padding-bottom: 40px;">
+        
+        <!-- Premium Autoplay Video Hero Banner -->
+        <div style="position:relative; width: 100%; height: 480px; overflow:hidden; background:#000;">
+            {% set video_url = '/static/images/sample_documentary.mp4' %}
+            {% if product.id == 1 %}
+                {% set video_url = 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-fresh-and-clean-potatoes-43186-large.mp4' %}
+            {% elif product.id == 2 %}
+                {% set video_url = 'https://assets.mixkit.co/videos/preview/mixkit-oil-being-poured-into-a-glass-bowl-40899-large.mp4' %}
+            {% elif product.id == 3 %}
+                {% set video_url = 'https://assets.mixkit.co/videos/preview/mixkit-shucking-fresh-sweet-corn-42686-large.mp4' %}
+            {% elif product.id == 4 %}
+                {% set video_url = 'https://assets.mixkit.co/videos/preview/mixkit-cutting-fresh-green-cabbage-on-a-wooden-board-42200-large.mp4' %}
+            {% elif product.id == 5 %}
+                {% set video_url = 'https://assets.mixkit.co/videos/preview/mixkit-chef-grilling-a-juicy-steak-on-a-pan-40292-large.mp4' %}
+            {% elif product.id == 7 %}
+                {% set video_url = 'https://assets.mixkit.co/videos/preview/mixkit-rice-field-in-a-sunny-day-41617-large.mp4' %}
+            {% endif %}
+            
+            <video id="detailVideo" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover; opacity:0.85;">
+                <source src="{{ video_url }}" type="video/mp4">
+                <source src="/static/images/sample_documentary.mp4" type="video/mp4">
+            </video>
+            
+            <!-- Floating Mute/Play Controls -->
+            <div style="position:absolute; top:20px; right:20px; display:flex; gap:8px; z-index:10;">
+                <button onclick="toggleVideoPlay(this)" style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.25); border-radius:50%; width:44px; height:44px; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; outline:none; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); transition: all 0.2s;">
+                    <svg class="play-icon" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <svg class="pause-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+                <button onclick="toggleVideoMute(this)" style="background:rgba(15,23,42,0.6); border:1px solid rgba(255,255,255,0.25); border-radius:50%; width:44px; height:44px; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; outline:none; backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px); transition: all 0.2s;">
+                    <svg class="mute-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM12 4L9.91 6.09 12 8.18V4zm-6.41.59L4 6l4.41 4.41L4 14.83V20h5l4.18-4.18L18 20.64l1.41-1.41L5.59 4.59zM12 15.82l-2.18-2.18L12 15.82z"/></svg>
+                    <svg class="unmute-icon" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                </button>
+            </div>
+            
+            <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.1) 100%); display:flex; flex-direction:column; justify-content:flex-end; padding: 40px 25px; pointer-events: none;">
+                <div style="display:inline-block; background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#0f172a; font-weight:900; font-size:0.95rem; padding:5px 14px; border-radius:30px; align-self:flex-start; margin-bottom:12px; letter-spacing:-0.5px; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);">🎥 산지 직송 현장</div>
+                <h2 style="color:#fff; font-size:2.2rem; font-weight:900; margin-bottom:12px; line-height:1.25; letter-spacing:-1px; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">산지에서 식탁까지,<br>가장 생생한 순간을.</h2>
+                <p style="color:#cbd5e1; font-size:1.05rem; line-height:1.6; word-break:keep-all; text-shadow: 0 1px 5px rgba(0,0,0,0.4);">생산자가 정성스레 수확하는 생생한 현장을 직접 확인하세요. 100% 신선하고 신뢰할 수 있는 먹거리만을 전해드립니다.</p>
+            </div>
+        </div>
+
+        <!-- Point 1: AI Quality Control -->
+        <div style="padding: 60px 25px; text-align:center;">
+            <div style="color:#3182f6; font-weight:900; font-size:1.2rem; margin-bottom:15px; letter-spacing:1px;">POINT 01</div>
+            <h3 style="font-size:2.2rem; font-weight:900; color:#1e293b; margin-bottom:25px; line-height:1.3; letter-spacing:-1px;">오직 이곳에서만!<br>AI 품질 보증 시스템</h3>
+            <p style="font-size:1.1rem; color:#475569; line-height:1.7; word-break:keep-all;">생산자의 눈대중에만 의존하지 마세요.<br>업계 최초 도입한 <b>[스마트 AI 비전 센서]</b>를 통해 농산물의 당도, 수분감, 외관 결함을 3차원으로 자동 스캔하여 정확히 1등급 상품만을 선별합니다. 이것이 저희만의 압도적 차별점입니다.</p>
+            
+            <div style="background:#f8fafc; border-radius:20px; padding:30px; margin-top:35px; text-align:left; border:1px solid #e2e8f0; box-shadow: 0 10px 20px rgba(0,0,0,0.03);">
+                <div style="font-weight: 900; margin-bottom: 25px; font-size: 1.2rem; color:#0f172a; display:flex; align-items:center; gap:10px;"><span style="font-size:1.5rem;">📊</span> 실시간 AI 품질 검사표</div>
+                
+                <div style="display: flex; justify-content: space-between; font-size: 1rem; margin-bottom: 10px; font-weight:800;"><span>당도 및 수분 밸런스</span><span style="color:#2563eb;">최상위 1% 수준</span></div>
+                <div style="width: 100%; background: #e2e8f0; height: 12px; border-radius: 6px; margin-bottom: 25px;"><div style="width: 98%; background: #2563eb; height: 100%; border-radius: 6px;"></div></div>
+
+                <div style="display: flex; justify-content: space-between; font-size: 1rem; margin-bottom: 10px; font-weight:800;"><span>외관 결함 무결성</span><span style="color:#f59e0b;">99.9% 무결점</span></div>
+                <div style="width: 100%; background: #e2e8f0; height: 12px; border-radius: 6px; margin-bottom: 15px;"><div style="width: 99.9%; background: #f59e0b; height: 100%; border-radius: 6px;"></div></div>
+            </div>
+        </div>
+
+        <!-- Point 2 -->
+        <div style="padding: 60px 25px; text-align:center; background:#f8fafc;">
+            <img src="https://images.unsplash.com/photo-1595858066548-cf9df597f7bb?q=80&w=800" style="width:100%; border-radius:20px; margin-bottom: 30px; box-shadow: 0 15px 30px rgba(0,0,0,0.08);" loading="lazy">
+            <div style="color:#f59e0b; font-weight:900; font-size:1.2rem; margin-bottom:15px; letter-spacing:1px;">POINT 02</div>
+            <h3 style="font-size:2.2rem; font-weight:900; color:#1e293b; margin-bottom:25px; line-height:1.3; letter-spacing:-1px;">결이 다른 신선함,<br>눈으로 직접 확인하세요.</h3>
+            <p style="font-size:1.1rem; color:#475569; line-height:1.7; word-break:keep-all;">재고를 쌓아두지 않고 주문 즉시 산지에서 직배송됩니다. 중간 유통 5단계를 완전히 생략하여 밭에서 방금 수확한 듯한 싱그러움을 박스 속에 그대로 담았습니다.</p>
+        </div>
+
+        <div style="padding: 60px 25px; text-align:center;">
+            <img src="https://images.unsplash.com/photo-1506484381205-f7945653044d?q=80&w=800" style="width:100%; border-radius:20px; margin-bottom: 30px; box-shadow: 0 15px 30px rgba(0,0,0,0.08);" loading="lazy">
+            <h3 style="font-size:2.2rem; font-weight:900; color:#1e293b; margin-bottom:25px; line-height:1.3; letter-spacing:-1px;">안전하고 깨끗한<br>프리미엄 친환경 포장</h3>
+            <p style="font-size:1.1rem; color:#475569; line-height:1.7; word-break:keep-all;">신선함을 끝까지 지키기 위해 특수 개발된 보냉 패키징과 아이스팩을 아낌없이 사용합니다. 믿고 드실 수 있도록 포장 하나까지 심혈을 기울였습니다.</p>
+        </div>
+
+        <!-- DB Description Text formatting -->
+        <div style="padding: 30px 25px; font-size: 1.15rem; color: #1e293b; line-height: 1.8; word-break: keep-all; white-space: pre-wrap; font-weight: 600; text-align: left; background:#fefce8; margin:0 20px; border-radius:16px;">
+{{ product.description|safe if product.description else "" }}
+        </div>
+    </div>
+
+    <!-- Section 3: Reviews -->
+    <div style="border-top: 10px solid #f1f5f9; padding: 50px 20px; background:#fff;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 30px;">
+            <h3 style="font-size: 1.8rem; font-weight: 900; margin:0; color:#1e293b;">베스트 상품평 <span style="color:#2563eb; font-size:1.4rem;">(1,245)</span></h3>
+            <div style="font-size: 1.4rem; color: #f59e0b; font-weight:900;">⭐️ 4.9 <span style="font-size: 1rem; color:#94a3b8; font-weight:600;">/ 5</span></div>
+        </div>
+        
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #e2e8f0; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🧑🏻</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">김*현</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.18</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"마트에서 사는 것보다 훠얼씬 신선하네요!"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">대형 마트에서 직접 보고 사는 것보다 상태가 좋습니다. 확실히 시스템으로 깐깐하게 선별해서 그런지 상한 곳 하나 없이 깨끗하고 아주 달고 맛있습니다. 배송도 너무 빠르고 포장도 꼼꼼해서 대만족입니다.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #fef08a; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👩🏻‍🦰</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">최*아</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.17</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"정착템 확정! 가족들이 다 맛있대요"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">반신반의하면서 첫 주문해봤는데 박스 열자마자 완전 신선한 티가 팍팍 납니다. 가족들도 어디서 샀냐고 묻네요. 결제도 토스페이로 그냥 지문만 찍으니까 한방에 끝나서 너무 편했어요. 재구매 의사 200%입니다.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #bfdbfe; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👨🏻</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">박*준</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.16</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"부모님이 너무 좋아하십니다"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">매번 시장가서 무겁게 들고 왔는데 다음날 바로 문 앞까지 오니까 너무 살기 편해졌네요. 물건 상태도 마트 A급 못지않게 아주 훌륭합니다. 자주 이용하겠습니다.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #fbcfe8; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👩🏻</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">이*영</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.16</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"결제가 3초만에 끝남 ㄷㄷ"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">토스페이 연동된 거 신의 한 수네요! 복잡한 비밀번호 입력 없이 톡 누르니까 알아서 결제되고. 농산물도 상처 하나 없이 아주 실한 녀석들로만 왔어요.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #bbf7d0; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👱🏻‍♂️</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">정*민</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.15</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"포장부터가 차원이 다르네요"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">다른 쇼핑몰에서 시켰다가 다 무르거나 상해서 온 적이 많았는데, 여기는 완충제에 꼼꼼히 싸여서 안전하게 왔어요. 상자 열자마자 신선한 흙내음이 확 납니다. 믿고 먹습니다.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #c7d2fe; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🧑🏻‍🦱</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">강*수</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.15</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"배송 속도 실화인가요?"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">밤 10시 넘어서 시켰는데 다음날 아침 6시에 문 앞에 와있어서 깜놀했습니다. 진짜 미친 속도네요 ㅋㅋㅋ 품질은 말해 뭐해 입 아플 정도로 최상급입니다.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #e9d5ff; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">🙋🏻‍♀️</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">조*진</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.14</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"가성비, 가심비 모두 만족 대만족"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">가격 대비 양도 많고 무엇보다 상태가 미쳤습니다. 대형마트 행사할 때 싸다고 막 집어왔다가 후회하지 말고 무조건 여기서 사세요. 진짜 강력 추천합니다.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #fed7aa; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👨🏻‍🦰</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">윤*호</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.13</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"AI 기술력인가요? 무조건 합격"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">최첨단 기술로 골라냈다고 해서 호기심에 한번 사봤는데, 정말 알이 굵고 속이 꽉 찬 것들로만 왔네요. 세상 많이 좋아졌습니다. 아주 달달해요.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #fecaca; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👵🏻</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">임*희</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.11</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"명절 선물용으로 최고네요"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">시부모님께 명절 선물용으로 보내드렸는데 까다로우신 분들이 너무 좋다고 칭찬하셨어요. 포장도 고급스럽고 내용물도 튼실해서 어깨가 다 으쓱했네요.</p>
+        </div>
+
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px;">
+            <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 15px;">
+                <div style="width: 45px; height: 45px; border-radius: 25px; background: #a7f3d0; display:flex; align-items:center; justify-content:center; font-size:1.2rem;">👱🏻</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color:#1e293b;">한*석</div>
+                    <div style="color: #f59e0b; font-size: 0.9rem;">★★★★★ <span style="color:#94a3b8; margin-left:8px;">2026.03.10</span></div>
+                </div>
+            </div>
+            <div style="font-weight: 800; color: #0f172a; margin-bottom: 12px; font-size:1.2rem;">"왜 진작 안 썼나 후회됩니다"</div>
+            <p style="font-size: 1.05rem; color: #475569; line-height: 1.7; margin: 0; word-break:keep-all;">주변 추천으로 동네장터 처음 써보는데 진짜 혁명이네요. 마트 가서 장보는 시간 줄여주고 물건은 더 좋으니 안 쓸 이유가 없죠. 앞으로 1순위 쇼핑앱입니다.</p>
+        </div>
+        
+        <button class="main-btn" style="width: 100%; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; padding: 18px; font-size: 1.1rem; font-weight: 900; border-radius: 12px; cursor:pointer;">1,245개 리뷰 전체보기</button>
+    </div>
+
+    <!-- Section 4: Seller Info -->
+    <div style="padding: 50px 20px 120px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0;">
+        <h3 style="font-size: 1.3rem; font-weight: 900; color: #1e293b; margin-bottom: 25px;">판매자 정보 제공</h3>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; color: #475569;">
+            <tbody>
+                <tr><th style="text-align:left; padding:12px 0; color:#94a3b8; width:110px; font-weight:700;">상호명</th><td style="padding:12px 0; color:#1e293b; font-weight:800;">{{ product.store_id }} (유)농업회사법인</td></tr>
+                <tr style="border-top: 1px dashed #cbd5e1;"><th style="text-align:left; padding:12px 0; color:#94a3b8; font-weight:700;">대표자</th><td style="padding:12px 0; color:#1e293b; font-weight:700;">김농업</td></tr>
+                <tr style="border-top: 1px dashed #cbd5e1;"><th style="text-align:left; padding:12px 0; color:#94a3b8; font-weight:700;">사업자번호</th><td style="padding:12px 0; color:#3182f6; font-weight:800;">123-45-67890</td></tr>
+                <tr style="border-top: 1px dashed #cbd5e1;"><th style="text-align:left; padding:12px 0; color:#94a3b8; font-weight:700;">고객센터 전화</th><td style="padding:12px 0; font-weight:800; color:#1e293b;">1588-0000 <span style="font-size:0.85rem; color:#94a3b8; font-weight:normal;">(평일 09:00~18:00)</span></td></tr>
+                <tr style="border-top: 1px dashed #cbd5e1;"><th style="text-align:left; padding:12px 0; color:#94a3b8; font-weight:700;">영업소재지</th><td style="padding:12px 0; line-height:1.5;">강원도 평창군 대관령면 눈마을길 12, AI스마트팜 단지 1동</td></tr>
+                <tr style="border-top: 1px dashed #cbd5e1;"><th style="text-align:left; padding:12px 0; color:#94a3b8; font-weight:700;">통신판매업</th><td style="padding:12px 0;">제 2026-평창-0012호</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Fixed Bottom Buy Button -->
+    <div style="position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: #fff; padding: 15px 20px; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); z-index: 100; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #e2e8f0;">
+        <div style="font-size: 1.6rem; font-weight: 900; color: #b91c1c;">
+            {{ "{:,}".format(product.price) }}<span style="font-size: 1.2rem; color:#1e293b;">원</span>
+        </div>
+        {% if product.inventory > 0 %}
+        <button onclick="openOrderModal({{ product.id }}, '{{ product.name }}', {{ product.price }})" class="main-btn" style="width: auto; padding: 16px 45px; font-size: 1.2rem; border-radius: 30px; box-shadow: 0 4px 15px rgba(37,99,235,0.25); background: #2563eb; border-color: #2563eb; color: #fff; border:none; cursor:pointer;">
+            🚀 바로 구매
+        </button>
+        {% else %}
+        <button disabled class="main-btn" style="width: auto; padding: 16px 45px; font-size: 1.2rem; border-radius: 30px; background: #cbd5e1; border-color: #cbd5e1; color:#fff; border:none;">품절</button>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Incorporate Order Modal -->
+<div id="orderModal" class="modal" style="display:none; position:fixed; z-index: 99999; inset:0; background:#e2e8f0; overflow-y:auto;">
+    <div style="width:100%; max-width:600px; min-height:100vh; background:#fff; margin:0 auto; position:relative; padding:25px; box-sizing: border-box; box-shadow: 0 0 40px rgba(0,0,0,0.1);">
+        
+        <button onclick="closeOrderModal()" style="position:absolute; top:25px; right:25px; background:none; border:none; font-size:1.5rem; font-weight:900; cursor:pointer; color:#64748b;">✕</button>
+        <h3 style="margin-top:0; font-size:1.6rem; font-weight: 900; color: #0f172a; margin-bottom:20px;">🛍️ 간편 주문 결제</h3>
+        
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+            <p style="color:#64748b; font-size:0.9rem; margin: 0 0 5px 0; font-weight:700;">결제 예정 상품</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <p style="color:#0f172a; font-weight:900; font-size:1.15rem; margin: 0;" id="modalItemName"></p>
+            </div>
+            <div style="width:100%; height:1px; background:#e2e8f0; margin-bottom:15px;"></div>
+            
+            <!-- Additional Order Methods (Voice, Excel, Photo) -->
+            <div style="display:flex; gap:8px; margin-bottom: 20px;">
+                <button onclick="startVoiceOrder(event)" style="flex:1; padding:12px 6px; background:#22c55e; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow: 0 4px 6px rgba(34, 197, 94, 0.2); transition: all 0.3s; word-break:keep-all;">
+                    🎙️ 말로 주문
+                </button>
+                <button onclick="document.getElementById('excelUploadFile').click()" style="flex:1; padding:12px 6px; background:#10b981; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); transition: all 0.3s; word-break:keep-all;">
+                    📊 엑셀 주문
+                </button>
+                <button onclick="document.getElementById('photoUploadFile').click()" id="btnPhotoOrder" style="flex:1; padding:12px 6px; background:#0ea5e9; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2); transition: all 0.3s; word-break:keep-all;">
+                    📸 사진 주문
+                </button>
+                <input type="file" id="excelUploadFile" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none;" onchange="handleExcelUpload(this)">
+                <input type="file" id="photoUploadFile" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoUpload(this)">
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                <p style="color:#64748b; font-size:0.95rem; margin: 0; font-weight:800;">총 결제 금액</p>
+                <p style="color:#b91c1c; font-weight:900; font-size:1.85rem; margin: 0; line-height:1;"><span id="modalPrice"></span><span style="font-size:1.1rem; color:#1e293b;">원</span></p>
+            </div>
+        </div>
+        
+        <!-- Receivers List -->
+        <div id="receiversList">
+            <div class="receiver-block" style="background:#f8fafc; border:2px solid #e2e8f0; border-radius:12px; padding:20px; margin-bottom:15px; position:relative;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <p style="margin:0; font-size:1.1rem; font-weight:900; color:#1e293b;">📦 배송지 #1</p>
+                    <label style="font-size:0.95rem; font-weight:800; color:#3182f6; display:flex; align-items:center; gap:6px; cursor:pointer; background:#eff6ff; padding:6px 10px; border-radius:8px;">
+                        <input type="checkbox" class="isFixedSender" checked onchange="toggleSenderInput(this)" style="width:16px; height:16px;">
+                        주문자와 동일
+                    </label>
+                </div>
+                
+                <!-- Sender Fields (Hidden if Same as Orderer) -->
+                <div class="sender-area" style="display:none; background:#fff; border:1px dashed #cbd5e1; border-radius:10px; padding:15px; margin-bottom:20px;">
+                    <p style="margin:0 0 10px 0; font-size:0.95rem; font-weight:800; color:#64748b;">보내시는 분 정보</p>
+                    <input type="text" class="sndName" placeholder="보내시는 분 성함" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+                    <input type="tel" class="sndPhone" placeholder="연락처 (010-0000-0000)" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+                    <div style="display:flex; gap:8px; margin-bottom:10px;">
+                        <input type="text" class="sndAddr" placeholder="보내는 분 주소를 검색해주세요" readonly style="flex:1; padding:14px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; background:#f8fafc; cursor:pointer; font-size: 1.05rem; font-weight:700;" onclick="execDaumPostcode(this)">
+                        <button onclick="execDaumPostcode(this)" style="padding:0 20px; background:#475569; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size: 1.05rem; white-space:nowrap;">주소 검색</button>
+                    </div>
+                    <input type="text" class="sndAddrDetail" placeholder="상세주소 직접 입력 (보내는 분)" style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+                </div>
+
+                <!-- Receiver Fields -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <p style="margin:0; font-size:0.95rem; font-weight:800; color:#3182f6;">받으시는 분 정보</p>
+                    <div style="display:flex; align-items:center; border: 1px solid #cbd5e1; border-radius: 6px; overflow:hidden; background:#fff;">
+                        <button onclick="changeBlockQty(this, -1)" style="padding:3px 10px; background:transparent; border:none; cursor:pointer; font-weight:900; color:#475569; font-size:1rem;">-</button>
+                        <input type="text" class="blockQty" value="1" readonly style="width:30px; text-align:center; border:none; font-weight:800; font-size:0.95rem; color:#1e293b; pointer-events:none;">
+                        <button onclick="changeBlockQty(this, 1)" style="padding:3px 10px; background:transparent; border:none; cursor:pointer; font-weight:900; color:#475569; font-size:1rem;">+</button>
+                    </div>
+                </div>
+                <input type="text" class="recName" placeholder="받으시는 분 성함" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+                <input type="tel" class="recPhone" placeholder="연락처 (010-0000-0000)" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <input type="text" class="recAddr" placeholder="배송지 주소를 검색해주세요" readonly style="flex:1; padding:14px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; background:#fff; cursor:pointer; font-size: 1.05rem; font-weight:700;" onclick="execDaumPostcode(this)">
+                    <button onclick="execDaumPostcode(this)" style="padding:0 20px; background:#1e293b; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size: 1.05rem; white-space:nowrap;">주소 검색</button>
+                </div>
+                <input type="text" class="recAddrDetail" placeholder="상세주소 직접 입력 (예: 101동 202호)" style="width:100%; padding:14px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+            </div>
+        </div>
+        
+        <button onclick="addReceiver()" style="width:100%; padding:14px; background:#fff; color:#3182f6; border:2px dashed #93c5fd; border-radius:12px; font-weight:800; cursor:pointer; font-size:1.1rem; margin-bottom:20px;">
+            + 🚚 여러 곳으로 나눠서 보내기 (배송지 추가)
+        </button>
+
+        <div id="layer" style="display:none;position:fixed;overflow:hidden;z-index:999999;-webkit-overflow-scrolling:touch; background:#fff;">
+            <img src="//t1.daumcdn.net/postcode/resource/images/close.png" id="btnCloseLayer" style="cursor:pointer;position:absolute;right:0px;top:0px;z-index:9999999;width:35px;height:35px;background:white;padding:5px;" onclick="closeDaumPostcode()" alt="닫기 버튼">
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top: 20px;">
+            <button onclick="closeOrderModal()" style="flex:1; padding:16px; background:#f1f5f9; color: #475569; border:none; border-radius:12px; font-weight:800; cursor:pointer; font-size:1.1rem;">취소</button>
+            <button onclick="submitMultiOrder(this)" style="flex:2; padding:16px; background:#3182f6; color:#fff; border:none; border-radius:12px; cursor:pointer; font-size:1.2rem; display:flex; gap:6px; align-items:center; justify-content:center; box-shadow: 0 6px 15px rgba(49,130,246,0.3); transition: all 0.2s;">
+                <span style="font-weight:900;">결제하기</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    let selectedProductId = null;
+    let selectedProductBasePrice = 0;
+
+    function openOrderModal(id, name, price) {
+        selectedProductId = id;
+        selectedProductBasePrice = Number(price);
+        document.getElementById('modalItemName').innerText = name;
+        
+        // Reset blocks to default (1 block, qty=1)
+        document.getElementById('receiversList').innerHTML = "";
+        receiverCount = 0; // Will be incremented to 1 in addReceiver()
+        addReceiver(); // Adds the first clean block and calls updateModalPrice
+        
+        document.getElementById('orderModal').style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function changeBlockQty(btn, delta) {
+        let input = btn.parentElement.querySelector('.blockQty');
+        let currentQty = parseInt(input.value);
+        let newQty = currentQty + delta;
+        if (newQty >= 1) {
+            input.value = newQty;
+            updateModalPrice();
+        }
+    }
+
+    function updateModalPrice() {
+        let inputs = document.querySelectorAll('.blockQty');
+        let totalQty = 0;
+        inputs.forEach(input => {
+            totalQty += parseInt(input.value || 0);
+        });
+        if(totalQty === 0) totalQty = 1;
+        
+        let total = selectedProductBasePrice * totalQty;
+        document.getElementById('modalPrice').innerText = total.toLocaleString();
+    }
+
+    function toggleSenderInput(checkbox) {
+        const area = checkbox.closest('.receiver-block').querySelector('.sender-area');
+        area.style.display = checkbox.checked ? 'none' : 'block';
+        if(checkbox.checked) {
+            area.querySelector('.sndName').value = '';
+            area.querySelector('.sndPhone').value = '';
+            area.querySelector('.sndAddr').value = '';
+        }
+    }
+
+    let receiverCount = 1;
+    function addReceiver() {
+        receiverCount++;
+        const container = document.getElementById('receiversList');
+        const div = document.createElement('div');
+        div.className = 'receiver-block';
+        div.style.cssText = 'background:#f8fafc; border:2px solid #e2e8f0; border-radius:12px; padding:20px; margin-bottom:15px; position:relative;';
+        div.innerHTML = `
+            <button onclick="removeReceiver(this)" style="position:absolute; top:20px; right:20px; background:none; border:none; color:#ef4444; font-weight:800; font-size:0.95rem; cursor:pointer;">삭제 ✕</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding-right:50px;">
+                <p style="margin:0; font-size:1.1rem; font-weight:900; color:#1e293b;">📦 배송지 #${receiverCount}</p>
+                <label style="font-size:0.95rem; font-weight:800; color:#3182f6; display:flex; align-items:center; gap:6px; cursor:pointer; background:#eff6ff; padding:6px 10px; border-radius:8px;">
+                    <input type="checkbox" class="isFixedSender" checked onchange="toggleSenderInput(this)" style="width:16px; height:16px;">
+                    주문자와 동일
+                </label>
+            </div>
+            
+            <div class="sender-area" style="display:none; background:#fff; border:1px dashed #cbd5e1; border-radius:10px; padding:15px; margin-bottom:20px;">
+                <p style="margin:0 0 10px 0; font-size:0.95rem; font-weight:800; color:#64748b;">보내시는 분 정보</p>
+                <input type="text" class="sndName" placeholder="보내시는 분 성함" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+                <input type="tel" class="sndPhone" placeholder="연락처 (010-0000-0000)" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+                <div style="display:flex; gap:8px; margin-bottom:10px;">
+                    <input type="text" class="sndAddr" placeholder="보내는 분 주소를 검색해주세요" readonly style="flex:1; padding:14px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; background:#f8fafc; cursor:pointer; font-size: 1.05rem; font-weight:700;" onclick="execDaumPostcode(this)">
+                    <button onclick="execDaumPostcode(this)" style="padding:0 20px; background:#475569; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size: 1.05rem; white-space:nowrap;">주소 검색</button>
+                </div>
+                <input type="text" class="sndAddrDetail" placeholder="상세주소 직접 입력 (보내는 분)" style="width:100%; padding:14px; border:2px solid #e2e8f0; border-radius:10px; box-sizing:border-box; font-size: 1.05rem; font-weight:700;">
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <p style="margin:0; font-size:0.95rem; font-weight:800; color:#3182f6;">받으시는 분 정보</p>
+                <div style="display:flex; align-items:center; border: 1px solid #cbd5e1; border-radius: 6px; overflow:hidden; background:#fff;">
+                    <button onclick="changeBlockQty(this, -1)" style="padding:3px 10px; background:transparent; border:none; cursor:pointer; font-weight:900; color:#475569; font-size:1rem;">-</button>
+                    <input type="text" class="blockQty" value="1" readonly style="width:30px; text-align:center; border:none; font-weight:800; font-size:0.95rem; color:#1e293b; pointer-events:none;">
+                    <button onclick="changeBlockQty(this, 1)" style="padding:3px 10px; background:transparent; border:none; cursor:pointer; font-weight:900; color:#475569; font-size:1rem;">+</button>
+                </div>
+            </div>
+            <input type="text" class="recName" placeholder="받으시는 분 성함" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; font-size:1.05rem; font-weight:700;">
+            <input type="tel" class="recPhone" placeholder="연락처 (010-0000-0000)" style="width:100%; padding:14px; margin-bottom:10px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; font-size:1.05rem; font-weight:700;">
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <input type="text" class="recAddr" placeholder="배송지 주소를 검색해주세요" readonly style="flex:1; padding:14px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; background:#fff; cursor:pointer; font-size:1.05rem; font-weight:700;" onclick="execDaumPostcode(this)">
+                <button onclick="execDaumPostcode(this)" style="padding:0 20px; background:#1e293b; color:#fff; border:none; border-radius:10px; font-weight:800; cursor:pointer; font-size:1.05rem;">검색</button>
+            </div>
+            <input type="text" class="recAddrDetail" placeholder="상세주소 직접 입력 (예: 101동 202호)" style="width:100%; padding:14px; border:2px solid #cbd5e1; border-radius:10px; box-sizing:border-box; font-size:1.05rem; font-weight:700;">
+        `;
+        container.appendChild(div);
+        updateModalPrice();
+    }
+
+    function removeReceiver(btn) {
+        btn.parentElement.remove();
+        updateModalPrice();
+    }
+
+    function closeOrderModal() {
+        document.getElementById('orderModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    
+    var element_layer = document.getElementById('layer');
+    function closeDaumPostcode() {
+        element_layer.style.display = 'none';
+    }
+    
+    let currentPostcodeInput = null;
+    function execDaumPostcode(elem) {
+        if(elem && elem.tagName === 'BUTTON') {
+            currentPostcodeInput = elem.previousElementSibling;
+        } else if(elem) {
+            currentPostcodeInput = elem;
+        } else {
+            // fallback if parameter missing
+            currentPostcodeInput = document.querySelector('.recAddr');
+        }
+        
+        new daum.Postcode({
+            oncomplete: function(data) {
+                var addr = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+                var extraAddr = '';
+                if (data.userSelectedType === 'R') {
+                    if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) extraAddr += data.bname;
+                    if (data.buildingName !== '' && data.apartment === 'Y') extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
+                    if (extraAddr !== '') extraAddr = ' (' + extraAddr + ')';
+                }
+                if(currentPostcodeInput) currentPostcodeInput.value = addr + extraAddr;
+                element_layer.style.display = 'none';
+            },
+            width: '100%', height: '100%', maxSuggestItems: 5
+        }).embed(element_layer);
+        
+        element_layer.style.display = 'block';
+        element_layer.style.width = '100%';
+        element_layer.style.maxWidth = '500px';
+        element_layer.style.height = '80vh';
+        element_layer.style.maxHeight = '500px';
+        element_layer.style.border = '2px solid #1e293b';
+        element_layer.style.borderRadius = '12px';
+        element_layer.style.boxShadow = '0 15px 40px rgba(0,0,0,0.3)';
+        
+        const layerWidth = Math.min(window.innerWidth * 0.95, 500);
+        const layerHeight = Math.min(window.innerHeight * 0.8, 500);
+        const left = (window.innerWidth - layerWidth) / 2;
+        const top = (window.innerHeight - layerHeight) / 2;
+        
+        element_layer.style.width = layerWidth + 'px';
+        element_layer.style.height = layerHeight + 'px';
+        element_layer.style.left = left + 'px';
+        element_layer.style.top = top + 'px';
+    }
+
+    async function submitMultiOrder(btn) {
+        const blocks = document.querySelectorAll('.receiver-block');
+        let orderDataList = [];
+        
+        for(let block of blocks) {
+            const receiver = block.querySelector('.recName').value.trim();
+            const phone = block.querySelector('.recPhone').value.trim();
+            const addr = block.querySelector('.recAddr').value.trim();
+            const addrDetail = block.querySelector('.recAddrDetail').value.trim();
+            const blockQty = parseInt(block.querySelector('.blockQty').value);
+            
+            if(!receiver || !phone || !addr) {
+                alert("받으시는 분의 이름, 연락처, 배송지 주소를 모두 입력해주세요.");
+                return;
+            }
+            
+            const isFixed = block.querySelector('.isFixedSender').checked;
+            let finalName = receiver;
+            
+            if(!isFixed) {
+                const sName = block.querySelector('.sndName').value.trim();
+                const sPhone = block.querySelector('.sndPhone').value.trim();
+                const sAddr = block.querySelector('.sndAddr').value.trim();
+                const sAddrDetail = block.querySelector('.sndAddrDetail') ? block.querySelector('.sndAddrDetail').value.trim() : "";
+                
+                if(!sName || !sPhone || !sAddr) {
+                    alert("보내시는 분의 이름, 연락처, 배송지 주소를 빠짐없이 입력해주세요.");
+                    return;
+                }
+                const fullSndAddr = sAddr + " " + sAddrDetail;
+                finalName = `${receiver} (보낸사람: ${sName}, 연락처: ${sPhone}, 주소: ${fullSndAddr.trim()})`;
+            }
+            
+            const fullAddress = addr + " " + addrDetail;
+            
+            orderDataList.push({
+                product_id: selectedProductId,
+                name: finalName,
+                phone: phone,
+                address: fullAddress.trim(),
+                quantity: blockQty
+            });
+        }
+        
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span style="font-weight:800;">결제 진행 중... 💳</span>';
+        btn.style.opacity = '0.7';
+        btn.disabled = true;
+
+        setTimeout(async () => {
+            try {
+                let successCount = 0;
+                let failReason = "";
+                for(let order of orderDataList) {
+                    const res = await fetch('/api/market/order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(order)
+                    });
+                    const data = await res.json();
+                    if(data.success) {
+                        successCount++;
+                    } else {
+                        failReason = data.error;
+                    }
+                }
+                
+                if (successCount === orderDataList.length) {
+                    alert(`✅ 총 ${successCount}건의 결제가 성공적으로 승인되었습니다!\n요청하신 배송지 모두 안전하게 배송될 예정입니다.`);
+                    location.href = "/market"; 
+                } else if(successCount > 0) {
+                    alert(`⚠️ ${successCount}건 성공, 일부 실패: ${failReason}`);
+                    location.href = "/market";
+                } else {
+                    alert("주문 실패: 모든 주문 처리에 실패했습니다. " + failReason);
+                    btn.innerHTML = originalHtml;
+                    btn.style.opacity = '1';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                alert("통신 상태가 원활하지 않습니다. 잠시 후 닫고 다시 시도해주세요.");
+                btn.innerHTML = originalHtml;
+                btn.style.opacity = '1';
+                btn.disabled = false;
+            }
+        }, 2000);
+    }
+    
+    // Voice Order Logic
+    async function startVoiceOrder(e) {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert("죄송합니다. 현재 브라우저에서는 음성 인식 기능을 지원하지 않습니다.\n크롬(Chrome) 브라우저를 이용해 주세요.");
+            return;
+        }
+
+        const btn = e.currentTarget;
+        const orgHtml = btn.innerHTML;
+        btn.innerHTML = '🎙️ 듣고 있습니다... (말씀해 주세요)';
+        btn.style.background = '#ef4444';
+        
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ko-KR';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = async function(event) {
+            const transcript = event.results[0][0].transcript;
+            console.log("음성 인식 결과:", transcript);
+            
+            btn.innerHTML = '🎙️ AI가 음성을 분석 중입니다... ⏳';
+            btn.style.background = '#f59e0b';
+            
+            try {
+                const res = await fetch('/api/market/parse-voice', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text: transcript})
+                });
+                const response = await res.json();
+                
+                if(response.success && response.data && response.data.length > 0) {
+                    btn.innerHTML = '🎙️ 분석 완료! 배송지가 세팅되었습니다 ✅';
+                    btn.style.background = '#3b82f6';
+                    
+                    response.data.forEach(item => {
+                        addReceiver();
+                        const blocks = document.querySelectorAll('.receiver-block');
+                        const lastBlock = blocks[blocks.length - 1];
+                        
+                        lastBlock.querySelector('.isFixedSender').checked = true;
+                        lastBlock.querySelector('.sender-area').style.display = 'none';
+                        lastBlock.querySelector('.recName').value = item.name || '';
+                        lastBlock.querySelector('.recPhone').value = item.phone || '';
+                        lastBlock.querySelector('.recAddr').value = item.addr || '';
+                        lastBlock.querySelector('.recAddrDetail').value = item.addrDetail || '';
+                        lastBlock.querySelector('.blockQty').value = item.qty || 1;
+                    });
+                    updateModalPrice();
+                } else {
+                    alert("음성 분석에 실패했습니다. 직접 입력해 주세요.\n사유: " + response.error);
+                }
+            } catch (err) {
+                alert("서버 연결에 실패했습니다.");
+            }
+            
+            setTimeout(() => {
+                btn.innerHTML = orgHtml;
+                btn.style.background = '#22c55e';
+            }, 3000);
+        };
+
+        recognition.onerror = function(event) {
+            alert("음성 인식 중 오류가 발생했습니다. 마이크 권한을 확인해 주세요.");
+            btn.innerHTML = orgHtml;
+            btn.style.background = '#22c55e';
+        };
+
+        recognition.start();
+    }
+
+    // Excel Order Logic (Actual Parser via SheetJS)
+    function handleExcelUpload(input) {
+        if(!input.files || input.files.length === 0) return;
+        
+        const btn = input.previousElementSibling;
+        const orgHtml = btn.innerHTML;
+        const file = input.files[0];
+        
+        btn.innerHTML = '📊 엑셀 문서 집중 분석 중... ⏳';
+        btn.style.background = '#f59e0b';
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // Convert to array of arrays
+                const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                
+                let count = 0;
+                // Assuming row[0] is headers: [받는사람, 연락처, 배송지주소, 상세주소, 수량]
+                for(let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if(!row || row.length === 0) continue;
+                    
+                    const rName = row[0] || '';
+                    if(!rName.toString().trim()) continue; // Skip empty rows
+                    
+                    const rPhone = row[1] || '';
+                    const rAddr = row[2] || '';
+                    const rAddrDetail = row[3] || '';
+                    const rQty = parseInt(row[4]) || 1;
+                    
+                    addReceiver();
+                    const blocks = document.querySelectorAll('.receiver-block');
+                    const lastBlock = blocks[blocks.length - 1];
+                    
+                    lastBlock.querySelector('.isFixedSender').checked = true;
+                    lastBlock.querySelector('.sender-area').style.display = 'none';
+                    lastBlock.querySelector('.recName').value = rName;
+                    lastBlock.querySelector('.recPhone').value = rPhone;
+                    lastBlock.querySelector('.recAddr').value = rAddr;
+                    lastBlock.querySelector('.recAddrDetail').value = rAddrDetail;
+                    lastBlock.querySelector('.blockQty').value = rQty;
+                    
+                    count++;
+                }
+                
+                updateModalPrice();
+                
+                if(count > 0) {
+                    btn.innerHTML = `📊 대량 업로드 완료! (${count}건 세팅) ✅`;
+                    btn.style.background = '#3b82f6';
+                } else {
+                    btn.innerHTML = `📊 추가된 배송지가 없거나 포맷 오류입니다. (0건)`;
+                    btn.style.background = '#ef4444';
+                }
+                
+            } catch(err) {
+                console.error(err);
+                alert("엑셀 파일 양식이 맞지 않거나 읽을 수 없습니다.\\n1열: 받는이, 2열: 연락처, 3열: 기본주소, 4열: 상세주소, 5열: 수량");
+                btn.innerHTML = orgHtml;
+                btn.style.background = '#10b981';
+            }
+            
+            setTimeout(() => {
+                btn.innerHTML = orgHtml;
+                btn.style.background = '#10b981';
+            }, 3000);
+            
+            input.value = "";
+        };
+        
+        reader.readAsArrayBuffer(file);
+    }
+
+    // Photo Order Logic (AI Vision Parser)
+    async function handlePhotoUpload(input) {
+        if(!input.files || input.files.length === 0) return;
+        
+        const photoBtn = document.getElementById('btnPhotoOrder');
+        const orgHtml = photoBtn.innerHTML;
+        const file = input.files[0];
+        
+        photoBtn.innerHTML = '📸 AI 시각 판독 중... ⏳';
+        photoBtn.style.background = '#f59e0b';
+        
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+            const base64Image = e.target.result;
+            
+            try {
+                const res = await fetch('/api/market/parse-photo', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ image_base64: base64Image })
+                });
+                const response = await res.json();
+                
+                if(response.success && response.data && response.data.length > 0) {
+                    photoBtn.innerHTML = `📸 사진 판독 완료! (${response.data.length}건) ✅`;
+                    photoBtn.style.background = '#3b82f6';
+                    
+                    response.data.forEach(item => {
+                        addReceiver();
+                        const blocks = document.querySelectorAll('.receiver-block');
+                        const lastBlock = blocks[blocks.length - 1];
+                        
+                        lastBlock.querySelector('.isFixedSender').checked = true;
+                        lastBlock.querySelector('.sender-area').style.display = 'none';
+                        lastBlock.querySelector('.recName').value = item.name || '';
+                        lastBlock.querySelector('.recPhone').value = item.phone || '';
+                        lastBlock.querySelector('.recAddr').value = item.addr || '';
+                        lastBlock.querySelector('.recAddrDetail').value = item.addrDetail || '';
+                        lastBlock.querySelector('.blockQty').value = item.qty || 1;
+                    });
+                    updateModalPrice();
+                } else {
+                    alert("사진에서 주소록을 찾지 못했습니다.");
+                    photoBtn.innerHTML = orgHtml;
+                    photoBtn.style.background = '#0ea5e9';
+                }
+            } catch(err) {
+                console.error(err);
+                alert("서버 연결에 실패했습니다.");
+                photoBtn.innerHTML = orgHtml;
+                photoBtn.style.background = '#0ea5e9';
+            }
+            
+            setTimeout(() => {
+                photoBtn.innerHTML = orgHtml;
+                photoBtn.style.background = '#0ea5e9';
+            }, 3000);
+            
+            input.value = "";
+        };
+        
+        // This gives data:image/jpeg;base64,.... format
+        reader.readAsDataURL(file);
+    }
+
+    // Video Control Functions
+    function toggleVideoPlay(btn) {
+        const video = document.getElementById('detailVideo');
+        const playIcon = btn.querySelector('.play-icon');
+        const pauseIcon = btn.querySelector('.pause-icon');
+        if (video.paused) {
+            video.play();
+            playIcon.style.display = 'none';
+            pauseIcon.style.display = 'block';
+        } else {
+            video.pause();
+            playIcon.style.display = 'block';
+            pauseIcon.style.display = 'none';
+        }
+    }
+
+    function toggleVideoMute(btn) {
+        const video = document.getElementById('detailVideo');
+        const muteIcon = btn.querySelector('.mute-icon');
+        const unmuteIcon = btn.querySelector('.unmute-icon');
+        if (video.muted) {
+            video.muted = false;
+            muteIcon.style.display = 'none';
+            unmuteIcon.style.display = 'block';
+        } else {
+            video.muted = true;
+            muteIcon.style.display = 'block';
+            unmuteIcon.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

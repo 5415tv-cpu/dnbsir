@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    /* Dark Glassmorphism Theme */
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 10% 20%, #0f172a 0%, #1e1b4b 90%);
+        font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+        color: #f8fafc;
+    }
+
+    /* Override Global Sticky Header for Dark Theme */
+    .sticky-header {
+        background: rgba(15, 23, 42, 0.6) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    .app-title {
+        color: #fff !important;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5) !important;
+    }
+
+    .glass-container {
+        max-width: 650px;
+        margin: 30px auto;
+        padding: 30px 20px;
+        background: rgba(30, 41, 59, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3), inset 0 0 20px rgba(255,255,255,0.02);
+    }
+
+    .main-header {
+        text-align: center;
+        margin-bottom: 30px;
+        animation: fadeInDown 0.8s ease-out;
+    }
+
+    .main-header h2 {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #fff;
+        margin: 0 0 10px 0;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .main-header p {
+        color: #94a3b8;
+        font-size: 1rem;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* Chat Section */
+    .chat-box {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+
+    .chat-bubble {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(30, 64, 175, 0.2));
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        padding: 15px 20px;
+        border-radius: 20px 20px 20px 5px;
+        color: #fff;
+        font-size: 1.05rem;
+        line-height: 1.5;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .chat-bubble::before {
+        content: '🤖 비서:';
+        display: block;
+        font-size: 0.8rem;
+        color: #93c5fd;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .chip {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 8px 16px;
+        border-radius: 20px;
+        color: #e2e8f0;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .chip:hover {
+        background: rgba(59, 130, 246, 0.3);
+        border-color: #3b82f6;
+        color: #fff;
+    }
+
+    .input-wrapper {
+        display: flex;
+        gap: 10px;
+    }
+
+    #chatInput {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        padding: 15px;
+        border-radius: 12px;
+        font-size: 1rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    #chatInput:focus {
+        border-color: #3b82f6;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .send-btn {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0 20px;
+        border-radius: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .send-btn:hover {
+        background: #2563eb;
+    }
+
+    /* Cards Style */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 16px;
+        position: relative;
+    }
+
+    .badge {
+        position: absolute;
+        top: -12px;
+        right: 20px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+
+    .card-title {
+        margin: 0 0 15px 0;
+        font-size: 1.2rem;
+        font-weight: 800;
+    }
+
+    .meta-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .meta-list li {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+
+    .meta-label { color: #94a3b8; }
+    .meta-value { color: #f8fafc; font-weight: 600; text-align: right; }
+
+    /* Loading */
+    .loader {
+        display: none;
+        text-align: center;
+        padding: 40px 0;
+        color: #60a5fa;
+        font-weight: bold;
+    }
+    
+    .loader-spinner {
+        display: inline-block;
+        width: 40px; height: 40px;
+        border: 4px solid rgba(59,130,246,0.3);
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 15px;
+    }
+
+    /* Checkout Flow */
+    .checkout-area {
+        display: none;
+        margin-top: 30px;
+        background: rgba(0,0,0,0.3);
+        padding: 24px;
+        border-radius: 16px;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        text-align: center;
+    }
+
+    .token-btn {
+        width: 100%;
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #fff;
+        border: none;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 1.1rem;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
+        transition: transform 0.2s;
+    }
+
+    .token-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<div class="glass-container">
+    <div class="main-header">
+        <h2>🏙️ 시민 맞춤 혜택 진단</h2>
+        <p>복잡한 공공 서류 없이, 내 상황만 말해도<br>놓친 정부 지원금과 수당을 찾아드립니다.</p>
+    </div>
+
+    <!-- 1. Chat Area -->
+    <div class="chat-box" id="chatArea">
+        <div class="chat-bubble">
+            안녕하세요! 시민님의 어떤 문제를 해결해 드릴까요?<br>
+            <strong>"서울 사는 30대 신혼부부입니다."</strong> 처럼 편하게 말씀해주시면, 조건에 맞는 정부/지자체 지원금을 모두 찾아 드립니다.
+        </div>
+
+        <div class="chip-container">
+            <div class="chip" onclick="fillChat('서울 사는 30대 신혼부부이고, 집을 구하고 있어요.')">💍 30대 신혼부부</div>
+            <div class="chip" onclick="fillChat('최근에 첫 아이를 낳고 육아휴직 중입니다.')">👶 육아휴직/출산</div>
+            <div class="chip" onclick="fillChat('대학 졸업하고 취업 준비하는 무주택 청년입니다.')">🎓 취준생/청년</div>
+        </div>
+
+        <div class="input-wrapper">
+            <input type="text" id="chatInput" placeholder="내 상황을 자유롭게 적어주세요.">
+            <button class="send-btn" onclick="startAnalysis()">진단 시작</button>
+        </div>
+    </div>
+
+    <!-- 2. Loading Area -->
+    <div class="loader" id="loaderArea">
+        <div class="loader-spinner"></div>
+        <div id="loaderText">AI가 전국 1,000여 개의 시민 복지 정책을 스캔하고 있습니다...</div>
+    </div>
+
+    <!-- 3. Results Area -->
+    <div id="resultsArea" style="display: none; animation: fadeInUp 0.5s ease-out;">
+        <h3 style="color: #60a5fa; font-weight: 900; margin-bottom: 20px;">🎉 시민님을 위한 특별 혜택을 찾았습니다!</h3>
+
+        <div id="cardsWrapper">
+            <!-- Cards will be injected here by JS -->
+        </div>
+
+        <div class="checkout-area" id="checkoutArea">
+            <p style="margin: 0 0 15px 0; color: #cbd5e1; font-size: 0.95rem;">
+                관공서 비밀번호 찾기부터 복잡한 서류 작성까지 직접 하시기 힘드신가요?<br>
+                <strong style="color: #10b981;">로봇 비서가 원클릭으로 대행 접수하여 돈을 받아드립니다.</strong>
+            </p>
+            <button class="token-btn" onclick="openCheckout()">🚀 AI 대행 신청 (2,000 토큰)</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function fillChat(text) {
+        document.getElementById('chatInput').value = text;
+    }
+
+    function startAnalysis() {
+        const text = document.getElementById('chatInput').value.trim();
+        if(!text) {
+            alert('상황을 텍스트로 입력해주세요!');
+            return;
+        }
+
+        // Hide Chat, Show Loader
+        document.getElementById('chatArea').style.display = 'none';
+        document.getElementById('loaderArea').style.display = 'block';
+
+        const loaderText = document.getElementById('loaderText');
+        
+        setTimeout(() => { loaderText.innerText = "입력하신 키워드를 분석하여 주민센터 데이터베이스를 대조합니다..."; }, 1500);
+
+        setTimeout(() => {
+            document.getElementById('loaderArea').style.display = 'none';
+            renderResults();
+        }, 3000);
+    }
+
+    function renderResults() {
+        const wrapper = document.getElementById('cardsWrapper');
+        let cardsHtml = '';
+
+        // Citizen Cards
+        cardsHtml += generateCard('🎒 청년구직활동지원금', '#8b5cf6', '월 50만 원 (최대 6개월)', '만 18세~34세 미취업 청년');
+        cardsHtml += generateCard('🏠 무주택 청년 월세 특별지원', '#0ea5e9', '월 최대 20만 원', '보증금 5천만원 이하 청년');
+        cardsHtml += generateCard('🍼 부모급여 (국가지원)', '#f43f5e', '월 100만 원 (만 0세)', '출산 직후 1년간 최대 지원');
+        cardsHtml += generateCard('🛡️ 휴면/숨은 보험금 찾기', '#ec4899', '조회 후 즉시 계좌입금', '모든 병원/약국 미청구건 통합조회');
+
+        wrapper.innerHTML = cardsHtml;
+        document.getElementById('resultsArea').style.display = 'block';
+        document.getElementById('checkoutArea').style.display = 'block';
+    }
+
+    function generateCard(title, color, val1, val2) {
+        return `
+        <label class="glass-card" style="display: block; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" onchange="this.style.borderColor = this.querySelector('input').checked ? '${color}' : 'rgba(255,255,255,0.1)';">
+            <div style="position: absolute; top: 24px; left: 24px;">
+                <input type="checkbox" class="subsidy-checkbox" style="width: 22px; height: 22px; accent-color: ${color}; cursor: pointer;" value="${title}" />
+            </div>
+            <div class="badge" style="background: ${color}; color: white;">시민 전용 AI 매칭</div>
+            <h3 class="card-title" style="margin-left: 35px; color: ${color};">${title}</h3>
+            <ul class="meta-list">
+                <li><span class="meta-label">예상 복지 혜택</span><span class="meta-value" style="color: ${color}; font-size: 1.1rem;">${val1}</span></li>
+                <li><span class="meta-label">적용 대상 요약</span><span class="meta-value">${val2}</span></li>
+            </ul>
+        </label>
+        `;
+    }
+
+    function openCheckout() {
+        const checked = document.querySelectorAll('.subsidy-checkbox:checked');
+        if (checked.length === 0) {
+            alert("대행을 원하시는 혜택 항목을 1개 이상 체크해 주세요.");
+            return;
+        }
+
+        if (confirm("2,000 토큰(2만원)을 결제하고 서류 복사 및 관공서 대행 접수를 시작하시겠습니까?")) {
+            alert('🎉 결제 및 관공서 연동 성공! 카카오톡으로 진행 상황을 안내해 드립니다.');
+            window.location.href = '/citizen/send';
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 - 가게 상세</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="manifest" href="{{ static_url('manifest.json') }}">
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/service-worker.js');
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 pb-20">
+
+    <!-- Header -->
+    <div class="relative h-64 bg-gray-300 bg-cover bg-center" style="background-image: url('{{ store.image_url }}');">
+        <div class="absolute inset-0 bg-black/30"></div>
+        <button onclick="history.back()"
+            class="absolute top-4 left-4 bg-white/20 backdrop-blur rounded-full p-2 text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Content -->
+    <main class="max-w-md mx-auto -mt-8 relative z-10 px-4">
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">{{ store.name }}</h1>
+                    <p class="text-sm text-gray-500 mt-1">{{ store.category }}</p>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">영업중</span>
+                    <span class="text-xs text-gray-400 mt-1">⭐ 4.8 (120)</span>
+                </div>
+            </div>
+
+            <div class="mt-6 space-y-4">
+                <div class="flex items-start gap-3">
+                    <span class="text-gray-400">📍</span>
+                    <p class="text-sm text-gray-600">위치 정보가 없습니다. (데모 데이터)</p>
+                </div>
+                <div class="flex items-start gap-3">
+                    <span class="text-gray-400">📞</span>
+                    <a href="tel:{{ store.phone }}" class="text-sm text-blue-600 hover:underline">{{ store.phone }}</a>
+                </div>
+                <div class="flex items-start gap-3">
+                    <span class="text-gray-400">📝</span>
+                    <p class="text-sm text-gray-600 leading-relaxed">{{ store.info }}</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 mt-8">
+                <button onclick="toggleChat()"
+                    class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
+                    바로 예약하기
+                </button>
+                <button
+                    onclick="window.open(`https://map.kakao.com/link/search/{{ store.address | urlencode }}`, '_blank')"
+                    class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold active:scale-95 transition">
+                    지도 보기
+                </button>
+            </div>
+        </div>
+
+        <!-- Menu Preview (Optional) -->
+        {% if store.menu_text %}
+        <div class="bg-white rounded-xl shadow-sm p-6 mt-4">
+            <h2 class="font-bold text-lg mb-4">대표 메뉴</h2>
+            <div class="space-y-3">
+                <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ store.menu_text }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- AI Chat Widget (Customized for Store) -->
+    <div id="aiChatWidget"
+        style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; font-family: 'Noto Sans KR', sans-serif;">
+        <!-- Chat Button -->
+        <button id="chatToggleBtn" onclick="toggleChat()" style="
+            width: 60px; height: 60px; border-radius: 50%; background: #2563eb; color: white; border: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; transition: transform 0.2s;
+        ">
+            💬
+        </button>
+
+        <!-- Chat Window -->
+        <div id="chatWindow" style="
+            display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; max-width: 90vw;
+            background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            flex-direction: column; overflow: hidden; border: 1px solid #eee;
+        ">
+            <!-- Header -->
+            <div
+                style="padding: 15px; background: #2563eb; color: white; display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-weight: bold;">🤖 {{ store.name }} AI 매니저</span>
+                <span onclick="toggleChat()" style="cursor: pointer; padding: 0 5px;">✕</span>
+            </div>
+
+            <!-- Messages -->
+            <div id="chatMessages"
+                style="flex: 1; padding: 15px; overflow-y: auto; background: #f5f5f5; display: flex; flex-direction: column; gap: 10px;">
+                <div
+                    style="align-self: flex-start; background: white; padding: 10px 14px; border-radius: 12px 12px 12px 0; max-width: 85%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.95rem;">
+                    안녕하세요! {{ store.name }}입니다.<br>
+                    예약이나 주문, 메뉴에 대해 무엇이든 편하게 물어보세요! 😊
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div style="padding: 10px; background: white; border-top: 1px solid #eee; display: flex; gap: 5px;">
+                <input type="text" id="chatInput" placeholder="메시지 입력..." onkeypress="handleEnter(event)" style="
+                    flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 0.95rem;
+                ">
+                <button onclick="sendMessage()" style="
+                    background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 0.95rem;
+                ">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const STORE_ID = '{{ store.store_id }}';
+        let userPhone = localStorage.getItem('chatUserPhone') || generateRandomPhone();
+
+        function generateRandomPhone() {
+            const phone = '010-' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem('chatUserPhone', phone);
+            return phone;
+        }
+
+        function toggleChat() {
+            const window = document.getElementById('chatWindow');
+            const btn = document.getElementById('chatToggleBtn');
+            if (window.style.display === 'none' || window.style.display === '') {
+                window.style.display = 'flex';
+                btn.style.transform = 'rotate(90deg)';
+                // AI에게 첫 인사 시키고 싶다면 여기서 초기 트리거를 날릴 수 있습니다.
+            } else {
+                window.style.display = 'none';
+                btn.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const messages = document.getElementById('chatMessages');
+            const text = input.value.trim();
+            if (!text) return;
+
+            // Add User Message
+            appendMessage(text, 'user');
+            input.value = '';
+
+            // Loading Indicator
+            const loadingId = appendMessage('생각 중...', 'ai', true);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        phone: userPhone,
+                        store_id: STORE_ID
+                    })
+                });
+
+                const data = await response.json();
+
+                // Remove Loading
+                document.getElementById(loadingId).remove();
+
+                if (data.success) {
+                    appendMessage(data.response, 'ai');
+                } else {
+                    appendMessage('오류가 발생했습니다: ' + data.error, 'ai');
+                }
+            } catch (e) {
+                document.getElementById(loadingId).remove();
+                appendMessage('서버통신 오류', 'ai');
+            }
+        }
+
+        function appendMessage(text, sender, isLoading = false) {
+            const messages = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.id = isLoading ? 'msg-loading-' + Date.now() : '';
+            div.style.alignSelf = sender === 'user' ? 'flex-end' : 'flex-start';
+            div.style.background = sender === 'user' ? '#2563eb' : 'white';
+            div.style.color = sender === 'user' ? 'white' : 'black';
+            div.style.padding = '10px 14px';
+            div.style.fontSize = '0.95rem';
+            div.style.lineHeight = '1.5';
+            div.style.borderRadius = sender === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0';
+            div.style.maxWidth = '85%';
+            div.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+            // Convert newlines to br tags roughly
+            div.innerHTML = text.replace(/\n/g, '<br>');
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+            return div.id;
+        }
+    </script>
+</body>
+
+</html>

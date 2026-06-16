@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">예약</div>
+    <div class="page-title">주문/예약 창</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 640px; margin: 0 auto;">
+    {% if not store or not store.store_id %}
+    <div style="border: 3px solid #1A1A1A; background: #fff; padding: 20px; margin-bottom: 20px; box-shadow: 4px 4px 0px #ccc;">
+        <div style="font-size: 1.1rem; font-weight: 900; margin-bottom: 10px;">가게 정보를 찾을 수 없습니다.</div>
+        <div style="font-size: 0.95rem; color: #666;">예약 링크를 다시 확인해주세요.</div>
+    </div>
+    {% else %}
+    <div style="border: 3px solid #1A1A1A; background: #fff; padding: 20px; margin-bottom: 20px; box-shadow: 4px 4px 0px #ccc;">
+        <div style="font-size: 0.9rem; color: #666; font-weight: 800; margin-bottom: 6px;">가게 정보</div>
+        <div style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px;">{{ store.name }}</div>
+        <div style="margin-top: 10px; font-size: 0.95rem; color: #444;">📞 {{ store.phone or "전화번호 정보 없음" }}</div>
+        <div style="margin-top: 6px; font-size: 0.95rem; color: #444;">📍 {{ store.address or "주소 정보 없음" }}</div>
+    </div>
+
+    <div style="border: 3px solid #1A1A1A; background: #fff; padding: 20px; margin-bottom: 20px; box-shadow: 4px 4px 0px #ccc;">
+        <div style="font-size: 1.1rem; font-weight: 900; margin-bottom: 10px;">메뉴 선택</div>
+        <div style="font-size: 0.95rem; color: #666; margin-bottom: 15px;">수량을 선택하면 자동으로 주문 요약에 들어갑니다.</div>
+        {% if products and products|length > 0 %}
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            {% for product in products %}
+            <div data-product="{{ product.id }}" data-name="{{ product.name }}" data-price="{{ product.price }}"
+                style="border: 3px solid #1A1A1A; padding: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: 3px 3px 0px #ccc; background: #fff;">
+                <div style="flex: 1;">
+                    <div style="font-size: 1rem; font-weight: 900;">{{ product.name }}</div>
+                    <div style="font-size: 0.9rem; color: #666; margin-top: 6px;">
+                        {{ "{:,}".format(product.price) }}원
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" onclick="changeQty('{{ product.id }}', -1)"
+                        style="width: 44px; height: 44px; border: 3px solid #1A1A1A; background: #f5f5f5; font-weight: 900; font-size: 1.2rem; cursor: pointer;">-</button>
+                    <input id="qty-{{ product.id }}" type="number" min="0" value="0"
+                        style="width: 60px; height: 44px; text-align: center; border: 3px solid #1A1A1A; font-size: 1rem; font-weight: 900;">
+                    <button type="button" onclick="changeQty('{{ product.id }}', 1)"
+                        style="width: 44px; height: 44px; border: 3px solid #1A1A1A; background: #1A1A1A; color: #fff; font-weight: 900; font-size: 1.2rem; cursor: pointer;">+</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="font-size: 0.95rem; color: #666;">등록된 메뉴가 없습니다. 예약 정보만 입력할 수 있습니다.</div>
+        {% endif %}
+        <div id="menuSummaryBox" style="margin-top: 15px; font-size: 0.95rem; font-weight: 800; color: #1A1A1A;">선택된 메뉴: 없음</div>
+    </div>
+
+    <div style="border: 3px solid #1A1A1A; background: #fff; padding: 20px; margin-bottom: 20px; box-shadow: 4px 4px 0px #ccc;">
+        <div style="font-size: 1.1rem; font-weight: 900; margin-bottom: 10px;">예약 정보</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+                <label style="display: block; font-weight: 800; margin-bottom: 6px;">예약 날짜</label>
+                <input type="date" id="resDate"
+                    style="width: 100%; height: 48px; border: 3px solid #1A1A1A; padding: 0 10px; font-size: 1rem; font-weight: 800;">
+            </div>
+            <div>
+                <label style="display: block; font-weight: 800; margin-bottom: 6px;">예약 시간</label>
+                <input type="time" id="resTime"
+                    style="width: 100%; height: 48px; border: 3px solid #1A1A1A; padding: 0 10px; font-size: 1rem; font-weight: 800;">
+            </div>
+        </div>
+        <div style="margin-top: 12px;">
+            <label style="display: block; font-weight: 800; margin-bottom: 6px;">인원 수</label>
+            <input type="number" id="headCount" min="1" max="20" value="1"
+                style="width: 100%; height: 48px; border: 3px solid #1A1A1A; padding: 0 10px; font-size: 1rem; font-weight: 800;">
+        </div>
+        <div style="margin-top: 12px;">
+            <label style="display: block; font-weight: 800; margin-bottom: 6px;">요청 사항</label>
+            <textarea id="requestNote" rows="3"
+                style="width: 100%; border: 3px solid #1A1A1A; padding: 10px; font-size: 1rem; font-weight: 700; resize: vertical;"></textarea>
+        </div>
+    </div>
+
+    <div style="border: 3px solid #1A1A1A; background: #fff; padding: 20px; margin-bottom: 20px; box-shadow: 4px 4px 0px #ccc;">
+        <div style="font-size: 1.1rem; font-weight: 900; margin-bottom: 10px;">고객 정보</div>
+        <div style="margin-bottom: 12px;">
+            <label style="display: block; font-weight: 800; margin-bottom: 6px;">성함</label>
+            <input type="text" id="customerName" placeholder="홍길동"
+                style="width: 100%; height: 48px; border: 3px solid #1A1A1A; padding: 0 10px; font-size: 1rem; font-weight: 800;">
+        </div>
+        <div style="margin-bottom: 12px;">
+            <label style="display: block; font-weight: 800; margin-bottom: 6px;">연락처</label>
+            <input type="tel" id="customerPhone" placeholder="010-1234-5678"
+                style="width: 100%; height: 48px; border: 3px solid #1A1A1A; padding: 0 10px; font-size: 1rem; font-weight: 800;">
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-weight: 800;">
+            <input type="checkbox" id="consentCheck" style="width: 18px; height: 18px;">
+            개인정보 수집·이용에 동의합니다.
+        </label>
+        <div style="font-size: 0.85rem; color: #666; margin-top: 6px;">
+            예약 진행을 위해 이름과 연락처가 필요합니다.
+        </div>
+    </div>
+
+    <button onclick="submitReservation()" class="main-btn"
+        style="background: #1A1A1A; color: #fff; padding: 18px; width: 100%; font-size: 1.1rem; border-radius: 5px;">
+        예약 완료하기
+    </button>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const STORE_ID = "{{ store.store_id or '' }}";
+    const menuSummaryBox = document.getElementById('menuSummaryBox');
+
+    function changeQty(productId, diff) {
+        const input = document.getElementById('qty-' + productId);
+        const next = Math.max(0, parseInt(input.value || '0', 10) + diff);
+        input.value = next;
+        updateMenuSummary();
+    }
+
+    function updateMenuSummary() {
+        const items = [];
+        document.querySelectorAll('[data-product]').forEach(card => {
+            const pid = card.getAttribute('data-product');
+            const name = card.getAttribute('data-name');
+            const qty = parseInt(document.getElementById('qty-' + pid).value || '0', 10);
+            if (qty > 0) items.push(name + ' x' + qty);
+        });
+        menuSummaryBox.innerText = '선택된 메뉴: ' + (items.length ? items.join(', ') : '없음');
+    }
+
+    function setMinDate() {
+        const input = document.getElementById('resDate');
+        if (!input) return;
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        input.min = `${yyyy}-${mm}-${dd}`;
+    }
+
+    async function submitReservation() {
+        const name = document.getElementById('customerName').value.trim();
+        const phone = document.getElementById('customerPhone').value.trim();
+        const resDate = document.getElementById('resDate').value;
+        const resTime = document.getElementById('resTime').value;
+        const headCount = parseInt(document.getElementById('headCount').value || '1', 10);
+        const requestNote = document.getElementById('requestNote').value.trim();
+        const consent = document.getElementById('consentCheck').checked;
+
+        if (!STORE_ID) {
+            alert('가게 정보가 없습니다.');
+            return;
+        }
+
+        if (!name || !phone) {
+            alert('성함과 연락처를 입력해주세요.');
+            return;
+        }
+
+        if (!resDate || !resTime) {
+            alert('예약 날짜와 시간을 선택해주세요.');
+            return;
+        }
+
+        if (!consent) {
+            alert('개인정보 수집 동의가 필요합니다.');
+            return;
+        }
+
+        const items = [];
+        document.querySelectorAll('[data-product]').forEach(card => {
+            const pid = card.getAttribute('data-product');
+            const name = card.getAttribute('data-name');
+            const qty = parseInt(document.getElementById('qty-' + pid).value || '0', 10);
+            if (qty > 0) items.push(name + ' x' + qty);
+        });
+
+        const payload = {
+            store_id: STORE_ID,
+            customer_name: name,
+            customer_phone: phone,
+            res_date: resDate,
+            res_time: resTime,
+            head_count: headCount,
+            menu_summary: items.join(', ') || '메뉴 선택 없음',
+            request_note: requestNote,
+            consent: consent
+        };
+
+        try {
+            const res = await fetch('/api/citizen/reserve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            let data = {};
+            try {
+                data = await res.json();
+            } catch (err) {
+                data = {};
+            }
+            if (res.ok && data.success) {
+                alert('예약이 접수되었습니다. 가게에서 확인 후 연락드릴게요.');
+                location.reload();
+            } else {
+                const msg = data.detail || data.error || '알 수 없는 오류';
+                alert('예약 실패: ' + msg);
+            }
+        } catch (e) {
+            console.error(e);
+            alert('통신 오류가 발생했습니다.');
+        }
+    }
+
+    setMinDate();
+    updateMenuSummary();
+</script>
+{% endblock %}

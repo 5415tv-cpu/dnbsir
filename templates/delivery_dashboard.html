@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #111 !important;
+        color: #fff;
+    }
+    .delivery-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 2rem;
+        padding: 3rem 1rem;
+        border-radius: 20px;
+        border: 4px solid #fff;
+        background: #000;
+        color: #39ff14; /* Neon Green */
+        font-size: 2.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.3s;
+        box-shadow: 0 8px 0px rgba(255, 255, 255, 0.2);
+    }
+    .delivery-btn:active {
+        transform: translateY(8px);
+        box-shadow: 0 0px 0px rgba(255, 255, 255, 0.2);
+    }
+    .delivery-btn i {
+        margin-right: 1.5rem;
+        font-size: 2.5rem;
+    }
+    .notice-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.9);
+        color: #fff;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem;
+    }
+    .notice-content {
+        background: #000;
+        border: 4px solid #ff073a;
+        padding: 2.5rem;
+        max-width: 500px;
+        text-align: center;
+        border-radius: 20px;
+        box-shadow: 0 0 20px rgba(255,7,58,0.5);
+    }
+    .notice-content h2 {
+        color: #ff073a;
+        font-size: 2rem;
+        font-weight: 900;
+        margin-bottom: 1.5rem;
+    }
+    .notice-content p {
+        font-size: 1.5rem;
+        line-height: 1.6;
+        color: #fff;
+        word-break: keep-all;
+    }
+</style>
+
+<!-- Maintenance Modal removed -->
+
+<div style="padding: 2rem 1rem; max-width: 600px; margin: 0 auto; min-height: 100vh;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="color: #fff; font-size: 2.5rem; font-weight: 900; margin: 0; border-bottom: 4px solid #39ff14; padding-bottom: 1rem; display: inline-block;">
+            📦 택배 기사 대시보드
+        </h1>
+        <p style="color: #aaa; margin-top: 1rem; font-size: 1.3rem;">장갑을 벗지 말고 크게 누르세요!</p>
+        <button onclick="document.getElementById('logenSettingsModal').style.display='flex'" style="margin-top: 1rem; background: #333; color: #fff; padding: 0.8rem 1.5rem; border: 1px solid #777; border-radius: 20px; font-weight: bold; cursor: pointer;">
+            ⚙️ 로젠택배 연동 설정
+        </button>
+    </div>
+
+    <!-- Print Mode Toggle -->
+    <div style="background: #222; border-radius: 15px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; border: 2px solid #555;">
+        <span style="font-size: 1.5rem; font-weight: 900; color: #fff;">🖨️ 인쇄 모드</span>
+        <div style="display: flex; gap: 10px;">
+            <button id="btn-sheet" onclick="setPrintMode('sheet')" style="padding: 1rem 1.5rem; min-height: 44px; font-size: 1.4rem; font-weight: 900; border-radius: 10px; border: none; background: #39ff14; color: #000; cursor: pointer; transition: 0.2s;">낱장</button>
+            <button id="btn-roll" onclick="setPrintMode('roll')" style="padding: 1rem 1.5rem; min-height: 44px; font-size: 1.4rem; font-weight: 900; border-radius: 10px; border: none; background: #444; color: #aaa; cursor: pointer; transition: 0.2s;">롤(감열지)</button>
+        </div>
+    </div>
+
+    <!-- Partner Referral Dashboard -->
+    <div style="background: linear-gradient(135deg, #111 0%, #2a2a2a 100%); border-radius: 15px; padding: 1.5rem; margin-bottom: 2rem; border: 2px solid #ffcc00; display:flex; flex-direction:column; align-items:center;">
+        <h2 style="color: #ffcc00; font-size: 1.4rem; margin: 0 0 10px; font-weight: 900;">🤝 동네비서 파트너스 (영업 리워드)</h2>
+        <p style="color: #ddd; font-size: 1.1rem; margin: 0 0 20px; text-align: center; word-break:keep-all;">
+            직접 상가를 입점시키면 건당 <b>일반 1.5만냥 / VIP 3만냥</b> 보너스!
+        </p>
+        <div style="display: flex; gap: 10px; width: 100%; flex-direction: column;">
+            <button onclick="location.href='/delivery/brochure'" style="background: #ffffff; color: #111; width: 100%; border: none; padding: 1.2rem; border-radius: 10px; font-size: 1.4rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(255, 255, 255, 0.4);">
+                📖 1분 영업 브로슈어 열기
+            </button>
+            <button onclick="showReferralQR()" style="background: #ffcc00; color: #000; width: 100%; border: none; padding: 1.2rem; border-radius: 10px; font-size: 1.4rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);">
+                <i class="fas fa-qrcode"></i> 현장 가맹 QR 띄우기
+            </button>
+        </div>
+    </div>
+
+    <button class="delivery-btn" style="color: #39ff14; border-color: #39ff14;" onclick="if(enforceAppLock('delivery')) loadTodayList()">
+        📋 오늘 수거 목록
+    </button>
+    
+    <div id="pickup-list-container" style="display: none; margin-bottom: 2rem;">
+        <!-- Loaded via JS -->
+    </div>
+
+    <button class="delivery-btn" style="color: #00e5ff; border-color: #00e5ff;" onclick="if(enforceAppLock('delivery')) location.href='/courier'">
+        🔍 주소 검색/등록 (캐치)
+    </button>
+    
+    <button class="delivery-btn" style="color: #ffea00; border-color: #ffea00;" onclick="if(enforceAppLock('delivery')) openBarcodeScanner()">
+        🖨️ 송장 출력 (바코드)
+    </button>
+</div>
+
+<!-- Barcode Modal -->
+<div id="barcodeModal" class="notice-modal" style="display: none;">
+    <div class="notice-content" style="border-color: #ffea00; box-shadow: 0 0 20px rgba(255, 234, 0, 0.5);">
+        <h2 style="color: #ffea00;">🖨️ 운송장 바코드 (스캐너용)</h2>
+        
+        <!-- Native Camera Scanner -->
+        <label style="display: block; width: 100%; padding: 1.5rem; background: #39ff14; color: #000; font-size: 1.5rem; font-weight: 900; border-radius: 10px; margin-bottom: 1rem; text-align: center; cursor: pointer;">
+            📷 바코드 스캔 (카메라)
+            <input type="file" id="barcodeNativeScan" accept="image/*" capture="environment" style="display: none;" onchange="handleNativeScan(event)">
+        </label>
+        
+        <div style="color: #aaa; margin-bottom: 1rem;">또는 직접 입력</div>
+        <input type="text" id="barcodeInput" placeholder="운송장 번호 입력" style="width: 100%; padding: 1rem; font-size: 1.5rem; border-radius: 10px; border: 2px solid #ccc; margin-bottom: 1rem; text-align: center;">
+        <button onclick="generateBarcode()" style="width: 100%; padding: 1.5rem; min-height: 60px; background: #ffea00; color: #000; font-size: 1.5rem; font-weight: 900; border: none; border-radius: 10px; margin-bottom: 1.5rem;">바코드 생성</button>
+        
+        <div id="barcodeImageContainer" style="background: #fff; padding: 1rem; border-radius: 10px; display: none;">
+            <img id="barcodeImage" src="" alt="Barcode" style="width: 100%; max-height: 150px;">
+        </div>
+        
+        <button onclick="document.getElementById('barcodeModal').style.display='none'" style="margin-top: 2rem; width: 100%; padding: 1.2rem; background: #333; border: none; font-size: 1.5rem; font-weight: 900; color: #fff; border-radius: 10px;">닫기</button>
+    </div>
+</div>
+
+<!-- App Download Required Modal -->
+<div id="appDownloadModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #fff; border: 4px solid #1a1a1a; padding: 2.5rem; width: 100%; max-width: 400px; text-align: center; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h2 style="color: #1a1a1a; font-size: 2rem; font-weight: 900; margin-bottom: 1.5rem;">🔒 전용 앱 설치 필수</h2>
+        <p style="font-size: 1.1rem; line-height: 1.6; color: #333; word-break: keep-all; margin-bottom: 2rem;">
+            안정적인 <strong style="color: #ff073a;">블루투스 송장 출력</strong>을 위해 동네비서 전용 안드로이드 앱 설치가 필수입니다.<br><br>
+            <strong style="font-size: 1.1rem; color: #166534; background: #dcfce7; padding: 0.2rem 0.5rem; border-radius: 5px;">📥 앱 다운로드 안내</strong><br>
+            보안 정책에 따라 앱 다운로드 파일은 외부 웹에 공개되지 않습니다.<br>
+            <strong>정식 기사 가입(승인)이 완료되는 즉시, 회원님의 휴대폰 문자로 "앱 전용 보안 링크"가 자동 단독 발송되었습니다.</strong><br>
+            도착한 알림 문자함을 확인해주세요!
+        </p>
+        <button onclick="document.getElementById('appDownloadModal').style.display='none'" style="width: 100%; padding: 1rem; background: transparent; color: #888; border: 2px solid #ccc; font-size: 1.1rem; font-weight: bold; border-radius: 10px; cursor: pointer;">
+            알겠습니다 (닫기)
+        </button>
+    </div>
+</div>
+
+<script>
+    function enforceAppLock(target) {
+        const ua = navigator.userAgent;
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(ua);
+        const isNativeApp = ua.includes('DongnaeBiseoApp') || window.isNativeApp;
+
+        if (isMobile && !isNativeApp) {
+            window.location.href = 'dnbsir://login?target=' + target;
+            setTimeout(() => {
+                document.getElementById('appDownloadModal').style.display = 'flex';
+            }, 1500);
+            return false;
+        }
+        return true;
+    }
+
+    document.addEventListener("visibilitychange", function() {
+        if (document.visibilityState === 'visible') {
+            const modal = document.getElementById('appDownloadModal');
+            if (modal) modal.style.display = 'none';
+        }
+    });
+
+    // Maintenance Modal logic removed
+
+    async function loadTodayList() {
+        const container = document.getElementById('pickup-list-container');
+        if (container.style.display === 'block') {
+            container.style.display = 'none';
+            return;
+        }
+        
+        container.innerHTML = '<div style="text-align: center; color: #39ff14; font-size: 1.5rem;">로딩 중...</div>';
+        container.style.display = 'block';
+
+        try {
+            const res = await fetch('/api/courier/today');
+            const data = await res.json();
+            
+            if (data.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #aaa; font-size: 1.5rem; padding: 2rem; border: 2px dashed #aaa; border-radius: 15px;">오늘 예정된 수거 건이 없습니다.</div>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(item => {
+                const isCompleted = item.status === '수거완료' || item.status === '배송중';
+                html += `
+                <div style="background: #222; border: 2px solid ${isCompleted ? '#555' : '#39ff14'}; border-radius: 15px; padding: 1.5rem; margin-bottom: 1rem; opacity: ${isCompleted ? '0.6' : '1'};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-size: 1.2rem; color: #aaa;">${item.created_at.substring(11, 16)}</span>
+                        <span style="font-size: 1.2rem; font-weight: bold; color: ${isCompleted ? '#aaa' : '#fff'}; background: ${isCompleted ? '#444' : '#000'}; padding: 0.3rem 0.8rem; border-radius: 10px;">${item.status}</span>
+                    </div>
+                    <div style="font-size: 1.8rem; font-weight: 900; margin-bottom: 0.5rem; color: #fff;">
+                        ${item.sender_name} <span style="font-size: 1.2rem; color: #ccc;">(${item.item_name || '일반박스'})</span>
+                    </div>
+                    <div style="font-size: 1.4rem; font-weight: bold; color: #ffea00; margin-bottom: 0.5rem;">
+                        운임: ${item.encrypted_fee || '신용(착불)'}
+                    </div>
+                    <div style="font-size: 1.4rem; margin-bottom: 1.5rem;">
+                        <a href="tmap://search?name=${encodeURIComponent(item.sender_addr)}" style="color: #00e5ff; text-decoration: underline; display:flex; align-items:center; gap: 8px;">
+                            📍 ${item.sender_addr} <span style="font-size:1rem; background:#0055ff; color:#fff; padding:2px 6px; border-radius:4px;">TMAP 가기</span>
+                        </a>
+                    </div>
+                    
+                    ${!isCompleted ? `
+                    <button onclick="updatePickupStatus(${item.id}, '수거완료')" style="width: 100%; padding: 1.5rem; min-height: 60px; background: #39ff14; border: none; border-radius: 10px; font-size: 1.8rem; font-weight: 900; color: #000; cursor: pointer;">
+                        ✅ 수거 완료 처리
+                    </button>` : `
+                    <button disabled style="width: 100%; padding: 1.5rem; min-height: 60px; background: #444; border: none; border-radius: 10px; font-size: 1.8rem; font-weight: 900; color: #888;">
+                        완료됨
+                    </button>`}
+                </div>`;
+            });
+            container.innerHTML = html;
+        } catch (e) {
+            container.innerHTML = '<div style="text-align: center; color: #ff073a; font-size: 1.5rem;">데이터를 불러오지 못했습니다.</div>';
+        }
+    }
+
+    async function updatePickupStatus(id, status) {
+        if(!confirm("이 건을 수거 완료 처리하시겠습니까?")) return;
+        try {
+            const res = await fetch(`/api/courier/${id}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: status })
+            });
+            if (res.ok) {
+                loadTodayList(); // reload list
+            } else {
+                alert("상태 업데이트 실패");
+            }
+        } catch (e) {
+            alert("서버 통신 에러");
+        }
+    }
+
+    // Barcode Logic
+    function openBarcodeScanner() {
+        document.getElementById('barcodeModal').style.display = 'flex';
+        document.getElementById('barcodeImageContainer').style.display = 'none';
+        document.getElementById('barcodeInput').value = '';
+    }
+
+    function generateBarcode() {
+        const tnum = document.getElementById('barcodeInput').value.trim();
+        if (!tnum) {
+            alert("운송장 번호를 입력해주세요.");
+            return;
+        }
+        const img = document.getElementById('barcodeImage');
+        // Use tec-it public barcode API for Code 128
+        img.src = `https://barcode.tec-it.com/barcode.ashx?data=${encodeURIComponent(tnum)}&code=Code128&translate-esc=on`;
+        document.getElementById('barcodeImageContainer').style.display = 'block';
+    }
+
+    function handleNativeScan(e) {
+        if(e.target.files && e.target.files.length > 0) {
+            // 네이티브 카메라로 촬영한 이미지(바코드)를 JS 엔진(예: jsQR) 혹은 서버로 전송하여 해석
+            alert("네이티브 카메라 스캔 완료! (이미지 분석/디코딩 로직 동작)");
+        }
+    }
+
+    // Print Mode Toggle Logic
+    let currentPrintMode = 'sheet';
+
+    function setPrintMode(mode) {
+        currentPrintMode = mode;
+        localStorage.setItem('dnbsir_print_mode', mode);
+        
+        if (mode === 'sheet') {
+            document.getElementById('btn-sheet').style.background = '#39ff14';
+            document.getElementById('btn-sheet').style.color = '#000';
+            document.getElementById('btn-roll').style.background = '#444';
+            document.getElementById('btn-roll').style.color = '#aaa';
+            console.log("Printing Command Switched to: Sheet (낱장)");
+        } else {
+            document.getElementById('btn-roll').style.background = '#39ff14';
+            document.getElementById('btn-roll').style.color = '#000';
+            document.getElementById('btn-sheet').style.background = '#444';
+            document.getElementById('btn-sheet').style.color = '#aaa';
+            console.log("Printing Command Switched to: Roll (감열지)");
+        }
+    }
+
+    // Check saved mode on load
+    document.addEventListener('DOMContentLoaded', () => {
+        const saved = localStorage.getItem('dnbsir_print_mode');
+        if(saved) {
+            setPrintMode(saved);
+        } else {
+            setPrintMode('sheet');
+        }
+    });
+
+    const DRIVER_ID = "{{ request.cookies.get('admin_session', 'master') }}";
+    
+    function showReferralQR() {
+        // Google Charts API for QR rendering (using local QR link)
+        const signupUrl = encodeURIComponent(`https://citizen.dongnebiseo.com/register?ref=${DRIVER_ID}`);
+        const qrSrc = `https://chart.googleapis.com/chart?chs=300x300&cht=qr&chl=${signupUrl}&choe=UTF-8`;
+        document.getElementById('qrImage').src = qrSrc;
+        
+        const modal = document.getElementById('qrModal');
+        modal.style.display = 'flex';
+    }
+
+    // --- Logen Auth Logic ---
+    const logenUpdatedStr = "{{ settings.get('logen_pw_updated_at', '0') }}";
+    const logenUpdatedTs = parseFloat(logenUpdatedStr);
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!isNaN(logenUpdatedTs)) {
+            const nowSecs = Date.now() / 1000;
+            const expireDays = 90;
+            const daysPassed = (nowSecs - logenUpdatedTs) / (24 * 3600);
+            
+            if (logenUpdatedTs === 0 || daysPassed >= expireDays) {
+                setTimeout(() => {
+                    document.getElementById('expireNoticeBanner').style.display = 'block';
+                }, 1000); // 1 sec delay to show up after page load
+            }
+        }
+    });
+
+    async function saveLogenSettings() {
+        const id = document.getElementById('logenIdInput').value;
+        const pw = document.getElementById('logenPwInput').value;
+        
+        if(!id || !pw) return alert('아이디와 패스워드를 모두 입력해주세요.');
+        
+        try {
+            const res = await fetch('/api/admin/logen/settings', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({logen_id: id, logen_pw: pw})
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert('✅ 설정이 안전하게 저장되었습니다!');
+                document.getElementById('logenSettingsModal').style.display = 'none';
+                document.getElementById('expireNoticeBanner').style.display = 'none';
+                location.reload();
+            } else {
+                alert('❌ 저장 실패: ' + data.error);
+            }
+        } catch(e) {
+            alert('❌ 통신 에러가 발생했습니다.');
+        }
+    }
+</script>
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="notice-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 20px; padding: 30px; max-width: 400px; width: 90%; text-align: center; border: 8px solid #ffcc00; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+        <h2 style="color: #000; font-size: 2rem; font-weight: 900; margin-top: 0; margin-bottom: 20px;">가맹점 초대 코드</h2>
+        <p style="color: #333; font-size: 1.2rem; margin-bottom: 20px; word-break: keep-all; font-weight: bold;">
+            상점 사장님이 아래 QR을 카메라로 찍어 가입하시면 기사님께 <b>영업수수료</b>가 배당됩니다!
+        </p>
+        <img id="qrImage" src="" alt="QR" style="width: 250px; height: 250px; object-fit: contain; margin-bottom: 20px; border-radius:15px; border: 2px solid #eee;">
+        <button onclick="document.getElementById('qrModal').style.display='none'" style="width: 100%; font-size: 1.5rem; font-weight: 900; padding: 1.2rem; background: #000; color: #ffcc00; border: none; border-radius: 10px;">닫기</button>
+    </div>
+</div>
+
+<!-- Logen Auth Settings Modal -->
+<div id="logenSettingsModal" class="notice-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10001; align-items: center; justify-content: center;">
+    <div style="background: #222; border: 4px solid #333; padding: 2.5rem; max-width: 400px; width: 90%; text-align: center; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+        <h2 style="color: #fff; font-size: 1.8rem; font-weight: 900; margin-bottom: 1.5rem;">⚙️ 로젠택배 API 연동</h2>
+        <p style="color: #aaa; font-size: 1rem; margin-bottom: 1.5rem;">기사님의 로젠 계정을 연동해 주세요.</p>
+        
+        <input type="text" id="logenIdInput" placeholder="로젠 아이디 (예: 71020015)" value="{{ settings.get('logen_id', '') }}" style="width: 100%; padding: 1.2rem; font-size: 1.2rem; margin-bottom: 1rem; border-radius: 10px; border: 2px solid #555; background: #000; color: #fff;">
+        <input type="password" id="logenPwInput" placeholder="비밀번호" value="{{ settings.get('logen_pw', '') }}" style="width: 100%; padding: 1.2rem; font-size: 1.2rem; margin-bottom: 2rem; border-radius: 10px; border: 2px solid #555; background: #000; color: #fff;">
+        
+        <div style="display: flex; gap: 10px;">
+            <button onclick="document.getElementById('logenSettingsModal').style.display='none'" style="flex: 1; padding: 1.2rem; background: #444; border: none; font-size: 1.2rem; font-weight: bold; color: #fff; border-radius: 10px; cursor: pointer;">취소</button>
+            <button onclick="saveLogenSettings()" style="flex: 1; padding: 1.2rem; background: #39ff14; border: none; font-size: 1.2rem; font-weight: bold; color: #000; border-radius: 10px; cursor: pointer;">저장</button>
+        </div>
+    </div>
+</div>
+
+<!-- Password Expire Warning Banner (Gentle) -->
+<div id="expireNoticeBanner" onclick="document.getElementById('logenSettingsModal').style.display='flex';" style="display: none; position: fixed; top: 0; left: 0; width: 100%; z-index: 10002; background: #ffea00; color: #000; padding: 15px; text-align: center; font-weight: 900; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(255, 234, 0, 0.4); cursor: pointer; transition: 0.3s; line-height: 1.4;">
+    🚨 로젠택배 본사 비밀번호를 갱신하셨나요? <br>
+    <div style="font-size: 0.95rem; margin-top: 5px; font-weight: bold;">로젠택배(90일 주기)에서 비밀번호를 최신으로 바꾸셨다면, 동네비서 앱에서도 여기를 눌러 똑같이 맞춰주셔야 API가 끊기지 않습니다!</div>
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+static/DongneBiseo.apk
+static/apps/
+static/outputs/
+**/__pycache__/
+**/*.pyc
+*.log

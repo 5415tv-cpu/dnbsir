@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>택배 예약 방식 선택 | 동네비서</title>
+    <style>
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            word-break: keep-all;
+        }
+
+        .card-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s, border 0.2s;
+            text-decoration: none;
+            color: inherit;
+            border: 2px solid transparent;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #ffc107;
+        }
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .desc {
+            font-size: 1rem;
+            color: #666;
+            word-break: keep-all;
+        }
+
+        .elderly-card {
+            border: 2px solid #28a745;
+            background-color: #f0fff4;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>📦 택배를 어떻게 보내시겠어요?</h2>
+
+    <div class="card-container">
+        <!-- General Mode -->
+        <a href="/citizen/courier/general" class="card">
+            <span class="icon">📱</span>
+            <span class="title">스마트폰이 익숙해요</span>
+            <span class="desc">일반적인 입력 방식으로<br>직접 주소를 입력합니다.</span>
+        </a>
+
+        <!-- Elderly (AI) Mode -->
+        <a href="/citizen/courier/elderly" class="card elderly-card">
+            <span class="icon">🎙️ 📝</span>
+            <span class="title">말로 하거나 글로 쓸래요</span>
+            <span class="desc">어르신들을 위한 간편 모드<br>(음성 인식 & 카메라 촬영)</span>
+        </a>
+    </div>
+
+</body>
+
+</html>

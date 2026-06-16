@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <title>가입 유형 선택 - 동네비서</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 16px;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-decoration: none;
+            color: #334155;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { background: #f8fafc; transform: scale(1.05); }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .logo-area .emoji { font-size: 3rem; margin-bottom: 12px; display: block; }
+        .logo-area h1 {
+            font-size: 1.7rem;
+            font-weight: 900;
+            color: #0f172a;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+        .logo-area p {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .role-card {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            padding: 22px 24px;
+            border-radius: 20px;
+            font-weight: 800;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            text-align: left;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            margin-bottom: 14px;
+            text-decoration: none;
+        }
+        .role-card:last-child { margin-bottom: 0; }
+        .role-card:hover { transform: translateY(-3px); }
+        .role-card:active { transform: translateY(0); }
+
+        .role-card .icon {
+            font-size: 2.4rem;
+            flex-shrink: 0;
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .role-card .text-area { flex: 1; }
+        .role-card .title { font-size: 1.15rem; font-weight: 900; margin-bottom: 4px; }
+        .role-card .desc { font-size: 0.8rem; font-weight: 600; opacity: 0.75; }
+        .role-card .arrow { font-size: 1.2rem; flex-shrink: 0; opacity: 0.6; }
+
+        /* 사장님 카드 */
+        .card-merchant {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            box-shadow: 0 6px 20px rgba(30, 60, 114, 0.3);
+        }
+        .card-merchant .icon { background: rgba(255,255,255,0.15); }
+        .card-merchant:hover { box-shadow: 0 12px 30px rgba(30, 60, 114, 0.4); }
+
+        /* 농어민 카드 */
+        .card-farmer {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            color: white;
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.3);
+        }
+        .card-farmer .icon { background: rgba(255,255,255,0.15); }
+        .card-farmer:hover { box-shadow: 0 12px 30px rgba(22, 163, 74, 0.4); }
+
+        /* 일반시민 카드 */
+        .card-citizen {
+            background: white;
+            color: #1e293b;
+            border: 2.5px solid #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .card-citizen .icon { background: #f1f5f9; }
+        .card-citizen:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 8px 0 14px;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        .divider span { font-size: 0.78rem; color: #94a3b8; white-space: nowrap; font-weight: 700; }
+
+        /* 로그인 카드 */
+        .card-login {
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+            margin-top: 0;
+        }
+        .card-login .icon { background: rgba(255,255,255,0.15); }
+        .card-login:hover { box-shadow: 0 12px 30px rgba(99, 102, 241, 0.4); }
+    </style>
+</head>
+<body>
+
+<a href="/dashboard" class="back-btn">←</a>
+
+<div class="container">
+
+    <div class="logo-area">
+        <span class="emoji">👋</span>
+        <h1>가입 유형을<br>선택해주세요</h1>
+        <p>해당하는 유형을 선택하시면<br>맞춤 가입 페이지로 이동합니다</p>
+    </div>
+
+    <!-- 사장님 -->
+    <a href="/register/detail?type=merchant" class="role-card card-merchant">
+        <div class="icon">🏪</div>
+        <div class="text-area">
+            <div class="title">소상공인 (사장님)</div>
+            <div class="desc">가게 · 식당 · 매장 운영자</div>
+        </div>
+        <span class="arrow">›</span>
+    </a>
+
+    <!-- 농어민 -->
+    <a href="/register/detail?type=farmer" class="role-card card-farmer">
+        <div class="icon">🌾</div>
+        <div class="text-area">
+            <div class="title">농어민</div>
+            <div class="desc">농장 · 수산물 · 축산 생산자</div>
+        </div>
+        <span class="arrow">›</span>
+    </a>
+
+    <div class="divider"><span>또는</span></div>
+
+    <!-- 일반시민 -->
+    <a href="/admin" class="role-card card-citizen">
+        <div class="icon">👤</div>
+        <div class="text-area">
+            <div class="title" style="color:#1e293b;">일반 시민</div>
+            <div class="desc" style="color:#64748b;">택배 · 마켓 · 음식 이용 고객</div>
+        </div>
+        <span class="arrow" style="color:#94a3b8;">›</span>
+    </a>
+
+    <!-- 로그인 -->
+    <a href="/admin" class="role-card card-login">
+        <div class="icon">🔑</div>
+        <div class="text-area">
+            <div class="title">이미 계정이 있으신가요?</div>
+            <div class="desc">로그인하기</div>
+        </div>
+        <span class="arrow">›</span>
+    </a>
+
+</div>
+
+</body>
+</html>

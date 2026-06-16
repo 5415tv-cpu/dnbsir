@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="background: #fafafa; min-height: 100vh; padding: 20px 15px;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2 style="margin: 0; font-size: 1.4rem; font-weight: 900;">CRM 시작하기</h2>
+        <a href="/admin/dashboard" style="color: #888; text-decoration: none; font-weight: 500; font-size: 0.9rem;">건너뛰기</a>
+    </div>
+
+    <!-- Title Area -->
+    <div style="margin-bottom: 25px;">
+        <h3 style="margin: 0 0 8px 0; font-size: 1.2rem; font-weight: 800;">시작 방법을 선택하세요</h3>
+        <p style="margin: 0; color: #666; font-size: 0.85rem; line-height: 1.5;">
+            빈 CRM으로 직접 구성하거나, 내 업종에 딱 맞는 템플릿으로 빠르게 고객 관리를 시작할 수 있습니다.
+        </p>
+    </div>
+
+    <!-- Blank CRM Option (Highlighted) -->
+    <div class="template-card selected" onclick="selectTemplate('blank')" id="card-blank" style="background: #eef2ff; border: 2px solid #4f46e5; border-radius: 12px; padding: 20px; margin-bottom: 30px; cursor: pointer; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+            <div style="background: #fff; width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; border: 2px solid #4f46e5; color: #4f46e5; font-weight: bold; font-size: 1.2rem;">+</div>
+            <strong style="font-size: 1.05rem; color: #1e1b4b;">빈 CRM으로 시작</strong>
+        </div>
+        <p style="margin: 0; color: #4338ca; font-size: 0.85rem;">
+            개체와 속성을 직접 구성합니다. 자유롭게 나만의 CRM을 만들어 보세요.
+        </p>
+    </div>
+
+    <!-- Industry Templates -->
+    <h4 style="margin: 0 0 15px 0; font-size: 0.9rem; color: #666; font-weight: bold;">업종별 템플릿</h4>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 80px;">
+        {% set categories = [
+            ('건강', '🩺', '병원, 의원, 약국 및 헬스장 예약/관리'),
+            ('교육', '🎓', '학원, 공부방 수강생 및 강좌 관리'),
+            ('교통/운송서비스', '🚚', '택배, 화물 및 예약 고객 관리'),
+            ('금융', '💰', '고객 개인 자산 및 상담 내역 관리'),
+            ('미용', '✂️', '미용실, 네일샵 예약 및 시술 이력'),
+            ('소매(쇼핑몰)', '🛒', '상품 판매 및 주문/배송, 고객 클레임'),
+            ('엔터테인먼트', '🎬', '문화, 예술 분야 행사 참석자 관리'),
+            ('여가', '⛺', '숙박, 여행 및 레저 시설 예약 관리'),
+            ('게임', '🎮', '유저 관리 및 이벤트 운영 정보'),
+            ('출산/육아', '👶', '산후조리원, 키즈카페 등 고객 정보'),
+            ('음식점', '🍽️', '식당, 카페 예약 및 단골 방문 이력'),
+            ('자동차', '🚗', '정비소, 세차장 및 렌터카 고객 내역'),
+            ('컴퓨터', '💻', 'PC수리 및 IT 기기 대여 이력 관리'),
+            ('산업', '🏭', 'B2B 거래처 및 발주 진행 상황'),
+            ('기관/단체', '🏢', '협회, 모임, 회원 명부 및 회비 관리'),
+            ('광고', '📢', '캠페인 및 클라이언트 연락처 리스트'),
+            ('방송사/출판', '📰', '구독자 정보 및 정기 결제/라이센스'),
+            ('인터넷/통신', '🌐', '가입자 정보 및 약정/요금청구 관리'),
+            ('일반서비스', '💁', '생활 편의 서비스 방문/상담 기록'),
+            ('전문서비스', '💼', '세무, 법무, 부동산, 컨설팅 클라이언트'),
+            ('기타서비스', '✨', '그 외 특수 업종 맞춤형 비즈니스 관리')
+        ] %}
+        
+        {% for cat_name, icon, desc in categories %}
+        <div class="template-card" onclick="selectTemplate('{{ cat_name }}')" id="card-{{ loop.index }}" style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                <div style="font-size: 1.5rem; opacity: 0.8;">{{ icon }}</div>
+                <strong style="font-size: 1rem; color: #111827;">{{ cat_name }}</strong>
+            </div>
+            <p style="margin: 0; color: #6b7280; font-size: 0.85rem; padding-left: 36px;">
+                {{ desc }}
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Bottom Action Bar -->
+    <div style="position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; border-top: 1px solid #e5e7eb; padding: 15px 20px; display: flex; justify-content: flex-end; align-items: center; box-shadow: 0 -4px 6px rgba(0,0,0,0.02); z-index: 10;">
+        <form action="/api/admin/crm/setup" method="POST" id="crmSetupForm" style="display: flex; width: 100%; justify-content: flex-end;">
+            <input type="hidden" name="template" id="selectedTemplateInput" value="blank">
+            <button type="submit" style="background: #4f46e5; color: #fff; border: none; padding: 14px 30px; border-radius: 8px; font-weight: 800; font-size: 1rem; cursor: pointer;">
+                시작하기
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function selectTemplate(templateId) {
+    // Reset all cards
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.style.background = '#fff';
+        card.style.borderColor = '#e5e7eb';
+        
+        // Remove blue styling from text inside
+        const textElements = card.querySelectorAll('p, strong');
+        textElements.forEach(el => {
+            if (el.tagName === 'P') el.style.color = '#6b7280';
+            if (el.tagName === 'STRONG') el.style.color = '#111827';
+        });
+    });
+
+    // Handle 'blank' special styling
+    if (templateId === 'blank') {
+        const blankCard = document.getElementById('card-blank');
+        blankCard.style.background = '#eef2ff';
+        blankCard.style.borderColor = '#4f46e5';
+        blankCard.querySelector('strong').style.color = '#1e1b4b';
+        blankCard.querySelector('p').style.color = '#4338ca';
+    } else {
+        // Find normal card
+        const targetCard = Array.from(document.querySelectorAll('.template-card')).find(card => 
+            card.querySelector('strong')?.innerText === templateId
+        );
+        if(targetCard) {
+            targetCard.style.background = '#eff6ff';
+            targetCard.style.borderColor = '#3b82f6';
+            targetCard.querySelector('strong').style.color = '#1d4ed8';
+            targetCard.querySelector('p').style.color = '#2563eb';
+        }
+    }
+
+    // Update form input
+    document.getElementById('selectedTemplateInput').value = templateId;
+}
+</script>
+{% endblock %}

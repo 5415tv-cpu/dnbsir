@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% set hide_bottom_nav = True %}
+
+{% block header %}
+<!-- 0순위: 상단 고정 HUD (토큰 잔액 칩) -->
+<header class="sticky-header" style="top: 45px; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky;">
+    <a href="/" style="display: flex; align-items: center; text-decoration: none; gap: 8px;">
+        <strong style="font-weight: 900; font-size: 1.35rem; color: #1e3c72; letter-spacing: -0.5px;">탄탄한 동네비서</strong>
+    </a>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <div id="tokenChip" class="token-chip" style="background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.1); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
+            🪙 <span id="tokenBalance">0</span> 토큰
+        </div>
+        <button onclick="location.href='/admin/wallet'" style="background: #1e3c72; color: #fff; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">충전하기</button>
+    </div>
+</header>
+<style>
+    /* Warning chip styling for low token balance */
+    .token-chip.warning {
+        border-color: #ef4444 !important;
+        background: rgba(239, 68, 68, 0.1) !important;
+        animation: pulse-border 1.5s infinite;
+    }
+    @keyframes pulse-border {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* Premium Search Bar Wrapper */
+    .search-wrapper-premium {
+        position: relative;
+        width: 100%;
+    }
+    .search-input-premium {
+        width: 100%;
+        padding: 18px 115px 18px 24px;
+        border-radius: 30px;
+        border: 3px solid #1A1A1A;
+        font-size: 1rem;
+        font-weight: 800;
+        box-sizing: border-box;
+        outline: none;
+        box-shadow: 4px 4px 0px #1A1A1A;
+        background: #fff;
+        color: #000;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+    .search-input-premium:focus {
+        box-shadow: 6px 6px 0px #1e3c72;
+        border-color: #1e3c72;
+    }
+    .search-btn-premium {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #1e3c72;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        font-weight: 800;
+        cursor: pointer;
+        font-size: 0.95rem;
+        box-shadow: 0 4px 10px rgba(30, 60, 114, 0.25);
+        transition: all 0.2s ease;
+    }
+    .search-btn-premium:hover {
+        background: #2a5298;
+    }
+    .search-btn-premium:active {
+        transform: translateY(-50%) scale(0.95);
+        box-shadow: 0 2px 5px rgba(30, 60, 114, 0.2);
+    }
+
+    /* Premium centered physical buttons styling */
+    .citizen-huge-button {
+        background: #ffffff;
+        border: 3.5px solid #1A1A1A;
+        color: #1a1a1a;
+        padding: 24px 20px;
+        border-radius: 20px;
+        font-size: 1.3rem;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 5px 5px 0px #1A1A1A;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        transition: all 0.1s ease;
+        outline: none;
+        font-family: inherit;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .citizen-huge-button:hover {
+        background: #f8fafc;
+        transform: translate(-1px, -1px);
+        box-shadow: 6px 6px 0px #1A1A1A;
+    }
+    .citizen-huge-button:active {
+        transform: translate(3px, 3px);
+        box-shadow: 2px 2px 0px #1A1A1A;
+    }
+    .citizen-huge-button.boss-btn:hover {
+        background: linear-gradient(135deg, #162d5a, #1e3c72) !important;
+        transform: translate(-1px, -1px);
+        box-shadow: 6px 6px 0px #1e3c72 !important;
+    }
+    .citizen-huge-button.boss-btn:active {
+        transform: translate(3px, 3px);
+        box-shadow: 2px 2px 0px #1e3c72 !important;
+    }
+    .citizen-huge-button .icon {
+        font-size: 1.8rem;
+        line-height: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<main style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 10px; min-height: 75vh; font-family: 'Pretendard', sans-serif; box-sizing: border-box; width: 100%;">
+    
+    <div style="display: flex; flex-direction: column; gap: 20px; width: 100%; max-width: 480px; box-sizing: border-box; padding: 10px;">
+        <!-- [📦 택배보내기] -->
+        <button onclick="location.href='/citizen/courier'" class="citizen-huge-button">
+            <span class="icon">📦</span>
+            <span>택배보내기</span>
+        </button>
+        
+        <!-- [🏪 동네마켓둘러보기] -->
+        <button onclick="location.href='/citizen/market'" class="citizen-huge-button">
+            <span class="icon">🏪</span>
+            <span>동네마켓둘러보기</span>
+        </button>
+        
+        <!-- [🍔 단골식당둘러보기] -->
+        <button onclick="location.href='/citizen/reserve?store_id=test_store'" class="citizen-huge-button">
+            <span class="icon">🍔</span>
+            <span>단골식당둘러보기</span>
+        </button>
+
+        <!-- 구분선 -->
+        <div style="display: flex; align-items: center; gap: 12px; margin: 4px 0;">
+            <div style="flex: 1; height: 1.5px; background: linear-gradient(to right, transparent, #e2e8f0, transparent);"></div>
+            <span style="color: #94a3b8; font-size: 0.82rem; font-weight: 700; white-space: nowrap; letter-spacing: 0.5px;">사장님이신가요?</span>
+            <div style="flex: 1; height: 1.5px; background: linear-gradient(to right, transparent, #e2e8f0, transparent);"></div>
+        </div>
+
+        <!-- [🏪 사장님 가입하기] -->
+        <button onclick="location.href='/register/select'" class="citizen-huge-button boss-btn" style="background: linear-gradient(135deg, #1e3c72, #2a5298); border-color: #1e3c72; color: #fff; box-shadow: 5px 5px 0px #1e3c72;">
+            <span class="icon">🏪</span>
+            <span>사장님 가입하기</span>
+        </button>
+    </div>
+
+</main>
+
+<script>
+    // 롤링 칩 클릭 동작
+    function clickChip(text) {
+        document.getElementById('chatbotInput').value = text;
+        sendChatMessage();
+    }
+
+    function handleChatPress(e) {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    }
+
+    // 비동기 챗봇 통신 (Guardrail 통제 하에 API 결과를 단순 텍스트화)
+    async function sendChatMessage() {
+        const input = document.getElementById('chatbotInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const responseArea = document.getElementById('chatResponseArea');
+        responseArea.style.display = 'block';
+        responseArea.innerHTML = '🤖 <i>동네비서가 데이터 조회 중...</i>';
+        input.value = '';
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: text})
+            });
+            const data = await res.json();
+            if (data.success || data.response) {
+                responseArea.innerHTML = `<strong>답변:</strong><br>${data.response || data.message}`;
+            } else {
+                responseArea.innerHTML = `❌ 오류: ${data.error || '답변을 생성할 수 없습니다.'}`;
+            }
+        } catch (err) {
+            responseArea.innerHTML = '❌ 네트워크 연결 실패 (호스트 또는 CORS 오류)';
+            console.error(err);
+        }
+        
+        // 잔액 실시간 동기화
+        syncTokenHUD();
+    }
+
+    // 토큰 HUD 실시간 갱신 및 경고 표시
+    async function syncTokenHUD() {
+        try {
+            const res = await fetch('/api/auth/status');
+            const data = await res.json();
+            if (data.authenticated && data.user) {
+                const balance = data.user.points || 0;
+                document.getElementById('tokenBalance').innerText = balance.toLocaleString();
+                
+                const chip = document.getElementById('tokenChip');
+                if (balance < 1000) {
+                    chip.classList.add('warning');
+                } else {
+                    chip.classList.remove('warning');
+                }
+            }
+        } catch (e) {
+            console.log('HUD Sync failed');
+        }
+    }
+
+    // 퀵 버튼 동작
+    function quickCallTaxi() {
+        alert('🚖 현재 위치(상장동)를 파악하여 인근 택시 배차를 즉시 요청했습니다.');
+    }
+
+    function quickOrderFood() {
+        alert('🍔 늘 주문하시던 단골 매장의 메인 음식을 예약 접수 완료했습니다.');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        syncTokenHUD();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">상세 안내</div>
+    <div class="page-title">한 번에 보기</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+    <div style="background: #fff; padding: 26px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.08);">
+        <div style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 10px;">
+            사장님들의 고충을, 원리로 해결합니다.
+        </div>
+        <div style="color: #555; line-height: 1.7; margin-bottom: 18px;">
+            주소 오타, 시세 손해, 장부 누락은 바쁜 순간에 발생합니다. 단골비서는 오류를 먼저 잡아내는 구조입니다.
+        </div>
+
+        <div style="font-weight: 900; margin-bottom: 10px;">업종별 상세 보기</div>
+        <div style="display: grid; gap: 10px; margin-bottom: 18px;">
+            <a href="/detail/restaurant"
+                style="background: #f7f7f7; border-radius: 10px; padding: 12px; text-decoration: none; color: #1A1A1A; font-weight: 900;">
+                🍽️ 음식점 사장님 상세 보기
+            </a>
+            <a href="/detail/farm"
+                style="background: #f7f7f7; border-radius: 10px; padding: 12px; text-decoration: none; color: #1A1A1A; font-weight: 900;">
+                🌾 농가 사장님 상세 보기
+            </a>
+            <a href="/detail/logistics"
+                style="background: #f7f7f7; border-radius: 10px; padding: 12px; text-decoration: none; color: #1A1A1A; font-weight: 900;">
+                🚚 택배 사장님 상세 보기
+            </a>
+        </div>
+
+        <div style="font-weight: 900; margin-bottom: 6px;">3분 정석 이용법</div>
+        <div style="color: #555; line-height: 1.7;">
+            시작 전 핵심 가이드 확인 → 촬영 각도 툴팁 → 심화 매뉴얼로 원리/FAQ 확인
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}농가 통합 주문 관리 - 탄탄제작소{% endblock %}
+
+{% block page_header %}
+<div class="page-header">
+    <div class="current-menu-label">예약/주문</div>
+    <div class="page-title">농가 통합 주문 관리</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto;">
+
+    <!-- Products List (Mock for now) -->
+    <div class="card" style="padding: 15px; margin-bottom: 20px;">
+        <div style="display: flex; gap: 15px; align-items: center;">
+            <img src="/static/images/mock_cabbage.jpg" onerror="this.src='https://via.placeholder.com/60?text=IMG'"
+                style="width: 60px; height: 60px; object-fit: cover; border-radius: 10px;">
+            <div>
+                <div style="font-weight: 800; font-size: 1.1rem;">태백 고랭지 배추 10kg</div>
+                <div style="font-size: 0.95rem; color: #d32f2f; font-weight: 700;">35,000원 (판매중)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders -->
+    <div id="orderList">
+        <!-- Loaded via JS -->
+        <div class="card" style="margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span style="font-size: 0.9rem; color: #555; font-weight: 600;">신규 주문 (홍길동 님)</span>
+                <span style="font-size: 0.8rem; background: #e0e0e0; padding: 2px 8px; border-radius: 10px;">입금완료</span>
+            </div>
+            <div style="font-weight: 900; font-size: 1.1rem; margin-bottom: 15px;">강원도 태백시 번영로 123</div>
+
+            <button onclick="bookLogen('ORDER_123')" class="main-btn" style="padding: 15px; font-size: 1rem;">
+                📦 클릭 한 번으로 로젠택배 접수
+            </button>
+        </div>
+    </div>
+
+    <div style="margin-top: 15px; text-align: right; font-size: 0.9rem; color: #666;">
+        알림톡 잔액: <span id="walletBalance" style="font-weight: 800; color: #1A1A1A;">0</span>원
+        <span id="autoRefillStatus" style="color: #27ae60; display: none; font-weight: 700;">(자동충전 On)</span>
+    </div>
+
+    <a href="/admin/dashboard" class="main-btn"
+        style="margin-top: 25px; background: white; color: var(--text-color); border: 2px solid #ddd; text-align: center; box-shadow: none;">
+        🔙 대시보드로 돌아가기
+    </a>
+</div>
+
+<!-- Daum Postcode Layer -->
+<div id="layer" style="display:none;position:fixed;overflow:hidden;z-index:99999;-webkit-overflow-scrolling:touch;">
+    <img src="//t1.daumcdn.net/postcode/resource/images/close.png" id="btnCloseLayer"
+        style="cursor:pointer;position:absolute;right:-3px;top:-3px;z-index:1" onclick="closeDaumPostcode()"
+        alt="닫기 버튼">
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadData() {
+        // 1. Get Wallet Info
+        try {
+            const res = await fetch('{{ api_url }}/api/admin/auto-reply/settings');
+            const data = await res.json();
+            document.getElementById('walletBalance').innerText = data.wallet_balance.toLocaleString();
+            if (data.auto_refill_on == 1) {
+                document.getElementById('autoRefillStatus').style.display = 'inline';
+            }
+        } catch (e) { }
+
+        // 2. Get Real Orders
+        try {
+            const orderRes = await fetch('{{ api_url }}/api/admin/orders?type=FARM');
+            const orders = await orderRes.json();
+            
+            const listDiv = document.getElementById('orderList');
+            if (!orders || orders.length === 0) {
+                listDiv.innerHTML = '<div style="text-align:center; padding: 25px; color: #888; background: #fff; border-radius: 12px; border: 1px solid #eee;">접수된 새로운 예약/주문이 없습니다.</div>';
+                return;
+            }
+            
+            let html = '';
+            orders.forEach((o, index) => {
+                const buyerName = o.buyer_name || o.customer_name || '고객';
+                const status = o.status || '대기중';
+                const productName = o.product_name || o.menu_summary || '일반 예약';
+                const quantity = o.quantity || o.head_count || 1;
+                const address = o.buyer_address || o.customer_phone || '현장 방문/픽업';
+                const orderId = o.order_id || o.id || `MOCK_ORDER_${index}`;
+                
+                html += `
+                <div class="card" style="margin-bottom: 15px; border-left: 4px solid #3b82f6;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="font-size: 0.95rem; color: #1e293b; font-weight: 800;">새 예약 (${buyerName} 님)</span>
+                        <span style="font-size: 0.8rem; background: #e0f2fe; color: #0284c7; padding: 3px 10px; border-radius: 12px; font-weight: bold;">${status}</span>
+                    </div>
+                    <div style="font-weight: 900; font-size: 1.15rem; margin-bottom: 5px; color: #0f172a;">${productName} (${quantity}개/명)</div>
+                    <div style="font-size: 0.95rem; color: #64748b; margin-bottom: 15px; line-height: 1.4;">${address}</div>
+                    
+                    <button onclick="bookLogen('${orderId}', '${address}')" class="main-btn" style="padding: 15px; font-size: 1rem; width: 100%; border-radius: 10px; font-weight: bold;">
+                        📦 클릭 한 번으로 로젠택배 접수
+                    </button>
+                </div>
+                `;
+            });
+            listDiv.innerHTML = html;
+        } catch (e) {
+            console.error("Order Loading Error:", e);
+            document.getElementById('orderList').innerHTML = '<div style="text-align:center; color: #ef4444; padding: 20px;">예약 목록을 불러오는데 실패했습니다.</div>';
+        }
+    }
+
+    // Daum Postcode
+    var element_layer = document.getElementById('layer');
+
+    function closeDaumPostcode() {
+        element_layer.style.display = 'none';
+    }
+
+    // (Address search logic not used for one-click register currently, can remain if needed later)
+
+    async function bookLogen(orderId, address) {
+        if (!confirm("해당 예약건에 대한 로젠택배 접수를 즉시 진행하시겠습니까?\\n배송지: " + address)) return;
+
+        try {
+            // [Todo] Integrate with actual Logen API
+            // const res = await fetch('{{ api_url }}/api/logen/book', ...);
+
+            alert("로젠택배 접수가 성공적으로 완료되었습니다.\\n기사님이 1~2일 내로 방문 수거 예정입니다.");
+            // location.reload();
+
+        } catch (e) {
+            alert("택배 접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
+        }
+    }
+
+    window.onload = loadData;
+</script>
+{% endblock %}

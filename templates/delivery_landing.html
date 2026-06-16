@@ -1,0 +1,492 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #f1f5f9 !important;
+        color: #1e293b;
+    }
+    .landing-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+    }
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 800;
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    .badge-success {
+        background: #dcfce7;
+        color: #166534;
+        border: 1px solid #bbf7d0;
+    }
+    .badge-warning {
+        background: #fef9c3;
+        color: #854d0e;
+        border: 1px solid #fef08a;
+    }
+    .form-input {
+        width: 100%;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #1e293b;
+        font-size: 1.1rem;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .form-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    .submit-btn {
+        width: 100%;
+        padding: 1.2rem;
+        border-radius: 10px;
+        border: none;
+        background: #f59e0b;
+        color: #ffffff;
+        font-size: 1.2rem;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+    }
+    .submit-btn:hover {
+        background: #d97706;
+    }
+    .submit-btn:active {
+        transform: translateY(2px);
+    }
+    .login-btn {
+        display: block;
+        width: 100%;
+        padding: 1.3rem;
+        border-radius: 10px;
+        background: #0ea5e9;
+        color: #ffffff;
+        font-size: 1.3rem;
+        font-weight: 800;
+        text-align: center;
+        text-decoration: none;
+        transition: background 0.2s, transform 0.2s;
+        border: none;
+        box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2);
+    }
+    .login-btn:hover {
+        background: #0284c7;
+        transform: translateY(-2px);
+    }
+    .learn-more-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 1.2rem 1.5rem;
+        margin-top: 1.2rem;
+        border: 1px solid #e2e8f0;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-decoration: none;
+        color: #334155;
+        transition: all 0.2s;
+    }
+    .learn-more-card:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .learn-more-icon {
+        background: #eff6ff;
+        color: #3b82f6;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+    }
+    html {
+        scroll-behavior: smooth;
+    }
+    .section-title {
+        font-size: 1.6rem;
+        font-weight: 900;
+        color: #0f172a;
+        margin: 2.5rem 0 1rem;
+        border-left: 5px solid #0ea5e9;
+        padding-left: 1rem;
+    }
+    .timeline-item {
+        display: flex;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.2rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+    .timeline-number {
+        background: #0ea5e9;
+        color: white;
+        min-width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        font-size: 1.2rem;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .timeline-content h3 {
+        margin: 0 0 0.5rem 0;
+        color: #1e293b;
+        font-size: 1.1rem;
+    }
+    .timeline-content p {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .cost-card {
+        background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+        border: 1px solid #bfdbfe;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    .checklist-item {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+        border-radius: 0 8px 8px 0;
+    }
+    .checklist-item h4 {
+        margin: 0 0 0.4rem 0;
+        color: #b45309;
+        font-size: 1.05rem;
+    }
+    .checklist-item p {
+        margin: 0;
+        color: #78350f;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .point-card {
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    .sticky-nav {
+        position: sticky;
+        top: 0;
+        background: rgba(241, 245, 249, 0.95);
+        backdrop-filter: blur(5px);
+        z-index: 100;
+        padding: 1rem 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #cbd5e1;
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
+    }
+    .sticky-nav::-webkit-scrollbar {
+        display: none;
+    }
+    .nav-btn {
+        background: #ffffff;
+        color: #334155;
+        border: 1px solid #94a3b8;
+        padding: 0.6rem 1rem;
+        border-radius: 20px;
+        font-size: 0.95rem;
+        font-weight: 800;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    .nav-btn:hover {
+        background: #0ea5e9;
+        color: #fff;
+        border-color: #0ea5e9;
+    }
+</style>
+
+<div style="padding: 2rem 1rem; max-width: 600px; margin: 0 auto; min-height: 100vh;">
+    
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <img src="{{ static_url('icons/dnbsir-icon-192.png') }}" alt="동네비서 메인 캐릭터" onclick="installPWA()" title="클릭하여 PC/모바일 앱 설치하기" style="width: 120px; height: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s ease; border-radius: 20px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h1 style="color: #1e293b; font-size: 2.5rem; font-weight: 900; margin: 0; line-height: 1.2;">
+            동네비서<br>
+            <span style="color: #3b82f6;">멀티 택배 플랫폼</span>
+        </h1>
+        <!-- Construction notice removed -->
+    </div>
+
+    <!-- Sticky Quick Navigation -->
+    <div class="sticky-nav">
+        <a href="#sec-flow" class="nav-btn">1. 시스템 흐름</a>
+        <a href="#sec-reason" class="nav-btn">2. 연동 이유</a>
+        <a href="#sec-cost" class="nav-btn">3. 관리비 구조</a>
+        <a href="#sec-point" class="nav-btn">4. 상생 포인트</a>
+        <a href="#sec-error" class="nav-btn">5. 에러 대처</a>
+    </div>
+
+    <!-- 1. Logen Status -->
+    <div class="landing-card">
+        <div class="status-badge badge-success">✅ 시스템 연동 완료</div>
+        <h2 style="font-size: 1.8rem; margin: 0 0 0.8rem 0; color: #0f172a;">📦 로젠택배 기사님</h2>
+        <p style="color: #64748b; font-size: 1.05rem; line-height: 1.5; margin-bottom: 2rem;">
+            로젠택배 API 실전 연동이 완료되었습니다. 대시보드(자동 수거목록, 운송장 바코드 출력)를 정상적으로 이용하실 수 있습니다.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="/admin?mode=signup" class="login-btn" style="background: #0ea5e9; text-decoration: none;">
+                기사님 무료 가입 및 시작하기 <br>
+                <span style="font-size: 0.9rem; color: #e0f2fe; font-weight: 400;">(가입 후 대시보드에서 로젠 사번 입력)</span>
+            </a>
+            <a href="javascript:void(0)" onclick="openNativeApp('delivery')" class="login-btn" style="background: #f1f5f9; color: #475569; box-shadow: none; border: 1px solid #cbd5e1; text-decoration: none; padding: 1rem;">
+                기존 기사님 앱으로 로그인
+            </a>
+        </div>
+        
+        <!-- NEW: Learn more card -->
+        <a href="#learn-more-section" class="learn-more-card">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="learn-more-icon">💡</div>
+                <div>
+                    <div style="font-weight: 800; font-size: 1.05rem;">서비스 자세히 알아보기</div>
+                    <div style="color: #64748b; font-size: 0.85rem; margin-top: 0.2rem;">동네비서가 어떻게 기사님을 돕는지 확인하세요</div>
+                </div>
+            </div>
+            <div style="color: #cbd5e1; font-weight: bold;">&gt;</div>
+        </a>
+    </div>
+
+    <!-- 2. Other Couriers Pre-registration -->
+    <div class="landing-card" style="margin-bottom: 4rem;">
+        <div class="status-badge badge-warning">⏳ 시스템 연동 작업 중</div>
+        <h2 style="font-size: 1.8rem; margin: 0 0 0.8rem 0; color: #0f172a;">🚧 타사 기사님 (사전 등록)</h2>
+        <p style="color: #64748b; font-size: 1.05rem; line-height: 1.5; margin-bottom: 1.5rem;">
+            CJ대한통운, 한진, 롯데 등 타 택배사의 API 연동 및 테스트를 진행 중입니다. 사전 등록을 남겨주시면 가장 먼저 연락드리겠습니다.
+        </p>
+        
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0;">
+            <select id="courierCompany" class="form-input">
+                <option value="" disabled selected>택배사를 선택해주세요</option>
+                <option value="CJ대한통운">CJ대한통운</option>
+                <option value="한진택배">한진택배</option>
+                <option value="롯데택배">롯데택배</option>
+                <option value="우체국택배">우체국택배</option>
+                <option value="기타">기타 / 우티</option>
+            </select>
+            
+            <input type="tel" id="courierPhone" class="form-input" placeholder="연락처 (010-0000-0000)">
+            
+            <button class="submit-btn" onclick="submitPreRegistration()">🔔 사전 등록 (오픈 알림 받기)</button>
+        </div>
+    </div>
+    
+    <!-- NEW: Learn More Section (Detailed Checklist & Flow) -->
+    <section id="learn-more-section" style="margin-top: 5rem; padding-top: 3rem; border-top: 2px dashed #cbd5e1;">
+        <div style="text-align: center; margin-bottom: 3rem;">
+            <span style="background: #e0f2fe; color: #0284c7; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 800; font-size: 0.95rem;">전국구 배송 인프라 안내</span>
+            <h2 style="font-size: 2rem; margin: 1.5rem 0; color: #0f172a; font-weight: 900; word-break: keep-all; line-height: 1.3;">
+                5만원으로 시작하는<br>탄탄한 동네비서
+            </h2>
+            <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; text-align: left;">
+                <p style="color: #475569; font-size: 1.05rem; line-height: 1.7; word-break: keep-all; margin: 0;">
+                    ✅ <strong>전화 한 통</strong>이면 배송 예약부터 송장 출력까지 자동으로 이루어집니다.<br>
+                    ✅ 복잡한 심사 절차나 <strong>매달 내는 숨은 관리비는 0원</strong>입니다.<br>
+                    ✅ 오직 여러분의 <strong>성장과 매출을 지원</strong>하는 탄탄한 기술만 있을 뿐입니다.
+                </p>
+            </div>
+        </div>
+
+        <h3 class="section-title" id="sec-flow">1. 시스템 핵심 흐름 (Service Flow)</h3>
+        <div class="timeline-item">
+            <div class="timeline-number">1</div>
+            <div class="timeline-content">
+                <h3>자동 고객 응대 (Auto-Reply)</h3>
+                <p>가맹점/농가로 주문 전화가 걸려오고 끊는 순간, 시스템이 감지하여 <strong>[배송예약 자동 링크]</strong>가 담긴 알림톡을 고객에게 즉시 자동 발송합니다.</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-number">2</div>
+            <div class="timeline-content">
+                <h3>주소 자동화 및 사전 결제</h3>
+                <p>수신된 링크에서 고객이 <strong>(우편번호 API 등 정석 주소 검색)</strong> 배송지와 연락처를 입력 후 비용 결제를 완료합니다. 주소 오입력을 원천 차단합니다.</p>
+            </div>
+        </div>
+        <div class="timeline-item">
+            <div class="timeline-number">3</div>
+            <div class="timeline-content">
+                <h3>실시간 배송 오더 전송</h3>
+                <p>고객 결제 완료와 동시에 딜리버리 기사님의 <strong>동네비서 전용 단말기</strong>로 해당 택배 수거 데이터가 실시간으로 동기화됩니다.</p>
+            </div>
+        </div>
+        <div class="timeline-item" style="margin-bottom: 3rem;">
+            <div class="timeline-number">4</div>
+            <div class="timeline-content">
+                <h3>자동 송장 출력 (Auto-Print)</h3>
+                <p>앱을 통해 기사님의 동승 <strong>블루투스 프린터</strong>에서 즉각 송장이 출력됩니다. 수기 작성 없이 전화 한 통으로 실물 송장까지 끊김없이(Seamless) 출력됩니다.</p>
+            </div>
+        </div>
+
+        <h3 class="section-title" id="sec-reason">2. 로젠 아이디/비밀번호를 입력해야 하는 이유 🔐</h3>
+        <div class="point-card" style="background: #f8fafc; border-color: #cbd5e1; margin-bottom: 3rem;">
+            <p style="color: #334155; font-size: 1.05rem; line-height: 1.7; margin: 0;">
+                일반적으로 쇼핑몰이나 플랫폼이 택배사 전산망에 송장을 쏘려면 본사와 수개월에 걸친 B2B 제휴 및 복잡한 심사가 필요합니다. 기사님 입장에서도 별도 승인을 받아야 하는 번거로움이 있습니다.<br><br>
+                <strong>하지만 동네비서는 이 과정을 완전히 생략했습니다.</strong><br>
+                동네비서 시스템은 기사님이 현장에서 매일 쓰시는 <strong>'로젠택배 공식 업무용 앱(TMS)'의 통신 방식을 똑같이 흉내(Spoofing) 내도록 설계</strong>되었습니다.<br><br>
+                즉, 기사님의 사번(ID)과 비밀번호가 바로 '다이렉트 출입증' 역할을 하여, 동네비서가 마치 <strong>'기사님의 단말기'</strong>인 것처럼 로젠 전산망에 다이렉트로 안전하게 오더를 꽂아 넣습니다. 본사 눈치 볼 필요 없이 가입 즉시 내 단말기로 송장을 쏠 수 있는 핵심 비결입니다!
+            </p>
+        </div>
+
+        <h3 class="section-title" id="sec-cost">3. 경제적인 가입 및 관리비 구조</h3>
+        <div class="cost-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #bfdbfe; padding-bottom: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a;">초기 세팅비</div>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #3b82f6;">50,000원 <span style="font-size: 0.95rem; font-weight: 600; color: #64748b;">(최초 1회 한정)</span></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 1.25rem; font-weight: 800; color: #1e3a8a;">월 유지보수비</div>
+                <div style="font-size: 1.6rem; font-weight: 900; color: #ea580c;">0원 🆓 <span style="font-size: 0.95rem; font-weight: 600; color: #64748b;">(영구 면제)</span></div>
+            </div>
+            <div style="margin-top: 1.5rem; font-size: 0.95rem; color: #334155; line-height: 1.6; background: #fff; padding: 1.2rem; border-radius: 8px; border-left: 4px solid #3b82f6;">
+                💡 <strong>비용의 투명성:</strong> 지불하신 가입비 5만원은 플랫폼의 수수료 수익이 아닙니다! 고객 응대를 위한 <strong>'솔라피(SOLAPI) 문자 발송 비용 충전금'</strong>으로 전액 귀속되며, 보수적인 알림톡 단가 기준 <strong>약 33,000건의 오더 등록을 돌릴 수 있는</strong> 충분하고 강력한 총알로 쓰이게 됩니다.
+            </div>
+        </div>
+
+        <h3 class="section-title" id="sec-point">4. 상생 포인트 제도 소개</h3>
+        <div class="point-card">
+            <h4 style="margin: 0 0 0.8rem 0; color: #166534; font-size: 1.15rem;">📸 "찍고, 올리고, 혜택받고"</h4>
+            <p style="color: #15803d; font-size: 1rem; line-height: 1.6; margin: 0;">
+                물품 수거 시 가맹점 전경 등 점포 사진을 앱에 월정 목표 건수([N]건) 이상 정성껏 촬영해주시는 기사님께 <strong>현금성 포인트 보상</strong>을 지급합니다.<br><br>
+                기사님은 단순 배송원을 넘어 지역 상권의 매출을 돕는 <strong>'현장 마케팅 매니저'</strong>로 거듭나게 되며, 가맹점은 기사님의 고품질 사진이 앱 카탈로그 화보로 즉시 업데이트되는 강력한 상생(Win-win) 데이터 자산 혜택을 누립니다!
+            </p>
+        </div>
+
+        <h3 class="section-title" id="sec-error">5. 발생 가능한 에러 변수 (사전 방어 Checklist)</h3>
+        <div class="checklist-item" style="border-left-color: #ef4444; background: #fef2f2;">
+            <h4 style="color: #991b1b;">⚠️ 문자 잔액금고 0원 도달 시</h4>
+            <p style="color: #7f1d1d; margin-top:0.4rem;">잔고 소진 시 대고객 안내가 막힙니다. 잔액 2,000원 선 붕괴 즉시 기사님 앱으로 강력한 <strong>'스마트 충전 알림(Push Alert)'</strong>이 발송되는 등 자동 방어 시스템이 탑재되었습니다.</p>
+        </div>
+        <div class="checklist-item">
+            <h4>⚠️ 글로벌 프린터 통신망 지연</h4>
+            <p style="margin-top:0.4rem;">미국 서버-한국 디바이스 간 미세 통신 지연을 대비, 앱에 '프린터 연결 모니터링 아이콘'을 직관적으로 노출하며 문제 발생 시 한 번의 터치로 복원하는 <strong>'단축 리트라이(Retry) 버튼'</strong>을 확보했습니다.</p>
+        </div>
+        <div class="checklist-item">
+            <h4>⚠️ 주문 고객 화면 내 이탈률</h4>
+            <p style="margin-top:0.4rem;">정보 입력 귀찮음 이탈을 막기 위해 모든 결제 폼은 스크롤 이동 없는 Single-Page 형식과 첫 폼 <strong>Auto-Focusing 기술</strong>을 통한 강제 주의환기 UI 로직을 준수합니다.</p>
+        </div>
+        <div class="checklist-item" style="border-left-color: #0ea5e9; background: #f0f9ff; margin-bottom: 3rem;">
+            <h4 style="color: #0369a1;">⚠️ 사진 도용 남용 등 (어뷰징)</h4>
+            <p style="color: #0c4a6e; margin-top:0.4rem;">포인트만을 노린 바닥 사진 도배와 점주 마찰을 막기 위해 <strong>'100% 매장 일치 위성 GPS 기반 검증 로직'</strong> 및 사전 촬영 동의 여부 필터가 구성됩니다. 또한 바쁜 스케줄을 위해 <strong>Async 백그라운드 전송 기법</strong>으로 현장 대기시간 지연을 0초로 만듭니다!</p>
+        </div>
+    </section>
+
+    <!-- Tantanfab Shortcut -->
+    <div style="text-align: center; margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; margin-bottom: 2rem;">
+        <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 1rem;">소상공인을 위한 맞춤형 AI/IT 파트너</p>
+        <a href="https://tantanfab.com" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; background: #1e293b; color: #fff; padding: 1rem 2rem; border-radius: 30px; font-weight: 800; font-size: 1.1rem; text-decoration: none; transition: transform 0.2s, background 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <span style="margin-right: 8px;">🚀</span> 탄탄제작소 바로가기
+        </a>
+    </div>
+</div>
+
+<!-- App Download Required Modal -->
+<div id="appDownloadModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 10000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #ffffff; padding: 2.5rem; width: 100%; max-width: 400px; text-align: center; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <h2 style="color: #0ea5e9; font-size: 1.8rem; font-weight: 900; margin-bottom: 1rem;">📱 전용 앱 설치 안내</h2>
+        <p style="font-size: 1.1rem; line-height: 1.6; color: #475569; word-break: keep-all; margin-bottom: 2rem;">
+            정확한 <strong style="color: #0ea5e9;">블루투스 송장 출력</strong>과 <strong style="color: #0ea5e9;">실시간 푸시 알림</strong>을 위해 동네비서 전용 앱 설치가 필수입니다.
+        </p>
+        <button onclick="alert('앱스토어/플레이스토어 다운로드 페이지로 이동합니다.')" style="width: 100%; padding: 1.2rem; background: #0ea5e9; color: #ffffff; font-size: 1.2rem; font-weight: 900; border: none; border-radius: 10px; margin-bottom: 0.8rem; cursor: pointer; box-shadow: 0 4px 6px rgba(14, 165, 233, 0.2);">
+            앱 다운로드 하러가기
+        </button>
+        <button onclick="document.getElementById('appDownloadModal').style.display='none'" style="width: 100%; padding: 1rem; background: transparent; color: #64748b; border: 1px solid #cbd5e1; font-size: 1rem; font-weight: 800; border-radius: 10px; cursor: pointer;">
+            닫기
+        </button>
+    </div>
+</div>
+
+<script>
+// Deep Link Enforcement Logic
+function openNativeApp(target) {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (!isMobile) {
+        // PC 환경에서는 원래 웹 로그인 허용 (테스트용)
+        window.location.href = '/admin';
+        return;
+    }
+    
+    // 앱 호출 스킴
+    const appScheme = 'dnbsir://login?target=' + target;
+    window.location.href = appScheme;
+    
+    // 앱이 없거나 설치를 원하지 않는 분들을 위해 웹 버전으로도 접속 가능하도록 수정
+    setTimeout(() => {
+        // 우선은 웹 버전 로그인 화면으로 바로 연결해줍니다.
+        window.location.href = '/admin';
+    }, 1500);
+}
+
+// 브라우저 복귀 시(앱에서 돌아왔을 때) 모달 가리기 방어코드
+document.addEventListener("visibilitychange", function() {
+    if (document.visibilityState === 'visible') {
+        document.getElementById('appDownloadModal').style.display = 'none';
+    }
+});
+
+async function submitPreRegistration() {
+    const company = document.getElementById('courierCompany').value;
+    const phone = document.getElementById('courierPhone').value.trim();
+
+    if (!company) {
+        alert("택배사를 선택해주세요.");
+        return;
+    }
+    if (!phone) {
+        alert("연락처를 입력해주세요.");
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/courier/preregister', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ courier_company: company, phone: phone })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            alert(data.message || "사전 등록이 완료되었습니다. 연동 완료 시 가장 먼저 알려드리겠습니다!");
+            document.getElementById('courierCompany').value = '';
+            document.getElementById('courierPhone').value = '';
+        } else {
+            alert("처리 중 오류가 발생했습니다: " + (data.detail || "알 수 없는 오류"));
+        }
+    } catch(e) {
+        alert("서버와 통신할 수 없습니다.");
+    }
+}
+</script>
+{% endblock %}

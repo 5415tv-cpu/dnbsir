@@ -1,0 +1,665 @@
+{% extends "base.html" %}
+
+{% block page_header %}
+<div class="page-header" style="background: transparent; border-bottom: none; box-shadow: none;">
+    <button onclick="history.back()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; padding: 5px; margin-right: 15px; color: white;">←</button>
+    <div class="page-title" style="color: #ffffff; text-shadow: 1px 1px 3px rgba(0,0,0,0.3); margin: 0; font-size: 1.1rem; font-weight: 800; display: inline-block;">지원금 조회 서비스</div>
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
+        color: #ffffff !important;
+    }
+    .app-title {
+        color: #ffffff !important;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+    }
+    .sticky-header {
+        background: transparent !important;
+        box-shadow: none !important;
+        border-bottom: none !important;
+        backdrop-filter: blur(5px) !important;
+    }
+
+    .subsidy-container {
+        max-width: 600px;
+        margin: 20px auto;
+        border-radius: 20px;
+        font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        color: #ffffff;
+        padding: 24px;
+        margin-bottom: 20px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        position: relative;
+    }
+    .glass-card:hover {
+        transform: translateY(-4px);
+        border-color: #39ff14 !important;
+        box-shadow: 0 12px 24px rgba(0,0,0,0.2) !important;
+    }
+
+    .hero-section {
+        background: rgba(0, 0, 0, 0.2);
+        color: white;
+        padding: 40px 24px;
+        text-align: center;
+        position: relative;
+        border-radius: 16px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+    }
+
+    .hero-section::after {
+        content: "💰";
+        position: absolute;
+        font-size: 8rem;
+        opacity: 0.1;
+        right: -10px;
+        bottom: -20px;
+        pointer-events: none;
+    }
+
+    .hero-section h2 {
+        margin: 0 0 10px 0;
+        font-size: 1.6rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #ffd700;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .hero-section p {
+        margin: 0;
+        color: rgba(255,255,255,0.9);
+        font-size: 0.95rem;
+    }
+
+    .form-section {
+        padding: 30px 24px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .input-group {
+        margin-bottom: 24px;
+    }
+
+    .input-group label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 10px;
+    }
+
+    .input-group select, .input-group input {
+        width: 100%;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        font-size: 1.05rem;
+        color: #ffffff;
+        background: rgba(0,0,0,0.2);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-sizing: border-box;
+    }
+    
+    .input-group select option {
+        color: #000;
+    }
+
+    .input-group select:focus, .input-group input:focus {
+        border-color: #39ff14;
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(57, 255, 20, 0.2);
+    }
+
+    .submit-btn {
+        width: 100%;
+        background: rgba(255,255,255,0.15);
+        color: white;
+        font-weight: 800;
+        font-size: 1.15rem;
+        padding: 18px;
+        border: 1px solid rgba(255,255,255,0.3);
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        background: rgba(255,255,255,0.25);
+        border-color: #39ff14;
+    }
+
+    /* Loading Sequence */
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(30, 60, 114, 0.85);
+        z-index: 1000;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        backdrop-filter: blur(10px);
+    }
+
+    .loading-spinner {
+        width: 65px;
+        height: 65px;
+        border: 5px solid rgba(255,255,255,0.1);
+        border-top-color: #39ff14;
+        border-radius: 50%;
+        animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        margin-bottom: 24px;
+    }
+
+    .loading-text {
+        font-size: 1.25rem;
+        font-weight: 800;
+        text-align: center;
+        line-height: 1.6;
+    }
+
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    /* Results Interface */
+    .result-section {
+        display: none;
+    }
+
+    .alert-banner {
+        background: rgba(57, 255, 20, 0.1);
+        border: 1px solid rgba(57, 255, 20, 0.3);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 24px;
+        color: #ffffff;
+    }
+
+    .alert-icon {
+        font-size: 1.5rem;
+        line-height: 1;
+    }
+
+    .alert-content h4 {
+        margin: 0 0 4px 0;
+        color: #39ff14;
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .alert-content p {
+        margin: 0;
+        color: rgba(255,255,255,0.9);
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .badge {
+        position: absolute;
+        top: -12px;
+        right: 20px;
+        background: #39ff14;
+        color: #000;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 900;
+        box-shadow: 0 2px 8px rgba(57,255,20,0.4);
+    }
+
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #ffd700;
+        margin-bottom: 12px;
+    }
+
+    .meta-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .meta-list li {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        padding-bottom: 10px;
+        border-bottom: 1px dashed rgba(255,255,255,0.2);
+        font-size: 0.95rem;
+    }
+
+    .meta-list li:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+
+    .meta-label {
+        color: rgba(255,255,255,0.7);
+        font-weight: 600;
+    }
+
+    .meta-value {
+        color: #ffffff;
+        font-weight: 800;
+    }
+
+    .amount-highlight {
+        color: #39ff14;
+        font-size: 1.1rem;
+    }
+
+    .progress-wrapper {
+        margin-top: 16px;
+        background: rgba(0,0,0,0.2);
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: rgba(255,255,255,0.8);
+        margin-bottom: 6px;
+    }
+
+    .progress-track {
+        height: 8px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #39ff14, #ffd700);
+        border-radius: 4px;
+    }
+
+    .return-link {
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+
+    .return-link:hover {
+        color: #ffffff;
+        text-decoration: underline;
+    }
+
+</style>
+
+<div class="subsidy-container">
+    <div class="hero-section">
+        <img src="{{ static_url('icons/dnbsir-icon-192.png') }}" alt="동네비서 메인 캐릭터" onclick="installPWA()" title="클릭하여 PC/모바일 앱 설치하기" style="width: 120px; height: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s ease; border-radius: 20px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+        <h2>소상공인 지원사업 실시간 진단</h2>
+        <p>사업장이 위치한 지자체의 최신 소상공인 혜택을<br>AI가 단 3초 만에 정리해 드립니다.</p>
+    </div>
+
+    <div class="form-section glass-card" id="searchArea">
+        <form id="subsidyForm" onsubmit="searchSubsidy(event)">
+            <div class="input-group">
+                <label>📍 사업장 소재지 관할 도(道)</label>
+                <select id="region_do" required>
+                    <option value="" disabled selected>도 단위를 선택해주세요</option>
+                    <option value="서울특별시">서울특별시</option>
+                    <option value="부산광역시">부산광역시</option>
+                    <option value="대구광역시">대구광역시</option>
+                    <option value="인천광역시">인천광역시</option>
+                    <option value="광주광역시">광주광역시</option>
+                    <option value="대전광역시">대전광역시</option>
+                    <option value="울산광역시">울산광역시</option>
+                    <option value="세종특별자치시">세종특별자치시</option>
+                    <option value="경기도">경기도</option>
+                    <option value="강원특별자치도">강원특별자치도</option>
+                    <option value="충청북도">충청북도</option>
+                    <option value="충청남도">충청남도</option>
+                    <option value="전북특별자치도">전북특별자치도</option>
+                    <option value="전라남도">전라남도</option>
+                    <option value="경상북도">경상북도</option>
+                    <option value="경상남도">경상남도</option>
+                    <option value="제주특별자치도">제주특별자치도</option>
+                </select>
+            </div>
+            
+            <div class="input-group">
+                <label>🏘️ 세부 시/군/구</label>
+                <input type="text" id="region_si" placeholder="예: 강남구, 평창군" required>
+            </div>
+
+            <div class="input-group">
+                <label>👨‍💼 사업 영위 기간</label>
+                <select id="exp" required>
+                    <option value="1">1년 미만 (신규 창업)</option>
+                    <option value="3" selected>1년 이상 ~ 3년 미만</option>
+                    <option value="5">3년 이상</option>
+                </select>
+            </div>
+
+            <button type="submit" class="submit-btn" id="searchBtn">
+                <span style="font-size: 1.3rem;">🔍</span> 숨은 내 지원금 찾기
+            </button>
+        </form>
+    </div>
+
+    <!-- AI Loading Overlay -->
+    <div class="loading-overlay" id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">
+            중소벤처기업부 데이터 접속 중...
+        </div>
+        <div style="font-size: 0.9rem; color: #ffd700; margin-top: 12px;" id="loadingSub">
+            선택하신 지역의 공고문을 확인하고 있습니다.
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="result-section" id="resultArea">
+        
+        <div class="alert-banner">
+            <div class="alert-icon">💡</div>
+            <div class="alert-content">
+                <h4><span id="resultRegionDo">서울특별시</span> 맞춤형 AI 분석 완료!</h4>
+                <p>사장님의 조건(사업 영위 기간 등)에 가장 부합하는 <strong>최대 지원 혜택 2건</strong>을 전국 지자체 예산망에서 발굴했습니다.</p>
+            </div>
+        </div>
+
+        <!-- Card 1 -->
+        <label class="glass-card" style="display: block; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" onchange="this.style.borderColor = this.querySelector('input').checked ? '#39ff14' : 'rgba(255,255,255,0.2)';">
+            <div style="position: absolute; top: 24px; left: 24px;">
+                <input type="checkbox" class="subsidy-checkbox" style="width: 22px; height: 22px; accent-color: #39ff14; cursor: pointer;" value="2026 소상공인 경영안정 자금" />
+            </div>
+            <div class="badge">🔥 접수중</div>
+            <h3 class="card-title" id="card1Title" style="margin-left: 35px;">2026 소상공인 경영안정 자금</h3>
+            <ul class="meta-list">
+                <li>
+                    <span class="meta-label">지원 한도</span>
+                    <span class="meta-value amount-highlight">최대 30,000,000 원</span>
+                </li>
+                <li>
+                    <span class="meta-label">금리 인하 혜택</span>
+                    <span class="meta-value">연 2.0% (고정금리)</span>
+                </li>
+                <li>
+                    <span class="meta-label">필수 조건</span>
+                    <span class="meta-value">사업자등록증 보유 1년 이상</span>
+                </li>
+            </ul>
+            <div class="progress-wrapper">
+                <div class="progress-header">
+                    <span>관할 예산 소진율 (안전)</span>
+                    <span style="color: #39ff14;">32%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="bar-fill" style="width: 32%;"></div>
+                </div>
+            </div>
+        </label>
+
+        <!-- Card 2 -->
+        <label class="glass-card" style="display: block; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" onchange="this.style.borderColor = this.querySelector('input').checked ? '#ff4757' : 'rgba(255,255,255,0.2)';">
+            <div style="position: absolute; top: 24px; left: 24px;">
+                <input type="checkbox" class="subsidy-checkbox" style="width: 22px; height: 22px; accent-color: #ff4757; cursor: pointer;" value="동네상권 버팀목 지원금" />
+            </div>
+            <div class="badge" style="background: #ff4757; color: white;">⚠️ 마감임박</div>
+            <h3 class="card-title" id="card2Title" style="margin-left: 35px;">동네상권 버팀목 지원금</h3>
+            <ul class="meta-list">
+                <li>
+                    <span class="meta-label">일시금 지원</span>
+                    <span class="meta-value" style="color: #ff4757; font-size: 1.1rem;">최대 2,000,000 원</span>
+                </li>
+                <li>
+                    <span class="meta-label">자격 조건</span>
+                    <span class="meta-value">연매출 1억 미만 영세 소상공인</span>
+                </li>
+            </ul>
+            <div class="progress-wrapper">
+                <div class="progress-header">
+                    <span>관할 예산 소진율 (위험)</span>
+                    <span style="color: #ff4757;">89%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="bar-fill" style="width: 89%; background: linear-gradient(90deg, #ff4757, #ff6b81);"></div>
+                </div>
+            </div>
+        </label>
+
+        <!-- Card 3 (Government Subsidy) -->
+        <label class="glass-card" style="display: block; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" onchange="this.style.borderColor = this.querySelector('input').checked ? '#3b82f6' : 'rgba(255,255,255,0.2)';">
+            <div style="position: absolute; top: 24px; left: 24px;">
+                <input type="checkbox" class="subsidy-checkbox" style="width: 22px; height: 22px; accent-color: #3b82f6; cursor: pointer;" value="중소벤처기업부 전기요금 특별지원" />
+            </div>
+            <div class="badge" style="background: #3b82f6; color: white;">🏛️ 중앙정부 지원</div>
+            <h3 class="card-title" id="card3Title" style="margin-left: 35px; color: #60a5fa;">중소벤처기업부 전기요금 특별지원</h3>
+            <ul class="meta-list">
+                <li>
+                    <span class="meta-label">공과금 환급</span>
+                    <span class="meta-value" style="color: #60a5fa; font-size: 1.1rem;">최대 200,000 원</span>
+                </li>
+                <li>
+                    <span class="meta-label">자격 조건</span>
+                    <span class="meta-value">전국 소상공인 (업종 무관)</span>
+                </li>
+            </ul>
+            <div class="progress-wrapper">
+                <div class="progress-header">
+                    <span>전국 예산 소진율 (보통)</span>
+                    <span style="color: #3b82f6;">55%</span>
+                </div>
+                <div class="progress-track">
+                    <div class="bar-fill" style="width: 55%; background: linear-gradient(90deg, #3b82f6, #60a5fa);"></div>
+                </div>
+            </div>
+        </label>
+
+        <!-- Card 4 (Tax Refund) -->
+        <label class="glass-card" style="display: block; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" onchange="this.style.borderColor = this.querySelector('input').checked ? '#a855f7' : 'rgba(255,255,255,0.2)';">
+            <div style="position: absolute; top: 24px; left: 24px;">
+                <input type="checkbox" class="subsidy-checkbox" style="width: 22px; height: 22px; accent-color: #a855f7; cursor: pointer;" value="종합소득세/부가세 숨은 환급금" />
+            </div>
+            <div class="badge" style="background: #a855f7; color: white;">💸 경정청구 (세금환급)</div>
+            <h3 class="card-title" id="card4Title" style="margin-left: 35px; color: #d8b4fe;">5년간 놓친 내 세금 찾기</h3>
+            <ul class="meta-list">
+                <li>
+                    <span class="meta-label">평균 환급액</span>
+                    <span class="meta-value" style="color: #d8b4fe; font-size: 1.1rem;">약 3,500,000 원</span>
+                </li>
+                <li>
+                    <span class="meta-label">진행 사항</span>
+                    <span class="meta-value">기장 세무사 무관하게 조회 가능</span>
+                </li>
+            </ul>
+        </label>
+
+        <!-- Card 5 (Hidden Insurance) -->
+        <label class="glass-card" style="display: block; cursor: pointer; border: 2px solid transparent; transition: all 0.2s;" onchange="this.style.borderColor = this.querySelector('input').checked ? '#ec4899' : 'rgba(255,255,255,0.2)';">
+            <div style="position: absolute; top: 24px; left: 24px;">
+                <input type="checkbox" class="subsidy-checkbox" style="width: 22px; height: 22px; accent-color: #ec4899; cursor: pointer;" value="내 숨은 보험금 찾기" />
+            </div>
+            <div class="badge" style="background: #ec4899; color: white;">🛡️ 휴면/숨은 보험금</div>
+            <h3 class="card-title" id="card5Title" style="margin-left: 35px; color: #f9a8d4;">잠자는 내 숨은 보험금 찾기</h3>
+            <ul class="meta-list">
+                <li>
+                    <span class="meta-label">예상 수령액</span>
+                    <span class="meta-value" style="color: #f9a8d4; font-size: 1.1rem;">조회 후 즉시 확인</span>
+                </li>
+                <li>
+                    <span class="meta-label">서비스 특징</span>
+                    <span class="meta-value">전 보험사 중도/만기 보험금 통합조회</span>
+                </li>
+            </ul>
+        </label>
+
+
+        <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 12px; background: rgba(0,0,0,0.15); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="text-align: center; margin-bottom: 10px;">
+                <p style="margin: 0; font-size: 0.95rem; color: rgba(255,255,255,0.8);">관공서 절차가 너무 복잡하고 제출 서류가 막막하신가요?</p>
+                <h4 style="margin: 5px 0 0 0; color: #ffd700; font-size: 1.1rem; font-weight: 800;">💡 동네비서가 알아서 다 해드립니다!</h4>
+            </div>
+
+            <button id="guideBtn" class="submit-btn" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); font-size: 1rem; padding: 14px;">
+                📝 1:1 맞춤형 신청 가이드만 받기 (500 토큰)
+            </button>
+
+            <button id="proxyBtn" class="submit-btn" style="background: linear-gradient(135deg, #10b981, #059669); border: none; font-size: 1.15rem; box-shadow: 0 4px 15px rgba(16,185,129,0.4);">
+                🚀 AI 비서 원클릭 대행 신청 (2,000 토큰)
+            </button>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const guideBtn = document.getElementById('guideBtn');
+                const proxyBtn = document.getElementById('proxyBtn');
+                
+                function getSelectedSubsidies() {
+                    const checkboxes = document.querySelectorAll('.subsidy-checkbox:checked');
+                    let selected = [];
+                    checkboxes.forEach(cb => {
+                        // For Card 1, dynamically grab the name since it updates with region name
+                        const titleElement = cb.closest('.glass-card').querySelector('.card-title');
+                        selected.push(titleElement ? titleElement.innerText : cb.value);
+                    });
+                    return selected;
+                }
+
+                if (guideBtn) {
+                    guideBtn.addEventListener('click', function() {
+                        const selected = getSelectedSubsidies();
+                        if (selected.length === 0) {
+                            alert("💡 신청 가이드를 받으실 지원금을 위 목록에서 먼저 체크해 주세요!");
+                            return;
+                        }
+
+                        const names = selected.join(', ');
+                        const confirmCharge = confirm(`선택하신 [${names}] 상세 신청 가이드와 서류 양식을 500 토큰에 카카오톡으로 발송해 드립니다.\n\n계속하시겠습니까?`);
+                        if (!confirmCharge) return;
+
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '⏳ 발송 중...';
+                        this.disabled = true;
+                        
+                        setTimeout(() => {
+                            alert("✅ 500 토큰이 차감되었습니다.\n\n카카오톡으로 상세 신청 방법이 발송되었습니다!");
+                            this.innerHTML = '발송 완료';
+                            this.style.background = 'rgba(255, 255, 255, 0.2)';
+                        }, 1200);
+                    });
+                }
+
+                if (proxyBtn) {
+                    proxyBtn.addEventListener('click', function() {
+                        const selected = getSelectedSubsidies();
+                        if (selected.length === 0) {
+                            alert("🚀 대행 신청하실 지원금을 위 목록에서 먼저 체크해 주세요!");
+                            return;
+                        }
+
+                        const names = selected.join(', ');
+                        const confirmCharge = confirm(`선택하신 [${names}] 대행 접수를 AI가 진행합니다.\n\n대행 수수료로 2,000 토큰이 차감됩니다. 계속하시겠습니까?`);
+                        if (!confirmCharge) return;
+
+                        const originalText = this.innerHTML;
+                        this.innerHTML = '⚡ AI 시스템이 접수 준비 중...';
+                        this.disabled = true;
+                        this.style.background = '#059669';
+                        
+                        setTimeout(() => {
+                            this.innerHTML = '📑 관공서 로그인 및 양식 작성 중...';
+                            setTimeout(() => {
+                                alert("🎉 대행 신청이 정상적으로 접수되었습니다! (2,000 토큰 차감)\n\n알림톡으로 진행 상황을 실시간 보고해 드립니다.");
+                                this.innerHTML = '✅ 대행 접수 완료 (진행중)';
+                                this.style.background = '#1e293b';
+                            }, 2000);
+                        }, 1500);
+                    });
+                }
+            });
+        </script>
+
+        <a href="/admin/dashboard" class="submit-btn" style="margin-top: 15px; font-size: 1rem; text-decoration: none;">🔙 이전 화면으로 돌아가기</a>
+    </div>
+    <div style="height: 30px;"></div>
+
+</div>
+
+<script>
+    function searchSubsidy(e) {
+        e.preventDefault();
+        
+        const regionDo = document.getElementById('region_do').value;
+        const regionSi = document.getElementById('region_si').value;
+        const btn = document.getElementById('searchBtn');
+        
+        // UX Lock
+        btn.disabled = true;
+        btn.innerHTML = '데이터 수집 중...';
+
+        const loader = document.getElementById('loadingScreen');
+        const loadDoc = document.getElementById('loadingText');
+        const loadSub = document.getElementById('loadingSub');
+        
+        loader.style.display = 'flex';
+
+        // Phase 1
+        setTimeout(() => {
+            loadDoc.innerHTML = "해당 지자체 <strong style='color:#39ff14'>" + regionSi + "</strong> 조례망 검색 중...";
+            loadSub.innerHTML = "2026년도 소상공인 지원 예산 편성을 분석하고 있습니다.";
+        }, 1200);
+
+        // Phase 2
+        setTimeout(() => {
+            loadDoc.innerHTML = "💡 AI 지능형 필터링 가동";
+            loadSub.innerHTML = "입력하신 사업 요건과 매칭되는 최적의 지원금을 계산 중입니다.";
+        }, 2500);
+
+        // Finish
+        setTimeout(() => {
+            loader.style.display = 'none';
+            document.getElementById('searchArea').style.display = 'none';
+            
+            // Inject user data dynamically
+            document.getElementById('resultRegionDo').innerText = regionDo;
+            
+            // Tweak the title to sound local
+            document.getElementById('card1Title').innerText = `2026 ${regionSi} 소상공인 지원금`;
+            
+            document.getElementById('resultArea').style.display = 'block';
+            window.scrollTo(0, 0);
+        }, 4000);
+    }
+</script>
+
+{% endblock %}

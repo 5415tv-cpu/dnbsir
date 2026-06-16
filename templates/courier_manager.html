@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>택배 접수 키오스크 - 동네비서</title>
+    <!-- Daum Postcode API -->
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <!-- Toss Payments SDK -->
+    <script src="https://js.tosspayments.com/v1"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #16a34a;
+            --success-light: #dcfce7;
+            --dark: #0f172a;
+            --border: #cbd5e1;
+            --gray-light: #f8fafc;
+            --radius: 20px;
+            --radius-lg: 24px;
+        }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+            background-color: #f1f5f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            color: var(--dark);
+            height: 100vh;
+            height: 100dvh;   /* 모바일 하단 바 실시간 반영 */
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            height: 100vh;
+            height: 100dvh;   /* 모바일 하단 바 실시간 반영 */
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            position: relative;
+            box-sizing: border-box;
+            padding-bottom: 0;
+            overflow: hidden;
+        }
+
+        /* VIP Banner */
+        .vip-banner {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            color: #fbbf24;
+            padding: 14px 20px;
+            text-align: center;
+            font-weight: 900;
+            font-size: 1rem;
+            letter-spacing: 1px;
+        }
+
+        /* 프로그레스 바 */
+        .progress-container {
+            padding: 20px 24px 0;
+            background: #fff;
+        }
+
+        .progress-bar-bg {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            width: 20%;
+            background: var(--primary);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        /* [A] 상단 헤더 */
+        .kiosk-header {
+            padding: 20px 24px 10px;
+            background: #fff;
+            text-align: center;
+        }
+
+        .kiosk-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--dark);
+            letter-spacing: -1px;
+        }
+
+        /* [B] 단계별 카드 섹션 */
+        .kiosk-body {
+            padding: 20px 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .kiosk-step {
+            display: none;
+            width: 100%;
+            animation: fadeIn 0.25s ease-in-out;
+        }
+
+        .kiosk-step.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title {
+            font-size: 1.35rem;
+            font-weight: 900;
+            margin-bottom: 25px;
+            color: var(--dark);
+            line-height: 1.4;
+            word-break: keep-all;
+        }
+
+        .input-wrapper {
+            margin-bottom: 30px;
+        }
+
+        .kiosk-input {
+            width: 100%;
+            padding: 22px 24px;
+            font-size: 1.25rem;
+            font-weight: 900;
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-sizing: border-box;
+            background: #fff;
+            color: var(--dark);
+            transition: border-color 0.2s;
+        }
+
+        .kiosk-input:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.15);
+        }
+
+        .kiosk-input::placeholder {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .kiosk-input:read-only {
+            background-color: #f8fafc;
+            color: #475569;
+            border-color: var(--border);
+            cursor: default;
+        }
+
+        /* 주소 검색창 배치 */
+        .address-search-box {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-search-kiosk {
+            background: var(--dark);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            padding: 22px;
+            font-weight: 900;
+            font-size: 1.3rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+
+        .btn-search-kiosk:active {
+            background: #000;
+        }
+
+        /* 하단 네비게이션 버튼 (이전/다음) */
+        .kiosk-nav {
+            padding: 14px 24px;
+            padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); /* 아이폰·갤럭시 홈바 대응 */
+            display: flex;
+            gap: 14px;
+            background: white;
+            border-top: 1px solid #f1f5f9;
+            flex-shrink: 0;   /* 절대 압축되지 않음 */
+        }
+
+        .btn-kiosk-nav {
+            flex: 1;
+            padding: 22px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            text-align: center;
+        }
+
+        .btn-kiosk-nav:active {
+            transform: scale(0.97);
+        }
+
+        .btn-kiosk-next {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 6px 15px rgba(79, 70, 229, 0.2);
+        }
+
+        .btn-kiosk-prev {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-kiosk-pay {
+            background: var(--success);
+            color: white;
+            box-shadow: 0 6px 20px rgba(22, 163, 74, 0.25);
+        }
+
+        /* 접이식 어코디언 (Details) */
+        details {
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: #fff;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+
+        summary {
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #475569;
+            cursor: pointer;
+            background: var(--gray-light);
+            outline: none;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '▼'; font-size: 0.8rem; }
+        details[open] summary::after { transform: rotate(180deg); }
+
+        .details-content {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* 최종 요약 카드 */
+        .summary-card {
+            background: var(--gray-light);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            color: #475569;
+        }
+
+        .summary-item.total {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 2px dashed var(--border);
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--success);
+        }
+
+        /* 엑셀 대량 등록 */
+        .excel-box {
+            border: 2px dashed var(--primary);
+            background: var(--primary-light);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        {% if store.get('subscription_tier') == 'vip' %}
+        <div class="vip-banner">
+            💎 프리미엄 VIP 가맹점 💎
+        </div>
+        {% endif %}
+
+        <!-- 진행도 표시 바 -->
+        <div class="progress-container">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+        </div>
+
+        <!-- [A] 상단 헤더 -->
+        <div class="kiosk-header">
+            <h1 id="kiosk-header-text">📦 단계별 택배 접수</h1>
+        </div>
+
+        <!-- [B] 본문 바디 (단계별 플로우) -->
+        <div class="kiosk-body">
+            
+            <!-- STEP 1: 받는 사람 이름 -->
+            <div class="kiosk-step active" id="step-1">
+                <div class="step-title">1. 받으실 분의<br><span style="color:var(--primary)">이름</span>을 입력해 주세요.</div>
+                <div class="input-wrapper">
+                    <input type="text" id="receiver_name" class="kiosk-input" placeholder="받는 사람 이름" autofocus autocomplete="off">
+                </div>
+            </div>
+
+            <!-- STEP 2: 받는 사람 연락처 -->
+            <div class="kiosk-step" id="step-2">
+                <div class="step-title">2. 받으실 분의<br><span style="color:var(--primary)">휴대폰 번호</span>를 입력해 주세요.</div>
+                <div class="input-wrapper">
+                    <input type="tel" id="receiver_phone" class="kiosk-input" placeholder="010-0000-0000" oninput="autoHyphen(this)" maxlength="13" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+                </div>
+            </div>
+
+            <!-- STEP 3: 배송 주소 검색 -->
+            <div class="kiosk-step" id="step-3">
+                <div class="step-title">3. 배송받으실<br><span style="color:var(--primary)">주소</span>를 검색해 주세요.</div>
+                <div class="address-search-box">
+                    <button type="button" class="btn-search-kiosk" onclick="execDaumPostcode()">🔍 주소 검색하기</button>
+                    <input type="text" id="postcode" class="kiosk-input" placeholder="우편번호 (자동 검색)" readonly style="font-size: 1.1rem; padding: 15px 20px;" autocomplete="off">
+                    <input type="text" id="base_addr" class="kiosk-input" placeholder="검색된 주소" readonly style="font-size: 1.1rem; padding: 15px 20px;" autocomplete="off">
+                </div>
+            </div>
+
+            <!-- STEP 4: 상세 주소 입력 -->
+            <div class="kiosk-step" id="step-4">
+                <div class="step-title">4. 배송지의<br><span style="color:var(--primary)">상세 주소</span>를 입력해 주세요.</div>
+                <div class="input-wrapper">
+                    <!-- 기본주소 힌트 노출 -->
+                    <div id="base_addr_hint" style="font-size:1rem; color:#64748b; margin-bottom:12px; font-weight:bold;"></div>
+                    <input type="text" id="detail_addr" class="kiosk-input" placeholder="예: 101동 1204호, 2층" autocomplete="off">
+                </div>
+            </div>
+
+            <!-- STEP 5: 물품 규격 선택 (복수 선택 가능) -->
+            <div class="kiosk-step" id="step-5">
+                <div class="step-title">5. 보내실 물품의<br><span style="color:var(--primary)">크기와 무게</span>를 선택해 주세요.
+                    <span style="font-size:0.82rem; color:#64748b; font-weight:600;"> (중복 선택 가능)</span>
+                </div>
+                <div class="size-selection-container" style="display: flex; flex-direction: column; gap: 14px; width: 100%; margin-top: 12px;">
+
+                    <!-- 소형 카드 -->
+                    <div class="size-card" onclick="toggleSize('small')" id="size-card-small"
+                        style="border: 2px solid #e2e8f0; background: white; border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div id="chk-small" style="width:24px; height:24px; border-radius:6px; border:2px solid #cbd5e1;
+                                    display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; transition:all 0.2s;"></div>
+                                <div style="text-align: left;">
+                                    <div style="font-size: 1.2rem; font-weight: 900; color: #1e1b4b; display: flex; align-items: center; gap: 6px;">
+                                        <span>[소형]</span> <span style="font-weight:500; font-size:0.9rem; color:#64748b;">(5kg 이하)</span>
+                                    </div>
+                                    <div style="font-size: 0.88rem; color: #475569; margin-top: 4px;">가벼운 책, 의류 / 우체국 1~3호 상자</div>
+                                </div>
+                            </div>
+                            <div class="price-label" style="font-size: 1.35rem; font-weight: 900; color: #94a3b8;">5,000원</div>
+                        </div>
+                        <div id="qty-row-small" style="display:none; align-items: center; justify-content: flex-end; gap: 10px; width: 100%; border-top: 1.5px dashed rgba(0,0,0,0.08); padding-top: 10px; box-sizing: border-box;" onclick="event.stopPropagation()">
+                            <span style="font-size: 0.92rem; font-weight: 800; color: #475569;">보낼 갯수:</span>
+                            <div style="display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 4px 8px;">
+                                <button type="button" onclick="changeQty('small', -1, event)" style="width:32px; height:32px; border-radius:8px; border:none; background:#f1f5f9; font-size:1.2rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#475569;">-</button>
+                                <span id="qty-val-small" style="font-size:1.1rem; font-weight:900; color:#1e293b; min-width:24px; text-align:center;">1</span>
+                                <button type="button" onclick="changeQty('small', 1, event)" style="width:32px; height:32px; border-radius:8px; border:none; background:#f1f5f9; font-size:1.2rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#475569;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 중형 카드 -->
+                    <div class="size-card" onclick="toggleSize('medium')" id="size-card-medium"
+                        style="border: 2px solid #e2e8f0; background: white; border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div id="chk-medium" style="width:24px; height:24px; border-radius:6px; border:2px solid #cbd5e1;
+                                    display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; transition:all 0.2s;"></div>
+                                <div style="text-align: left;">
+                                    <div style="font-size: 1.2rem; font-weight: 900; color: #1e1b4b; display: flex; align-items: center; gap: 6px;">
+                                        <span>[중형]</span> <span style="font-weight:500; font-size:0.9rem; color:#64748b;">(15kg 이하)</span>
+                                    </div>
+                                    <div style="font-size: 0.88rem; color: #475569; margin-top: 4px;">소형 가전, 과일 상자 / 라면 상자 크기</div>
+                                </div>
+                            </div>
+                            <div class="price-label" style="font-size: 1.35rem; font-weight: 900; color: #94a3b8;">7,000원</div>
+                        </div>
+                        <div id="qty-row-medium" style="display:none; align-items: center; justify-content: flex-end; gap: 10px; width: 100%; border-top: 1.5px dashed rgba(0,0,0,0.08); padding-top: 10px; box-sizing: border-box;" onclick="event.stopPropagation()">
+                            <span style="font-size: 0.92rem; font-weight: 800; color: #475569;">보낼 갯수:</span>
+                            <div style="display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 4px 8px;">
+                                <button type="button" onclick="changeQty('medium', -1, event)" style="width:32px; height:32px; border-radius:8px; border:none; background:#f1f5f9; font-size:1.2rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#475569;">-</button>
+                                <span id="qty-val-medium" style="font-size:1.1rem; font-weight:900; color:#1e293b; min-width:24px; text-align:center;">1</span>
+                                <button type="button" onclick="changeQty('medium', 1, event)" style="width:32px; height:32px; border-radius:8px; border:none; background:#f1f5f9; font-size:1.2rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#475569;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 대형 카드 -->
+                    <div class="size-card" onclick="toggleSize('large')" id="size-card-large"
+                        style="border: 2px solid #e2e8f0; background: white; border-radius: 18px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; cursor: pointer; transition: all 0.2s;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div id="chk-large" style="width:24px; height:24px; border-radius:6px; border:2px solid #cbd5e1;
+                                    display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; transition:all 0.2s;"></div>
+                                <div style="text-align: left;">
+                                    <div style="font-size: 1.2rem; font-weight: 900; color: #1e1b4b; display: flex; align-items: center; gap: 6px;">
+                                        <span>[대형]</span> <span style="font-weight:500; font-size:0.9rem; color:#64748b;">(25kg 이하)</span>
+                                    </div>
+                                    <div style="font-size: 0.88rem; color: #475569; margin-top: 4px;">무거운 물품, 대형 상자 / 사과 상자 크기</div>
+                                </div>
+                            </div>
+                            <div class="price-label" style="font-size: 1.35rem; font-weight: 900; color: #94a3b8;">9,000원</div>
+                        </div>
+                        <div id="qty-row-large" style="display:none; align-items: center; justify-content: flex-end; gap: 10px; width: 100%; border-top: 1.5px dashed rgba(0,0,0,0.08); padding-top: 10px; box-sizing: border-box;" onclick="event.stopPropagation()">
+                            <span style="font-size: 0.92rem; font-weight: 800; color: #475569;">보낼 갯수:</span>
+                            <div style="display: flex; align-items: center; gap: 8px; background: white; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 4px 8px;">
+                                <button type="button" onclick="changeQty('large', -1, event)" style="width:32px; height:32px; border-radius:8px; border:none; background:#f1f5f9; font-size:1.2rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#475569;">-</button>
+                                <span id="qty-val-large" style="font-size:1.1rem; font-weight:900; color:#1e293b; min-width:24px; text-align:center;">1</span>
+                                <button type="button" onclick="changeQty('large', 1, event)" style="width:32px; height:32px; border-radius:8px; border:none; background:#f1f5f9; font-size:1.2rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#475569;">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- STEP 6: 배송 요청사항 및 보내는 분 정보 -->
+            <div class="kiosk-step" id="step-6">
+                <div class="step-title">6. 배송 요청사항을<br>선택해 주세요.</div>
+                <div class="form-group">
+                    <select id="request_msg_select" onchange="toggleCustomRequest(this)">
+                        <option value="문 앞에 놓아주세요">문 앞에 놓아주세요</option>
+                        <option value="벨 누르지 마세요">벨 누르지 마세요</option>
+                        <option value="부재 시 경비실에 맡겨주세요">부재 시 경비실에 맡겨주세요</option>
+                        <option value="도착 전 전화/문자 주세요">도착 전 전화/문자 주세요</option>
+                        <option value="custom">직접 입력</option>
+                    </select>
+                    <input type="text" id="request_msg_custom" class="kiosk-input custom-req-box" placeholder="요청 메시지 직접 입력 (최대 30자)" maxlength="30" style="margin-top: 15px; font-size: 1.1rem;">
+                </div>
+
+                <!-- 보내는 사람 주소 수정 (접이식으로 숨김) -->
+                <details>
+                    <summary>🏠 보내는 사람 정보 수정</summary>
+                    <div class="details-content">
+                        <div style="background:var(--primary-light); padding:10px; border-radius:10px; font-size:0.9rem; font-weight:bold; color:#3730a3; margin-bottom:15px; display:flex; align-items:center; gap:8px;">
+                            <input type="checkbox" id="pin_sender" style="width:18px; height:18px; cursor:pointer;">
+                            <label for="pin_sender" style="cursor:pointer; margin:0;">보내는 사람 정보 고정</label>
+                        </div>
+                        <div class="form-group" style="margin-bottom:15px;">
+                            <label style="font-weight:bold; font-size:0.9rem;">보내는 분 성함</label>
+                            <input type="text" id="sender_name" value="{{ store.get('owner_name', '') }}" style="width:100%; padding:12px; font-size:1rem; border:1px solid #ccc; border-radius:10px; box-sizing:border-box; margin-top:5px;" autocomplete="off">
+                        </div>
+                        <div class="form-group" style="margin-bottom:15px;">
+                            <label style="font-weight:bold; font-size:0.9rem;">보내는 분 전화번호</label>
+                            <input type="tel" id="sender_phone" value="{{ store.get('phone', '') }}" oninput="autoHyphen(this)" maxlength="13" style="width:100%; padding:12px; font-size:1rem; border:1px solid #ccc; border-radius:10px; box-sizing:border-box; margin-top:5px;" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:bold; font-size:0.9rem;">보내는 분 주소</label>
+                            <div class="address-row" style="margin-top:5px;">
+                                <input type="text" id="sender_postcode" placeholder="우편번호" readonly style="width:60%; padding:12px; font-size:1rem; border:1px solid #ccc; border-radius:10px; box-sizing:border-box;" autocomplete="off">
+                                <button type="button" onclick="execSenderPostcode()" style="width:35%; background:#1e293b; color:white; border:none; border-radius:10px; cursor:pointer;">검색</button>
+                            </div>
+                            <input type="text" id="sender_base_addr" placeholder="기본 주소" readonly style="width:100%; padding:12px; font-size:1rem; border:1px solid #ccc; border-radius:10px; box-sizing:border-box; margin-top:10px;" autocomplete="off">
+                            <input type="text" id="sender_detail_addr" placeholder="상세 주소" style="width:100%; padding:12px; font-size:1rem; border:1px solid #ccc; border-radius:10px; box-sizing:border-box; margin-top:10px;" autocomplete="off">
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- STEP 7: 최종 요약 및 결제 -->
+            <div class="kiosk-step" id="step-7">
+                <div class="step-title">7. 예약 내용을 확인하고<br>결제를 진행해 주세요.</div>
+                
+                <div class="summary-card">
+                    <div class="summary-item">
+                        <span>받는 사람</span>
+                        <strong id="summary_recv_name">—</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>전화번호</span>
+                        <strong id="summary_recv_phone">—</strong>
+                    </div>
+                    <div class="summary-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+                        <span>배송 주소</span>
+                        <strong id="summary_recv_addr" style="text-align: left; font-size: 0.95rem; word-break: keep-all;">—</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span>선택 규격</span>
+                        <strong id="summary_size_label">소형</strong>
+                    </div>
+                    <div class="summary-item total">
+                        <span>최종 결제 금액</span>
+                        <span id="total_fee_label">5,000 원</span>
+                    </div>
+                </div>
+
+                <!-- 경고 문구 추가 -->
+                <div style="margin-top: 15px; margin-bottom: 15px; padding: 15px; border-radius: 12px; background-color: #fffbeb; border: 1.5px solid #fef3c7; color: #b45309; font-size: 0.92rem; line-height: 1.5; text-align: left; font-weight: 700; word-break: keep-all;">
+                    ⚠️ 실제 측정 규격이나 무게가 선택하신 기준을 초과할 경우, 수거가 거부되거나 추가 요금이 발생할 수 있습니다.
+                </div>
+
+                <!-- 엑셀 대량 등록 -->
+                <details style="margin-top: 0;">
+                    <summary>📊 엑셀 대량 등록 (사장님 전용)</summary>
+                    <div class="details-content">
+                        <div class="excel-box">
+                            <p style="color: #475569; font-size: 0.95rem; margin-top:0;">엑셀로 수십 건의 예약을 한 번에 결제합니다.</p>
+                            <div style="display: flex; gap: 8px; justify-content: center; margin-top: 15px;">
+                                <button onclick="downloadExcelTemplate()" style="flex:1; background:#fff; border:1.5px solid var(--primary); color:var(--primary); padding:10px; border-radius:10px; font-weight:bold; cursor:pointer;">양식 다운</button>
+                                <button onclick="document.getElementById('excel_upload').click()" style="flex:1; background:var(--primary); border:none; color:white; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer;">엑셀 올리기</button>
+                                <input type="file" id="excel_upload" accept=".xlsx, .xls" style="display:none" onchange="handleExcelUpload(event)">
+                            </div>
+                            <!-- 업로드 결과 -->
+                            <div id="excel_result_box" style="display:none; margin-top: 15px; background:white; padding: 15px; border-radius:10px; text-align:left; border:1px solid var(--border);">
+                                <p style="font-weight:bold; color:var(--dark); margin-top:0;">✔️ 총 <span id="excel_count">0</span>건 파싱 성공</p>
+                                <div style="max-height: 80px; overflow-y: auto; font-size: 0.8rem; color:#64748b; background:#f8fafc; padding:8px; border-radius:6px; margin-bottom: 12px;" id="excel_preview_list"></div>
+                                <button onclick="initiateMultiPayment()" style="width: 100%; background:var(--success); color:white; padding:12px; border:none; border-radius:8px; font-size:1rem; font-weight:bold; cursor:pointer;">일괄 예약 결제 (<span id="excel_btn_count">0</span>건)</button>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+        </div><!-- /.kiosk-body END -->
+
+        <!-- ★ AI 입력 툴바: 모든 단계에서 항상 유지 (결제 단계 제외) -->
+        <div id="ai-toolbar" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            padding: 10px 24px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        ">
+            <!-- 마이크 -->
+            <button type="button" id="btn-mic" onclick="startVoiceInput()" style="
+                width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer;
+                background: linear-gradient(135deg,#4f46e5,#7c3aed);
+                box-shadow: 0 6px 18px rgba(79,70,229,0.4);
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; transition: all 0.2s; color: white; flex-shrink: 0;
+            ">
+                <span id="mic-icon" style="font-size:1.7rem;">🎤</span>
+                <span style="font-size:0.62rem; font-weight:800; letter-spacing:-0.3px;">음성입력</span>
+            </button>
+
+            <!-- 안내 텍스트 -->
+            <div style="text-align:center; flex: 1;">
+                <div id="ai-hint" style="font-size:0.78rem; color:#94a3b8; font-weight:600; line-height:1.5;">
+                    말하거나 사진을 찍으면<br>AI가 자동으로 채워드려요
+                </div>
+            </div>
+
+            <!-- 카메라 -->
+            <button type="button" id="btn-cam" onclick="startCameraInput()" style="
+                width: 64px; height: 64px; border-radius: 50%; border: none; cursor: pointer;
+                background: linear-gradient(135deg,#0f172a,#334155);
+                box-shadow: 0 6px 18px rgba(15,23,42,0.35);
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; transition: all 0.2s; color: white; flex-shrink: 0;
+            ">
+                <span id="cam-icon" style="font-size:1.7rem;">📷</span>
+                <span style="font-size:0.62rem; font-weight:800; letter-spacing:-0.3px;">사진촬영</span>
+            </button>
+        </div>
+
+        <!-- 하단 네비게이션 영역 (container 직속 → 항상 화면 하단 고정) -->
+        <div class="kiosk-nav">
+            <button type="button" class="btn-kiosk-nav btn-kiosk-prev" id="btn-prev" onclick="moveStep(-1)" style="display: block;">◀ 홈으로</button>
+            <button type="button" class="btn-kiosk-nav btn-kiosk-next" id="btn-next" onclick="moveStep(1)">다음 단계 ▶</button>
+            <button type="button" class="btn-kiosk-nav btn-kiosk-pay" id="btn-pay" onclick="initiatePayment()" style="display: none;">💳 결제하고 예약</button>
+        </div>
+
+        
+        <!-- 우체국 주소 검색 임베드 레이어 -->
+        <div id="postcode-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; flex-direction: column; box-sizing: border-box;">
+            <!-- 상단 닫기 헤더 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 2px solid var(--border); background: #fff;">
+                <span style="font-size: 1.3rem; font-weight: 900; color: var(--dark);">우체국 주소 검색</span>
+                <button type="button" onclick="closePostcodeOverlay()" style="background: var(--dark); color: white; border: none; padding: 12px 20px; border-radius: var(--radius); font-size: 1.1rem; font-weight: 900; cursor: pointer;">✕ 닫기</button>
+            </div>
+            <!-- API가 그려질 영역 -->
+            <div id="postcode-iframe-wrap" style="flex: 1; width: 100%; overflow: hidden; position: relative; background: #fff;"></div>
+        </div>
+    </div>
+
+    <!-- Hidden Toss Payments Form Values -->
+    <script>
+        const tossClientKey = "{{ toss_client_key }}";
+        let parsedMultiData = [];
+        
+        let currentStep = 1;
+        const totalSteps = 7;
+        
+        let selectedSize = 'small';
+        let isJeju = false;
+        let finalFee = 5000;
+        const sizeFees = {
+            'small': 5000,
+            'medium': 7000,
+            'large': 9000
+        };
+        const quantities = {
+            'small': 1,
+            'medium': 1,
+            'large': 1
+        };
+
+        // ── 크기 선택 (복수 체크박스 방식) ────────────────────────
+        const selectedSizes = new Set(['small']); // 기본 소형 선택
+        // 초기 렌더
+        window.addEventListener('DOMContentLoaded', () => toggleSize('small'));
+
+        function toggleSize(size) {
+            if (selectedSizes.has(size)) {
+                // 이미 선택된 경우 → 해제 (단, 최소 1개는 선택 유지)
+                if (selectedSizes.size === 1) return; // 마지막 1개는 해제 불가
+                selectedSizes.delete(size);
+            } else {
+                selectedSizes.add(size);
+            }
+            _renderSizeCards();
+            calculateFee();
+        }
+
+        function _renderSizeCards() {
+            const sizes = ['small', 'medium', 'large'];
+            sizes.forEach(s => {
+                const card    = document.getElementById(`size-card-${s}`);
+                const chk     = document.getElementById(`chk-${s}`);
+                const qtyRow  = document.getElementById(`qty-row-${s}`);
+                const priceEl = card ? card.querySelector('.price-label') : null;
+                const active  = selectedSizes.has(s);
+
+                if (card) {
+                    card.style.border     = active ? '3px solid var(--primary)' : '2px solid #e2e8f0';
+                    card.style.background = active ? 'var(--primary-light)'     : 'white';
+                }
+                if (chk) {
+                    chk.style.background  = active ? 'var(--primary)' : 'white';
+                    chk.style.border      = active ? '2px solid var(--primary)' : '2px solid #cbd5e1';
+                    chk.textContent       = active ? '✓' : '';
+                    chk.style.color       = 'white';
+                    chk.style.fontWeight  = '900';
+                }
+                if (priceEl) {
+                    priceEl.style.color   = active ? 'var(--primary)' : '#94a3b8';
+                }
+                if (qtyRow) {
+                    qtyRow.style.display  = active ? 'flex' : 'none';
+                }
+            });
+        }
+
+        // 구형 단일선택 호환 (사용처 없지만 안전망)
+        function selectSize(size) { toggleSize(size); }
+
+        function changeQty(size, delta, event) {
+            if (event) event.stopPropagation();
+            // 수량 변경 시 자동 선택
+            if (!selectedSizes.has(size)) {
+                selectedSizes.add(size);
+                _renderSizeCards();
+            }
+            let q = (quantities[size] || 1) + delta;
+            if (q < 1) q = 1;
+            if (q > 99) q = 99;
+            quantities[size] = q;
+            const span = document.getElementById(`qty-val-${size}`);
+            if (span) span.innerText = q;
+            calculateFee();
+        }
+
+        function calculateFee() {
+            const sizeNames = { small: '소형', medium: '중형', large: '대형' };
+            const extra = isJeju ? 3000 : 0;
+            let total = 0;
+            const parts = [];
+            selectedSizes.forEach(s => {
+                const q   = quantities[s] || 1;
+                const fee = (sizeFees[s] + extra) * q;
+                total += fee;
+                parts.push(`${sizeNames[s]} ${q}개`);
+            });
+            finalFee = total;
+            const label = document.getElementById('total_fee_label');
+            if (label) label.innerText = total.toLocaleString() + ' 원';
+            const summaryLabel = document.getElementById('summary_size_label');
+            if (summaryLabel) summaryLabel.innerText = parts.join(' + ') + (isJeju ? ' (제주 할증 포함)' : '');
+        }
+
+
+        // ── AI 음성 입력 (Web Speech API) ────────────────────────────
+        function startVoiceInput() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('이 브라우저는 음성 입력을 지원하지 않습니다.\n크롬(Chrome) 브라우저를 사용해 주세요.');
+                return;
+            }
+            const btn = document.getElementById('btn-mic');
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ko-KR';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            btn.style.background = 'linear-gradient(135deg,#dc2626,#ef4444)';
+            btn.style.boxShadow  = '0 8px 24px rgba(220,38,38,0.5)';
+            btn.querySelector('span').textContent = '🔴';
+
+            recognition.onresult = (e) => {
+                const transcript = e.results[0][0].transcript;
+                const field = document.getElementById('receiver_name');
+                if (field) field.value = transcript;
+                btn.style.background = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
+                btn.style.boxShadow  = '0 8px 24px rgba(79,70,229,0.4)';
+                btn.querySelector('span').textContent = '🎤';
+            };
+            recognition.onerror = () => {
+                btn.style.background = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
+                btn.style.boxShadow  = '0 8px 24px rgba(79,70,229,0.4)';
+                btn.querySelector('span').textContent = '🎤';
+            };
+            recognition.start();
+        }
+
+        // ── AI 카메라 입력 (사진 촬영 후 AI 파싱) ──────────────────────
+        function startCameraInput() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';   // 후면 카메라
+            input.style.display = 'none';
+            document.body.appendChild(input);
+
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const btn = document.getElementById('btn-cam');
+                btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+                btn.querySelector('span').textContent = '⏳';
+
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    const base64 = ev.target.result.split(',')[1];
+                    try {
+                        const res = await fetch('/api/ai/parse-image', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({ image: base64 })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.name)   { const f = document.getElementById('receiver_name');  if(f) f.value = data.name; }
+                            if (data.phone)  { const f = document.getElementById('receiver_phone'); if(f) f.value = data.phone; }
+                            if (data.addr)   { const f = document.getElementById('base_addr');      if(f) f.value = data.addr; }
+                            if (data.detail) { const f = document.getElementById('detail_addr');    if(f) f.value = data.detail; }
+                            alert('✅ AI가 정보를 자동으로 입력했습니다.\n내용을 확인하고 수정해 주세요.');
+                        } else {
+                            alert('AI 파싱 실패. 직접 입력해 주세요.');
+                        }
+                    } catch {
+                        alert('서버 연결 오류. 직접 입력해 주세요.');
+                    }
+                    btn.style.background = 'linear-gradient(135deg,#0f172a,#334155)';
+                    btn.querySelector('span').textContent = '📷';
+                };
+                reader.readAsDataURL(file);
+                document.body.removeChild(input);
+            };
+            input.click();
+        }
+
+        // 단계 변경 함수
+        function moveStep(direction) {
+            // Step 1에서 이전(홈으로) 터치 시 홈 화면으로 이동
+            if (direction === -1 && currentStep === 1) {
+                location.href = "/";
+                return;
+            }
+
+            // 1. 값 검증 후 넘어가기
+            if (direction === 1) {
+                if (currentStep === 1) {
+                    const rName = document.getElementById('receiver_name').value.trim();
+                    if (!rName) return alert("받으시는 분의 이름을 입력해 주세요.");
+                } else if (currentStep === 2) {
+                    const rPhone = document.getElementById('receiver_phone').value.trim();
+                    if (rPhone.length < 12) return alert("올바른 휴대폰 번호를 입력해 주세요.");
+                } else if (currentStep === 3) {
+                    const baseAddr = document.getElementById('base_addr').value.trim();
+                    if (!baseAddr) return alert("주소를 검색해 주세요.");
+                    // 4단계 힌트 갱신
+                    document.getElementById('base_addr_hint').innerText = "📍 " + baseAddr;
+                } else if (currentStep === 4) {
+                    const detailAddr = document.getElementById('detail_addr').value.trim();
+                    if (!detailAddr) {
+                        alert("상세 주소(동/호수, 층수 등)를 반드시 정확하게 입력해 주세요.");
+                        document.getElementById('detail_addr').focus();
+                        return;
+                    }
+                } else if (currentStep === 5) {
+                    // 크기 및 무게 선택 완료
+                } else if (currentStep === 6) {
+                    const sName = document.getElementById('sender_name').value.trim();
+                    const sPhone = document.getElementById('sender_phone').value.trim();
+                    const sBase = document.getElementById('sender_base_addr').value.trim();
+                    const sDetail = document.getElementById('sender_detail_addr').value.trim();
+                    
+                    if (!sName || !sPhone || !sBase || !sDetail) {
+                        const detailsEl = document.querySelector('details');
+                        if (detailsEl) detailsEl.open = true;
+                        
+                        if (!sName) return alert("보내는 분 성함을 입력해 주세요.");
+                        if (sPhone.length < 12) return alert("보내는 분의 올바른 휴대폰 번호를 입력해 주세요.");
+                        if (!sBase) return alert("보내는 분의 주소를 검색해 주세요.");
+                        if (!sDetail) return alert("보내는 분의 상세 주소(동·호수 등)를 입력해 주세요.");
+                    }
+                    
+                    // 최종 요약 화면 갱신
+                    document.getElementById('summary_recv_name').innerText = document.getElementById('receiver_name').value.trim();
+                    document.getElementById('summary_recv_phone').innerText = document.getElementById('receiver_phone').value.trim();
+                    document.getElementById('summary_recv_addr').innerText = 
+                        document.getElementById('base_addr').value.trim() + " " + document.getElementById('detail_addr').value.trim();
+                    
+                    calculateFee();
+                }
+            }
+
+            // Step 값 업데이트
+            currentStep += direction;
+            if (currentStep < 1) currentStep = 1;
+            if (currentStep > totalSteps) currentStep = totalSteps;
+
+            // UI 제어
+            for (let i = 1; i <= totalSteps; i++) {
+                const el = document.getElementById(`step-${i}`);
+                if (el) {
+                    if (i === currentStep) el.classList.add('active');
+                    else el.classList.remove('active');
+                }
+            }
+
+            // 프로그레스 바 제어
+            const pct = (currentStep / totalSteps) * 100;
+            document.getElementById('progress-fill').style.width = pct + "%";
+
+            // 버튼 제어
+            const btnPrev = document.getElementById('btn-prev');
+            const btnNext = document.getElementById('btn-next');
+            const btnPay = document.getElementById('btn-pay');
+
+            if (currentStep === 1) {
+                btnPrev.style.display = 'block';
+                btnPrev.innerText = '◀ 홈으로';
+                btnNext.style.display = 'block';
+                btnPay.style.display = 'none';
+            } else if (currentStep === totalSteps) {
+                btnPrev.style.display = 'block';
+                btnPrev.innerText = '◀ 이전';
+                btnNext.style.display = 'none';
+                btnPay.style.display = 'block';
+            } else {
+                btnPrev.style.display = 'block';
+                btnPrev.innerText = '◀ 이전';
+                btnNext.style.display = 'block';
+                btnPay.style.display = 'none';
+            }
+
+            // AI 툴바: 결제 단계(7)에서만 숨김, 나머지 모든 단계 유지
+            const aiToolbar = document.getElementById('ai-toolbar');
+            if (aiToolbar) {
+                aiToolbar.style.display = (currentStep === totalSteps) ? 'none' : 'flex';
+            }
+        }
+
+        // 엑셀 양식 다운로드
+        function downloadExcelTemplate() {
+            if (typeof XLSX === 'undefined') return alert('페이지가 아직 로드되지 않았습니다.');
+            const ws_data = [
+                ["보내는 분", "보내는 분 연락처", "받는 분", "받는 분 연락처", "우편번호", "배송지 주소", "상세주소", "물품명/요청사항"],
+                ["테스트쇼핑몰", "010-1234-5678", "홍길동", "010-9876-5432", "06236", "서울 강남구 테헤란로 1", "101동 101호", "파손주의"]
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "택배접수양식");
+            XLSX.writeFile(wb, "동네비서_택배대량접수_양식.xlsx");
+        }
+
+        // 엑셀 파싱 핸들러
+        function handleExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+                
+                if (jsonData.length === 0) {
+                    alert("데이터가 없습니다. 양식의 헤더를 지우지 마세요.");
+                    return;
+                }
+
+                parsedMultiData = [];
+                let previewHTML = "";
+
+                jsonData.forEach((row, idx) => {
+                    const sName = row["보내는 분"] || document.getElementById('sender_name').value || "파트너";
+                    const sPhone = row["보내는 분 연락처"] || document.getElementById('sender_phone').value || "010-0000-0000";
+                    const rName = row["받는 분"];
+                    const rPhone = String(row["받는 분 연락처"] || "");
+                    const pCode = row["우편번호"] || "";
+                    const bAddr = row["배송지 주소"] || "";
+                    const dAddr = row["상세주소"] || "";
+                    const item = row["물품명/요청사항"] || "일반 물품";
+
+                    if (rName && rPhone.length >= 10 && bAddr) {
+                        parsedMultiData.push({
+                            sender_name: sName,
+                            sender_phone: sPhone,
+                            sender_postcode: document.getElementById('sender_postcode').value.trim(),
+                            sender_base_address: document.getElementById('sender_base_addr').value.trim(),
+                            sender_detail_address: document.getElementById('sender_detail_addr').value.trim(),
+                            sender_addr: document.getElementById('sender_base_addr').value.trim() + " " + document.getElementById('sender_detail_addr').value.trim(),
+                            receiver_name: rName,
+                            receiver_phone: rPhone,
+                            postcode: pCode,
+                            address: bAddr,
+                            detail_address: dAddr,
+                            receiver_addr: bAddr + " " + dAddr,
+                            item_type: item,
+                            weight: "small",
+                            quantity: 1,
+                            pay_type: "prepaid"
+                        });
+                        if (idx < 5) previewHTML += `<div>✔️ [${rName}] ${bAddr} ${dAddr}</div>`;
+                    }
+                });
+
+                if (parsedMultiData.length > 100) {
+                    alert(`최대 100건까지만 대량 등록이 가능합니다. (현재 ${parsedMultiData.length}건 입력됨)\n파일을 나누어 올려주세요.`);
+                    document.getElementById('excel_result_box').style.display = 'none';
+                    return;
+                }
+
+                if (parsedMultiData.length > 5) previewHTML += `<div style="margin-top:5px; font-weight:bold;">... (그 외 ${parsedMultiData.length - 5}건)</div>`;
+
+                if (parsedMultiData.length === 0) {
+                    alert("양식에 맞게 입력된 유효한 데이터가 없습니다.");
+                    document.getElementById('excel_result_box').style.display = 'none';
+                    return;
+                }
+
+                document.getElementById('excel_preview_list').innerHTML = previewHTML;
+                document.getElementById('excel_count').innerText = parsedMultiData.length;
+                document.getElementById('excel_btn_count').innerText = parsedMultiData.length;
+                document.getElementById('excel_result_box').style.display = 'block';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 일괄 결제 및 예약
+        function initiateMultiPayment() {
+            if (parsedMultiData.length === 0) return alert("결제할 대상 데이터가 없습니다.");
+            
+            const totalMultiFee = parsedMultiData.length * 4500;
+            
+            const requestPayload = {
+                reservations: parsedMultiData,
+                is_multi: true,
+                total_fee: totalMultiFee
+            };
+            sessionStorage.setItem('pending_multi_courier_orders', JSON.stringify(requestPayload));
+
+            const tossPayments = TossPayments(tossClientKey);
+            const orderId = 'COURIER_MULTI_' + Math.random().toString(36).substr(2, 9);
+            
+            tossPayments.requestPayment('카드', {
+                amount: totalMultiFee,
+                orderId: orderId,
+                orderName: `동네비서 대량 택배 ${parsedMultiData.length}건`,
+                customerName: parsedMultiData[0].sender_name,
+                successUrl: window.location.origin + '/api/pay/success?type=multi',
+                failUrl: window.location.origin + window.location.pathname
+            }).catch(function (error) {
+                if (error.code !== 'USER_CANCEL') alert(error.message);
+            });
+        }
+        
+        // Load Pinned Data on Startup
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedSender = localStorage.getItem('pinned_sender');
+            if (savedSender) {
+                const sData = JSON.parse(savedSender);
+                document.getElementById('sender_name').value = sData.name || '';
+                document.getElementById('sender_phone').value = sData.phone || '';
+                if (sData.postcode) document.getElementById('sender_postcode').value = sData.postcode;
+                if (sData.base_addr) document.getElementById('sender_base_addr').value = sData.base_addr;
+                if (sData.detail_addr) document.getElementById('sender_detail_addr').value = sData.detail_addr;
+                document.getElementById('pin_sender').checked = true;
+            } else {
+                // Pre-populate with store info if available from template
+                const storeAddr = "{{ store.get('address', '') }}";
+                if (storeAddr) {
+                    document.getElementById('sender_base_addr').value = storeAddr;
+                }
+            }
+            
+            // Auto focus on receiver name
+            document.getElementById('receiver_name').focus();
+        });
+
+        // 폰번호 자동 하이픈 로직
+        function autoHyphen(target) {
+            target.value = target.value
+                .replace(/[^0-9]/g, '')
+                .replace(/^(\d{0,3})(\d{0,4})(\d{0,4})$/g, (match, p1, p2, p3) => {
+                    let res = p1;
+                    if (p2) res += '-' + p2;
+                    if (p3) res += '-' + p3;
+                    return res;
+                });
+        }
+
+        // 배송 요청사항 직접 입력 토글
+        function toggleCustomRequest(select) {
+            const customBox = document.getElementById('request_msg_custom');
+            if (select.value === 'custom') {
+                customBox.style.display = 'block';
+                customBox.focus();
+            } else {
+                customBox.style.display = 'none';
+            }
+        }
+
+        // 우체국 주소 검색 레이어 제어
+        const postcodeOverlay = document.getElementById('postcode-overlay');
+        const postcodeWrap = document.getElementById('postcode-iframe-wrap');
+        let currentPostcodeCallback = null;
+
+        function closePostcodeOverlay() {
+            postcodeOverlay.style.display = 'none';
+            postcodeWrap.innerHTML = '';
+            currentPostcodeCallback = null;
+        }
+
+        function openPostcodeOverlay(callback) {
+            currentPostcodeCallback = callback;
+            postcodeOverlay.style.display = 'flex';
+            postcodeWrap.innerHTML = '';
+            
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    if (currentPostcodeCallback) {
+                        currentPostcodeCallback(data);
+                    }
+                    closePostcodeOverlay();
+                },
+                width: '100%',
+                height: '100%',
+                maxSuggestItems: 5
+            }).embed(postcodeWrap);
+        }
+
+        // 받는 분 주소 검색
+        function execDaumPostcode() {
+            openPostcodeOverlay(function(data) {
+                var addr = data.roadAddress || data.jibunAddress;
+                document.getElementById('postcode').value = data.zonecode;
+                document.getElementById('base_addr').value = addr;
+                document.getElementById('detail_addr').value = '';
+                checkSurcharge(addr);
+                
+                // 주소 선택이 끝나면 자동으로 다음 상세 주소 입력창으로 포커스
+                setTimeout(() => {
+                    moveStep(1); // 자동으로 상세주소(4단계)로 이동
+                    document.getElementById('detail_addr').focus();
+                }, 300);
+            });
+        }
+
+        // 보내는 분 주소 검색
+        function execSenderPostcode() {
+            openPostcodeOverlay(function(data) {
+                var addr = data.roadAddress || data.jibunAddress;
+                document.getElementById('sender_postcode').value = data.zonecode;
+                document.getElementById('sender_base_addr').value = addr;
+                document.getElementById('sender_detail_addr').value = '';
+                
+                setTimeout(() => {
+                    document.getElementById('sender_detail_addr').focus();
+                }, 100);
+            });
+        }
+
+        // 할증 체크
+        function checkSurcharge(addr) {
+            if (addr.includes("제주특별자치도") || addr.includes("제주")) {
+                isJeju = true;
+            } else {
+                isJeju = false;
+            }
+            calculateFee();
+        }
+
+        // 결제 및 Redirect 연동 (Toss SDK)
+        function initiatePayment() {
+            const sName  = document.getElementById('sender_name').value.trim();
+            const sPhone = document.getElementById('sender_phone').value.trim();
+            const sBAddr = document.getElementById('sender_base_addr').value.trim();
+            const sDAddr = document.getElementById('sender_detail_addr').value.trim();
+            const sAddr  = sBAddr ? (sDAddr ? sBAddr + ' ' + sDAddr : sBAddr) : '';
+            
+            const rName = document.getElementById('receiver_name').value.trim();
+            const rPhone = document.getElementById('receiver_phone').value.trim();
+            const baseAddr = document.getElementById('base_addr').value.trim();
+            const detailAddr = document.getElementById('detail_addr').value.trim();
+            const postcodeVal = document.getElementById('postcode').value.trim();
+
+            if (!sName || !sPhone || !sBAddr || !sDAddr) {
+                const detailsEl = document.querySelector('details');
+                if (detailsEl) detailsEl.open = true;
+                
+                if (!sName || !sPhone) return alert("보내는 분 정보를 입력해주세요.");
+                if (!sBAddr) return alert("보내는 분 주소를 검색해 주세요.");
+                if (!sDAddr) return alert("보내는 분 상세 주소를 입력해 주세요.");
+            }
+            if (!rName) return alert("수령인 성함을 입력해주세요.");
+            if (rPhone.length < 12) return alert("올바른 휴대폰 번호를 입력해주세요.");
+            if (!baseAddr) return alert("배송지 주소를 검색해주세요.");
+            if (!detailAddr) return alert("상세 주소를 입력해주세요.");
+
+            // 고정(PIN) 상태 저장
+            if (document.getElementById('pin_sender').checked) {
+                localStorage.setItem('pinned_sender', JSON.stringify({
+                    name: sName,
+                    phone: sPhone,
+                    postcode: document.getElementById('sender_postcode').value.trim(),
+                    base_addr: sBAddr,
+                    detail_addr: sDAddr
+                }));
+            } else {
+                localStorage.removeItem('pinned_sender');
+            }
+
+            // 요청사항 정리
+            let reqMsg = document.getElementById('request_msg_select').value;
+            if (reqMsg === 'custom') {
+                reqMsg = document.getElementById('request_msg_custom').value.trim();
+            }
+
+            // 예약 데이터 캐싱
+            const orderData = {
+                sender_name: sName,
+                sender_phone: sPhone,
+                sender_postcode: document.getElementById('sender_postcode').value.trim(),
+                sender_base_address: sBAddr,
+                sender_detail_address: sDAddr,
+                sender_address: sAddr,
+                receiver_name: rName,
+                receiver_phone: rPhone,
+                postcode: postcodeVal,
+                address: baseAddr,
+                detail_address: detailAddr,
+                memo: reqMsg,
+                fee: finalFee
+            };
+            
+            const payBtn = document.getElementById('btn-pay');
+            if (payBtn) payBtn.disabled = true;
+
+            // 선택된 크기 배열 생성 (복수 선택 지원)
+            const sizesOrdered = Array.from(selectedSizes).map(s => ({ size: s, qty: quantities[s] || 1 }));
+            const totalQty = sizesOrdered.reduce((sum, s) => sum + s.qty, 0);
+
+            fetch('/api/citizen/courier/pending-reservation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    sender_name:           sName,
+                    sender_phone:          sPhone,
+                    sender_postcode:       document.getElementById('sender_postcode').value.trim(),
+                    sender_base_address:   sBAddr,
+                    sender_detail_address: sDAddr,
+                    sender_addr:           sAddr,
+                    receiver_name:         rName,
+                    receiver_phone:        rPhone,
+                    postcode:              postcodeVal,
+                    address:               baseAddr,
+                    detail_address:        detailAddr,
+                    item_type:             '일반 택배 접수',
+                    // 복수 크기: sizes_ordered 배열 전송
+                    sizes_ordered:         sizesOrdered,
+                    // 단일 하위 호환 (첫 번째 선택 기준)
+                    weight:                sizesOrdered[0]?.size || 'small',
+                    quantity:              totalQty,
+                    payment_method:        'toss',
+                    pay_type:              'prepaid'
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(err.detail || '예약 임시 등록에 실패했습니다.'); });
+                }
+                return response.json();
+            })
+            .then(res => {
+                if (res.success) {
+                    orderData.orderId = res.order_id;
+                    sessionStorage.setItem('pending_courier_order', JSON.stringify(orderData));
+
+                    // 결제 호출
+                    const tossPayments = TossPayments(tossClientKey);
+                    tossPayments.requestPayment('카드', {
+                        amount: res.amount,
+                        orderId: res.order_id,
+                        orderName: res.order_name,
+                        customerName: rName,
+                        successUrl: window.location.origin + '/api/pay/success',
+                        failUrl: window.location.origin + window.location.pathname
+                    }).catch(function (error) {
+                        if (payBtn) payBtn.disabled = false;
+                        if (error.code !== 'USER_CANCEL') {
+                            alert(error.message);
+                        }
+                    });
+                } else {
+                    if (payBtn) payBtn.disabled = false;
+                    alert("예약 등록 실패");
+                }
+            })
+            .catch(err => {
+                if (payBtn) payBtn.disabled = false;
+                alert(err.message || "서버 통신 오류가 발생했습니다.");
+            });
+        }
+    </script>
+</body>
+
+</html>

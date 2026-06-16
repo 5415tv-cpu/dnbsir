@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 확인 및 결제 | 동네비서 산지직송 마켓</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 30% 20%, #1e293b 0%, #090d16 100%);
+            color: #f8fafc;
+            padding-bottom: 110px;
+        }
+
+        /* ── 헤더 ── */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(9,13,22,0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-back {
+            background: rgba(30,41,59,0.7);
+            border: 1.5px solid rgba(255,255,255,0.1);
+            color: #cbd5e1;
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .btn-back:hover { border-color: #fbbf24; color: #fbbf24; }
+
+        .header-info { flex: 1; }
+        .header-step { font-size: 0.7rem; color: #64748b; font-weight: 700; margin-bottom: 2px; }
+        .header-title { font-size: 1.05rem; font-weight: 900; color: #f8fafc; }
+
+        /* ── 단계 표시 ── */
+        .step-bar {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            gap: 0;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+        .step-num {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 900;
+        }
+        .step.done .step-num { background: #22c55e; color: #fff; }
+        .step.done .step-label { color: #22c55e; }
+        .step.active .step-num { background: #fbbf24; color: #0f172a; }
+        .step.active .step-label { color: #fbbf24; }
+        .step.pending .step-num { background: rgba(255,255,255,0.08); color: #64748b; }
+        .step.pending .step-label { color: #64748b; }
+        .step-line { flex: 1; height: 2px; background: rgba(255,255,255,0.08); margin: 0 6px; }
+        .step-line.done { background: #22c55e; }
+
+        /* ── 섹션 카드 ── */
+        .section {
+            margin: 0 14px 14px;
+            background: rgba(30,41,59,0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1.5px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 900;
+            color: #fbbf24;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ── 주문 상품 목록 ── */
+        .order-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .order-item:last-child { border-bottom: none; padding-bottom: 0; }
+
+        .order-img {
+            width: 52px; height: 52px;
+            border-radius: 10px;
+            object-fit: cover;
+            background: rgba(15,23,42,0.5);
+            flex-shrink: 0;
+        }
+
+        .order-info { flex: 1; }
+        .order-name { font-size: 0.88rem; font-weight: 700; color: #f1f5f9; margin-bottom: 3px; }
+        .order-qty { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+
+        .order-price { font-size: 0.95rem; font-weight: 900; color: #f59e0b; white-space: nowrap; }
+
+        /* ── 합계 ── */
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px dashed rgba(251,191,36,0.25);
+        }
+        .total-label { font-size: 0.9rem; font-weight: 700; color: #94a3b8; }
+        .total-amount { font-size: 1.3rem; font-weight: 900; color: #fbbf24; }
+
+        /* ── 폼 ── */
+        .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-label { font-size: 0.8rem; font-weight: 700; color: #94a3b8; }
+
+        .form-input {
+            width: 100%;
+            height: 48px;
+            border-radius: 12px;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            background: rgba(15,23,42,0.5);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus { border-color: #fbbf24; }
+        .form-input::placeholder { color: rgba(255,255,255,0.25); font-weight: 500; }
+
+        .zip-row { display: flex; gap: 8px; }
+        .btn-zip {
+            flex-shrink: 0;
+            height: 48px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(203,213,225,0.15);
+            color: #cbd5e1;
+            font-size: 0.82rem;
+            font-weight: 900;
+            cursor: pointer;
+            white-space: nowrap;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        .btn-zip:hover { background: rgba(251,191,36,0.15); border-color: #fbbf24; color: #fbbf24; }
+
+        /* ── 하단 결제 버튼 ── */
+        .pay-bar {
+            position: fixed;
+            bottom: 0; left: 0;
+            width: 100%;
+            padding: 10px 16px 24px;
+            background: linear-gradient(to top, rgba(9,13,22,1) 65%, transparent);
+            z-index: 200;
+        }
+
+        .pay-btn {
+            width: 100%;
+            height: 60px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: 900;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(245,158,11,0.35);
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .pay-btn:active { transform: scale(0.97); }
+
+        /* 다음 주소 레이어 */
+        .daum-layer {
+            display: none;
+            position: fixed;
+            z-index: 1200;
+            background: #fff;
+            overflow: hidden;
+            border: 2px solid #fbbf24;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .daum-close {
+            position: absolute;
+            right: 0; top: 0;
+            width: 36px; height: 36px;
+            background: #000;
+            color: #fff;
+            text-align: center;
+            line-height: 36px;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        /* ── 빈 장바구니 ── */
+        .empty-cart {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+        .empty-cart .icon { font-size: 3rem; margin-bottom: 14px; }
+        .empty-cart p { font-size: 1rem; font-weight: 700; margin-bottom: 20px; }
+        .btn-back-market {
+            display: inline-block;
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #0f172a;
+            font-weight: 900;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header>
+    <button class="btn-back" onclick="history.back()">←</button>
+    <div class="header-info">
+        <div class="header-step">STEP 2 / 2</div>
+        <div class="header-title">주문 확인 및 결제</div>
+    </div>
+</header>
+
+<!-- 단계 바 -->
+<div class="step-bar">
+    <div class="step done">
+        <div class="step-num">✓</div>
+        <div class="step-label">상품 선택</div>
+    </div>
+    <div class="step-line done"></div>
+    <div class="step active">
+        <div class="step-num">2</div>
+        <div class="step-label">배송 정보 입력</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step pending">
+        <div class="step-num">3</div>
+        <div class="step-label">결제 완료</div>
+    </div>
+</div>
+
+<!-- 콘텐츠 (JS로 렌더링) -->
+<div id="content"></div>
+
+<!-- 다음 주소 레이어 -->
+<div id="daumLayer" class="daum-layer">
+    <div class="daum-close" onclick="document.getElementById('daumLayer').style.display='none'">×</div>
+</div>
+
+<script>
+    const toss = TossPayments('test_ck_PBal2vxj81ND2OPW6a7135RQgOAN');
+    const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+
+    if (!cart.length) {
+        document.getElementById('content').innerHTML = `
+            <div class="empty-cart">
+                <div class="icon">🛒</div>
+                <p>선택된 상품이 없습니다.</p>
+                <a href="/citizen/market" class="btn-back-market">상품 선택하러 가기</a>
+            </div>
+        `;
+    } else {
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+
+        document.getElementById('content').innerHTML = `
+            <!-- 주문 상품 -->
+            <div class="section">
+                <div class="section-title">🛒 주문 상품</div>
+                ${cart.map(item => `
+                    <div class="order-item">
+                        <img class="order-img" src="${item.img}" alt="${item.name}" onerror="this.src='/static/images/potato_pack.png'">
+                        <div class="order-info">
+                            <div class="order-name">${item.name}</div>
+                            <div class="order-qty">${item.qty}개 × ${item.price.toLocaleString()}원</div>
+                        </div>
+                        <div class="order-price">${(item.price * item.qty).toLocaleString()}원</div>
+                    </div>
+                `).join('')}
+                <div class="total-row">
+                    <div class="total-label">총 결제 금액</div>
+                    <div class="total-amount">${total.toLocaleString()}원</div>
+                </div>
+            </div>
+
+            <!-- 보내는 분 -->
+            <div class="section">
+                <div class="section-title">📤 보내시는 분</div>
+                <div class="form-group">
+                    <label class="form-label">성함 / 상호</label>
+                    <input class="form-input" id="senderName" value="탄탄제작소">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">연락처</label>
+                    <input class="form-input" id="senderPhone" value="010-2384-7447" type="tel">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">주소</label>
+                    <div class="zip-row">
+                        <input class="form-input" id="senderZip" value="26027" readonly style="flex:1">
+                        <button class="btn-zip" onclick="searchAddr('sender')">주소 찾기</button>
+                    </div>
+                    <input class="form-input" id="senderBase" value="강원특별자치도 태백시 태붐로 54" readonly style="margin-top:8px">
+                    <input class="form-input" id="senderDetail" placeholder="상세 주소" style="margin-top:8px">
+                </div>
+            </div>
+
+            <!-- 받는 분 -->
+            <div class="section">
+                <div class="section-title">📥 받으시는 분</div>
+                <div class="form-group">
+                    <label class="form-label">성함</label>
+                    <input class="form-input" id="recipientName" placeholder="홍길동">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">연락처</label>
+                    <input class="form-input" id="recipientPhone" placeholder="010-0000-0000" type="tel">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">배송 주소</label>
+                    <div class="zip-row">
+                        <input class="form-input" id="recipientZip" placeholder="우편번호" readonly style="flex:1">
+                        <button class="btn-zip" onclick="searchAddr('recipient')">주소 찾기</button>
+                    </div>
+                    <input class="form-input" id="recipientBase" placeholder="기본 주소" readonly style="margin-top:8px">
+                    <input class="form-input" id="recipientDetail" placeholder="상세 주소 (동·호수)" style="margin-top:8px">
+                </div>
+            </div>
+
+            <!-- 결제 버튼 -->
+            <div class="pay-bar">
+                <button class="pay-btn" onclick="proceedToPayment()">
+                    💳 ${total.toLocaleString()}원 결제하기
+                </button>
+            </div>
+        `;
+    }
+
+    let addrTarget = 'recipient';
+    function searchAddr(target) {
+        addrTarget = target;
+        const layer = document.getElementById('daumLayer');
+        new daum.Postcode({
+            oncomplete(data) {
+                const prefix = addrTarget;
+                document.getElementById(prefix + 'Zip').value = data.zonecode;
+                document.getElementById(prefix + 'Base').value = data.address;
+                document.getElementById(prefix + 'Detail').value = '';
+                document.getElementById(prefix + 'Detail').focus();
+                layer.style.display = 'none';
+            },
+            width: '100%', height: '100%', maxSuggestItems: 5
+        }).embed(layer);
+        const w = Math.min(window.innerWidth * 0.95, 440);
+        const h = Math.min(window.innerHeight * 0.75, 480);
+        layer.style.cssText = `display:block; width:${w}px; height:${h}px; left:${(window.innerWidth - w) / 2}px; top:${(window.innerHeight - h) / 2}px;`;
+    }
+
+    function proceedToPayment() {
+        const sName   = document.getElementById('senderName').value.trim();
+        const sPhone  = document.getElementById('senderPhone').value.trim();
+        const sZip    = document.getElementById('senderZip').value.trim();
+        const sBase   = document.getElementById('senderBase').value.trim();
+        const sDetail = document.getElementById('senderDetail').value.trim();
+
+        const rName   = document.getElementById('recipientName').value.trim();
+        const rPhone  = document.getElementById('recipientPhone').value.trim();
+        const rZip    = document.getElementById('recipientZip').value.trim();
+        const rBase   = document.getElementById('recipientBase').value.trim();
+        const rDetail = document.getElementById('recipientDetail').value.trim();
+
+        if (!sName || !sPhone || !sZip || !sBase) { alert('보내는 분 정보를 모두 입력해 주세요.'); return; }
+        if (!rName || !rPhone || !rZip || !rBase || !rDetail) { alert('받는 분 배송 정보를 모두 입력해 주세요.'); return; }
+
+        const total      = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        const orderName  = cart.length === 1
+            ? `${cart[0].name} ${cart[0].qty}개`
+            : `${cart[0].name} 외 ${cart.length - 1}건`;
+        const now        = new Date();
+        const orderId    = `MK-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getTime()).slice(-6)}`;
+
+        const successUrl = 'https://dongnebiseo.com/market/success'
+            + '?customer_name='   + encodeURIComponent(rName)
+            + '&phone_number='    + encodeURIComponent(rPhone)
+            + '&zip_code='        + encodeURIComponent(rZip)
+            + '&base_address='    + encodeURIComponent(rBase)
+            + '&detail_address='  + encodeURIComponent(rDetail)
+            + '&sender_name='     + encodeURIComponent(sName)
+            + '&sender_phone='    + encodeURIComponent(sPhone)
+            + '&sender_address='  + encodeURIComponent(`(${sZip}) ${sBase} ${sDetail}`)
+            + '&items_json='      + encodeURIComponent(JSON.stringify(cart));
+
+        toss.requestPayment('카드', {
+            amount: total,
+            orderId,
+            orderName,
+            successUrl,
+            failUrl: 'https://dongnebiseo.com/market/fail'
+        }).catch(err => {
+            if (err.code !== 'USER_CANCEL') alert('결제 오류: ' + err.message);
+        });
+    }
+</script>
+</body>
+</html>
