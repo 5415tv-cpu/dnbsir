@@ -101,9 +101,213 @@ def documentary_dashboard():
     stats = services.get_dashboard_stats()
     return render_template('tantan_documentary.html', stats=stats)
 
+@app.route('/dongnae-dashboard')
+def dongnae_dashboard():
+    """동네비서 전국 물류 관리 대시보드"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login'))
+    return render_template('tantan_dongnae.html')
+
 @app.route('/documentary/start')
 def documentary_start():
     return render_template('tantan_documentary_start.html')
+
+
+# =============================================================
+# 📡 콜백 블랙박스 모니터 (동네비서 DB 직접 읽기 — 볼륨 마운트)
+# =============================================================
+import sqlite3 as _sqlite3
+
+# Docker 볼륨으로 마운트된 동네비서 DB 경로
+_DNB_DB = "/app/dnb_db/database.db"
+
+def _dnb_query_logs(date_from=None, date_to=None, stage=None, phone=None, limit=300):
+    """webhook_logs 직접 조회"""
+    if not os.path.exists(_DNB_DB):
+        return {"success": False, "error": f"DB 파일 없음: {_DNB_DB}"}
+    try:
+        # immutable=1: WAL/lock 파일 생성 없이 읽기전용 열기 (read-only 볼륨 대응)
+        conn = _sqlite3.connect(f"file:{_DNB_DB}?immutable=1", uri=True)
+        conn.row_factory = _sqlite3.Row
+        cur = conn.cursor()
+        where, params = [], []
+        if date_from:
+            where.append("DATE(received_at) >= ?")
+            params.append(date_from)
+        if date_to:
+            where.append("DATE(received_at) <= ?")
+            params.append(date_to)
+        if stage:
+            where.append("stage = ?")
+            params.append(stage)
+        if phone:
+            where.append("customer_phone LIKE ?")
+            params.append(f"%{phone}%")
+        sql = "SELECT * FROM webhook_logs"
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY received_at DESC LIMIT ?"
+        params.append(int(limit))
+        cur.execute(sql, params)
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return {"success": True, "logs": rows, "total": len(rows)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+def _dnb_query_stats(date_from=None, date_to=None):
+    """webhook_logs 통계 직접 집계"""
+    if not os.path.exists(_DNB_DB):
+        return {"success": False, "error": f"DB 파일 없음: {_DNB_DB}"}
+    try:
+        # immutable=1: WAL/lock 파일 생성 없이 읽기전용 열기
+        conn = _sqlite3.connect(f"file:{_DNB_DB}?immutable=1", uri=True)
+        cur = conn.cursor()
+        where, params = [], []
+        if date_from:
+            where.append("DATE(received_at) >= ?")
+            params.append(date_from)
+        if date_to:
+            where.append("DATE(received_at) <= ?")
+            params.append(date_to)
+        clause = ("WHERE " + " AND ".join(where)) if where else ""
+        def count(stage_val):
+            cur.execute(f"SELECT COUNT(*) FROM webhook_logs {clause} AND stage=?", params + [stage_val])
+            return cur.fetchone()[0]
+        cur.execute(f"SELECT COUNT(*) FROM webhook_logs {clause}", params)
+        total = cur.fetchone()[0]
+        conn.close()
+        return {
+            "success": True, "total": total,
+            "sms_ok":      count('SMS_OK'),
+            "sms_fail":    count('SMS_FAIL'),
+            "cooldown":    count('COOLDOWN'),
+            "auth_fail":   count('AUTH_FAIL'),
+            "state_cached":count('STATE_CACHED'),
+            "outgoing":    count('OUTGOING_SKIP'),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.route('/admin/webhook-monitor')
+def webhook_monitor():
+    """콜백 블랙박스 모니터 페이지"""
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('login'))
+    return render_template('tantan_webhook_monitor.html')
+
+@app.route('/api/admin/webhook-logs')
+def proxy_webhook_logs():
+    """동네비서 webhook_logs 조회 (DB 직접)"""
+    if not session.get('admin_logged_in'):
+        return {"success": False, "error": "Unauthorized"}, 401
+    return _dnb_query_logs(
+        date_from=request.args.get('date_from'),
+        date_to=request.args.get('date_to'),
+        stage=request.args.get('stage'),
+        phone=request.args.get('phone'),
+        limit=request.args.get('limit', 300),
+    )
+
+@app.route('/api/admin/webhook-stats')
+def proxy_webhook_stats():
+    """동네비서 webhook_stats 집계 (DB 직접)"""
+    if not session.get('admin_logged_in'):
+        return {"success": False, "error": "Unauthorized"}, 401
+    return _dnb_query_stats(
+        date_from=request.args.get('date_from'),
+        date_to=request.args.get('date_to'),
+    )
+
+# ──────────────────────────────────────────────
+# 가입자 상세 / 수정 / 삭제 API
+# ──────────────────────────────────────────────
+@app.route('/api/admin/store/<store_id>', methods=['GET'])
+def api_store_detail(store_id):
+    """가입자 전체 정보 조회"""
+    if not session.get('admin_logged_in'):
+        return {"success": False, "error": "Unauthorized"}, 401
+    store = services.get_store_detail(store_id)
+    if not store:
+        return {"success": False, "error": "가입자 없음"}, 404
+    return {"success": True, "store": store}
+
+@app.route('/api/admin/store/<store_id>', methods=['POST'])
+def api_store_update(store_id):
+    """가입자 정보 수정"""
+    if not session.get('admin_logged_in'):
+        return {"success": False, "error": "Unauthorized"}, 401
+    data = request.get_json(force=True) or {}
+    ok, msg = services.update_store(store_id, data)
+    return {"success": ok, "message": msg}, (200 if ok else 400)
+
+@app.route('/api/admin/store/<store_id>/delete', methods=['POST'])
+def api_store_delete(store_id):
+    """가입자 삭제"""
+    if not session.get('admin_logged_in'):
+        return {"success": False, "error": "Unauthorized"}, 401
+    ok, msg = services.delete_store(store_id)
+    return {"success": ok, "message": msg}, (200 if ok else 400)
+
+@app.route('/api/admin/funnel-stats')
+def proxy_funnel_stats():
+    """콜백 퍼널 전환율 통계 (SMS발송→클릭→가입→구매)"""
+    if not session.get('admin_logged_in'):
+        return {"success": False, "error": "Unauthorized"}, 401
+    if not os.path.exists(_DNB_DB):
+        return {"success": False, "error": f"DB 없음: {_DNB_DB}"}
+    try:
+        date_from = request.args.get('date_from')
+        date_to   = request.args.get('date_to')
+        conn = _sqlite3.connect(f"file:{_DNB_DB}?immutable=1", uri=True)
+        cur  = conn.cursor()
+
+        # SMS 발송 (webhook_logs SMS_OK)
+        wh_where  = ["stage='SMS_OK'"]
+        wh_params = []
+        if date_from:
+            wh_where.append("DATE(received_at) >= ?"); wh_params.append(date_from)
+        if date_to:
+            wh_where.append("DATE(received_at) <= ?"); wh_params.append(date_to)
+        cur.execute(f"SELECT COUNT(*) FROM webhook_logs WHERE {' AND '.join(wh_where)}", wh_params)
+        sms_sent = cur.fetchone()[0]
+
+        # 클릭 / 가입 / 구매 (callback_funnel)
+        cf_where, cf_params = [], []
+        if date_from:
+            cf_where.append("DATE(link_clicked_at) >= ?"); cf_params.append(date_from)
+        if date_to:
+            cf_where.append("DATE(link_clicked_at) <= ?"); cf_params.append(date_to)
+        cf_clause = ("WHERE " + " AND ".join(cf_where)) if cf_where else ""
+
+        def cnt(extra=None):
+            sql = f"SELECT COUNT(*) FROM callback_funnel {cf_clause}"
+            p   = list(cf_params)
+            if extra:
+                sql += (" AND " if cf_clause else " WHERE ") + extra
+            cur.execute(sql, p)
+            return cur.fetchone()[0]
+
+        clicks     = cnt()
+        registered = cnt("registered_at IS NOT NULL")
+        purchased  = cnt("purchased_at IS NOT NULL")
+        conn.close()
+
+        def pct(n, total):
+            return round(n / total * 100, 1) if total else 0
+
+        return {
+            "success":       True,
+            "sms_sent":      sms_sent,
+            "clicks":        clicks,
+            "registered":    registered,
+            "purchased":     purchased,
+            "click_rate":    pct(clicks,     sms_sent),
+            "register_rate": pct(registered, sms_sent),
+            "purchase_rate": pct(purchased,  sms_sent),
+        }
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 
 # =============================================================

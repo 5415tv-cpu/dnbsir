@@ -1,0 +1,167 @@
+{
+  "1": {
+    "inputs": {
+      "ckpt_name": "svd_xt.safetensors"
+    },
+    "class_type": "ImageOnlyCheckpointLoader",
+    "_meta": {
+      "title": "Load SVD XT Model (FP8 VRAM Optimized)"
+    }
+  },
+  "2": {
+    "inputs": {
+      "image": "input_image.png",
+      "upload": "image"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Input Image"
+    }
+  },
+  "3": {
+    "inputs": {
+      "width": 1024,
+      "height": 576,
+      "video_frames": 25,
+      "motion_bucket_id": 127,
+      "fps": 6,
+      "augmentation_level": 0.0,
+      "clip_vision": [
+        "1",
+        1
+      ],
+      "init_image": [
+        "2",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "SVD_img2vid_Conditioning",
+    "_meta": {
+      "title": "SVD Conditioning"
+    }
+  },
+  "4": {
+    "inputs": {
+      "min_cfg": 1.0,
+      "model": [
+        "1",
+        0
+      ]
+    },
+    "class_type": "VideoLinearCFGGuidance",
+    "_meta": {
+      "title": "VideoLinearCFGGuidance"
+    }
+  },
+  "5": {
+    "inputs": {
+      "seed": 123456789012345,
+      "steps": 20,
+      "cfg": 2.5,
+      "sampler_name": "euler",
+      "scheduler": "karras",
+      "denoise": 1.0,
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "3",
+        0
+      ],
+      "negative": [
+        "3",
+        1
+      ],
+      "latent_image": [
+        "3",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler (Video)"
+    }
+  },
+  "6": {
+    "inputs": {
+      "tile_size": 512,
+      "samples": [
+        "5",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeTiled",
+    "_meta": {
+      "title": "VAE Decode Tiled (Prevents VRAM OOM)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "model_name": "4x-UltraSharp.pth"
+    },
+    "class_type": "UpscaleModelLoader",
+    "_meta": {
+      "title": "Load 4x-UltraSharp"
+    }
+  },
+  "8": {
+    "inputs": {
+      "upscale_model": [
+        "7",
+        0
+      ],
+      "image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "ImageUpscaleWithModel",
+    "_meta": {
+      "title": "Upscale 4x"
+    }
+  },
+  "9": {
+    "inputs": {
+      "upscale_method": "bicubic",
+      "scale_by": 0.5,
+      "image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Downscale to 2x (Stability)"
+    }
+  },
+  "10": {
+    "inputs": {
+      "frame_rate": 6,
+      "loop_count": 0,
+      "filename_prefix": "svd_hq_mp4",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine (H264 MP4)"
+    }
+  }
+}

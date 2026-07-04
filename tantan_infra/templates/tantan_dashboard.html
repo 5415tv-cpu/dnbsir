@@ -313,6 +313,7 @@
                 <a href="/dashboard?tab=video"      style="padding:10px 20px; background:#fefce8; color:#854d0e; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🎬 비디오</a>
                 <a href="/dashboard?tab=logs"       style="padding:10px 20px; background:#fef2f2; color:#991b1b; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">🚨 시스템 로그</a>
                 <a href="/dashboard?tab=settlement" style="padding:10px 20px; background:#faf5ff; color:#6d28d9; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem;">💰 정산 관리</a>
+                <a href="/admin/webhook-monitor"    style="padding:10px 20px; background:#0d1117; color:#3fb950; border-radius:12px; font-weight:700; text-decoration:none; font-size:0.95rem; border: 1px solid #3fb950;">📡 콜백 블랙박스</a>
             </div>
         </div>
 
@@ -1735,41 +1736,71 @@
             </div>
             
             {% if stats.all_stores %}
-            <div class="table-container" style="max-height: 400px;">
-                <table class="data-table">
-                    <thead style="position: sticky; top: 0; z-index: 1;">
+            <div style="margin-bottom:12px; display:flex; gap:8px; align-items:center;">
+                <input id="storeSearchInput" type="text" placeholder="검색: 이름 / 연락처 / 코드..."
+                    oninput="filterStoreTable(this.value)"
+                    style="flex:1; padding:10px 14px; border:1px solid #e2e8f0; border-radius:10px; font-size:0.9rem; outline:none;">
+                <span id="storeCountBadge" style="color:#64748b; font-size:0.85rem; white-space:nowrap;">총 {{ stats.all_stores|length }}명</span>
+            </div>
+            <div class="table-container" style="max-height:600px;">
+                <table class="data-table" id="storeDetailTable">
+                    <thead style="position:sticky; top:0; z-index:1;">
                         <tr>
-                            <th>가입유형 (Role)</th>
-                            <th>상호명 / 성함</th>
+                            <th>유형</th>
+                            <th>상호명 / 담당자</th>
                             <th>연락처 (ID)</th>
-                            <th>충전 잔액 (포인트)</th>
-                            <th>계정 상태</th>
+                            <th>추천인 코드</th>
+                            <th>충전잔액</th>
+                            <th>포인트</th>
+                            <th>가입일</th>
+                            <th>관리</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="storeTableBody">
                         {% for store in stats.all_stores %}
-                        <tr>
+                        <tr class="store-row" style="cursor:pointer;"
+                            data-search="{{ (store.name or '') }} {{ (store.owner_name or '') }} {{ (store.store_id or '') }} {{ (store.my_referral_code or '') }}"
+                            onclick="openStoreModal('{{ store.store_id }}')">
                             <td>
                                 {% if store.role == 'citizen' %}
-                                <span class="badge" style="background: #e0f2fe; color: #0284c7;">일반 시민</span>
+                                <span class="badge" style="background:#e0f2fe;color:#0284c7;font-size:0.75rem;">시민</span>
                                 {% elif store.role == 'farmer' %}
-                                <span class="badge" style="background: #dcfce7; color: #166534;">농어민</span>
+                                <span class="badge" style="background:#dcfce7;color:#166534;font-size:0.75rem;">농어민</span>
+                                {% elif store.role == 'courier' %}
+                                <span class="badge" style="background:#fce7f3;color:#9d174d;font-size:0.75rem;">택배기사</span>
                                 {% else %}
-                                <span class="badge" style="background: #fef9c3; color: #854d0e;">가맹 상점</span>
+                                <span class="badge" style="background:#fef9c3;color:#854d0e;font-size:0.75rem;">가맹점</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <strong style="display: block;">{{ store.name }}</strong>
-                                <span style="color: var(--text-muted); font-size: 0.85rem;">{{ store.owner_name }}</span>
+                                <strong style="display:block;">{{ store.name or '-' }}</strong>
+                                <span style="color:var(--text-muted);font-size:0.8rem;">{{ store.owner_name or '미입력' }}</span>
                             </td>
-                            <td style="font-family: monospace; letter-spacing: 0.05em;">{{ store.store_id }}</td>
-                            <td><strong style="color: #ea580c;">{{ "{:,}".format(store.wallet_balance|default(store.points|default(0))) }} P</strong></td>
-                            <td>
-                                {% if (store.wallet_balance|default(store.points|default(0))) > 0 or store.role in ['citizen', 'farmer'] %}
-                                <span class="badge badge-active">정상 (Active)</span>
-                                {% else %}
-                                <span class="badge badge-error">잔액부족 (Suspended)</span>
+                            <td style="font-family:monospace;font-size:0.85rem;">
+                                {{ store.store_id }}
+                                {% if store.phone and store.phone != store.store_id %}
+                                <br><span style="color:var(--text-muted);font-size:0.78rem;">{{ store.phone }}</span>
                                 {% endif %}
+                            </td>
+                            <td>
+                                {% if store.my_referral_code %}
+                                <span onclick="event.stopPropagation();navigator.clipboard.writeText('{{ store.my_referral_code }}').then(()=>{this.style.background='#bbf7d0';this.style.color='#166534';setTimeout(()=>{this.style.background='';this.style.color='';},1200);})"
+                                    title="클릭 복사"
+                                    style="font-family:monospace;font-size:0.85rem;font-weight:700;letter-spacing:2px;background:#f1f5f9;color:#1e3c72;padding:3px 8px;border-radius:6px;cursor:pointer;transition:all 0.2s;display:inline-block;">
+                                    {{ store.my_referral_code }}
+                                </span>
+                                {% else %}
+                                <span style="color:var(--text-muted);font-size:0.78rem;">미발급</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-weight:700;color:#ea580c;">{{ "{:,}".format((store.wallet_balance or 0)|int) }}P</td>
+                            <td style="color:#7c3aed;font-weight:600;">{{ "{:,}".format((store.points or 0)|int) }}P</td>
+                            <td style="font-size:0.78rem;color:var(--text-muted);">{{ (store.created_at or '')[:10] }}</td>
+                            <td onclick="event.stopPropagation();">
+                                <button onclick="openStoreModal('{{ store.store_id }}')"
+                                    style="background:#3b82f6;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:0.78rem;cursor:pointer;">
+                                    상세
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -1777,9 +1808,173 @@
                 </table>
             </div>
             {% else %}
-            <div class="empty-state"><i class="ri-inbox-line" style="font-size: 2rem;"></i><br>등록된 가입자가 없습니다.</div>
+            <div class="empty-state"><i class="ri-inbox-line" style="font-size:2rem;"></i><br>등록된 가입자가 없습니다.</div>
             {% endif %}
         </div>
+
+        <!-- 가입자 상세 전체화면 모달 -->
+        <div id="storeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); z-index:9999; backdrop-filter:blur(4px); overflow-y:auto;">
+            <div style="max-width:720px; margin:40px auto 80px; background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.35);">
+                <div style="background:linear-gradient(135deg,#1e3c72,#2a5298); padding:24px 28px; display:flex; align-items:center; justify-content:space-between;">
+                    <div>
+                        <h2 style="color:#fff; margin:0; font-size:1.25rem;">&#128100; 가입자 상세 정보</h2>
+                        <p id="modalStoreId" style="color:rgba(255,255,255,0.7); margin:4px 0 0; font-family:monospace; font-size:0.85rem;"></p>
+                    </div>
+                    <button onclick="closeStoreModal()" style="background:rgba(255,255,255,0.2); border:none; color:#fff; width:36px; height:36px; border-radius:50%; font-size:1.3rem; cursor:pointer; line-height:1;">&times;</button>
+                </div>
+                <div id="modalLoading" style="text-align:center; padding:60px; color:#94a3b8;"><div style="font-size:2.5rem; margin-bottom:12px;">&#8987;</div>불러오는 중...</div>
+                <div id="modalContent" style="display:none; padding:28px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:20px;">
+                        <div>
+                            <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">상호명</label>
+                            <input id="mf_name" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;" placeholder="상호명">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">담당자 / 대표자</label>
+                            <input id="mf_owner_name" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;" placeholder="담당자명">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">연락처</label>
+                            <input id="mf_phone" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;box-sizing:border-box;" placeholder="010-XXXX-XXXX">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">가입 유형 (Role)</label>
+                            <select id="mf_role" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:0.95rem;box-sizing:border-box;">
+                                <option value="">가맹점 (기본)</option>
+                                <option value="owner">owner</option>
+                                <option value="citizen">citizen (일반시민)</option>
+                                <option value="farmer">farmer (농어민)</option>
+                                <option value="courier">courier (택배기사)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:18px;">
+                        <p style="margin:0 0 12px;font-weight:700;font-size:0.9rem;color:#334155;">&#128176; 재무 정보</p>
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                            <div>
+                                <label style="font-size:0.74rem;color:#64748b;display:block;margin-bottom:4px;">충전 잔액 (P)</label>
+                                <input id="mf_wallet_balance" type="number" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;box-sizing:border-box;" placeholder="0">
+                            </div>
+                            <div>
+                                <label style="font-size:0.74rem;color:#64748b;display:block;margin-bottom:4px;">포인트 (P)</label>
+                                <input id="mf_points" type="number" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;box-sizing:border-box;" placeholder="0">
+                            </div>
+                            <div>
+                                <label style="font-size:0.74rem;color:#64748b;display:block;margin-bottom:4px;">수수료율 (%)</label>
+                                <input id="mf_fee_rate" type="number" step="0.01" style="width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;box-sizing:border-box;" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div style="background:#f0f9ff;border-radius:12px;padding:16px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                        <div>
+                            <label style="font-size:0.75rem;color:#0369a1;font-weight:700;display:block;margin-bottom:4px;">&#127873; 내 추천인 코드</label>
+                            <input id="mf_my_referral_code" type="text" maxlength="10"
+                                style="width:100%;padding:10px 12px;border:1.5px solid #bae6fd;border-radius:10px;font-family:monospace;font-size:1.1rem;font-weight:700;letter-spacing:3px;color:#0c4a6e;box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">추천받은 사람 ID</label>
+                            <input id="mf_referrer_id" type="text"
+                                style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;box-sizing:border-box;" placeholder="추천인 store_id">
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+                        <div>
+                            <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">주소</label>
+                            <input id="mf_address" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;box-sizing:border-box;" placeholder="주소">
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">사업자번호</label>
+                            <input id="mf_biz_number" type="text" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;font-family:monospace;box-sizing:border-box;" placeholder="000-00-00000">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:22px;">
+                        <label style="font-size:0.75rem;color:#64748b;font-weight:700;display:block;margin-bottom:4px;">관리자 메모</label>
+                        <textarea id="mf_memo" rows="3" style="width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:10px;resize:vertical;font-size:0.9rem;box-sizing:border-box;" placeholder="내부 메모 (외부 미노출)"></textarea>
+                    </div>
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button onclick="closeStoreModal()" style="padding:10px 20px;border:1.5px solid #e2e8f0;border-radius:10px;background:#fff;color:#64748b;cursor:pointer;font-size:0.9rem;">취소</button>
+                        <button onclick="deleteCurrentStore()" style="padding:10px 20px;border:none;border-radius:10px;background:#fee2e2;color:#dc2626;cursor:pointer;font-size:0.9rem;font-weight:600;">&#128465; 삭제</button>
+                        <button onclick="saveCurrentStore()" style="padding:10px 24px;border:none;border-radius:10px;background:linear-gradient(135deg,#1e3c72,#2a5298);color:#fff;cursor:pointer;font-size:0.9rem;font-weight:700;">&#128190; 저장</button>
+                    </div>
+                    <div id="modalMsg" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
+                </div>
+            </div>
+        </div>
+        <script>
+        function filterStoreTable(q) {
+            const rows = document.querySelectorAll('#storeTableBody .store-row');
+            const lower = q.toLowerCase();
+            let count = 0;
+            rows.forEach(r => { const m = (r.dataset.search||'').toLowerCase().includes(lower); r.style.display=m?'':'none'; if(m) count++; });
+            const badge = document.getElementById('storeCountBadge');
+            if(badge) badge.textContent = count + '명 표시 중';
+        }
+        let _curStoreId = null;
+        function openStoreModal(storeId) {
+            _curStoreId = storeId;
+            document.getElementById('storeModal').style.display = 'block';
+            document.getElementById('modalLoading').style.display = 'block';
+            document.getElementById('modalContent').style.display = 'none';
+            document.getElementById('modalMsg').style.display = 'none';
+            document.getElementById('modalStoreId').textContent = storeId;
+            document.body.style.overflow = 'hidden';
+            fetch('/api/admin/store/' + encodeURIComponent(storeId))
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) { alert('오류: ' + data.error); closeStoreModal(); return; }
+                    const s = data.store;
+                    const f = (id, key, def) => { const el=document.getElementById(id); if(el) el.value=(s[key]!=null?s[key]:(def!=null?def:'')); };
+                    f('mf_name','name'); f('mf_owner_name','owner_name'); f('mf_phone','phone');
+                    f('mf_wallet_balance','wallet_balance',0); f('mf_points','points',0); f('mf_fee_rate','fee_rate',0);
+                    f('mf_my_referral_code','my_referral_code'); f('mf_referrer_id','referrer_id');
+                    f('mf_address','address'); f('mf_biz_number','biz_number'); f('mf_memo','memo');
+                    const r = document.getElementById('mf_role'); if(r) r.value = s.role || '';
+                    document.getElementById('modalLoading').style.display = 'none';
+                    document.getElementById('modalContent').style.display = 'block';
+                }).catch(e => { alert('오류: ' + e); closeStoreModal(); });
+        }
+        function closeStoreModal() {
+            document.getElementById('storeModal').style.display = 'none';
+            document.body.style.overflow = '';
+            _curStoreId = null;
+        }
+        function saveCurrentStore() {
+            if (!_curStoreId) return;
+            const g = id => { const el=document.getElementById(id); return el?el.value:''; };
+            const fields = {
+                name: g('mf_name'), owner_name: g('mf_owner_name'), phone: g('mf_phone'),
+                role: g('mf_role'),
+                wallet_balance: parseFloat(g('mf_wallet_balance'))||0,
+                points: parseFloat(g('mf_points'))||0,
+                fee_rate: parseFloat(g('mf_fee_rate'))||0,
+                my_referral_code: g('mf_my_referral_code'),
+                referrer_id: g('mf_referrer_id'),
+                address: g('mf_address'), biz_number: g('mf_biz_number'), memo: g('mf_memo'),
+            };
+            fetch('/api/admin/store/' + encodeURIComponent(_curStoreId), {
+                method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(fields)
+            }).then(r=>r.json()).then(data => {
+                const msg = document.getElementById('modalMsg');
+                msg.style.display = 'block';
+                msg.style.background = data.success ? '#dcfce7' : '#fee2e2';
+                msg.style.color = data.success ? '#166534' : '#dc2626';
+                msg.textContent = data.success ? '저장 완료' : ('오류: ' + data.message);
+                if (data.success) setTimeout(() => location.reload(), 1200);
+            });
+        }
+        function deleteCurrentStore() {
+            if (!_curStoreId) return;
+            if (!confirm('[' + _curStoreId + '] 가입자를 삭제합니까? 되돌릴 수 없습니다.')) return;
+            fetch('/api/admin/store/' + encodeURIComponent(_curStoreId) + '/delete', {method:'POST'})
+                .then(r=>r.json()).then(data => {
+                    if (data.success) { alert('삭제 완료'); location.reload(); }
+                    else alert('삭제 실패: ' + data.message);
+                });
+        }
+        document.addEventListener('keydown', e => { if(e.key==='Escape') closeStoreModal(); });
+        document.getElementById('storeModal').addEventListener('click', function(e) { if(e.target===this) closeStoreModal(); });
+        </script>
+
 
         <!-- AI Logs Table -->
         {% elif current_tab == 'ai' %}
@@ -2275,6 +2470,9 @@
                 </button>
                 <button onclick="location.href='/documentary-dashboard'" class="btn" style="background: #10b981; color: white; border: none; padding: 8px 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); width: fit-content;">
                     <i class="ri-film-line"></i> 내생애 다큐 관제센터로 이동
+                </button>
+                <button onclick="location.href='/dongnae-dashboard'" class="btn" style="background: #0099CC; color: white; border: none; padding: 8px 16px; box-shadow: 0 4px 14px 0 rgba(0, 153, 204, 0.39); width: fit-content;">
+                    <i class="ri-truck-line"></i> 동네비서 물류 관제 대시보드
                 </button>
             </div>
             <div class="card-header">

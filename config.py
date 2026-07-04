@@ -1,28 +1,23 @@
-import os
-import toml
-from dotenv import load_dotenv
+"""
+config.py ???덇굅???명솚 釉뚮┸吏
+=================================
+[2026-07-05 Phase 2 援ъ“議곗젙]
 
-# dotenv 자동 로드 (.env 파일이 있으면 환경변수에 병합)
-load_dotenv()
+???뚯씪? 湲곗〈 肄붾뱶??`import config; config.get_secret()` ?몄텧???덈줈??dongnebiseo.config.settings 紐⑤뱢濡??곌껐?섎뒗 釉뚮┸吏?낅땲??
 
-def load_secrets():
-    """Load secrets from secrets.toml."""
-    secrets = {}
-    try:
-        if os.path.exists("secrets.toml"):
-            secrets = toml.load("secrets.toml")
-    except Exception:
-        pass
-    return secrets
+湲곗〈 肄붾뱶瑜??섏젙?섏? ?딄퀬?????ㅼ젙 ?쒖뒪?쒖쓣 ?ъ슜?????덉뒿?덈떎.
 
-def get_secret(key: str, default: str = "") -> str:
-    """Get secret from environment variable (including .env) or secrets.toml."""
-    # Priority 1: Environment Variable (.env or system)
-    value = os.environ.get(key)
-    if value:
-        return value
-        
-    # Priority 2: secrets.toml
-    secrets = load_secrets()
-    return secrets.get(key, default)
+[留덉씠洹몃젅?댁뀡 媛?대뱶]
+  # ?덇굅??諛⑹떇 (???뚯씪???듯빐 怨꾩냽 ?숈옉)
+  import config
+  key = config.get_secret("GOOGLE_API_KEY")
+
+  # ?좉퇋 沅뚯옣 諛⑹떇 (?먯쭊?곸쑝濡?援먯껜)
+  from dongnebiseo_app.config.settings import get_settings
+  key = get_settings().app.gemini_api_key
+"""
+
+# ???ㅼ젙 紐⑤뱢?먯꽌 ?덇굅???명솚 ?⑥닔 ?ъ닔異?from dongnebiseo_app.config.settings import get_secret, get_settings  # noqa: F401
+
+__all__ = ["get_secret", "get_settings"]
 

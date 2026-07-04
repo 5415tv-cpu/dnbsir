@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>콜백 블랙박스 모니터 | 탄탄제작소</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --green:    #3fb950;
+    --red:      #f85149;
+    --yellow:   #d29922;
+    --blue:     #58a6ff;
+    --purple:   #bc8cff;
+    --orange:   #ffa657;
+    --tantan:   #ff6b35;   /* 탄탄제작소 브랜드 색 */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; border-bottom: 1px solid var(--border);
+    background: var(--surface); position: sticky; top: 0; z-index: 100;
+  }
+  .header h1 { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .header h1 .brand { color: var(--tantan); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; display: inline-block; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  .nav-back { color: var(--muted); font-size: 13px; text-decoration: none; }
+  .nav-back:hover { color: var(--text); }
+  .last-update { font-size: 12px; color: var(--muted); }
+
+  .controls {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 14px 24px; border-bottom: 1px solid var(--border); background: var(--surface);
+  }
+  .controls input, .controls select {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 7px 12px; font-size: 13px; font-family: inherit;
+  }
+  .controls input:focus, .controls select:focus { outline: none; border-color: var(--blue); }
+  .btn { padding: 7px 16px; border-radius: 6px; border: none; cursor: pointer;
+    font-size: 13px; font-weight: 600; font-family: inherit; transition: .15s; }
+  .btn-primary { background: var(--tantan); color: #fff; }
+  .btn-primary:hover { background: #ff8558; }
+  .btn-refresh { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+  .btn-refresh:hover { border-color: var(--tantan); }
+  .sep { width: 1px; height: 24px; background: var(--border); }
+
+  .stats { display: flex; gap: 12px; padding: 16px 24px; flex-wrap: wrap; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 18px; min-width: 110px; flex: 1;
+  }
+  .stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+  .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .stat-card.total    .value { color: var(--text); }
+  .stat-card.ok       .value { color: var(--green); }
+  .stat-card.fail     .value { color: var(--red); }
+  .stat-card.cooldown .value { color: var(--yellow); }
+  .stat-card.auth     .value { color: var(--red); }
+  .stat-card.cached   .value { color: var(--purple); }
+  .stat-card.outgoing .value { color: var(--orange); }
+
+  .tabs { display: flex; gap: 4px; padding: 12px 24px 0; border-bottom: 1px solid var(--border); }
+  .tab { padding: 8px 14px; border-radius: 6px 6px 0 0; border: 1px solid transparent;
+    border-bottom: none; cursor: pointer; font-size: 13px; font-weight: 500;
+    background: none; color: var(--muted); transition: .15s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--surface); border-color: var(--border); color: var(--text); margin-bottom: -1px; }
+
+  .table-wrap { padding: 0 24px 32px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+  th { text-align: left; padding: 10px 12px; color: var(--muted); font-weight: 500; font-size: 11px;
+       text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid #21262d; vertical-align: top; }
+  tr:hover td { background: rgba(255,255,255,.025); }
+
+  .badge { display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .badge::before { content:''; width:6px; height:6px; border-radius:50%; }
+  .badge.SMS_OK       { background:#1a3a1e; color:var(--green);  } .badge.SMS_OK::before   { background:var(--green);  }
+  .badge.SMS_FAIL     { background:#3a1a1a; color:var(--red);    } .badge.SMS_FAIL::before { background:var(--red);    }
+  .badge.SMS_QUEUED   { background:#1a2a3a; color:var(--blue);   } .badge.SMS_QUEUED::before { background:var(--blue); }
+  .badge.COOLDOWN     { background:#2e2414; color:var(--yellow); } .badge.COOLDOWN::before { background:var(--yellow); }
+  .badge.AUTH_FAIL    { background:#3a1a1a; color:#ff7b72;       } .badge.AUTH_FAIL::before { background:#ff7b72;      }
+  .badge.PHONE_INVALID{ background:#2a1a2a; color:var(--purple); } .badge.PHONE_INVALID::before { background:var(--purple); }
+  .badge.OUTGOING_SKIP{ background:#2a2010; color:var(--orange); } .badge.OUTGOING_SKIP::before { background:var(--orange); }
+  .badge.STATE_CACHED { background:#1a1a2a; color:#79b8ff;       } .badge.STATE_CACHED::before { background:#79b8ff;   }
+  .badge.RECEIVED     { background:#1e1e1e; color:var(--muted);  } .badge.RECEIVED::before { background:var(--muted);  }
+
+  .pipeline { display: flex; align-items: center; gap: 4px; margin-top: 8px; flex-wrap: wrap; }
+  .pipe-step { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .pipe-ok   { background:#1a3a1e; color:var(--green); }
+  .pipe-fail { background:#3a1a1a; color:var(--red); }
+  .pipe-arrow { color: #444c56; font-size: 10px; }
+
+  .payload-toggle { cursor: pointer; color: var(--blue); font-size: 11px; white-space: nowrap; }
+  .payload-content { display: none; margin-top: 8px; padding: 10px;
+    background: #0d1117; border: 1px solid var(--border); border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #79b8ff;
+    white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
+  .payload-content.open { display: block; }
+
+  .phone { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .time  { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .ip    { font-size: 11px; color: var(--muted); }
+  .empty { text-align: center; padding: 60px 0; color: var(--muted); }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+  .loading { display: none; text-align: center; padding: 40px; color: var(--muted); }
+  .err-banner { margin: 12px 24px; padding: 12px 16px; background: #3a1a1a;
+    border: 1px solid var(--red); border-radius: 8px; color: var(--red); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>
+    <span class="dot"></span>
+    <span class="brand">탄탄제작소</span> &nbsp;|&nbsp; 콜백 블랙박스 모니터
+  </h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span class="last-update" id="lastUpdate">마지막 조회: —</span>
+    <a class="nav-back" href="/dashboard">← 대시보드</a>
+  </div>
+</div>
+
+<div id="errBanner" class="err-banner" style="display:none"></div>
+
+<div class="controls">
+  <label style="font-size:12px;color:var(--muted)">날짜</label>
+  <input type="date" id="dateFrom" />
+  <span style="color:var(--muted);font-size:12px">~</span>
+  <input type="date" id="dateTo" />
+  <div class="sep"></div>
+  <input type="text" id="phoneFilter" placeholder="번호 검색 (010...)" style="width:160px" />
+  <button class="btn btn-primary" onclick="loadData()">🔍 조회</button>
+  <button class="btn btn-refresh" onclick="loadData()">↻ 새로고침</button>
+</div>
+
+<div class="stats">
+  <div class="stat-card total">   <div class="label">전체 수신</div>  <div class="value" id="st-total">—</div></div>
+  <div class="stat-card ok">      <div class="label">✅ SMS 성공</div><div class="value" id="st-ok">—</div></div>
+  <div class="stat-card fail">    <div class="label">❌ SMS 실패</div><div class="value" id="st-fail">—</div></div>
+  <div class="stat-card cooldown"><div class="label">⏸ 쿨다운</div>  <div class="value" id="st-cool">—</div></div>
+  <div class="stat-card auth">    <div class="label">🚫 인증실패</div><div class="value" id="st-auth">—</div></div>
+  <div class="stat-card cached">  <div class="label">🔄 상태캐싱</div><div class="value" id="st-cached">—</div></div>
+  <div class="stat-card outgoing"><div class="label">📤 발신차단</div><div class="value" id="st-out">—</div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="filterStage(null,this)">전체</button>
+  <button class="tab" onclick="filterStage('SMS_OK',this)">✅ SMS 성공</button>
+  <button class="tab" onclick="filterStage('SMS_FAIL',this)">❌ SMS 실패</button>
+  <button class="tab" onclick="filterStage('PHONE_INVALID',this)">📵 번호무효</button>
+  <button class="tab" onclick="filterStage('COOLDOWN',this)">⏸ 쿨다운</button>
+  <button class="tab" onclick="filterStage('AUTH_FAIL',this)">🚫 인증실패</button>
+  <button class="tab" onclick="filterStage('STATE_CACHED',this)">🔄 캐싱</button>
+</div>
+
+<div class="table-wrap">
+  <div class="loading" id="loading">⏳ 동네비서 서버에서 데이터 로딩 중...</div>
+  <table id="logsTable" style="display:none">
+    <thead>
+      <tr>
+        <th>수신 시각 (KST)</th>
+        <th>고객 번호</th>
+        <th>상태</th>
+        <th>call_state</th>
+        <th>IP</th>
+        <th>결과 메시지</th>
+        <th>처리 흐름</th>
+      </tr>
+    </thead>
+    <tbody id="logBody"></tbody>
+  </table>
+  <div class="empty" id="emptyMsg" style="display:none">
+    <div class="icon">📭</div>
+    <div>조건에 맞는 로그가 없습니다.</div>
+  </div>
+</div>
+
+<script>
+let _allLogs = [];
+let _stageFilter = null;
+
+const today = new Date().toISOString().slice(0,10);
+document.getElementById('dateFrom').value = today;
+document.getElementById('dateTo').value   = today;
+
+const PIPE_LABELS = {
+  RECEIVED:'수신', AUTH_FAIL:'인증실패', PHONE_INVALID:'번호무효',
+  OUTGOING_SKIP:'발신차단', STATE_CACHED:'상태캐싱', COOLDOWN:'쿨다운',
+  SMS_QUEUED:'SMS등록', SMS_OK:'발송✅', SMS_FAIL:'발송실패❌'
+};
+const PIPE_MAP = {
+  SMS_OK:       ['RECEIVED','SMS_QUEUED','SMS_OK'],
+  SMS_FAIL:     ['RECEIVED','SMS_QUEUED','SMS_FAIL'],
+  COOLDOWN:     ['RECEIVED','COOLDOWN'],
+  AUTH_FAIL:    ['RECEIVED','AUTH_FAIL'],
+  PHONE_INVALID:['RECEIVED','PHONE_INVALID'],
+  OUTGOING_SKIP:['RECEIVED','OUTGOING_SKIP'],
+  STATE_CACHED: ['RECEIVED','STATE_CACHED'],
+};
+function pipelineHTML(stage) {
+  const path = PIPE_MAP[stage] || ['RECEIVED'];
+  const last = path[path.length-1];
+  let html = '<div class="pipeline">';
+  path.forEach((s,i) => {
+    const isLast = s===last;
+    const cls = isLast && s==='SMS_OK' ? 'pipe-ok' : (isLast && s!=='RECEIVED') ? 'pipe-fail' : 'pipe-ok';
+    html += `<span class="pipe-step ${cls}">${PIPE_LABELS[s]||s}</span>`;
+    if (i<path.length-1) html += '<span class="pipe-arrow">›</span>';
+  });
+  return html + '</div>';
+}
+
+async function loadData() {
+  const from  = document.getElementById('dateFrom').value;
+  const to    = document.getElementById('dateTo').value;
+  const phone = document.getElementById('phoneFilter').value.trim();
+  document.getElementById('errBanner').style.display = 'none';
+
+  // 통계
+  const sq = new URLSearchParams({date_from:from, date_to:to}).toString();
+  fetch(`/api/admin/webhook-stats?${sq}`)
+    .then(r=>r.json()).then(s => {
+      document.getElementById('st-total').textContent  = s.total??0;
+      document.getElementById('st-ok').textContent     = s.sms_ok??0;
+      document.getElementById('st-fail').textContent   = s.sms_fail??0;
+      document.getElementById('st-cool').textContent   = s.cooldown??0;
+      document.getElementById('st-auth').textContent   = s.auth_fail??0;
+      document.getElementById('st-cached').textContent = s.state_cached??0;
+      document.getElementById('st-out').textContent    = s.outgoing??0;
+    }).catch(e => showErr('통계 로드 실패: '+e));
+
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('logsTable').style.display = 'none';
+  document.getElementById('emptyMsg').style.display = 'none';
+
+  const params = new URLSearchParams({date_from:from, date_to:to, limit:300});
+  if (phone) params.set('phone', phone);
+
+  try {
+    const res  = await fetch(`/api/admin/webhook-logs?${params}`);
+    const data = await res.json();
+    if (!data.success && data.error) { showErr('동네비서 API 오류: '+data.error); return; }
+    _allLogs = data.logs || [];
+    document.getElementById('lastUpdate').textContent = '마지막 조회: ' + new Date().toLocaleTimeString('ko-KR');
+    renderTable();
+  } catch(e) {
+    showErr('데이터 로드 실패: '+e);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function showErr(msg) {
+  const b = document.getElementById('errBanner');
+  b.textContent = '⚠️ ' + msg;
+  b.style.display = 'block';
+}
+
+function filterStage(stage, btn) {
+  _stageFilter = stage;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderTable();
+}
+
+function renderTable() {
+  const logs = _stageFilter ? _allLogs.filter(l=>l.stage===_stageFilter) : _allLogs;
+  const tbody = document.getElementById('logBody');
+  const table = document.getElementById('logsTable');
+  const empty = document.getElementById('emptyMsg');
+  if (!logs.length) { table.style.display='none'; empty.style.display='block'; return; }
+  table.style.display='table'; empty.style.display='none';
+  tbody.innerHTML = logs.map((log,i) => {
+    const payId = `pay-${i}`;
+    let payloadFmt = '—';
+    try { payloadFmt = JSON.stringify(JSON.parse(log.raw_payload||'{}'),null,2); } catch{}
+    return `<tr>
+      <td class="time">${(log.received_at||'').slice(0,19)}</td>
+      <td class="phone">${log.customer_phone||'<span style="color:var(--muted)">—</span>'}</td>
+      <td><span class="badge ${log.stage||'RECEIVED'}">${log.stage||'RECEIVED'}</span></td>
+      <td><code style="font-size:11px;color:var(--purple)">${log.call_state||log.call_type||'—'}</code></td>
+      <td class="ip">${log.auth_ok?'🔓':'🔒'} ${log.source_ip||'—'}</td>
+      <td style="max-width:200px;font-size:12px;color:var(--muted)">${log.result_msg||'—'}</td>
+      <td>
+        <span class="payload-toggle" onclick="document.getElementById('${payId}').classList.toggle('open')">📦 페이로드</span>
+        <pre class="payload-content" id="${payId}">${payloadFmt}</pre>
+        ${pipelineHTML(log.stage)}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+setInterval(loadData, 30000);
+loadData();
+</script>
+</body>
+</html>

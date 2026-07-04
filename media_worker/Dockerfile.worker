@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────────
+# 동네비서 숏폼 미디어 워커 — GPU 워커 전용 Dockerfile
+# 탄탄제작소 인프라: GPU 서버 (로컬 RTX 4070 또는 Vultr GPU)
+# 메인 앱 Dockerfile과 완전 분리 — 독립 배포
+# ─────────────────────────────────────────────────────────────────
+
+FROM python:3.11-slim
+
+# 시스템 패키지
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONUNBUFFERED=1
+WORKDIR /app
+
+# 의존성 설치
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 워커 코드 복사
+COPY . .
+
+# 출력 디렉토리 생성
+RUN mkdir -p /app/media_output
+
+# Celery 워커 실행
+# concurrency=1: GPU 작업은 직렬 처리 (메모리 초과 방지)
+CMD ["celery", "-A", "worker", "worker", \
+     "--loglevel=info", \
+     "--concurrency=1", \
+     "-Q", "media_tasks", \
+     "--logfile=/app/logs/celery.log"]

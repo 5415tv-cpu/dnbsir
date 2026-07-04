@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>동네비서 핵심 기술 소개서 (Report)</title>
-    <!-- Google Fonts: Pretendard -->
+    <title>동네비서 핵심 기술 소개서</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
     <style>
         :root {
@@ -15,7 +14,6 @@
             --text-gray: #a0aab2;
             --border-color: #333;
         }
-
         body {
             background-color: var(--bg-dark);
             color: var(--text-light);
@@ -23,8 +21,6 @@
             line-height: 1.7;
             padding: 40px 20px;
         }
-
-        /* A4 Paper Style Container */
         .a4-container {
             max-width: 850px;
             margin: 0 auto;
@@ -34,15 +30,12 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
-
-        /* Header */
         .doc-header {
             text-align: center;
             border-bottom: 2px solid var(--main-gold);
             padding-bottom: 30px;
             margin-bottom: 40px;
         }
-
         .doc-header h1 {
             font-size: 2.5rem;
             font-weight: 800;
@@ -50,18 +43,14 @@
             margin-bottom: 15px;
             letter-spacing: -1px;
         }
-
         .doc-header p {
             color: var(--main-gold);
             font-weight: 600;
             font-size: 1.1rem;
         }
-
-        /* Sections */
         .doc-section {
             margin-bottom: 40px;
         }
-
         .doc-section h2 {
             font-size: 1.4rem;
             font-weight: 700;
@@ -70,20 +59,17 @@
             display: flex;
             align-items: center;
         }
-
         .doc-section h2::before {
             content: '■';
             font-size: 0.9rem;
             margin-right: 10px;
         }
-
         .doc-section h3 {
             font-size: 1.1rem;
             color: #fff;
             margin-top: 20px;
             margin-bottom: 8px;
         }
-
         .doc-section p {
             color: var(--text-gray);
             font-size: 1rem;
@@ -91,8 +77,6 @@
             word-break: keep-all;
             margin-bottom: 15px;
         }
-
-        /* Highlighting box */
         .highlight-box {
             background: rgba(255, 204, 0, 0.05);
             border-left: 4px solid var(--main-gold);
@@ -100,13 +84,10 @@
             margin: 20px 0;
             border-radius: 0 8px 8px 0;
         }
-
         .highlight-box p {
             margin-bottom: 0;
             color: #e0e0e0;
         }
-
-        /* Back Button */
         .back-btn {
             display: inline-block;
             margin-top: 40px;
@@ -119,28 +100,21 @@
             font-weight: bold;
             transition: all 0.3s;
         }
-
         .back-btn:hover {
             background-color: var(--main-gold);
             color: #000;
         }
-
         @media (max-width: 768px) {
-            .a4-container {
-                padding: 40px 30px;
-            }
-            .doc-header h1 {
-                font-size: 2rem;
-            }
+            .a4-container { padding: 40px 30px; }
+            .doc-header h1 { font-size: 2rem; }
         }
     </style>
 </head>
 <body>
-
     <div class="a4-container">
         <div class="doc-header">
             <h1>동네비서 기술 및 사업 소개서</h1>
-            <p>초개인화 AI 에이전트를 통한 지역 소상공인 및 취약계층 디지털 전환 사업</p>
+            <p>AI 자동화를 통한 지역 소상공인·농가 디지털 전환 사업</p>
         </div>
 
         <div class="doc-section">
@@ -152,40 +126,44 @@
         <div class="doc-section">
             <h2>2. 핵심 기술 역량 (Core Technology)</h2>
             <div class="highlight-box">
-                <p>탄탄제작소의 '동네비서'는 최신 대형언어모델(LLM)과 자동화 프로세스(RPA)를 결합하여, 사용자가 IT 기기를 조작할 필요 없이 <strong>음성 전화 한 통과 사진 한 장만으로 모든 업무가 자동 처리</strong>되는 AI 에이전트 시스템입니다.</p>
+                <p>탄탄제작소의 '동네비서'는 대형언어모델(LLM)과 자동화 프로세스를 결합하여, <strong>전화 한 통을 놓쳐도 자동으로 고객에게 안내하고, 고객이 직접 주문·결제·택배 접수까지 완료</strong>할 수 있는 AI 비서 시스템입니다. 판매자는 포장만 하면 됩니다.</p>
             </div>
-            <h3>가. 실시간 음성-텍스트 변환 및 맥락 이해 (AI STT & LLM)</h3>
-            <p>고객의 주문 전화나 문의 사항을 AI가 24시간 실시간으로 청취하고, 대화의 맥락을 완벽히 이해하여 정형화된 데이터(텍스트)로 변환합니다. 사투리나 비정형적인 대화에서도 주문 품목, 수량, 주소를 정확히 추출합니다.</p>
 
-            <h3>나. 비전 AI (Vision AI) 기반 수기 문서 디지털화</h3>
-            <p>택배기사나 농민이 수기로 작성된 송장이나 메모를 스마트폰 카메라로 촬영하면, OCR(광학문자인식)과 Vision AI 기술이 즉시 디지털 텍스트로 변환하여 시스템에 연동합니다.</p>
+            <h3>가. 미수신 자동 알림 시스템 (Auto Callback)</h3>
+            <p>소상공인이나 농부가 전화를 받지 못한 경우, 시스템이 자동으로 고객에게 카카오 알림톡 또는 SMS를 발송합니다. 고객은 안내 링크를 통해 동네마켓에서 직접 주문·결제·배송지 입력을 완료하고, 판매자는 포장만 하면 되는 구조입니다.</p>
 
-            <h3>다. 서버리스 아키텍처 및 자동화 (Serverless RPA)</h3>
-            <p>Google Cloud Run 기반의 서버리스 환경으로 구축되어 트래픽 증감에 유연하게 대응하며, 접수된 데이터를 Google Sheets나 외부 배송 시스템(API)으로 실시간 자동 전송합니다.</p>
+            <h3>나. AI 챗봇 비서 (LLM 기반 업무 자동화)</h3>
+            <p>Google Gemini 기반의 AI가 판매자의 매출 조회, 단골 고객 현황, 주문 내역 등 업무 데이터를 자연어로 답변합니다. "이번 달 매출 얼마야?", "단골 고객 몇 명이야?" 와 같은 질문에 즉시 응답하여 별도의 데이터 분석 없이도 경영 현황을 파악할 수 있습니다.</p>
+
+            <h3>다. 동네마켓 직거래 플랫폼</h3>
+            <p>농가 및 소상공인이 직접 상품을 등록하면 고객이 주문·결제·배송지 입력까지 완료합니다. 주문이 확정되면 택배 송장이 자동 발행되며, 중간 수수료 없이 생산자와 소비자가 직접 거래하는 구조로 판매 마진을 극대화합니다.</p>
+
+            <h3>라. 알림톡 마케팅 자동화</h3>
+            <p>단골 고객 DB를 기반으로 수확 소식, 특가 이벤트, 재고 알림 등을 카카오 알림톡으로 일괄 발송합니다. 별도의 마케팅 인력 없이 클릭 한 번으로 단골 고객 전체에게 메시지를 발송할 수 있습니다.</p>
         </div>
 
         <div class="doc-section">
             <h2>3. 서비스 차별성</h2>
-            <p><strong>① Zero UI (No-Code/No-Touch) 접근성</strong><br>
-            별도의 앱 설치나 복잡한 화면 조작 없이, 기존의 유선 전화와 기본 문자 메시지만으로 AI 시스템을 100% 활용할 수 있어 디지털 소외계층에게 완벽한 사용성을 제공합니다.</p>
-            <p><strong>② 맞춤형 초개인화 에이전트 분화</strong><br>
-            단일 시스템이 아닌 직군별 맞춤형 에이전트로 동작합니다. 농부에게는 '직거래 비서', 소상공인에게는 '주방 비서', 택배기사에게는 '배송 비서'로 형태를 바꾸어 산업별 특화된 솔루션을 제공합니다.</p>
+            <p><strong>① 스마트폰 하나로 완결되는 업무 자동화</strong><br>
+            별도의 전문 장비 없이 스마트폰 브라우저만으로 주문 확인, 택배 접수, 고객 관리, 매출 분석이 모두 가능합니다. 디지털에 익숙하지 않은 고령의 소상공인도 쉽게 사용할 수 있습니다.</p>
+            <p><strong>② 맞춤형 직군별 AI 비서</strong><br>
+            농부에게는 '직거래 비서', 소상공인에게는 '가게 운영 비서'로 역할을 분리하여 각 직군에 특화된 기능과 화면을 제공합니다.</p>
+            <p><strong>③ 가입 즉시 사용 가능한 SaaS 구조</strong><br>
+            토큰 충전 후 즉시 모든 기능을 사용할 수 있는 선불 충전 방식으로, 초기 도입 비용 없이 사용한 만큼만 비용을 지불합니다.</p>
         </div>
 
         <div class="doc-section">
             <h2>4. 경제적·사회적 기대 효과 (Social Impact)</h2>
             <p>본 시스템의 도입은 단순한 업무 효율화를 넘어 지역 사회 전체의 안전망과 자생력을 강화합니다.</p>
             <h3>가. 소상공인 및 농가의 매출 증대</h3>
-            <p>주문 누락을 방지하고 반복적인 행정 업무 시간을 획기적으로 단축시켜, 생산자가 본연의 제품 퀄리티 향상에만 집중할 수 있는 환경을 조성합니다.</p>
-            
+            <p>전화 주문 누락을 방지하고 반복적인 행정 업무 시간을 획기적으로 단축시켜, 생산자가 본연의 제품 퀄리티 향상에만 집중할 수 있는 환경을 조성합니다.</p>
             <h3>나. '비서야'를 통한 사회적 안전망 구축 (ESG)</h3>
-            <p>동네비서의 파생 기술인 '비서야'는 독거노인과 중증 장애인 등 취약계층의 일상 안부를 정기적으로 묻고, 건강 상태를 모니터링합니다. 이상 징후 발생 시 지자체나 보호자에게 즉각 알림을 전송하여 고독사를 예방하고 복지 사각지대를 해소하는 데 기여합니다.</p>
+            <p>동네비서의 파생 서비스인 '비서야'는 독거노인과 중증 장애인 등 취약계층의 일상 안부를 정기적으로 묻고, 건강 상태를 모니터링합니다. 이상 징후 발생 시 지자체나 보호자에게 즉각 알림을 전송하여 고독사를 예방하고 복지 사각지대를 해소하는 데 기여합니다.</p>
         </div>
 
         <div style="text-align: center;">
             <a href="/" class="back-btn">홈페이지로 돌아가기</a>
         </div>
     </div>
-
 </body>
 </html>

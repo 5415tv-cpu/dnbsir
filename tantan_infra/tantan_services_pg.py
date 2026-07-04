@@ -1,5 +1,6 @@
 import os
-import sqlite3
+import psycopg2
+import psycopg2.extras
 
 # 데이터베이스 경로 설정
 # 1. Vultr 프로덕션 환경 경로 확인
@@ -79,9 +80,68 @@ def calculate_korean_income_tax(taxable_income):
     else:
         return int(taxable_income * 0.45 - 65940000)
 
+# ──────────────────────────────────────────────
+# 가입자 상세조회 / 수정 / 삭제 (PostgreSQL)
+# ──────────────────────────────────────────────
+def get_store_detail(store_id):
+    """특정 가입자 전체 컬럼 조회"""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("SELECT * FROM stores WHERE store_id = %s", (store_id,))
+        row = c.fetchone()
+        conn.close()
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"[get_store_detail] {e}")
+        return None
+
+
+def update_store(store_id, fields: dict):
+    """가입자 정보 수정 (허용 필드만)"""
+    ALLOWED = {
+        'name', 'owner_name', 'phone', 'category', 'info', 'address',
+        'wallet_balance', 'points', 'membership', 'subscription_tier',
+        'role', 'status', 'my_referral_code', 'referrer_id',
+        'biz_number', 'bank_code', 'account_number', 'account_holder',
+        'smart_callback_on', 'auto_reply_msg', 'auto_reply_missed', 'auto_reply_end',
+        'fee_rate', 'marketing_agreed', 'memo'
+    }
+    safe = {k: v for k, v in fields.items() if k in ALLOWED}
+    if not safe:
+        return False, "수정 가능한 필드가 없습니다"
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        set_clause = ", ".join(f"{k} = %s" for k in safe)
+        values = list(safe.values()) + [store_id]
+        c.execute(f"UPDATE stores SET {set_clause} WHERE store_id = %s", values)
+        conn.commit()
+        conn.close()
+        return True, "수정 완료"
+    except Exception as e:
+        return False, str(e)
+
+
+def delete_store(store_id):
+    """가입자 삭제"""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        c.execute("DELETE FROM stores WHERE store_id = %s", (store_id,))
+        affected = c.rowcount
+        conn.commit()
+        conn.close()
+        if affected == 0:
+            return False, "해당 가입자 없음"
+        return True, "삭제 완료"
+    except Exception as e:
+        return False, str(e)
+
+
 def get_dashboard_stats(tab=None):
     """
-    database.db에서 관리자 대시보드용 주요 지표를 집계하여 반환합니다.
+    PostgreSQL 데이터베이스에서 관리자 대시보드용 주요 지표를 집계하여 반환합니다.
     """
     stats = {
         'total_users': 0,
@@ -115,13 +175,9 @@ def get_dashboard_stats(tab=None):
         'recent_stores': []
     }
     
-    if not os.path.exists(DB_PATH):
-        return stats
-        
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # 관리자용 설정 테이블 초기화 (최초 1회)
         cursor.execute("""
@@ -142,8 +198,8 @@ def get_dashboard_stats(tab=None):
         stats['manual_expense'] = manual_expense
         
         # 1. 일반 사용자 수
-        cursor.execute("SELECT COUNT(*) FROM users")
-        stats['total_users'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) as count FROM users")
+        stats['total_users'] = cursor.fetchone()['count']
         
         # 2. 전체 가입자/매장 수
         cursor.execute("SELECT role FROM stores")
@@ -154,30 +210,33 @@ def get_dashboard_stats(tab=None):
         stats['total_users'] = len(all_roles)
         
         # 3. SMS 발송 건수
-        cursor.execute("SELECT COUNT(*) FROM sms_logs")
-        stats['total_sms'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) as count FROM sms_logs")
+        stats['total_sms'] = cursor.fetchone()['count']
         
         # 4. 배송 건수
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='courier_requests'")
-        if cursor.fetchone():
-            cursor.execute("SELECT COUNT(*) FROM courier_requests")
-            stats['total_deliveries'] = cursor.fetchone()[0]
-        else:
-            stats['total_deliveries'] = 0        
+        try:
+            cursor.execute("SELECT COUNT(*) as count FROM courier_requests")
+            stats['total_deliveries'] = cursor.fetchone()['count']
+        except Exception:
+            conn.rollback()
+            stats['total_deliveries'] = 0
+            
         # 5. AI 통화/응답 처리 건수
-        cursor.execute("SELECT COUNT(*) FROM ai_call_logs")
-        stats['total_ai_calls'] = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) as count FROM ai_call_logs")
+        stats['total_ai_calls'] = cursor.fetchone()['count']
         
         # 5-1. 등록된 배달 기사/라이더 수
         total_drivers = 0
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='couriers'")
-        if cursor.fetchone():
-            cursor.execute("SELECT COUNT(*) FROM couriers")
-            total_drivers += cursor.fetchone()[0]
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='riders'")
-        if cursor.fetchone():
-            cursor.execute("SELECT COUNT(*) FROM riders")
-            total_drivers += cursor.fetchone()[0]
+        try:
+            cursor.execute("SELECT COUNT(*) as count FROM couriers")
+            total_drivers += cursor.fetchone()['count']
+        except Exception:
+            conn.rollback()
+        try:
+            cursor.execute("SELECT COUNT(*) as count FROM riders")
+            total_drivers += cursor.fetchone()['count']
+        except Exception:
+            conn.rollback()
         stats['total_drivers'] = total_drivers
         
         # 6. 최근 AI 통화 내역
@@ -200,44 +259,47 @@ def get_dashboard_stats(tab=None):
             
         # 최근 예약 내역
         if tab == 'reservations' or not tab:
-            # db에 reservations 테이블이 있을 때만
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='reservations'")
-            if cursor.fetchone():
+            try:
                 cursor.execute("""
                     SELECT store_id, customer_name, res_date, res_time, status 
                     FROM reservations 
                     ORDER BY id DESC LIMIT 50
                 """)
                 stats['recent_reservations'] = [dict(row) for row in cursor.fetchall()]
+            except Exception:
+                conn.rollback()
                 
         # 최근 택배 내역
         if tab == 'deliveries' or not tab:
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='courier_requests'")
-            if cursor.fetchone():
+            try:
                 cursor.execute("""
                     SELECT citizen_id as store_id, sender_name, receiver_name, receiver_phone, status, tracking_code as tracking_num 
                     FROM courier_requests 
                     ORDER BY request_id DESC LIMIT 50
                 """)
                 stats['recent_deliveries'] = [dict(row) for row in cursor.fetchall()]
+            except Exception:
+                conn.rollback()
                 
         # 배달 기사 내역
         if tab == 'drivers' or not tab:
             stats['recent_drivers'] = []
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='couriers'")
-            if cursor.fetchone():
+            try:
                 cursor.execute("SELECT courier_id as driver_id, name, phone, '택배기사' as type, status, created_at FROM couriers ORDER BY created_at DESC LIMIT 25")
                 stats['recent_drivers'].extend([dict(row) for row in cursor.fetchall()])
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='riders'")
-            if cursor.fetchone():
+            except Exception:
+                conn.rollback()
+            try:
                 cursor.execute("SELECT rider_id as driver_id, name, phone, '배달라이더' as type, status, created_at FROM riders ORDER BY created_at DESC LIMIT 25")
                 stats['recent_drivers'].extend([dict(row) for row in cursor.fetchall()])
+            except Exception:
+                conn.rollback()
         
         # 8. 전체 가맹점 목록 (관제용 - 필터링)
         if tab in ['stores', 'citizens', 'farmers'] or not tab:
-            query = "SELECT store_id, name, owner_name, phone, points, wallet_balance, created_at, role FROM stores"
+            query = "SELECT store_id, name, owner_name, phone, points, wallet_balance, created_at, role, my_referral_code FROM stores"
             if tab == 'stores':
-                query += " WHERE role IS NULL OR role = '' OR role = 'owner'"
+                query += " WHERE role NOT IN ('citizen', 'farmer') OR role IS NULL"
             elif tab == 'citizens':
                 query += " WHERE role = 'citizen'"
             elif tab == 'farmers':
@@ -253,8 +315,8 @@ def get_dashboard_stats(tab=None):
         stats['total_est_cost'] = stats['est_sms_cost'] + stats['est_ai_cost']
         
         # 전체 상점 잔액 (매출/충전금액 추정)
-        cursor.execute("SELECT SUM(wallet_balance) FROM stores")
-        total_balance = cursor.fetchone()[0]
+        cursor.execute("SELECT SUM(wallet_balance) as sum_balance FROM stores")
+        total_balance = cursor.fetchone()['sum_balance']
         total_balance = total_balance if total_balance else 0
         stats['total_wallet_balance'] = total_balance
         
@@ -264,22 +326,17 @@ def get_dashboard_stats(tab=None):
         stats['net_profit'] = stats['total_revenue'] - stats['total_expense']
         
         # 세금 계산 (국세청 기본 공식 적용)
-        # 1. 예상 부가세 (VAT) = (매출과세표준 * 10%) - (매입과세표준 * 10%)
-        # 안전한 계산을 위해 매출-매입 차액에 10%를 적용합니다.
         stats['est_vat'] = max(0, int((stats['total_revenue'] - stats['total_expense']) * 0.1))
-        
-        # 2. 예상 종합소득세 (과세표준 = 영업이익)
-        # ※ 실제로는 소득공제가 들어가지만 여기서는 단순 영업이익을 과세표준으로 합니다.
         taxable_income = stats['net_profit']
         stats['est_income_tax'] = calculate_korean_income_tax(taxable_income)
         
         # DB 상태 및 용량 체크 (대용량 경고 로직)
         try:
-            db_size_bytes = os.path.getsize(DB_PATH)
-            db_size_mb = db_size_bytes / (1024 * 1024)
+            cursor.execute("SELECT pg_database_size('dongnebiseo') as db_size")
+            db_size_bytes = cursor.fetchone()['db_size']
+            db_size_mb = db_size_bytes / (1024.0 * 1024.0)
             stats['db_size_mb'] = db_size_mb
             
-            # 50MB 초과 시 혹은 전체 유저가 100,000명 이상일 때 경고
             if db_size_mb > 50.0 or stats['total_users'] > 100000:
                 stats['db_status'] = 'warning'
                 stats['db_message'] = '데이터베이스 용량이 임계점(50MB)을 초과했거나 동시 접속자가 많습니다. 안정적인 서비스를 위해 대용량 외부 DB(Google Cloud SQL 등)로의 마이그레이션을 준비해 주세요.'
@@ -302,6 +359,10 @@ def get_dashboard_stats(tab=None):
                 if payout < 0: payout = 0
                 courier_data[s_id] = courier_data.get(s_id, 0) + payout
         except Exception as e:
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"Error fetching courier payouts: {e}")
 
         sales_data = {}
@@ -328,6 +389,10 @@ def get_dashboard_stats(tab=None):
                 elif o_type in ['CONSIGN', '위탁']:
                     sales_data[s_id]['consignment_sales'] += net_amount
         except Exception as e:
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"Error fetching orders payouts: {e}")
 
         branch_settlements = []
@@ -354,6 +419,10 @@ def get_dashboard_stats(tab=None):
                     'total_payout': total_payout
                 })
         except Exception as e:
+            try:
+                conn.rollback()
+            except:
+                pass
             print(f"Error merging branch settlements: {e}")
 
         stats['branch_settlements'] = branch_settlements
@@ -366,11 +435,11 @@ def get_dashboard_stats(tab=None):
 
 def init_video_requests_table():
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS video_requests (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 store_id TEXT,
                 store_name TEXT,
                 status TEXT DEFAULT 'pending',
@@ -395,15 +464,15 @@ def init_video_requests_table():
 def add_video_request(store_id, store_name, story="", images=""):
     init_video_requests_table()
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         import datetime
         now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute(
-            "INSERT INTO video_requests (store_id, store_name, story, images, requested_at) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO video_requests (store_id, store_name, story, images, requested_at) VALUES (%s, %s, %s, %s, %s) RETURNING id",
             (store_id, store_name, story, images, now)
         )
-        new_id = cursor.lastrowid
+        new_id = cursor.fetchone()['id']
         conn.commit()
         conn.close()
         return new_id
@@ -413,9 +482,9 @@ def add_video_request(store_id, store_name, story="", images=""):
 
 def update_video_request_status(request_id, status):
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("UPDATE video_requests SET status = ? WHERE id = ?", (status, request_id))
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("UPDATE video_requests SET status = %s WHERE id = %s", (status, request_id))
         conn.commit()
         conn.close()
         return True
@@ -426,9 +495,9 @@ def update_video_request_status(request_id, status):
 def get_pending_video_requests():
     init_video_requests_table()
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        pass # handled by RealDictCursor
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("SELECT * FROM video_requests WHERE status = 'pending' ORDER BY requested_at DESC")
         rows = cursor.fetchall()
         conn.close()
@@ -440,10 +509,10 @@ def get_pending_video_requests():
 def get_store_video_requests(store_id):
     init_video_requests_table()
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM video_requests WHERE store_id = ? ORDER BY requested_at DESC", (store_id,))
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        pass # handled by RealDictCursor
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("SELECT * FROM video_requests WHERE store_id = %s ORDER BY requested_at DESC", (store_id,))
         rows = cursor.fetchall()
         conn.close()
         return [dict(r) for r in rows]
@@ -453,10 +522,10 @@ def get_store_video_requests(store_id):
 
 def complete_video_request(request_id):
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute("UPDATE video_requests SET status = 'completed', completed_at = ? WHERE id = ?", (now, request_id))
+        cursor.execute("UPDATE video_requests SET status = 'completed', completed_at = %s WHERE id = %s", (now, request_id))
         conn.commit()
         conn.close()
         return True
@@ -469,16 +538,13 @@ def authenticate_store(username, password):
     database.db의 stores 테이블을 조회하여 상점(소상공인) 로그인을 인증합니다.
     username은 store_id 혹은 phone 번호로 매칭합니다.
     """
-    if not os.path.exists(DB_PATH):
-        return None
-        
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        pass # handled by RealDictCursor
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         cursor.execute(
-            "SELECT store_id, name, owner_name, points, wallet_balance FROM stores WHERE (store_id = ? OR phone = ?) AND password = ?",
+            "SELECT store_id, name, owner_name, points, wallet_balance FROM stores WHERE (store_id = %s OR phone = %s) AND password = %s",
             (username, username, password)
         )
         store = cursor.fetchone()
@@ -502,34 +568,31 @@ def get_store_dashboard_data(store_id):
         'deliveries': []
     }
     
-    if not os.path.exists(DB_PATH):
-        return data
-        
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        pass # handled by RealDictCursor
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # 상점 정보
-        cursor.execute("SELECT name, owner_name, points, wallet_balance, phone FROM stores WHERE store_id = ?", (store_id,))
+        cursor.execute("SELECT name, owner_name, points, wallet_balance, phone FROM stores WHERE store_id = %s", (store_id,))
         store_info = cursor.fetchone()
         if store_info:
             data['info'] = dict(store_info)
             
         # 최근 AI 콜백 내역 5건
-        cursor.execute("SELECT customer_phone, summary, created_at FROM ai_call_logs WHERE store_id = ? ORDER BY created_at DESC LIMIT 5", (store_id,))
+        cursor.execute("SELECT customer_phone, summary, created_at FROM ai_call_logs WHERE store_id = %s ORDER BY created_at DESC LIMIT 5", (store_id,))
         data['ai_logs'] = [dict(row) for row in cursor.fetchall()]
         
         # 최근 SMS 발송 내역 5건
-        cursor.execute("SELECT phone, message, status, created_at FROM sms_logs WHERE store_id = ? ORDER BY created_at DESC LIMIT 5", (store_id,))
+        cursor.execute("SELECT phone, message, status, created_at FROM sms_logs WHERE store_id = %s ORDER BY created_at DESC LIMIT 5", (store_id,))
         data['sms_logs'] = [dict(row) for row in cursor.fetchall()]
         
         # 최근 택배 배송 내역 5건
-        cursor.execute("SELECT item_name, receiver_name, status, created_at FROM deliveries WHERE store_id = ? ORDER BY created_at DESC LIMIT 5", (store_id,))
+        cursor.execute("SELECT item_name, receiver_name, status, created_at FROM deliveries WHERE store_id = %s ORDER BY created_at DESC LIMIT 5", (store_id,))
         data['deliveries'] = [dict(row) for row in cursor.fetchall()]
         
         # 최근 상품/방문 예약 접수 내역 5건
-        cursor.execute("SELECT customer_name, contact, res_date, res_time, status, created_at FROM reservations WHERE store_id = ? ORDER BY created_at DESC LIMIT 5", (store_id,))
+        cursor.execute("SELECT customer_name, contact, res_date, res_time, status, created_at FROM reservations WHERE store_id = %s ORDER BY created_at DESC LIMIT 5", (store_id,))
         data['reservations'] = [dict(row) for row in cursor.fetchall()]
         
         conn.close()
@@ -542,16 +605,13 @@ def find_store_id(owner_name, phone):
     """
     이름(owner_name)과 전화번호(phone)로 상점 아이디를 찾습니다.
     """
-    if not os.path.exists(DB_PATH):
-        return None
-        
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # owner_name이나 name(상호명) 중 하나라도 일치하면 검색
         cursor.execute(
-            "SELECT store_id FROM stores WHERE (owner_name = ? OR name = ?) AND phone = ?",
+            "SELECT store_id FROM stores WHERE (owner_name = %s OR name = %s) AND phone = %s",
             (owner_name, owner_name, phone)
         )
         row = cursor.fetchone()
@@ -568,16 +628,13 @@ def reset_store_password(store_id, phone, new_password):
     """
     상점 아이디(store_id)와 전화번호(phone)가 일치하면 새로운 비밀번호로 변경합니다.
     """
-    if not os.path.exists(DB_PATH):
-        return False
-        
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # 계정 검증
         cursor.execute(
-            "SELECT store_id FROM stores WHERE store_id = ? AND phone = ?",
+            "SELECT store_id FROM stores WHERE store_id = %s AND phone = %s",
             (store_id, phone)
         )
         row = cursor.fetchone()
@@ -585,7 +642,7 @@ def reset_store_password(store_id, phone, new_password):
         if row:
             # 일치하면 비밀번호 업데이트
             cursor.execute(
-                "UPDATE stores SET password = ? WHERE store_id = ?",
+                "UPDATE stores SET password = %s WHERE store_id = %s",
                 (new_password, store_id)
             )
             conn.commit()
@@ -603,15 +660,12 @@ def create_store_account(owner_name, phone, category, store_name, password):
     새로운 상점 계정을 생성하고 초기 포인트(1000)를 지급합니다.
     store_id는 휴대폰 번호(phone)와 동일하게 설정합니다.
     """
-    if not os.path.exists(DB_PATH):
-        return False, "데이터베이스 연결 오류"
-        
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # 중복 계정 체크 (휴대폰 번호 기준)
-        cursor.execute("SELECT store_id FROM stores WHERE store_id = ? OR phone = ?", (phone, phone))
+        cursor.execute("SELECT store_id FROM stores WHERE store_id = %s OR phone = %s", (phone, phone))
         if cursor.fetchone():
             conn.close()
             return False, "이미 가입된 휴대폰 번호입니다."
@@ -622,7 +676,7 @@ def create_store_account(owner_name, phone, category, store_name, password):
         # 새 계정 INSERT (초기 지갑 잔액 1000포인트)
         cursor.execute("""
             INSERT INTO stores (store_id, password, name, owner_name, phone, category, points, wallet_balance, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, 0, 1000, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, 0, 1000, %s)
         """, (phone, password, store_name, owner_name, phone, category, now))
         
         conn.commit()
@@ -636,12 +690,9 @@ def update_admin_ledger(revenue, expense):
     """
     수기 매출/지출 내역을 데이터베이스에 업데이트합니다.
     """
-    if not os.path.exists(DB_PATH):
-        return False
-        
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         
         # 테이블 생성 확인
         cursor.execute("""
@@ -652,11 +703,116 @@ def update_admin_ledger(revenue, expense):
         """)
         
         # 데이터 갱신
-        cursor.execute("INSERT OR REPLACE INTO admin_settings (key, value) VALUES (?, ?)", ("manual_revenue", str(revenue)))
-        cursor.execute("INSERT OR REPLACE INTO admin_settings (key, value) VALUES (?, ?)", ("manual_expense", str(expense)))
+        cursor.execute("INSERT INTO admin_settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ("manual_revenue", str(revenue)))
+        cursor.execute("INSERT INTO admin_settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", ("manual_expense", str(expense)))
         
         conn.commit()
         return True
     except Exception as e:
         print(f"Error updating admin ledger: {e}")
         return False
+
+
+# =============================================================
+# 💰 정산 관리 함수
+# =============================================================
+def _init_settlements_table(conn):
+    """settlements 테이블이 없으면 생성"""
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS settlements (
+            id SERIAL PRIMARY KEY,
+            store_id TEXT NOT NULL,
+            store_name TEXT,
+            owner_name TEXT,
+            phone TEXT,
+            amount INTEGER NOT NULL DEFAULT 0,
+            fee INTEGER NOT NULL DEFAULT 0,
+            net_amount INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'PENDING',
+            description TEXT,
+            created_at TIMESTAMP DEFAULT NOW(),
+            approved_at TIMESTAMP,
+            transferred_at TIMESTAMP
+        )
+    """)
+    conn.commit()
+
+
+def get_settlements():
+    """전체 정산 목록 조회 (최신순)"""
+    try:
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        _init_settlements_table(conn)
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT id, store_id, store_name, owner_name, phone,
+                   amount, fee, net_amount, status, description,
+                   to_char(created_at, 'YYYY-MM-DD HH24:MI') as created_at,
+                   to_char(approved_at, 'YYYY-MM-DD HH24:MI') as approved_at,
+                   to_char(transferred_at, 'YYYY-MM-DD HH24:MI') as transferred_at
+            FROM settlements
+            ORDER BY created_at DESC
+            LIMIT 200
+        """)
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return rows
+    except Exception as e:
+        print(f"Error fetching settlements: {e}")
+        return []
+
+
+def update_settlement_status(settlement_id, new_status):
+    """정산 상태 변경: PENDING → APPROVED → TRANSFERRED"""
+    import datetime
+    valid = {'APPROVED', 'TRANSFERRED', 'PENDING'}
+    if new_status not in valid:
+        return False
+    try:
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        cursor = conn.cursor()
+        now = datetime.datetime.now()
+
+        if new_status == 'APPROVED':
+            cursor.execute(
+                "UPDATE settlements SET status=%s, approved_at=%s WHERE id=%s AND status='PENDING'",
+                (new_status, now, settlement_id)
+            )
+        elif new_status == 'TRANSFERRED':
+            cursor.execute(
+                "UPDATE settlements SET status=%s, transferred_at=%s WHERE id=%s AND status='APPROVED'",
+                (new_status, now, settlement_id)
+            )
+        else:
+            cursor.execute("UPDATE settlements SET status=%s WHERE id=%s", (new_status, settlement_id))
+
+        affected = cursor.rowcount
+        conn.commit()
+        conn.close()
+        return affected > 0
+    except Exception as e:
+        print(f"Error updating settlement status: {e}")
+        return False
+
+
+def create_settlement(store_id, store_name, owner_name, phone, amount, fee_rate=0.033, description=''):
+    """새 정산 항목 생성 (수수료 자동 계산)"""
+    fee = int(amount * fee_rate)
+    net_amount = amount - fee
+    try:
+        conn = psycopg2.connect(dbname="dongnebiseo", user="tandan", password="대표님비밀번호", host="host.docker.internal", port="5432")
+        _init_settlements_table(conn)
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO settlements (store_id, store_name, owner_name, phone, amount, fee, net_amount, status, description)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING', %s)
+            RETURNING id
+        """, (store_id, store_name, owner_name, phone, amount, fee, net_amount, description))
+        new_id = cursor.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return new_id
+    except Exception as e:
+        print(f"Error creating settlement: {e}")
+        return None

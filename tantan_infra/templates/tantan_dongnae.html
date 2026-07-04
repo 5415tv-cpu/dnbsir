@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>동네비서 | 관리자 대시보드</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg-primary:#0F1B2D;--bg-secondary:#111D30;--bg-card:rgba(255,255,255,0.04);
+      --bg-card-hover:rgba(255,255,255,0.07);--border:rgba(255,255,255,0.08);
+      --border-accent:rgba(0,212,255,0.3);--accent-1:#00D4FF;--accent-2:#0099CC;
+      --accent-3:#0066AA;--text-primary:#E8F4FD;--text-secondary:#8BA8C4;
+      --text-muted:#5A7A9A;--success:#00E676;--success-bg:rgba(0,230,118,0.12);
+      --warning:#FFB300;--warning-bg:rgba(255,179,0,0.12);--danger:#FF5252;
+      --danger-bg:rgba(255,82,82,0.12);--info:#40C4FF;--info-bg:rgba(64,196,255,0.12);
+      --sidebar-w:260px;--header-h:64px;--radius:14px;--radius-sm:8px;
+      --shadow:0 8px 32px rgba(0,0,0,0.4);--shadow-accent:0 4px 24px rgba(0,212,255,0.15);
+      --transition:all 0.25s cubic-bezier(0.4,0,0.2,1)
+    }
+    html{font-size:14px}
+    body{font-family:'Inter',sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6;min-height:100vh;overflow-x:hidden}
+    ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(0,212,255,0.25);border-radius:3px}
+    .layout{display:flex;min-height:100vh}
+    /* SIDEBAR */
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:var(--transition);overflow:hidden}
+    .sidebar-logo{padding:22px 24px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+    .logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 4px 12px rgba(0,212,255,0.3);flex-shrink:0}
+    .logo-text{font-size:16px;font-weight:700;letter-spacing:-.3px}.logo-text span{color:var(--accent-1)}
+    .logo-sub{font-size:10px;color:var(--text-muted);margin-top:1px}
+    .sst{font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;padding:16px 24px 6px}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:10px 20px;margin:2px 10px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);color:var(--text-secondary);font-size:13px;font-weight:500;position:relative;user-select:none}
+    .nav-item:hover{background:var(--bg-card-hover);color:var(--text-primary)}
+    .nav-item.active{background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,153,204,0.1));color:var(--accent-1);border:1px solid var(--border-accent)}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:60%;background:var(--accent-1);border-radius:0 3px 3px 0}
+    .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+    .nav-badge{margin-left:auto;background:var(--accent-1);color:var(--bg-primary);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;line-height:1.4}
+    .sidebar-footer{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-card);border-radius:var(--radius-sm);border:1px solid var(--border)}
+    .user-avatar{width:34px;height:34px;background:linear-gradient(135deg,var(--accent-2),var(--accent-3));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+    .user-name{font-size:12px;font-weight:600}.user-role{font-size:10px;color:var(--accent-1);background:rgba(0,212,255,0.1);padding:1px 6px;border-radius:4px;display:inline-block;margin-top:2px}
+    /* MAIN */
+    .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+    .topbar{height:var(--header-h);background:rgba(15,27,45,0.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;gap:16px;position:sticky;top:0;z-index:90}
+    .topbar-title{font-size:17px;font-weight:700;flex:1}.topbar-title span{color:var(--text-secondary);font-weight:400;font-size:13px;margin-left:8px}
+    .topbar-actions{display:flex;align-items:center;gap:10px}
+    .icon-btn{width:36px;height:36px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:var(--transition);font-size:16px;color:var(--text-secondary)}
+    .icon-btn:hover{background:var(--bg-card-hover);color:var(--accent-1);border-color:var(--border-accent)}
+    .notif-dot{position:relative}.notif-dot::after{content:'';position:absolute;top:6px;right:6px;width:6px;height:6px;background:var(--danger);border-radius:50%;border:2px solid var(--bg-primary)}
+    .date-badge{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:12px;color:var(--text-secondary)}
+    .content{padding:28px;flex:1}
+    /* TABS */
+    .tab-panel{display:none;animation:fadeIn 0.3s ease}.tab-panel.active{display:block}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+    .section-title{font-size:20px;font-weight:700}.section-title small{font-size:12px;font-weight:400;color:var(--text-muted);margin-left:8px}
+    /* KPI */
+    .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .kpi-card{background:var(--bg-card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:var(--transition);position:relative;overflow:hidden}
+    .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent-1),var(--accent-2));opacity:0;transition:var(--transition)}
+    .kpi-card:hover{background:var(--bg-card-hover);border-color:var(--border-accent);box-shadow:var(--shadow-accent);transform:translateY(-2px)}.kpi-card:hover::before{opacity:1}
+    .kpi-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .kpi-label{font-size:12px;font-weight:500;color:var(--text-muted)}
+    .kpi-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px}
+    .kpi-value{font-size:28px;font-weight:800;letter-spacing:-1px;line-height:1;margin-bottom:8px}
+    .kpi-trend{font-size:12px;display:flex;align-items:center;gap:4px}.trend-up{color:var(--success)}.trend-down{color:var(--danger)}
+    /* GLASS CARD */
+    .gc{background:var(--bg-card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);transition:var(--transition)}.gc:hover{border-color:rgba(0,212,255,0.15)}
+    .ch{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .ct{font-size:14px;font-weight:600}.cb{padding:22px}
+    .charts-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+    .chart-wrap{position:relative}canvas{max-width:100%}
+    /* TABLE */
+    .tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+    tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:var(--transition)}tbody tr:hover{background:rgba(255,255,255,0.03)}tbody tr:last-child{border-bottom:none}
+    tbody td{padding:12px 16px;color:var(--text-primary);vertical-align:middle;white-space:nowrap}
+    /* BADGE */
+    .badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+    .bd{width:6px;height:6px;border-radius:50%}
+    .bs{background:var(--success-bg);color:var(--success)}.bw{background:var(--warning-bg);color:var(--warning)}.br{background:var(--danger-bg);color:var(--danger)}.bi{background:var(--info-bg);color:var(--info)}.bm{background:rgba(255,255,255,0.06);color:var(--text-muted)}
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;border:none;outline:none;transition:var(--transition);font-family:'Inter',sans-serif}
+    .btn-p{background:linear-gradient(135deg,var(--accent-1),var(--accent-2));color:var(--bg-primary);box-shadow:0 4px 12px rgba(0,212,255,0.25)}.btn-p:hover{box-shadow:0 6px 20px rgba(0,212,255,0.4);transform:translateY(-1px)}
+    .btn-g{background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border)}.btn-g:hover{background:var(--bg-card-hover);color:var(--text-primary)}.btn-g.active{background:rgba(0,212,255,0.12);color:var(--accent-1);border-color:var(--border-accent)}
+    .btn-sm{padding:6px 12px;font-size:12px}
+    /* FILTER */
+    .fb{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.fb .sep{width:1px;height:24px;background:var(--border);margin:0 4px}
+    .siw{position:relative;display:flex;align-items:center}.si{position:absolute;left:10px;color:var(--text-muted);font-size:14px;pointer-events:none}
+    .si-input{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px 8px 32px;font-size:13px;color:var(--text-primary);font-family:'Inter',sans-serif;outline:none;transition:var(--transition);width:220px}
+    .si-input:focus{border-color:var(--border-accent);box-shadow:0 0 0 3px rgba(0,212,255,0.1)}.si-input::placeholder{color:var(--text-muted)}
+    /* PROGRESS */
+    .pb-w{background:rgba(255,255,255,0.06);border-radius:10px;height:6px;overflow:hidden;min-width:80px}
+    .pb-f{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--accent-1),var(--accent-2));transition:width .8s ease}
+    /* MODAL */
+    .mo{position:fixed;inset:0;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:var(--transition)}.mo.open{opacity:1;visibility:visible}
+    .mb{background:#131F33;border:1px solid var(--border-accent);border-radius:18px;width:520px;max-width:95vw;box-shadow:0 24px 80px rgba(0,0,0,0.6);transform:scale(.92) translateY(16px);transition:var(--transition);overflow:hidden}.mo.open .mb{transform:scale(1) translateY(0)}
+    .mh{padding:22px 26px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+    .mt{font-size:16px;font-weight:700}.mc{width:30px;height:30px;background:var(--bg-card);border:1px solid var(--border);border-radius:7px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted);transition:var(--transition)}.mc:hover{color:var(--danger);border-color:var(--danger)}
+    .mbody{padding:22px 26px}.mf{padding:16px 26px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+    /* FORM */
+    .fg{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fgg{display:flex;flex-direction:column;gap:6px}.fgg.full{grid-column:1/-1}
+    .fl{font-size:12px;font-weight:500;color:var(--text-secondary)}
+    .fc{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;color:var(--text-primary);font-family:'Inter',sans-serif;outline:none;transition:var(--transition)}.fc:focus{border-color:var(--border-accent);box-shadow:0 0 0 3px rgba(0,212,255,0.1)}.fc::placeholder{color:var(--text-muted)}select.fc option{background:#131F33;color:var(--text-primary)}
+    /* STAT MINI */
+    .smg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+    .sm{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;transition:var(--transition)}.sm:hover{background:var(--bg-card-hover)}
+    .sml{font-size:12px;color:var(--text-muted);margin-bottom:6px}.smv{font-size:26px;font-weight:800;letter-spacing:-.5px}
+    /* TOAST */
+    .tc{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+    .toast{background:#1A2A40;border:1px solid var(--border-accent);border-radius:12px;padding:14px 18px;min-width:280px;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:flex;align-items:flex-start;gap:12px;animation:tIn .3s ease;transition:var(--transition)}.toast.removing{animation:tOut .3s ease forwards}
+    @keyframes tIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}@keyframes tOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(40px)}}
+    .ti{font-size:20px;flex-shrink:0}.tt{font-size:13px;font-weight:600;margin-bottom:2px}.tm{font-size:12px;color:var(--text-secondary)}
+    /* STATUS */
+    .ds{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .dsr{background:rgba(64,196,255,0.12);color:var(--info)}.dsp{background:rgba(255,179,0,0.12);color:var(--warning)}.dss{background:rgba(0,212,255,0.12);color:var(--accent-1)}.dsh{background:rgba(0,230,118,0.12);color:var(--success)}
+    .ss2{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .ssc{background:var(--success-bg);color:var(--success)}.ssp{background:var(--warning-bg);color:var(--warning)}.sspr{background:var(--info-bg);color:var(--info)}
+    .gt{height:2px;background:linear-gradient(90deg,transparent,var(--accent-1),var(--accent-2),transparent);margin-bottom:28px;border-radius:1px;opacity:.6}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}.pulse{animation:pulse 2s ease infinite}
+    .ps{display:flex;align-items:center;gap:10px;margin-bottom:20px}.pl{font-size:13px;color:var(--text-secondary)}
+    @media(max-width:1200px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.charts-grid{grid-template-columns:1fr}}
+    @media(max-width:900px){.sidebar{transform:translateX(-100%)}.main{margin-left:0}}
+    @media(max-width:600px){.kpi-grid{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.smg{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="tc" id="toastContainer"></div>
+<!-- MODAL -->
+<div class="mo" id="bModal">
+  <div class="mb">
+    <div class="mh"><div class="mt">✦ 신규 지점 등록</div><div class="mc" onclick="closeModal()">✕</div></div>
+    <div class="mbody">
+      <div class="fg">
+        <div class="fgg"><label class="fl">지점명 *</label><input class="fc" type="text" placeholder="예: 서울 강남점" /></div>
+        <div class="fgg"><label class="fl">지점 코드 *</label><input class="fc" type="text" placeholder="SEOUL-GN-001" /></div>
+        <div class="fgg"><label class="fl">지점장명</label><input class="fc" type="text" placeholder="이름 입력" /></div>
+        <div class="fgg"><label class="fl">연락처</label><input class="fc" type="text" placeholder="010-0000-0000" /></div>
+        <div class="fgg full"><label class="fl">주소</label><input class="fc" type="text" placeholder="지점 주소 입력" /></div>
+        <div class="fgg"><label class="fl">지역 구분</label><select class="fc"><option>서울</option><option>경기</option><option>인천</option><option>부산</option><option>대구</option><option>광주</option><option>대전</option><option>강원</option><option>경남</option></select></div>
+        <div class="fgg"><label class="fl">운영 상태</label><select class="fc"><option>활성</option><option>준비중</option><option>일시정지</option></select></div>
+        <div class="fgg full"><label class="fl">비고</label><textarea class="fc" rows="2" placeholder="추가 메모 (선택)"></textarea></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn btn-g" onclick="closeModal()">취소</button><button class="btn btn-p" onclick="submitBranch()">✦ 지점 등록</button></div>
+  </div>
+</div>
+<!-- LAYOUT -->
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">📦</div>
+      <div><div class="logo-text">동네<span>비서</span></div><div class="logo-sub">ADMIN DASHBOARD v2.4</div></div>
+    </div>
+    <div class="sst">메인 메뉴</div>
+    <div class="nav-item active" onclick="switchTab('home',this)"><span class="nav-icon">⊞</span> 대시보드<span class="nav-badge">NEW</span></div>
+    <div class="nav-item" onclick="switchTab('branch',this)"><span class="nav-icon">🏪</span> 지점 관리</div>
+    <div class="nav-item" onclick="switchTab('delivery',this)"><span class="nav-icon">🚚</span> 배송 현황<span class="nav-badge">12</span></div>
+    <div class="nav-item" onclick="switchTab('settlement',this)"><span class="nav-icon">💳</span> 정산 관리</div>
+    <div class="nav-item" onclick="switchTab('notification',this)"><span class="nav-icon">💬</span> 알림톡 현황</div>
+    <div class="sst">시스템</div>
+    <div class="nav-item" onclick="showToast('⚙️','시스템 설정','기능 개발 중입니다.')"><span class="nav-icon">⚙️</span> 시스템 설정</div>
+    <div class="nav-item" onclick="showToast('👥','계정 관리','기능 개발 중입니다.')"><span class="nav-icon">👥</span> 계정 관리</div>
+    <div class="nav-item" onclick="showToast('📋','로그 조회','기능 개발 중입니다.')"><span class="nav-icon">📋</span> 로그 조회</div>
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">SA</div>
+        <div><div class="user-name">김관리자</div><div class="user-role">SYSTEM_ADMIN</div></div>
+        <div style="margin-left:auto;font-size:13px;color:var(--text-muted);cursor:pointer" onclick="showToast('👋','로그아웃','안전하게 로그아웃 되었습니다.')">⎋</div>
+      </div>
+    </div>
+  </nav>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="topbarTitle">대시보드 <span>전국 현황 개요</span></div>
+      <div class="topbar-actions">
+        <div class="date-badge">📅 2026년 6월 28일 (토)</div>
+        <div class="icon-btn notif-dot" onclick="showToast('🔔','알림','미처리 알림 3건이 있습니다.')">🔔</div>
+        <div class="icon-btn" onclick="showToast('🔄','새로고침','데이터를 갱신했습니다.')">🔄</div>
+        <div class="icon-btn" onclick="showToast('📤','내보내기','CSV 파일 준비 중...')">📤</div>
+      </div>
+    </header>
+    <div class="content">
+
+      <!-- HOME -->
+      <div class="tab-panel active" id="tab-home">
+        <div class="gt"></div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">총 접수건수 (이번달)</div><div class="kpi-icon" style="background:rgba(0,212,255,0.12)">📦</div></div><div class="kpi-value" style="color:var(--accent-1)">24,871</div><div class="kpi-trend trend-up">▲ 12.4% <span style="color:var(--text-muted)">전월 대비</span></div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">오늘 집하완료</div><div class="kpi-icon" style="background:rgba(0,230,118,0.12)">✅</div></div><div class="kpi-value" style="color:var(--success)">1,248</div><div class="kpi-trend trend-up">▲ 8.2% <span style="color:var(--text-muted)">어제 대비</span></div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">이번달 매출</div><div class="kpi-icon" style="background:rgba(255,179,0,0.12)">💰</div></div><div class="kpi-value" style="color:var(--warning)">₩382M</div><div class="kpi-trend trend-up">▲ 6.7% <span style="color:var(--text-muted)">전월 대비</span></div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">알림톡 발송건</div><div class="kpi-icon" style="background:rgba(64,196,255,0.12)">💬</div></div><div class="kpi-value" style="color:var(--info)">31,092</div><div class="kpi-trend trend-down">▼ 1.3% <span style="color:var(--text-muted)">전월 대비</span></div></div>
+        </div>
+        <div class="charts-grid">
+          <div class="gc"><div class="ch"><div class="ct">📈 최근 7일 일별 접수량</div><div style="display:flex;gap:8px"><span class="badge bi"><span class="bd" style="background:var(--info)"></span>접수</span><span class="badge bs"><span class="bd" style="background:var(--success)"></span>완료</span></div></div><div class="cb"><div class="chart-wrap" style="height:240px"><canvas id="lineChart"></canvas></div></div></div>
+          <div class="gc"><div class="ch"><div class="ct">🏆 지점별 이번달 실적</div></div><div class="cb"><div class="chart-wrap" style="height:240px"><canvas id="barChart"></canvas></div></div></div>
+        </div>
+        <div class="gc" style="overflow:hidden">
+          <div class="ch"><div class="ct">📋 최근 택배 접수 현황</div><button class="btn btn-g btn-sm" onclick="switchTab('delivery',document.querySelectorAll('.nav-item')[2])">전체보기 →</button></div>
+          <div class="tw"><table>
+            <thead><tr><th>접수번호</th><th>지점</th><th>고객명</th><th>택배사</th><th>운송장번호</th><th>상태</th><th>접수일시</th></tr></thead>
+            <tbody>
+              <tr><td><span style="font-family:monospace;color:var(--accent-1);font-size:11px">#RCP-20260628-00091</span></td><td>서울 강남점</td><td>이수민</td><td><span class="badge bm">CJ대한통운</span></td><td style="font-family:monospace">5521748293010</td><td><span class="ds dsh">✓ 택배사인계</span></td><td style="color:var(--text-secondary);font-size:12px">2026-06-28 23:41</td></tr>
+              <tr><td><span style="font-family:monospace;color:var(--accent-1);font-size:11px">#RCP-20260628-00090</span></td><td>부산 해운대점</td><td>박준영</td><td><span class="badge bm">롯데택배</span></td><td style="font-family:monospace">3894720018833</td><td><span class="ds dss">▣ 지점입고</span></td><td style="color:var(--text-secondary);font-size:12px">2026-06-28 23:17</td></tr>
+              <tr><td><span style="font-family:monospace;color:var(--accent-1);font-size:11px">#RCP-20260628-00089</span></td><td>경기 성남점</td><td>최지혜</td><td><span class="badge bm">한진택배</span></td><td style="font-family:monospace">7721039102840</td><td><span class="ds dsp">◐ 픽업완료</span></td><td style="color:var(--text-secondary);font-size:12px">2026-06-28 22:58</td></tr>
+              <tr><td><span style="font-family:monospace;color:var(--accent-1);font-size:11px">#RCP-20260628-00088</span></td><td>인천 연수점</td><td>김동현</td><td><span class="badge bm">CJ대한통운</span></td><td style="font-family:monospace">5521839482010</td><td><span class="ds dsr">○ 접수완료</span></td><td style="color:var(--text-secondary);font-size:12px">2026-06-28 22:34</td></tr>
+              <tr><td><span style="font-family:monospace;color:var(--accent-1);font-size:11px">#RCP-20260628-00087</span></td><td>대전 유성점</td><td>정민서</td><td><span class="badge bm">우체국택배</span></td><td style="font-family:monospace">8802019398271</td><td><span class="ds dsh">✓ 택배사인계</span></td><td style="color:var(--text-secondary);font-size:12px">2026-06-28 22:10</td></tr>
+            </tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <!-- BRANCH -->
+      <div class="tab-panel" id="tab-branch">
+        <div class="gt"></div>
+        <div class="section-header">
+          <div class="section-title">🏪 지점 관리 <small>전국 34개 지점 운영 중</small></div>
+          <div style="display:flex;gap:10px"><div class="siw"><span class="si">🔍</span><input class="si-input" type="text" placeholder="지점명, 지역 검색..."/></div><button class="btn btn-p" onclick="openModal()">＋ 지점 추가</button></div>
+        </div>
+        <div class="fb" style="margin-bottom:18px">
+          <button class="btn btn-g btn-sm active" onclick="filterActive(this)">전체 34</button>
+          <button class="btn btn-g btn-sm" onclick="filterActive(this)">활성 31</button>
+          <button class="btn btn-g btn-sm" onclick="filterActive(this)">준비중 2</button>
+          <button class="btn btn-g btn-sm" onclick="filterActive(this)">일시정지 1</button>
+        </div>
+        <div class="gc" style="overflow:hidden">
+          <div class="ch"><div class="ct">📍 지점 목록</div><div style="font-size:12px;color:var(--text-muted)">마지막 업데이트: 2026-06-28 23:40</div></div>
+          <div class="tw"><table><thead><tr><th>#</th><th>지점명</th><th>지역</th><th>지점장</th><th>연락처</th><th>이번달 접수</th><th>달성률</th><th>이번달 매출</th><th>상태</th><th>액션</th></tr></thead><tbody id="bTbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- DELIVERY -->
+      <div class="tab-panel" id="tab-delivery">
+        <div class="gt"></div>
+        <div class="section-header">
+          <div class="section-title">🚚 배송 현황 <small>오늘 기준 실시간</small></div>
+          <div class="date-badge pulse" style="color:var(--success)">● LIVE</div>
+        </div>
+        <div class="kpi-grid" style="margin-bottom:20px">
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">접수완료</div><span class="ds dsr">○</span></div><div class="kpi-value" style="color:var(--info)">847</div><div class="kpi-trend" style="color:var(--text-muted)">대기중</div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">픽업완료</div><span class="ds dsp">◐</span></div><div class="kpi-value" style="color:var(--warning)">312</div><div class="kpi-trend" style="color:var(--text-muted)">이동 중</div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">지점입고</div><span class="ds dss">▣</span></div><div class="kpi-value" style="color:var(--accent-1)">524</div><div class="kpi-trend" style="color:var(--text-muted)">입고 완료</div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">택배사인계</div><span class="ds dsh">✓</span></div><div class="kpi-value" style="color:var(--success)">1,848</div><div class="kpi-trend trend-up">▲ 오늘 완료</div></div>
+        </div>
+        <div class="fb" style="margin-bottom:18px">
+          <button class="btn btn-g btn-sm active" onclick="filterDelivery('all',this)">전체</button>
+          <button class="btn btn-g btn-sm" onclick="filterDelivery('received',this)">접수완료</button>
+          <button class="btn btn-g btn-sm" onclick="filterDelivery('pickup',this)">픽업완료</button>
+          <button class="btn btn-g btn-sm" onclick="filterDelivery('stored',this)">지점입고</button>
+          <button class="btn btn-g btn-sm" onclick="filterDelivery('handed',this)">택배사인계</button>
+          <div class="sep"></div>
+          <div class="siw"><span class="si">🔍</span><input class="si-input" type="text" placeholder="운송장 번호, 고객명..." oninput="searchDelivery(this.value)"/></div>
+        </div>
+        <div class="gc" style="overflow:hidden">
+          <div class="ch"><div class="ct">📦 택배 목록</div><div style="font-size:12px;color:var(--text-muted)" id="dCount">총 20건 표시</div></div>
+          <div class="tw"><table><thead><tr><th>접수번호</th><th>지점</th><th>고객명</th><th>연락처</th><th>택배사</th><th>운송장번호</th><th>무게</th><th>요금</th><th>상태</th><th>접수일시</th></tr></thead><tbody id="dTbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- SETTLEMENT -->
+      <div class="tab-panel" id="tab-settlement">
+        <div class="gt"></div>
+        <div class="section-header">
+          <div class="section-title">💳 정산 관리</div>
+          <button class="btn btn-p" onclick="showToast('📊','정산 보고서','PDF 생성 중입니다...')">📄 보고서 출력</button>
+        </div>
+        <div class="ps">
+          <div class="pl">정산 기간:</div>
+          <select class="fc" style="width:auto;padding:7px 14px" onchange="showToast('📅','기간 변경','정산 기간이 변경되었습니다.')"><option>2026년 06월</option><option>2026년 05월</option><option>2026년 04월</option><option>2026년 03월</option></select>
+          <div class="pl">상태 필터:</div>
+          <select class="fc" style="width:auto;padding:7px 14px" onchange="showToast('🔎','필터 적용','정산 현황을 필터링했습니다.')"><option>전체</option><option>정산완료</option><option>정산대기</option><option>처리중</option></select>
+        </div>
+        <div class="kpi-grid" style="margin-bottom:20px">
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">총 매출액</div><div class="kpi-icon" style="background:rgba(0,212,255,0.12)">💰</div></div><div class="kpi-value" style="font-size:22px;color:var(--accent-1)">₩382,450,000</div><div class="kpi-trend trend-up">▲ 6.7% 전월 대비</div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">총 수수료</div><div class="kpi-icon" style="background:rgba(255,179,0,0.12)">🏷️</div></div><div class="kpi-value" style="font-size:22px;color:var(--warning)">₩57,367,500</div><div class="kpi-trend" style="color:var(--text-muted)">매출의 15%</div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">알림 비용 합계</div><div class="kpi-icon" style="background:rgba(64,196,255,0.12)">💬</div></div><div class="kpi-value" style="font-size:22px;color:var(--info)">₩4,041,960</div><div class="kpi-trend" style="color:var(--text-muted)">건당 ₩130</div></div>
+          <div class="kpi-card"><div class="kpi-card-header"><div class="kpi-label">순 정산액</div><div class="kpi-icon" style="background:rgba(0,230,118,0.12)">✅</div></div><div class="kpi-value" style="font-size:22px;color:var(--success)">₩321,040,540</div><div class="kpi-trend trend-up">▲ 정산 완료 28건</div></div>
+        </div>
+        <div class="gc" style="overflow:hidden">
+          <div class="ch"><div class="ct">📋 지점별 정산 현황</div><button class="btn btn-p btn-sm" onclick="showToast('✅','정산 확정','선택된 지점의 정산을 확정했습니다.')">✓ 정산 일괄확정</button></div>
+          <div class="tw"><table><thead><tr><th><input type="checkbox" style="accent-color:var(--accent-1)"/></th><th>지점명</th><th>접수건수</th><th>총 매출</th><th>수수료(15%)</th><th>알림 비용</th><th>순 정산액</th><th>정산 상태</th><th>정산 예정일</th><th>액션</th></tr></thead><tbody id="sTbody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- NOTIFICATION -->
+      <div class="tab-panel" id="tab-notification">
+        <div class="gt"></div>
+        <div class="section-header">
+          <div class="section-title">💬 알림톡 발송 현황 <small>이번달 기준</small></div>
+          <button class="btn btn-p" onclick="showToast('📨','알림톡 발송','테스트 알림톡을 발송했습니다.')">📨 테스트 발송</button>
+        </div>
+        <div class="smg">
+          <div class="sm"><div class="sml">✅ 발송 성공</div><div class="smv" style="color:var(--success)">29,481</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">성공률 94.8%</div></div>
+          <div class="sm"><div class="sml">❌ 발송 실패</div><div class="smv" style="color:var(--danger)">621</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">실패율 2.0%</div></div>
+          <div class="sm"><div class="sml">🔄 SMS 대체</div><div class="smv" style="color:var(--warning)">990</div><div style="font-size:12px;color:var(--text-muted);margin-top:4px">대체율 3.2%</div></div>
+        </div>
+        <div class="charts-grid">
+          <div class="gc">
+            <div class="ch"><div class="ct">🍩 발송 결과 분포</div></div>
+            <div class="cb" style="display:flex;align-items:center;gap:32px">
+              <div class="chart-wrap" style="height:220px;width:220px;flex-shrink:0"><canvas id="donutChart"></canvas></div>
+              <div style="flex:1">
+                <div style="display:flex;flex-direction:column;gap:14px">
+                  <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:var(--success)"></div><span style="font-size:13px">발송 성공</span></div><span style="font-weight:700;color:var(--success)">29,481 <span style="color:var(--text-muted);font-weight:400">(94.8%)</span></span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:var(--warning)"></div><span style="font-size:13px">SMS 대체</span></div><span style="font-weight:700;color:var(--warning)">990 <span style="color:var(--text-muted);font-weight:400">(3.2%)</span></span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between"><div style="display:flex;align-items:center;gap:8px"><div style="width:12px;height:12px;border-radius:3px;background:var(--danger)"></div><span style="font-size:13px">발송 실패</span></div><span style="font-weight:700;color:var(--danger)">621 <span style="color:var(--text-muted);font-weight:400">(2.0%)</span></span></div>
+                  <hr style="border-color:var(--border)"/>
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--text-secondary)">총 발송</span><span style="font-weight:700;font-size:16px;color:var(--accent-1)">31,092건</span></div>
+                  <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--text-secondary)">이번달 비용</span><span style="font-weight:700;font-size:16px;color:var(--warning)">₩4,041,960</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="gc"><div class="ch"><div class="ct">📊 일별 발송 비용 추이</div></div><div class="cb"><div class="chart-wrap" style="height:220px"><canvas id="costChart"></canvas></div></div></div>
+        </div>
+        <div class="gc" style="overflow:hidden;margin-top:20px">
+          <div class="ch"><div class="ct">📋 지점별 알림톡 발송 현황</div></div>
+          <div class="tw"><table><thead><tr><th>지점명</th><th>총 발송</th><th>성공</th><th>실패</th><th>SMS 대체</th><th>성공률</th><th>발송 비용</th></tr></thead><tbody id="nTbody"></tbody></table></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<script>
+Chart.defaults.color='#8BA8C4';Chart.defaults.font.family='Inter';Chart.defaults.font.size=12;
+const BD=[
+  {id:1,name:'서울 강남점',region:'서울',mgr:'김영수',tel:'010-1234-5678',count:2841,goal:2500,rev:42615000,st:'활성'},
+  {id:2,name:'서울 마포점',region:'서울',mgr:'이지영',tel:'010-2345-6789',count:2107,goal:2200,rev:31605000,st:'활성'},
+  {id:3,name:'서울 송파점',region:'서울',mgr:'박철수',tel:'010-3456-7890',count:1932,goal:2000,rev:28980000,st:'활성'},
+  {id:4,name:'경기 성남점',region:'경기',mgr:'최유리',tel:'010-4567-8901',count:2284,goal:2100,rev:34260000,st:'활성'},
+  {id:5,name:'경기 수원점',region:'경기',mgr:'정태양',tel:'010-5678-9012',count:1876,goal:2000,rev:28140000,st:'활성'},
+  {id:6,name:'경기 용인점',region:'경기',mgr:'강민준',tel:'010-6789-0123',count:1654,goal:1800,rev:24810000,st:'활성'},
+  {id:7,name:'부산 해운대점',region:'부산',mgr:'한소희',tel:'010-7890-1234',count:2012,goal:2000,rev:30180000,st:'활성'},
+  {id:8,name:'부산 서면점',region:'부산',mgr:'임재원',tel:'010-8901-2345',count:1743,goal:1800,rev:26145000,st:'활성'},
+  {id:9,name:'인천 연수점',region:'인천',mgr:'조현진',tel:'010-9012-3456',count:1598,goal:1700,rev:23970000,st:'활성'},
+  {id:10,name:'대전 유성점',region:'대전',mgr:'윤서연',tel:'010-0123-4567',count:1421,goal:1500,rev:21315000,st:'활성'},
+  {id:11,name:'대구 수성점',region:'대구',mgr:'신동준',tel:'010-1111-2222',count:1387,goal:1500,rev:20805000,st:'활성'},
+  {id:12,name:'광주 상무점',region:'광주',mgr:'백지수',tel:'010-2222-3333',count:1204,goal:1400,rev:18060000,st:'준비중'},
+  {id:13,name:'강원 춘천점',region:'강원',mgr:'남궁철',tel:'010-3333-4444',count:98,goal:1200,rev:1470000,st:'준비중'},
+  {id:14,name:'경남 창원점',region:'경남',mgr:'엄지훈',tel:'010-4444-5555',count:712,goal:1000,rev:10680000,st:'일시정지'},
+];
+const DD=[
+  {id:'RCP-20260628-00091',br:'서울 강남점',cu:'이수민',tel:'010-1111-2222',cr:'CJ대한통운',tr:'5521748293010',wt:'3.2kg',fee:'₩5,500',st:'handed',tm:'2026-06-28 23:41'},
+  {id:'RCP-20260628-00090',br:'부산 해운대점',cu:'박준영',tel:'010-2222-3333',cr:'롯데택배',tr:'3894720018833',wt:'1.8kg',fee:'₩4,000',st:'stored',tm:'2026-06-28 23:17'},
+  {id:'RCP-20260628-00089',br:'경기 성남점',cu:'최지혜',tel:'010-3333-4444',cr:'한진택배',tr:'7721039102840',wt:'5.0kg',fee:'₩7,000',st:'pickup',tm:'2026-06-28 22:58'},
+  {id:'RCP-20260628-00088',br:'인천 연수점',cu:'김동현',tel:'010-4444-5555',cr:'CJ대한통운',tr:'5521839482010',wt:'2.5kg',fee:'₩5,000',st:'received',tm:'2026-06-28 22:34'},
+  {id:'RCP-20260628-00087',br:'대전 유성점',cu:'정민서',tel:'010-5555-6666',cr:'우체국택배',tr:'8802019398271',wt:'0.9kg',fee:'₩3,500',st:'handed',tm:'2026-06-28 22:10'},
+  {id:'RCP-20260628-00086',br:'서울 마포점',cu:'홍길동',tel:'010-6666-7777',cr:'CJ대한통운',tr:'5521938473920',wt:'4.5kg',fee:'₩6,500',st:'stored',tm:'2026-06-28 21:55'},
+  {id:'RCP-20260628-00085',br:'경기 수원점',cu:'이서진',tel:'010-7777-8888',cr:'롯데택배',tr:'3894829019283',wt:'2.0kg',fee:'₩4,000',st:'received',tm:'2026-06-28 21:40'},
+  {id:'RCP-20260628-00084',br:'서울 송파점',cu:'강지민',tel:'010-8888-9999',cr:'한진택배',tr:'7721148204938',wt:'3.8kg',fee:'₩6,000',st:'handed',tm:'2026-06-28 21:22'},
+  {id:'RCP-20260628-00083',br:'부산 서면점',cu:'권도영',tel:'010-9999-0000',cr:'CJ대한통운',tr:'5522039128374',wt:'1.2kg',fee:'₩3,500',st:'pickup',tm:'2026-06-28 21:08'},
+  {id:'RCP-20260628-00082',br:'대구 수성점',cu:'오민준',tel:'010-0000-1111',cr:'우체국택배',tr:'8802119283748',wt:'6.0kg',fee:'₩8,000',st:'stored',tm:'2026-06-28 20:51'},
+  {id:'RCP-20260628-00081',br:'서울 강남점',cu:'임채원',tel:'010-1212-3434',cr:'CJ대한통운',tr:'5522138204827',wt:'2.9kg',fee:'₩5,000',st:'received',tm:'2026-06-28 20:33'},
+  {id:'RCP-20260628-00080',br:'경기 용인점',cu:'노수빈',tel:'010-2323-4545',cr:'롯데택배',tr:'3894929182938',wt:'1.5kg',fee:'₩3,500',st:'handed',tm:'2026-06-28 20:17'},
+  {id:'RCP-20260628-00079',br:'인천 연수점',cu:'류재현',tel:'010-3434-5656',cr:'한진택배',tr:'7721249201837',wt:'4.2kg',fee:'₩6,500',st:'pickup',tm:'2026-06-28 20:02'},
+  {id:'RCP-20260628-00078',br:'서울 마포점',cu:'문소영',tel:'010-4545-6767',cr:'CJ대한통운',tr:'5522239128374',wt:'0.7kg',fee:'₩3,000',st:'handed',tm:'2026-06-28 19:48'},
+  {id:'RCP-20260628-00077',br:'부산 해운대점',cu:'심준호',tel:'010-5656-7878',cr:'우체국택배',tr:'8802219283737',wt:'3.5kg',fee:'₩5,500',st:'stored',tm:'2026-06-28 19:30'},
+  {id:'RCP-20260628-00076',br:'대전 유성점',cu:'안지혜',tel:'010-6767-8989',cr:'CJ대한통운',tr:'5522338209483',wt:'2.1kg',fee:'₩4,500',st:'received',tm:'2026-06-28 19:14'},
+  {id:'RCP-20260628-00075',br:'경기 성남점',cu:'양민서',tel:'010-7878-9090',cr:'롯데택배',tr:'3895029183749',wt:'5.8kg',fee:'₩7,500',st:'pickup',tm:'2026-06-28 18:58'},
+  {id:'RCP-20260628-00074',br:'서울 송파점',cu:'오세영',tel:'010-8989-0101',cr:'한진택배',tr:'7721349201836',wt:'1.0kg',fee:'₩3,000',st:'handed',tm:'2026-06-28 18:42'},
+  {id:'RCP-20260628-00073',br:'강원 춘천점',cu:'전하준',tel:'010-9090-1212',cr:'CJ대한통운',tr:'5522439128375',wt:'2.7kg',fee:'₩5,000',st:'stored',tm:'2026-06-28 18:26'},
+  {id:'RCP-20260628-00072',br:'대구 수성점',cu:'조은혜',tel:'010-0101-2323',cr:'우체국택배',tr:'8802319283736',wt:'4.0kg',fee:'₩6,000',st:'handed',tm:'2026-06-28 18:10'},
+];
+const SD=[
+  {br:'서울 강남점',cnt:2841,rev:42615000,st:'ssc',dt:'2026-07-05'},
+  {br:'서울 마포점',cnt:2107,rev:31605000,st:'ssc',dt:'2026-07-05'},
+  {br:'서울 송파점',cnt:1932,rev:28980000,st:'sspr',dt:'2026-07-07'},
+  {br:'경기 성남점',cnt:2284,rev:34260000,st:'ssc',dt:'2026-07-05'},
+  {br:'경기 수원점',cnt:1876,rev:28140000,st:'ssp',dt:'2026-07-10'},
+  {br:'경기 용인점',cnt:1654,rev:24810000,st:'ssc',dt:'2026-07-05'},
+  {br:'부산 해운대점',cnt:2012,rev:30180000,st:'ssc',dt:'2026-07-05'},
+  {br:'부산 서면점',cnt:1743,rev:26145000,st:'sspr',dt:'2026-07-07'},
+  {br:'인천 연수점',cnt:1598,rev:23970000,st:'ssp',dt:'2026-07-10'},
+  {br:'대전 유성점',cnt:1421,rev:21315000,st:'ssc',dt:'2026-07-05'},
+];
+const ND=[
+  {br:'서울 강남점',tot:3692,suc:3502,fail:72,alt:118},
+  {br:'서울 마포점',tot:2739,suc:2595,fail:57,alt:87},
+  {br:'서울 송파점',tot:2512,suc:2380,fail:53,alt:79},
+  {br:'경기 성남점',tot:2969,suc:2814,fail:61,alt:94},
+  {br:'경기 수원점',tot:2439,suc:2312,fail:48,alt:79},
+  {br:'경기 용인점',tot:2150,suc:2039,fail:44,alt:67},
+  {br:'부산 해운대점',tot:2616,suc:2479,fail:51,alt:86},
+  {br:'부산 서면점',tot:2266,suc:2149,fail:46,alt:71},
+];
+const TT={home:['대시보드','전국 현황 개요'],branch:['지점 관리','전국 34개 지점'],delivery:['배송 현황','실시간 추적'],settlement:['정산 관리','월별 정산 현황'],notification:['알림톡 현황','발송 성과 분석']};
+function switchTab(t,el){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(el)el.classList.add('active');
+  const[ti,su]=TT[t];
+  document.getElementById('topbarTitle').innerHTML=ti+' <span>'+su+'</span>';
+}
+function openModal(){document.getElementById('bModal').classList.add('open')}
+function closeModal(){document.getElementById('bModal').classList.remove('open')}
+document.getElementById('bModal').addEventListener('click',e=>{if(e.target===document.getElementById('bModal'))closeModal()});
+function submitBranch(){closeModal();showToast('✅','지점 등록 완료','신규 지점이 성공적으로 등록되었습니다.')}
+function showToast(icon,title,msg){
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div');t.className='toast';
+  t.innerHTML='<div class="ti">'+icon+'</div><div><div class="tt">'+title+'</div><div class="tm">'+msg+'</div></div>';
+  c.appendChild(t);
+  setTimeout(()=>{t.classList.add('removing');setTimeout(()=>t.remove(),300)},3200);
+}
+function filterActive(el){el.closest('.fb').querySelectorAll('.btn').forEach(b=>b.classList.remove('active'));el.classList.add('active')}
+function renderBranch(){
+  const SM={활성:'bs',준비중:'bw',일시정지:'br'};
+  document.getElementById('bTbody').innerHTML=BD.map(b=>{
+    const p=Math.min(Math.round(b.count/b.goal*100),100);
+    return '<tr><td style="color:var(--text-muted)">'+b.id+'</td><td style="font-weight:600">'+b.name+'</td><td><span class="badge bm">'+b.region+'</span></td><td>'+b.mgr+'</td><td style="color:var(--text-secondary);font-size:12px">'+b.tel+'</td><td style="font-weight:600">'+b.count.toLocaleString()+'</td><td><div style="display:flex;align-items:center;gap:8px"><div class="pb-w"><div class="pb-f" style="width:'+p+'%"></div></div><span style="font-size:12px;color:'+(p>=100?'var(--success)':'var(--text-muted)')+'">'+p+'%</span></div></td><td style="font-weight:600;color:var(--accent-1)">₩'+(b.rev/1e6).toFixed(1)+'M</td><td><span class="badge '+SM[b.st]+'">'+b.st+'</span></td><td><div style="display:flex;gap:6px"><button class="btn btn-g btn-sm" onclick="showToast(\'🏪\',\''+b.name+'\',\'지점 상세 페이지로 이동합니다.\')">상세</button><button class="btn btn-g btn-sm" onclick="showToast(\'✏️\',\'수정\',\''+b.name+' 정보를 수정합니다.\')">수정</button></div></td></tr>';
+  }).join('');
+}
+const DSM={received:['dsr','○ 접수완료'],pickup:['dsp','◐ 픽업완료'],stored:['dss','▣ 지점입고'],handed:['dsh','✓ 택배사인계']};
+let cF='all',cS='';
+function renderDelivery(){
+  let fil=DD.filter(d=>(cF==='all'||d.st===cF)&&(!cS||d.id.toLowerCase().includes(cS)||d.cu.toLowerCase().includes(cS)||d.tr.includes(cS)));
+  document.getElementById('dCount').textContent='총 '+fil.length+'건 표시';
+  document.getElementById('dTbody').innerHTML=fil.map(d=>{
+    const[c,l]=DSM[d.st];
+    return '<tr><td><span style="font-family:monospace;color:var(--accent-1);font-size:11px">#'+d.id+'</span></td><td>'+d.br+'</td><td style="font-weight:600">'+d.cu+'</td><td style="color:var(--text-secondary);font-size:12px">'+d.tel+'</td><td><span class="badge bm">'+d.cr+'</span></td><td style="font-family:monospace;font-size:12px">'+d.tr+'</td><td>'+d.wt+'</td><td style="font-weight:600;color:var(--accent-1)">'+d.fee+'</td><td><span class="ds '+c+'">'+l+'</span></td><td style="color:var(--text-secondary);font-size:12px">'+d.tm+'</td></tr>';
+  }).join('');
+}
+function filterDelivery(s,el){cF=s;document.querySelectorAll('#tab-delivery .fb .btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderDelivery()}
+function searchDelivery(v){cS=v.toLowerCase();renderDelivery()}
+function renderSettlement(){
+  const SL={ssc:'정산완료',ssp:'정산대기',sspr:'처리중'};
+  document.getElementById('sTbody').innerHTML=SD.map(s=>{
+    const com=Math.round(s.rev*.15),nc=Math.round(s.cnt*130),net=s.rev-com-nc;
+    return '<tr><td><input type="checkbox" style="accent-color:var(--accent-1)"/></td><td style="font-weight:600">'+s.br+'</td><td>'+s.cnt.toLocaleString()+'</td><td style="font-weight:600">₩'+s.rev.toLocaleString()+'</td><td style="color:var(--warning)">₩'+com.toLocaleString()+'</td><td style="color:var(--info)">₩'+nc.toLocaleString()+'</td><td style="font-weight:700;color:var(--success)">₩'+net.toLocaleString()+'</td><td><span class="ss2 '+s.st+'">'+SL[s.st]+'</span></td><td style="color:var(--text-secondary)">'+s.dt+'</td><td><button class="btn btn-sm '+(s.st==='ssp'?'btn-p':'btn-g')+'" onclick="showToast(\'✅\',\'정산 확정\',\''+s.br+'의 정산이 확정되었습니다.\')">'+( s.st==='ssc'?'확인':'확정')+'</button></td></tr>';
+  }).join('');
+}
+function renderNotif(){
+  document.getElementById('nTbody').innerHTML=ND.map(n=>{
+    const r=((n.suc/n.tot)*100).toFixed(1);
+    return '<tr><td style="font-weight:600">'+n.br+'</td><td style="font-weight:600">'+n.tot.toLocaleString()+'</td><td style="color:var(--success)">'+n.suc.toLocaleString()+'</td><td style="color:var(--danger)">'+n.fail+'</td><td style="color:var(--warning)">'+n.alt+'</td><td><div style="display:flex;align-items:center;gap:8px"><div class="pb-w" style="min-width:70px"><div class="pb-f" style="width:'+r+'%;background:linear-gradient(90deg,var(--success),#00B050)"></div></div><span style="font-size:12px;color:var(--success)">'+r+'%</span></div></td><td style="font-weight:600;color:var(--accent-1)">₩'+(n.tot*130).toLocaleString()+'</td></tr>';
+  }).join('');
+}
+function initCharts(){
+  const tOpts={backgroundColor:'#1A2A40',borderColor:'rgba(0,212,255,0.3)',borderWidth:1,padding:12,titleColor:'#E8F4FD',bodyColor:'#8BA8C4'};
+  new Chart(document.getElementById('lineChart'),{type:'line',data:{labels:['6/22','6/23','6/24','6/25','6/26','6/27','6/28'],datasets:[{label:'접수건수',data:[834,912,761,1048,987,1124,1248],borderColor:'#00D4FF',backgroundColor:'rgba(0,212,255,0.08)',tension:.4,fill:true,pointBackgroundColor:'#00D4FF',pointRadius:5,pointHoverRadius:7,borderWidth:2},{label:'집하완료',data:[790,871,724,998,941,1072,1180],borderColor:'#00E676',backgroundColor:'rgba(0,230,118,0.05)',tension:.4,fill:true,pointBackgroundColor:'#00E676',pointRadius:5,pointHoverRadius:7,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{...tOpts,callbacks:{label:c=>' '+c.dataset.label+': '+c.parsed.y.toLocaleString()+'건'}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}},y:{grid:{color:'rgba(255,255,255,0.04)'},border:{display:false},ticks:{callback:v=>v.toLocaleString()}}}}});
+  new Chart(document.getElementById('barChart'),{type:'bar',data:{labels:['강남','마포','송파','성남','수원','해운대'],datasets:[{label:'접수건수',data:[2841,2107,1932,2284,1876,2012],backgroundColor:['rgba(0,212,255,0.7)','rgba(0,153,204,0.7)','rgba(0,212,255,0.5)','rgba(0,153,204,0.5)','rgba(0,212,255,0.4)','rgba(0,153,204,0.4)'],borderRadius:6,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tOpts,callbacks:{label:c=>' 접수: '+c.parsed.y.toLocaleString()+'건'}}},scales:{x:{grid:{display:false},border:{display:false}},y:{grid:{color:'rgba(255,255,255,0.04)'},border:{display:false},ticks:{callback:v=>v.toLocaleString()}}}}});
+  new Chart(document.getElementById('donutChart'),{type:'doughnut',data:{labels:['발송 성공','SMS 대체','발송 실패'],datasets:[{data:[29481,990,621],backgroundColor:['rgba(0,230,118,0.85)','rgba(255,179,0,0.85)','rgba(255,82,82,0.85)'],borderColor:'#0F1B2D',borderWidth:3,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'70%',plugins:{legend:{display:false},tooltip:{...tOpts,borderColor:'rgba(0,212,255,0.3)',callbacks:{label:c=>' '+c.parsed.toLocaleString()+'건 ('+((c.parsed/31092)*100).toFixed(1)+'%)'}}}}});
+  new Chart(document.getElementById('costChart'),{type:'line',data:{labels:['6/1','6/5','6/10','6/15','6/20','6/25','6/28'],datasets:[{label:'발송비용',data:[98800,124800,141700,158600,167700,178100,189700],borderColor:'#FFB300',backgroundColor:'rgba(255,179,0,0.08)',tension:.4,fill:true,pointBackgroundColor:'#FFB300',pointRadius:4,pointHoverRadius:6,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tOpts,borderColor:'rgba(255,179,0,0.3)',callbacks:{label:c=>' ₩'+c.parsed.y.toLocaleString()}}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}},y:{grid:{color:'rgba(255,255,255,0.04)'},border:{display:false},ticks:{callback:v=>'₩'+(v/1000).toFixed(0)+'K'}}}}});
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  renderBranch();renderDelivery();renderSettlement();renderNotif();initCharts();
+  setTimeout(()=>showToast('👋','안녕하세요, 김관리자님','오늘도 동네비서와 함께 즐거운 업무 되세요!'),800);
+});
+</script>
+</body>
+</html>

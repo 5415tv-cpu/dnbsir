@@ -2,10 +2,10 @@ import toml
 import os
 import sys
 
-# Production check: force postgres backend if on Linux (POSIX) or if environment variable is set
-if os.name == 'posix' or os.environ.get('DATABASE_URL') or os.environ.get('DB_BACKEND') == 'postgres':
+# 백엔드 선택: DATABASE_URL 또는 DB_BACKEND=postgres 환경변수가 명시된 경우에만 postgres 사용
+# ※ os.name == 'posix' 체크는 제거 — Docker(Linux)에서도 sqlite를 쓰는 경우가 있음
+if os.environ.get('DATABASE_URL') or os.environ.get('DB_BACKEND') == 'postgres':
     backend = 'postgres'
-
 else:
     config_path = os.path.join(os.path.dirname(__file__), 'config.toml')
     try:
@@ -19,4 +19,3 @@ if backend == 'sqlite':
     from tantan_services_sqlite import *
 else:
     from tantan_services_pg import *
-

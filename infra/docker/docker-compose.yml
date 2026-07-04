@@ -1,0 +1,203 @@
+version: '3.8'
+
+# ═══════════════════════════════════════════════════════════════════════
+# 동네비서 시스템 — 최종 멀티 컨테이너 구성
+#
+# [운영 주체 및 서비스 경계]
+# ┌─────────────────────────────────────────────────────────────────┐
+# │  탄탄제작소 (Tantan Fabrication) — 인프라 홀더                   │
+# │  → db, redis, media-worker 컨테이너 + 서버 인프라 책임            │
+# ├─────────────────────────────────────────────────────────────────┤
+# │  동네비서 (Dongnebiseo) — 서비스 브랜드 애플리케이션              │
+# │  → dongnebiseo-app 컨테이너 (키오스크 UI + 비즈니스 로직)         │
+# └─────────────────────────────────────────────────────────────────┘
+#
+# [물리적 폴더 → 컨테이너 매핑]
+#   tantan_infra/     → (배포 기준: 탄탄제작소 서버에서 독립 실행)
+#   dongnebiseo_app/  → dongnebiseo-app 컨테이너
+#   media_worker/     → media-worker 컨테이너 (완전 격리)
+#   infra/docker/     → 이 파일 위치
+#
+# [실행]
+#   cd infra/docker
+#   docker compose up -d
+#   docker compose logs -f dongnebiseo-app
+# ═══════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ──────────────────────────────────────────────────────────────
+  # ① 동네비서 앱 — 키오스크 UI + 비즈니스 로직
+  #    소스: dongnebiseo_app/ (설정/서비스), routers/, templates/, static/
+  #    인프라: 탄탄제작소 서버 위에서 구동
+  # ──────────────────────────────────────────────────────────────
+  dongnebiseo-app:
+    build:
+      context: ../..         # AI_Store 루트 (routers/, templates/ 포함)
+      dockerfile: Dockerfile
+    image: dnbsir-app:latest
+    container_name: dnbsir-app
+    restart: unless-stopped
+    ports:
+      - "${TANTAN_PORT:-8080}:8080"
+    environment:
+      PORT: "8080"
+      # 탄탄제작소 인프라 설정 (TANTAN_ prefix)
+      TANTAN_DATABASE_URL: "postgresql://${TANTAN_DB_USER:-dnbsir}:${TANTAN_DB_PASSWORD}@db:5432/${TANTAN_DB_NAME:-dnbsir}"
+      TANTAN_DB_HOST: "db"
+      TANTAN_REDIS_URL: "redis://redis:6379/0"
+      TANTAN_SERVER_REGION: "kr-central1"
+      TANTAN_UPLOAD_SECRET: "${TANTAN_UPLOAD_SECRET}"
+      # 동네비서 앱 설정 (레거시 키명)
+      GOOGLE_API_KEY: "${GOOGLE_API_KEY}"
+      SOLAPI_API_KEY: "${SOLAPI_API_KEY}"
+      SOLAPI_API_SECRET: "${SOLAPI_API_SECRET}"
+      SOLAPI_SENDER: "${SOLAPI_SENDER}"
+      TOSS_CLIENT_KEY: "${TOSS_CLIENT_KEY}"
+      TOSS_SECRET_KEY: "${TOSS_SECRET_KEY}"
+      WEBHOOK_SECRET_TOKEN: "${WEBHOOK_SECRET_TOKEN}"
+      APP_BASE_URL: "${APP_BASE_URL:-https://dongnebiseo.com}"
+    env_file:
+      - ../../.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          memory: 2G           # 메인 앱 메모리 상한 — OOM 격리
+          cpus: '1.0'
+    networks:
+      - dnbsir-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # ──────────────────────────────────────────────────────────────
+  # ② 숏폼 미디어 워커 — 탄탄제작소 GPU 서버 전용 (완전 격리)
+  #    소스: media_worker/
+  #    - 메인 앱 코드와 의존성 제로 공유
+  #    - 장애 발생 시 메인 앱 서비스 무영향
+  #    - Celery + Redis 비동기 태스크 큐
+  # ──────────────────────────────────────────────────────────────
+  media-worker:
+    build:
+      context: ../../media_worker
+      dockerfile: Dockerfile.worker
+    image: dnbsir-media-worker:latest
+    container_name: dnbsir-media-worker
+    restart: unless-stopped
+    environment:
+      MEDIA_WORKER_REDIS_URL: "redis://redis:6379/1"   # 별도 DB 인덱스 (앱과 격리)
+      MEDIA_WORKER_COMFYUI_HOST: "${MEDIA_WORKER_COMFYUI_HOST:-host.docker.internal}"
+      MEDIA_WORKER_COMFYUI_PORT: "${MEDIA_WORKER_COMFYUI_PORT:-8188}"
+      MEDIA_WORKER_TANTAN_API_KEY: "${TANTAN_UPLOAD_SECRET}"
+      MEDIA_WORKER_DNBSIR_API_BASE: "${APP_BASE_URL:-https://api.dnbsir.com}"
+    env_file:
+      - ../../media_worker/.env
+    depends_on:
+      - redis
+    deploy:
+      resources:
+        limits:
+          memory: 8G           # 대용량 미디어 처리 메모리 상한 (OOM 방지 핵심)
+          cpus: '2.0'
+    # ▼ GPU 서버에서 실행 시 아래 2줄 주석 해제
+    # runtime: nvidia
+    # environment:
+    #   NVIDIA_VISIBLE_DEVICES: all
+    networks:
+      - dnbsir-network           # 앱과 동일 네트워크 (Redis 접근용)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+    profiles:
+      - with-worker              # 기본 실행에서 제외: docker compose --profile with-worker up
+
+  # ──────────────────────────────────────────────────────────────
+  # ③ Redis — Celery 태스크 큐 브로커 (탄탄제작소 인프라)
+  #    DB 0: dongnebiseo-app 캐시
+  #    DB 1: media-worker Celery 태스크 큐
+  # ──────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: dnbsir-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - dnbsir-network
+
+  # ──────────────────────────────────────────────────────────────
+  # ④ PostgreSQL — 탄탄제작소 DB 클러스터 (한국 서버)
+  # ──────────────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: dnbsir-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${TANTAN_DB_NAME:-dnbsir}"
+      POSTGRES_USER: "${TANTAN_DB_USER:-dnbsir}"
+      POSTGRES_PASSWORD: "${TANTAN_DB_PASSWORD}"
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # 한국 서버 타임존 설정
+      TZ: "Asia/Seoul"
+      PGTZ: "Asia/Seoul"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TANTAN_DB_USER:-dnbsir} -d ${TANTAN_DB_NAME:-dnbsir}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - dnbsir-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+volumes:
+  postgres_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/tantan/data/postgres   # 탄탄제작소 서버 마운트 경로
+
+  redis_data:
+    driver: local
+
+networks:
+  dnbsir-network:
+    name: dnbsir-network
+    driver: bridge
