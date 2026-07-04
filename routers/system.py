@@ -111,7 +111,11 @@ async def check_integrity_endpoint():
 
 @router.get("/health")
 def health_check():
-    return {"ok": True}
+    return {
+        "status": "ok",
+        "service": "dongnebiseo",
+        "version": "1.4.0"
+    }
 
 @router.get("/status", response_class=HTMLResponse)
 async def visual_health_check():
