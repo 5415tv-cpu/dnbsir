@@ -225,8 +225,9 @@ async def admin_dashboard(request: Request, cookie_store_id: Union[str, None] = 
     except Exception as e:
         print(f"Error fetching video requests: {e}")
 
-    response_obj = templates.TemplateResponse(request, "admin_dashboard.html", {
+    response_obj = templates.TemplateResponse(request, "dashboard.html", {
         "request": request, 
+        "store_name": store.get("store_name", "내 상점"),
         "store": store, 
         "video_requests": video_requests,
         "stats": {
@@ -1174,3 +1175,70 @@ async def get_log_files(
             files.append({"name": fname, "size_kb": size_kb})
 
     return {"files": files}
+
+
+# --- 신규 가맹점 대시보드 연동 라우트 ---
+
+@router.get("/manage_orders", response_class=HTMLResponse)
+async def manage_orders(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
+    if not cookie_store_id:
+        return RedirectResponse(url="/admin?mode=login", status_code=303)
+    mock_orders = [
+        {'name': '김철수', 'item': '사과 1박스 (특등급)', 'price': '35,000'},
+        {'name': '이영희', 'item': '배 2박스', 'price': '60,000'},
+        {'name': '박지민', 'item': '사과즙 50포', 'price': '25,000'}
+    ]
+    mock_callbacks = [
+        {'name': '최민수', 'reason': '장바구니 결제 미완료 (3시간 경과)', 'phone': '010-1234-5678'},
+        {'name': '정재현', 'reason': '계좌번호 문의 (AI 자동 응답됨)', 'phone': '010-9876-5432'}
+    ]
+    return templates.TemplateResponse(request, "manage_orders.html", {"request": request, "orders": mock_orders, "callbacks": mock_callbacks})
+
+@router.get("/ai_assistant", response_class=HTMLResponse)
+async def ai_assistant(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
+    if not cookie_store_id:
+        return RedirectResponse(url="/admin?mode=login", status_code=303)
+    store = db.get_store(cookie_store_id)
+    return templates.TemplateResponse(request, "ai_assistant.html", {"request": request, "store_name": store.get("store_name", "내 상점")})
+
+@router.get("/token_history", response_class=HTMLResponse)
+async def token_history(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
+    if not cookie_store_id:
+        return RedirectResponse(url="/admin?mode=login", status_code=303)
+    store = db.get_store(cookie_store_id)
+    history = [
+        {"date": "2026-07-15 14:00", "method": "토큰 사용", "amount": "-10 🔮", "tokens_added": "AI 자동 응답"},
+        {"date": "2026-07-14 09:30", "method": "토큰 충전", "amount": "+1,000 🔮", "tokens_added": "계좌이체 충전"}
+    ]
+    return templates.TemplateResponse(request, "token_history.html", {"request": request, "history": history, "store_name": store.get("store_name", "내 상점")})
+
+@router.get("/token_recharge", response_class=HTMLResponse)
+async def token_recharge(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
+    if not cookie_store_id:
+        return RedirectResponse(url="/admin?mode=login", status_code=303)
+    store = db.get_store(cookie_store_id)
+    return templates.TemplateResponse(request, "token_recharge.html", {"request": request, "store_name": store.get("store_name", "내 상점")})
+
+@router.post("/api/ai/query")
+async def ai_query(request: Request, query_type: str = Form(None), custom_text: str = Form('')):
+    custom_text = custom_text.strip() if custom_text else ""
+    if query_type == 'orders_today':
+        reply = "오늘 총 3건의 신규 주문이 있습니다. (김철수님 외 2건, 총 120,000원 대기 중)"
+        return {"reply": reply, "action": None}
+    elif query_type == 'sales_month':
+        reply = "이번 달 누적 매출액은 4,550,000원입니다. 지난달 대비 15% 상승 중입니다!"
+        return {"reply": reply, "action": None}
+    elif query_type == 'bestseller':
+        reply = "현재 '사과 세트'가 가장 많이 팔리고 있습니다. 이 상품으로 홍보용 숏폼을 하나 더 만들어볼까요? (예상비용: 10 🔮)"
+        return {"reply": reply, "action": "create_shortform"}
+    elif custom_text:
+        if "주문" in custom_text or "얼마" in custom_text:
+            reply = "명령어를 정확히 인식하기 위해 위에 있는 자동 질문 버튼을 이용해 주시면 더 빠르고 정확하게 안내해 드릴 수 있습니다!"
+        else:
+            reply = f"사장님, 말씀하신 '{custom_text}'에 대해 지금은 답변이 어렵습니다. 추후 업데이트를 기대해주세요!"
+        return {"reply": reply, "action": None}
+    return {"reply": "잘못된 요청입니다.", "action": None}
+
+@router.post("/api/token_recharge")
+async def process_token_recharge(request: Request, amount: str = Form(...), cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
+    return {"success": True, "message": f"{amount}원 충전 요청이 접수되었습니다."}
