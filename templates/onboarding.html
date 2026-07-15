@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>동네비서 1분 자동 입점</title>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
@@ -134,5 +135,62 @@
             🔒 <b>보안 시스템 가동 중</b>: 해킹 방지를 위해 이미지 확장자 변조 검사 및 파일 헤더 분석이 자동으로 수행되며, 5MB 이상의 파일은 업로드가 원천 차단됩니다.
         </div>
     </div>
+    
+    <script>
+        document.querySelector('form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('store_image');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("대표 사진을 반드시 선택해주세요.");
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // 버튼 상태 변경
+            const originalBtnText = submitBtn.innerText;
+            submitBtn.innerText = "사진을 최적화하는 중입니다...";
+            submitBtn.disabled = true;
+            submitBtn.style.backgroundColor = "#999";
+            
+            try {
+                // 압축 옵션 설정
+                const options = {
+                    maxSizeMB: 1,          // 최대 1MB
+                    maxWidthOrHeight: 1920, // 가로/세로 최대 1920px
+                    useWebWorker: true,
+                    fileType: 'image/jpeg', // JPEG 변환
+                    initialQuality: 0.8
+                };
+                
+                // browser-image-compression 실행 (EXIF Orientation 자동 처리됨)
+                const compressedFile = await imageCompression(file, options);
+                
+                // 새로운 File 객체 생성 (기존 파일명 유지, 확장자는 .jpg)
+                const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+                const newFileObj = new File([compressedFile], newFileName, {
+                    type: "image/jpeg",
+                });
+                
+                // fileInput 값 교체
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(newFileObj);
+                fileInput.files = dataTransfer.files;
+                
+                // 폼 강제 제출 (이벤트 리스너 우회)
+                HTMLFormElement.prototype.submit.call(this);
+                
+            } catch (error) {
+                console.error("이미지 압축 중 오류 발생:", error);
+                alert("이미지 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+                submitBtn.innerText = originalBtnText;
+                submitBtn.disabled = false;
+                submitBtn.style.backgroundColor = ""; // 원래 색상으로 복구 (CSS 클래스 의존)
+            }
+        });
+    </script>
 </body>
 </html>

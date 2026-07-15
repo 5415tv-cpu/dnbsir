@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, Response, Depends, HTTPException, BackgroundTasks, Cookie
+from fastapi import APIRouter, Request, Form, Response, Depends, HTTPException, BackgroundTasks, Cookie, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -832,6 +832,56 @@ async def process_onboarding(
         
     db.save_store(store_id, updated_data)
     return RedirectResponse(url=next_url, status_code=303)
+
+@router.post("/onboard", response_class=HTMLResponse)
+async def process_new_onboard(
+    request: Request,
+    subdomain: str = Form(...),
+    store_name: str = Form(...),
+    description: str = Form(""),
+    store_image: UploadFile = File(...)
+):
+    import sqlite3
+    from pathlib import Path
+    import shutil
+    
+    subdomain = subdomain.strip().lower()
+    store_name = store_name.strip()
+    
+    if not subdomain or not store_name:
+        return HTMLResponse("서브도메인과 상점 이름은 필수입니다.", status_code=400)
+        
+    if not store_image or not store_image.filename:
+        return HTMLResponse("선택된 파일이 없습니다.", status_code=400)
+        
+    filename = store_image.filename
+    unique_filename = f"{subdomain}_{filename}"
+    upload_dir = Path("static/uploads")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    filepath = upload_dir / unique_filename
+    
+    with open(filepath, "wb") as buffer:
+        shutil.copyfileobj(store_image.file, buffer)
+        
+    try:
+        with sqlite3.connect("database.db") as conn:
+            existing = conn.execute("SELECT id FROM stores WHERE subdomain = ?", (subdomain,)).fetchone()
+            if existing:
+                conn.execute(
+                    "UPDATE stores SET store_name = ?, description = ?, image_filename = ? WHERE subdomain = ?",
+                    (store_name, description, unique_filename, subdomain)
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO stores (subdomain, store_name, description, image_filename) VALUES (?, ?, ?, ?)",
+                    (subdomain, store_name, description, unique_filename)
+                )
+    except Exception as e:
+        return HTMLResponse(f"오류가 발생했습니다: {str(e)}", status_code=500)
+        
+    test_url = f"https://{subdomain}.dongnebiseo.com"
+    html = f"<h1>성공적으로 상점이 생성(업데이트)되었습니다!</h1><p>접속 주소: <a href='{test_url}'>{test_url}</a></p>"
+    return HTMLResponse(content=html)
 
 # ==========================================
 # Legal Compliance: Account Deletion

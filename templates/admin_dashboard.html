@@ -1,138 +1,1086 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>동네비서 1분 자동 입점</title>
-    <style>
-        body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
+{% extends "base.html" %}
+
+{% set hide_bottom_nav = True %}
+
+{% block header %}
+<!-- 0순위: 상단 고정 HUD (토큰 잔액 칩) -->
+<header class="sticky-header" style="top: 45px; display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky;">
+    <a href="/" style="display: flex; align-items: center; text-decoration: none; gap: 8px;">
+        <strong style="font-weight: 900; font-size: 1.35rem; color: #1e3c72; letter-spacing: -0.5px;">탄탄한 동네비서</strong>
+    </a>
+    <div style="display: flex; align-items: center; gap: 10px;">
+        <div id="tokenChip" class="token-chip {% if store.points|default(0) < 1000 %}warning{% endif %}" style="background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.1); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
+            🪙 <span id="tokenBalance">{{ store.points|default(0) }}</span> 토큰
+        </div>
+        <button onclick="openPaymentModal()" style="background: #1e3c72; color: #fff; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">충전하기</button>
+        <button id="dashboard-hamburger-btn" onclick="toggleDashboardSidebar(true)" style="background: none; border: none; font-size: 1.8rem; color: #1e3c72; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+            ☰
+        </button>
+    </div>
+</header>
+<style>
+    /* Warning chip styling for low token balance */
+    .token-chip.warning {
+        border-color: #ef4444 !important;
+        background: rgba(239, 68, 68, 0.1) !important;
+        animation: pulse-border 1.5s infinite;
+    }
+    @keyframes pulse-border {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background: #f1f5f9 !important; /* Soft premium background */
+    }
+
+    .kiosk-container {
+        width: 100%;
+        max-width: 480px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 10px 5px 40px 5px;
+        box-sizing: border-box;
+    }
+
+    .kiosk-card {
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.02);
+        width: 100%;
+        box-sizing: border-box;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .kiosk-clock-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        text-align: center;
+        padding: 26px 20px;
+        box-shadow: 0 10px 30px rgba(30, 60, 114, 0.04);
+    }
+
+    .kiosk-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(39, 174, 96, 0.06);
+        color: #27ae60;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+        border: 1px solid rgba(39, 174, 96, 0.15);
+    }
+
+    .kiosk-status-pulse {
+        width: 8px;
+        height: 8px;
+        background-color: #27ae60;
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse-green 2s infinite;
+    }
+
+    @keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.5); }
+        70% { box-shadow: 0 0 0 6px rgba(39, 174, 96, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+    }
+
+    .kiosk-clock-time {
+        font-size: 4.6rem;
+        font-weight: 900;
+        color: #0f172a;
+        letter-spacing: -1.5px;
+        font-family: 'Outfit', 'Inter', monospace;
+        line-height: 1;
+        margin: 4px 0;
+    }
+
+    @media (max-width: 600px) {
+        .kiosk-clock-time {
+            font-size: 3.2rem;
+            letter-spacing: -1px;
         }
-        .container {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            width: 100%;
-            max-width: 500px;
-        }
-        h1 {
-            margin-top: 0;
-            color: #111;
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-        p.subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 15px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        input[type="text"], input[type="file"], textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-family: inherit;
-        }
-        .domain-input-group {
-            display: flex;
-            align-items: center;
-        }
-        .domain-input-group input {
-            flex: 1;
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-        .domain-suffix {
-            background: #f1f3f5;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-left: none;
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
-            color: #555;
-            font-size: 14px;
-        }
-        button {
-            width: 100%;
-            padding: 14px;
-            background-color: #FF5A5F;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #E0484D;
-        }
-        .security-notice {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 6px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>동네비서 파트너 입점</h1>
-        <p class="subtitle">사진 1장과 이름만 입력하면 즉시 나만의 상점이 완성됩니다.</p>
+    }
+
+    .kiosk-date {
+        font-size: 0.95rem;
+        color: #64748b;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+
+    .kiosk-alert-card {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        border: none;
+        color: #ffffff;
+        padding: 24px;
+        border-radius: 24px;
+        text-align: center;
+        box-shadow: 0 12px 28px rgba(239, 68, 68, 0.25);
+        animation: alert-glow 2.5s infinite alternate;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    @keyframes alert-glow {
+        from { box-shadow: 0 10px 25px rgba(239, 68, 68, 0.2); }
+        to { box-shadow: 0 10px 35px rgba(239, 68, 68, 0.4); }
+    }
+
+    .kiosk-btn {
+        width: 100%;
+        padding: 16px;
+        font-size: 1.05rem;
+        font-weight: 800;
+        border-radius: 14px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .kiosk-btn-white {
+        background: #ffffff;
+        color: #dc2626;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .kiosk-btn-white:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .kiosk-btn-outline-white {
+        background: transparent;
+        color: #ffffff;
+        border: 1.5px solid rgba(255, 255, 255, 0.6);
+        margin-top: 10px;
+    }
+
+    .kiosk-btn-outline-white:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: #ffffff;
+    }
+
+    /* 📝 공책 스타일 주문 목록 (Notebook Style Orders) */
+    .notebook-card {
+        background: #ffffff;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        border-radius: 24px;
+        padding: 22px;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.02);
+        width: 100%;
+        box-sizing: border-box;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .notebook-page {
+        background: #fdfdfa; /* Cream paper color */
+        border: 1.5px solid #cbd5e1;
+        border-radius: 14px;
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.01), 3px 3px 0px rgba(0,0,0,0.04);
+        position: relative;
+        padding: 16px 16px 16px 28px; /* binder margin */
+        min-height: 120px;
+        box-sizing: border-box;
+    }
+
+    .notebook-binder {
+        position: absolute;
+        top: 0;
+        left: 14px;
+        bottom: 0;
+        width: 4px;
+        border-left: 1.5px dashed #94a3b8;
+        border-right: 1.5px dashed #94a3b8;
+    }
+
+    .notebook-line {
+        border-bottom: 1px dashed rgba(59, 130, 246, 0.2); /* Soft blue ruled line */
+        padding: 10px 0;
+        font-size: 0.9rem;
+        color: #334155;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .notebook-line:last-child {
+        border-bottom: none;
+    }
+
+    /* 📞 전화 목록 스타일 */
+    .kiosk-log-card {
+        background: #f8fafc;
+        border: 1px solid rgba(15, 23, 42, 0.05);
+        border-radius: 18px;
+        padding: 18px;
+        margin-bottom: 12px;
+        transition: all 0.2s ease;
+    }
+
+    .kiosk-log-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .kiosk-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 10px;
+        border-radius: 10px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        border: 1px solid transparent;
+    }
+
+    .kiosk-badge-success {
+        background: rgba(39, 174, 96, 0.06);
+        color: #27ae60;
+        border-color: rgba(39, 174, 96, 0.15);
+    }
+
+    .kiosk-badge-fail {
+        background: rgba(239, 68, 68, 0.06);
+        color: #ef4444;
+        border-color: rgba(239, 68, 68, 0.15);
+        animation: pulse-red-border 2s infinite;
+    }
+
+    @keyframes pulse-red-border {
+        0% { border-color: rgba(239, 68, 68, 0.2); }
+        50% { border-color: rgba(239, 68, 68, 0.5); }
+        100% { border-color: rgba(239, 68, 68, 0.2); }
+    }
+
+    .kiosk-details-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .kiosk-tag {
+        font-size: 0.7rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 6px;
+        white-space: nowrap;
+        margin-top: 1px;
+    }
+
+    .kiosk-tag-intent {
+        background: rgba(59, 130, 246, 0.08);
+        color: #2563eb;
+    }
+
+    .kiosk-tag-summary {
+        background: rgba(139, 92, 246, 0.08);
+        color: #7c3aed;
+    }
+
+    .kiosk-text-msg {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        padding: 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        color: #334155;
+        white-space: pre-wrap;
+        word-break: break-all;
+        max-height: 90px;
+        overflow-y: auto;
+        line-height: 1.5;
+        margin-top: 8px;
+        font-family: inherit;
+    }
+
+    .kiosk-action-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .kiosk-action-btn {
+        flex: 1;
+        padding: 12px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        transition: all 0.2s;
+    }
+
+    .kiosk-action-btn:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+        border-color: #94a3b8;
+    }
+
+    .kiosk-action-btn-primary {
+        background: #1e3c72;
+        color: #ffffff;
+        border-color: #1e3c72;
+    }
+
+    .kiosk-action-btn-primary:hover {
+        background: #2a5298;
+        border-color: #2a5298;
+    }
+
+    .kiosk-chat-wrapper {
+        position: relative;
+        width: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .kiosk-chat-input {
+        width: 100%;
+        padding: 16px 85px 16px 20px;
+        border-radius: 30px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.95rem;
+        font-weight: 700;
+        box-sizing: border-box;
+        outline: none;
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.01);
+        transition: all 0.3s;
+    }
+
+    .kiosk-chat-input:focus {
+        border-color: #1e3c72;
+        box-shadow: 0 4px 20px rgba(30, 60, 114, 0.06);
+    }
+
+    .kiosk-chat-btn {
+        position: absolute;
+        right: 8px;
+        background: #1e3c72;
+        color: #ffffff;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 22px;
+        font-weight: 800;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .kiosk-chat-btn:hover {
+        background: #2a5298;
+    }
+
+    .kiosk-chip-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 2px 2px 2px;
+        margin-top: 10px;
+    }
+
+    .kiosk-chip {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        padding: 12px 16px;
+        border-radius: 14px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: left;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .kiosk-chip:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+        color: #0f172a;
+    }
+</style>
+
+<main style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px; min-height: 75vh; font-family: 'Pretendard', sans-serif;">
+    <div class="kiosk-container">
         
-        <!-- 보안상 enctype="multipart/form-data" 필수 -->
-        <form action="/onboard" method="POST" enctype="multipart/form-data">
-            
-            <div class="form-group">
-                <label for="subdomain">원하시는 인터넷 주소 (영문)</label>
-                <div class="domain-input-group">
-                    <input type="text" id="subdomain" name="subdomain" placeholder="kimfarm" required pattern="[a-zA-Z0-9-]+" title="영문자와 숫자, 하이픈만 가능합니다.">
-                    <div class="domain-suffix">.dongnebiseo.com</div>
+        {% set role = store.role|default('merchant') %}
+
+        <!-- 1. 택배기사용 / 배달원 뷰 (Rider / Courier / Logistics) -->
+        {% if role in ['logistics', 'courier'] %}
+        <div class="kiosk-card" style="text-align: center; padding: 30px 20px;">
+            <div style="font-size: 1.05rem; color: #64748b; font-weight: bold; margin-bottom: 6px;">오늘 남은 배달/수거</div>
+            <div class="huge-number" id="deliveryCount" style="font-size: 4.2rem; font-weight: 900; margin: 10px 0; color: #1e3c72; text-shadow: 0 4px 10px rgba(30, 60, 114, 0.1);">
+                {{ recent_orders|length }}건
+            </div>
+            <button class="kiosk-btn kiosk-btn-white" onclick="startBarcodeScan()" style="background: #1e3c72; color: #fff; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(30, 60, 114, 0.15);">
+                📷 바코드 스캔하기
+            </button>
+            <button class="kiosk-btn kiosk-btn-white" onclick="completeRiderDelivery()" style="background: #27ae60; color: #fff; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.15);">
+                ✅ 배달 완료 처리
+            </button>
+        </div>
+
+        <!-- 2. 농어민용 뷰 (Farmer) -->
+        {% elif role == 'farmer' %}
+        <div class="kiosk-card" style="padding: 24px;">
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 16px; margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem;">
+                ⛅ 태백 고랭지 날씨: <strong style="color: #1e3c72;">맑음 (24°C)</strong><br>
+                🌱 최적 작업 정보: <span style="color: #27ae60; font-weight: 700;">지금은 수확 및 산지 발송 최적기입니다.</span>
+            </div>
+            <input type="file" id="farmerPhotoRegister" accept="image/*" capture="environment" style="display: none;" onchange="uploadFarmerProduct(this)">
+            <button class="kiosk-btn kiosk-btn-white" onclick="document.getElementById('farmerPhotoRegister').click()" style="background: #27ae60; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 160px; border-radius: 20px; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.15);">
+                <span style="font-size: 2.5rem;">📸</span>
+                <span style="font-size: 1.15rem; font-weight: 800;">산지 상품 촬영 (즉시 등록)</span>
+            </button>
+        </div>
+
+        <!-- 3. 식당 사장님용 뷰 (Merchant / Owner / Default Fallback) -->
+        {% else %}
+        
+        {# Check if there are any pending orders #}
+        {% set has_pending = false %}
+        {% for o in recent_orders %}
+            {% if o.status|lower == 'pending' %}
+                {% set has_pending = true %}
+            {% endif %}
+        {% endfor %}
+
+        <!-- 대기 화면 (시계 화면) -->
+        <div class="kiosk-card kiosk-clock-card" id="merchantIdleView">
+            <div class="kiosk-status-badge">
+                <span class="kiosk-status-pulse"></span>
+                AI 대기 중 (실시간 모니터링)
+            </div>
+            <div class="kiosk-clock-time" id="liveClock">17:04:12</div>
+            <div class="kiosk-date">{{ today_date }}</div>
+        </div>
+
+        <!-- 신규 주문 발생 시 화면 오버레이 형태 -->
+        <div class="kiosk-alert-card" id="merchantEventView" style="display: {% if has_pending %}block{% else %}none{% endif %};">
+            <div style="font-weight: 900; font-size: 1.25rem; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; letter-spacing: -0.5px;">
+                🚨 신규 주문 접수 요청!
+            </div>
+            <div style="font-size: 0.9rem; margin-bottom: 20px; opacity: 0.95; font-weight: 500; line-height: 1.4;">새로운 주문서가 등록되었습니다. 수락 및 배달기사 호출을 진행해 주세요.</div>
+            <button class="kiosk-btn kiosk-btn-white" onclick="acceptNewOrder()">
+                🛎️ 신규 주문 접수하기
+            </button>
+            <button class="kiosk-btn kiosk-btn-outline-white" onclick="callRider()">
+                🏍️ 배달 기사 호출
+            </button>
+        </div>
+        {% endif %}
+
+        <!-- 공통 챗봇 인터페이스 (로그인 상태 기반 조건부 렌더링) -->
+        <div class="kiosk-card" style="padding: 22px;">
+            <!-- ✅ 로그인 상태 → 기존 AI 비서 UI -->
+            <div id="chatbot-loggedin" style="display:none;">
+                <div style="text-align: center; margin-bottom: 12px;">
+                    <div style="font-size: 1rem; font-weight: 800; color: #0f172a;">💡 비서에게 물어보기</div>
+                </div>
+                <div class="kiosk-chat-wrapper">
+                    <input type="text" class="kiosk-chat-input" id="chatbotInput" placeholder="예: 이달 정산 수수료 얼마야? 입력..." onkeypress="handleChatPress(event)">
+                    <button class="kiosk-chat-btn" onclick="sendChatMessage()">질문</button>
+                </div>
+                <!-- 결과 출력창 -->
+                <div id="chatResponseArea" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; padding: 14px; border-radius: 14px; font-size: 0.9rem; line-height: 1.6; color: #1e293b; text-align: left; max-height: 180px; overflow-y: auto; margin-top: 12px;"></div>
+                <!-- 롤링 제안 칩 -->
+                <div class="kiosk-chip-list">
+                    <div class="kiosk-chip" onclick="clickChip('이달 정산 수수료 얼마야?')">📊 이달 수수료 확인</div>
+                    <div class="kiosk-chip" onclick="clickChip('단골들에게 특가 감자 알림톡 보내줘')">💬 단골 알림톡 발송</div>
+                    <div class="kiosk-chip" onclick="clickChip('오늘 들어온 주문 내역 다 보여줘')">💰 오늘 주문 목록</div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="store_name">상점 이름</label>
-                <input type="text" id="store_name" name="store_name" placeholder="예: 소백산 김씨농장" required>
+            <!-- 🔒 비로그인 상태 → 미가입자용 무료 UI -->
+            <div id="chatbot-guest" style="display:none;">
+                <div style="text-align: center; margin-bottom: 14px;">
+                    <div style="font-size: 1rem; font-weight: 800; color: #0f172a;">🌤️ 오늘의 날씨 (무료)</div>
+                    <div style="font-size: 0.8rem; color: #64748b; margin-top: 4px;">로그인 없이 무료로 이용 가능한 기능입니다</div>
+                </div>
+                <div id="guestWeatherResult" style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 12px; padding: 14px; font-size: 0.9rem; color: #0369a1; text-align: center; margin-bottom: 14px;">
+                    <span style="font-size: 1.5rem;">⛅</span><br>날씨 정보를 불러오는 중...
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <a href="/store/landing" style="display: block; text-align: center; background: linear-gradient(135deg, #1e3c72, #2a5298); color: #fff; font-weight: 800; font-size: 0.95rem; padding: 13px; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 12px rgba(30,60,114,0.2);">
+                        🚀 동네비서 가입하고 전체 기능 사용하기
+                    </a>
+                    <a href="/admin?mode=login" style="display: block; text-align: center; background: #f8fafc; color: #1e3c72; font-weight: 700; font-size: 0.9rem; padding: 11px; border-radius: 12px; text-decoration: none; border: 1px solid #cbd5e1;">
+                        🔑 이미 회원이신가요? 로그인
+                    </a>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="description">간단한 소개 (선택)</label>
-                <textarea id="description" name="description" rows="3" placeholder="예: 당일 수확한 신선한 사과만 보내드립니다."></textarea>
+            <!-- 로딩 중 스켈레톤 -->
+            <div id="chatbot-loading" style="text-align:center; padding: 20px; color: #94a3b8; font-size: 0.85rem;">
+                ⏳ 로딩 중...
             </div>
-
-            <div class="form-group">
-                <label for="store_image">대표 사진 업로드 (5MB 이하, JPG/PNG)</label>
-                <input type="file" id="store_image" name="store_image" accept=".jpg, .jpeg, .png" required>
-            </div>
-
-            <button type="submit">1분 만에 상점 만들기</button>
-        </form>
-
-        <div class="security-notice">
-            🔒 <b>보안 시스템 가동 중</b>: 해킹 방지를 위해 이미지 확장자 변조 검사 및 파일 헤더 분석이 자동으로 수행되며, 5MB 이상의 파일은 업로드가 원천 차단됩니다.
         </div>
+
+
+        <!-- 🎁 내 추천인 코드 카드 -->
+        {% if store.my_referral_code %}
+        <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%); border-radius: 20px; padding: 22px; box-shadow: 0 8px 30px rgba(30,60,114,0.22); position: relative; overflow: hidden;">
+            <!-- 배경 데코 -->
+            <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.06); pointer-events: none;"></div>
+            <div style="position: absolute; bottom: -30px; left: 30px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.04); pointer-events: none;"></div>
+
+            <div style="position: relative; z-index: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                    <span style="font-size: 1.3rem;">🎁</span>
+                    <div>
+                        <div style="font-size: 0.78rem; color: rgba(255,255,255,0.7); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">내 추천인 코드</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 500;">친구에게 공유하고 리워드를 받으세요!</div>
+                    </div>
+                </div>
+
+                <!-- 코드 표시 영역 -->
+                <div style="background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; backdrop-filter: blur(4px);">
+                    <span id="myReferralCode" style="font-size: 1.55rem; font-weight: 900; color: #ffffff; letter-spacing: 3px; font-family: 'Courier New', monospace; text-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                        {{ store.my_referral_code }}
+                    </span>
+                    <button onclick="copyReferralCode()" id="copyCodeBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px; white-space: nowrap;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        <span id="copyIcon">📋</span> 복사
+                    </button>
+                </div>
+
+                <!-- 공유 버튼들 -->
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="shareReferralLink()" style="flex: 1; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                        🔗 링크 공유
+                    </button>
+                    <button onclick="shareKakao()" style="flex: 1; background: #fee500; border: none; color: #3c1e1e; padding: 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 800; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        💬 카카오 공유
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 📝 오늘 주문 목록 (Notebook Style Orders) -->
+        <div class="notebook-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-size: 1.05rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                    📝 오늘 주문 목록
+                </span>
+                <span style="font-size: 0.75rem; font-weight: 700; color: #64748b;">
+                    총 {{ recent_orders|length }}건
+                </span>
+            </div>
+
+            <div class="notebook-page">
+                <div class="notebook-binder"></div>
+                {% if not recent_orders %}
+                <div style="text-align: center; color: #94a3b8; padding: 40px 10px; font-size: 0.85rem;">
+                    오늘 접수된 신규 주문이 없습니다.
+                </div>
+                {% else %}
+                    <div style="display: flex; flex-direction: column;">
+                    {% for o in recent_orders %}
+                        <div class="notebook-line">
+                            <span style="font-weight: 700; color: #0f172a; max-width: 65%;">
+                                {{ o.item_name or '상품 주문' }} {% if o.amount %}({{ o.amount|default(0) }}원){% endif %}
+                            </span>
+                            <span style="font-size: 0.75rem; font-weight: 800; color: {% if o.status|lower == 'pending' %}#ef4444{% else %}#27ae60{% endif %};">
+                                {% if o.status|lower == 'pending' %}
+                                    🛎️ 접수대기
+                                {% elif o.status|lower == 'completed' %}
+                                    ✅ 완료
+                                {% else %}
+                                    {{ o.status or '접수' }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 📞 실시간 전화 및 콜백 현황 (Missed Call & Callback Logs) -->
+        <div class="kiosk-card" style="padding: 22px; cursor: pointer;" onclick="location.href='/admin/calls'">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">
+                <span style="font-size: 1.05rem; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                    📞 실시간 전화 및 콜백 현황
+                </span>
+                <a href="/admin/calls" onclick="event.stopPropagation()" style="font-size: 0.78rem; font-weight: 800; color: #ffffff; background: #1e3c72; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: 20px; box-shadow: 0 2px 8px rgba(30,60,114,0.18); white-space: nowrap;">
+                    전체보기 <span style="font-size: 0.85rem;">➡️</span>
+                </a>
+            </div>
+
+            <div id="dashboardCallLogs" style="display: flex; flex-direction: column; gap: 12px;">
+                {% if not ai_logs %}
+                <div style="text-align: center; padding: 30px 10px; color: #94a3b8; font-size: 0.9rem; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <span style="font-size: 2rem;">📭</span>
+                    <span>최근 24시간 동안 수신된 미수신 전화가 없습니다.</span>
+                </div>
+                {% else %}
+                    {% for log in ai_logs[:3] %}
+                    <div class="kiosk-log-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 0.95rem; font-weight: 800; color: #1e293b;">
+                                📞 {{ log.customer_name or log.customer_phone or '발신자' }}
+                            </span>
+                            <span style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">
+                                {{ log.created_at[11:16] if log.created_at and log.created_at|length >= 16 else '' }}
+                            </span>
+                        </div>
+
+                        {% if log.event_type == 'CALLBACK_FAILED' %}
+                        <div class="kiosk-badge kiosk-badge-fail" style="margin-bottom: 10px;">
+                            ⚠️ 콜백 문자 자동 전송 실패 (수동 전송 필요)
+                        </div>
+                        {% elif log.event_type == 'CALLBACK_SUCCESS' %}
+                        <div class="kiosk-badge kiosk-badge-success" style="margin-bottom: 10px;">
+                            ✅ 콜백 문자 자동 전송 완료
+                        </div>
+                        {% endif %}
+
+                        <div style="font-size: 0.85rem; line-height: 1.5; color: #334155; margin-bottom: 6px; display: flex; flex-direction: column; gap: 6px;">
+                            <div class="kiosk-details-row">
+                                <span class="kiosk-tag kiosk-tag-intent">목적</span>
+                                <strong style="color: #0f172a; font-weight: 700;">{{ log.intent or '확인 필요' }}</strong>
+                            </div>
+                            <div class="kiosk-details-row">
+                                <span class="kiosk-tag kiosk-tag-summary">요약</span>
+                                <span style="color: #475569;">{{ log.summary or 'AI 요약 내용이 없습니다.' }}</span>
+                            </div>
+                        </div>
+
+                        {% if log.event_details %}
+                        <div class="manual-callback-box" style="margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 10px;">
+                            <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 6px; font-weight: 700;">📝 전송할 콜백 메시지 내용:</div>
+                            <div class="callback-text kiosk-text-msg">{{ log.event_details }}</div>
+                            
+                            <div class="kiosk-action-group">
+                                <button onclick="triggerDirectSMS(this, '{{ log.customer_phone }}')" class="kiosk-action-btn kiosk-action-btn-primary">
+                                    📲 직접 문자 전송
+                                </button>
+                                <button onclick="triggerCopyToClipboard(this)" class="kiosk-action-btn">
+                                    📋 메시지 복사
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
     </div>
-</body>
-</html>
+</main>
+
+<script>
+    // ===============================
+    // 추천인 코드 복사 / 공유 기능
+    // ===============================
+    const _REFERRAL_CODE = "{{ store.my_referral_code or '' }}";
+    const _REFERRAL_LINK = `${location.origin}/store/landing?ref=${_REFERRAL_CODE}`;
+
+    function copyReferralCode() {
+        if (!_REFERRAL_CODE) return;
+        navigator.clipboard.writeText(_REFERRAL_CODE).then(() => {
+            const btn = document.getElementById('copyCodeBtn');
+            const icon = document.getElementById('copyIcon');
+            if (icon) icon.textContent = '✅';
+            if (btn) btn.style.background = 'rgba(39,174,96,0.35)';
+            setTimeout(() => {
+                if (icon) icon.textContent = '📋';
+                if (btn) btn.style.background = 'rgba(255,255,255,0.2)';
+            }, 2000);
+        }).catch(() => {
+            // 폴백: textarea 방식
+            const ta = document.createElement('textarea');
+            ta.value = _REFERRAL_CODE;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('📋 코드가 복사되었습니다: ' + _REFERRAL_CODE);
+        });
+    }
+
+    function shareReferralLink() {
+        if (!_REFERRAL_CODE) return;
+        if (navigator.share) {
+            navigator.share({
+                title: '동네비서 가입 초대',
+                text: `제 추천 코드(${_REFERRAL_CODE})로 동네비서에 가입하면 혜택을 드려요!`,
+                url: _REFERRAL_LINK
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(_REFERRAL_LINK).then(() => {
+                alert('🔗 가입 링크가 클립보드에 복사되었습니다!\n\n' + _REFERRAL_LINK);
+            }).catch(() => {
+                prompt('아래 링크를 복사하세요:', _REFERRAL_LINK);
+            });
+        }
+    }
+
+    function shareKakao() {
+        // 카카오 SDK 미설치 시 링크 복사로 폴백
+        if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+            Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '동네비서 가입 초대',
+                    description: `제 추천 코드(${_REFERRAL_CODE})로 가입하면 특별 혜택을 드려요!`,
+                    imageUrl: location.origin + '/static/logo.png',
+                    link: { mobileWebUrl: _REFERRAL_LINK, webUrl: _REFERRAL_LINK }
+                },
+                buttons: [{ title: '지금 가입하기', link: { mobileWebUrl: _REFERRAL_LINK, webUrl: _REFERRAL_LINK } }]
+            });
+        } else {
+            shareReferralLink();
+        }
+    }
+
+    // 시계 갱신 로직 (식당 사장님용)
+    setInterval(() => {
+        const clock = document.getElementById('liveClock');
+        if (clock) {
+            const now = new Date();
+            clock.innerText = now.toTimeString().split(' ')[0];
+        }
+    }, 1000);
+
+    // 롤링 칩 클릭 동작
+    function clickChip(text) {
+        document.getElementById('chatbotInput').value = text;
+        sendChatMessage();
+    }
+
+    function handleChatPress(e) {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    }
+
+    // 비동기 챗봇 통신 (Guardrail 통제 하에 API 결과를 단순 텍스트화)
+    async function sendChatMessage() {
+        const input = document.getElementById('chatbotInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const responseArea = document.getElementById('chatResponseArea');
+        responseArea.style.display = 'block';
+        responseArea.innerHTML = '🤖 <i>동네비서가 데이터 조회 중...</i>';
+        input.value = '';
+
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: text})
+            });
+
+            // 🔒 401: 세션 만료 → 로그인 강제 이동
+            if (res.status === 401) {
+                responseArea.innerHTML = '🔒 로그인 세션이 만료되었습니다.';
+                alert('⚠️ 로그인이 필요합니다.\n로그인 화면으로 이동합니다.');
+                window.location.href = '/admin?mode=login';
+                return;
+            }
+
+            // 🔴 기타 HTTP 에러 처리
+            if (!res.ok) {
+                responseArea.innerHTML = `❌ 서버 오류 (${res.status}): 잠시 후 다시 시도해 주세요.`;
+                return;
+            }
+
+            const data = await res.json();
+            if (data.success || data.response) {
+                responseArea.innerHTML = `<strong>답변:</strong><br>${data.response || data.message}`;
+            } else {
+                responseArea.innerHTML = `❌ 오류: ${data.error || '답변을 생성할 수 없습니다.'}`;
+            }
+        } catch (err) {
+            responseArea.innerHTML = '❌ 네트워크 연결 실패 (호스트 또는 CORS 오류)';
+            console.error(err);
+        }
+        
+        // 잔액 실시간 동기화
+        syncTokenHUD();
+    }
+
+
+    // 토큰 HUD 실시간 갱신 및 경고 표시
+    async function syncTokenHUD() {
+        try {
+            const res = await fetch('/api/auth/status');
+            const data = await res.json();
+            if (data.authenticated && data.user) {
+                const balance = data.user.points || 0;
+                document.getElementById('tokenBalance').innerText = balance.toLocaleString();
+                
+                const chip = document.getElementById('tokenChip');
+                if (balance < 1000) {
+                    chip.classList.add('warning');
+                } else {
+                    chip.classList.remove('warning');
+                }
+            }
+        } catch (e) {
+            console.log('HUD Sync failed');
+        }
+    }
+
+    // 택배기사 완료 동작
+    function completeRiderDelivery() {
+        if (confirm('모든 미배달 건을 완료 처리하시겠습니까?')) {
+            alert('정상적으로 처리 완료되었습니다.');
+            document.getElementById('deliveryCount').innerText = '0건';
+            syncTokenHUD();
+        }
+    }
+
+    // 바코드 스캔 동작
+    function startBarcodeScan() {
+        alert('카메라 바코드 스캐너가 준비 중입니다.');
+    }
+
+    // 식당 신규 주문 접수
+    function acceptNewOrder() {
+        alert('🛎️ 주문 수락 완료! 조리를 시작합니다.');
+        document.getElementById('merchantEventView').style.display = 'none';
+        document.getElementById('merchantIdleView').style.display = 'block';
+        syncTokenHUD();
+    }
+
+    // 식당 기사 호출
+    function callRider() {
+        alert('🏍️ 인근 동네비서 배달기사를 성공적으로 호출했습니다.');
+    }
+
+    // 농민 사진 촬영 및 자동 상품 등록
+    function uploadFarmerProduct(input) {
+        if (!input.files || input.files.length === 0) return;
+        alert('📸 이미지 분석 중...\nGemini Vision API가 신선한 농산물 종류(감자/배추) 및 등급을 판독하여 자동 등록을 준비합니다.');
+    }
+
+    // Toast Alert notification helper
+    function showToast(message, isSuccess = true) {
+        const toast = document.getElementById('toastAlert');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.style.background = isSuccess ? '#27ae60' : '#ef4444';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+        toast.style.opacity = '1';
+        
+        setTimeout(() => {
+            toast.style.transform = 'translateX(-50%) translateY(100px)';
+            toast.style.opacity = '0';
+        }, 3000);
+    }
+
+    function copyToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('📋 메시지가 복사되었습니다! 문자나 카카오톡 창에 붙여넣어 주세요.');
+            }).catch(err => {
+                fallbackCopyToClipboard(text);
+            });
+        } else {
+            fallbackCopyToClipboard(text);
+        }
+    }
+
+    function fallbackCopyToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                showToast('📋 메시지가 복사되었습니다! 문자나 카카오톡 창에 붙여넣어 주세요.');
+            } else {
+                showToast('❌ 메시지 복사에 실패했습니다.', false);
+            }
+        } catch (err) {
+            showToast('❌ 메시지 복사에 실패했습니다.', false);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function sendDirectSMS(phone, body) {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const separator = isIOS ? '&' : '?';
+        const smsUrl = `sms:${phone}${separator}body=${encodeURIComponent(body)}`;
+        window.location.href = smsUrl;
+    }
+
+    function triggerDirectSMS(btn, phone) {
+        const box = btn.closest('.manual-callback-box');
+        const textEl = box.querySelector('.callback-text');
+        const text = textEl.textContent.trim();
+        sendDirectSMS(phone, text);
+    }
+
+    function triggerCopyToClipboard(btn) {
+        const box = btn.closest('.manual-callback-box');
+        const textEl = box.querySelector('.callback-text');
+        const text = textEl.textContent.trim();
+        copyToClipboard(text);
+    }
+
+    // ────────────────────────────────────────────────
+    // 🔑 인증 상태 기반 UI 분기 (Private / Public)
+    // ────────────────────────────────────────────────
+    async function initAuthUI() {
+        try {
+            const res = await fetch('/api/auth/status');
+            const data = await res.json();
+
+            document.getElementById('chatbot-loading').style.display = 'none';
+
+            if (data.isLoggedIn) {
+                // ✅ 로그인 상태 → AI 비서 UI 표시
+                document.getElementById('chatbot-loggedin').style.display = 'block';
+            } else {
+                // 🔒 비로그인 → 미가입자용 무료 UI 표시
+                document.getElementById('chatbot-guest').style.display = 'block';
+                // 공개 날씨 API 자동 호출
+                try {
+                    const wRes = await fetch('/api/public/weather');
+                    const wData = await wRes.json();
+                    document.getElementById('guestWeatherResult').innerHTML =
+                        `<span style="font-size:1.5rem">⛅</span><br>
+                         <strong style="font-size:1.05rem">${wData.weather} ${wData.temperature}</strong><br>
+                         <span style="font-size:0.85rem;color:#475569">${wData.message}</span>`;
+                } catch (e) {
+                    document.getElementById('guestWeatherResult').innerHTML =
+                        '⛅ 날씨 정보를 불러올 수 없습니다.';
+                }
+            }
+        } catch (e) {
+            // 네트워크 오류 시 기본 로그인 UI 표시
+            document.getElementById('chatbot-loading').style.display = 'none';
+            document.getElementById('chatbot-loggedin').style.display = 'block';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initAuthUI();   // ← 인증 상태 체크 후 UI 분기
+        syncTokenHUD();
+        
+        // Auto-run query if passed via URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const queryParam = urlParams.get('query');
+        if (queryParam) {
+            const input = document.getElementById('chatbotInput');
+            if (input) {
+                input.value = queryParam;
+                sendChatMessage();
+                // Clean up URL parameter to prevent recurring runs on refresh
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+    });
+
+    let selectedPoints = 0;
+    let paymentAmount = 0;
+
+    function openPaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        modal.style.display = 'flex';
+    }
+
+    function closePaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        modal.style.display = 'none';
+    }
+
+    function selectAmount(points) {
+        selectedPoints = points;
+        paymentAmount = Math.ceil(points * 1.1); // 10% VAT
+        document.getElementById('selectedAmountDisplay').innerHTML =
+            `<span style="font-size:0.875rem; color:#6b7280; font-weight:normal;">부가세 포함</span> ` +
+            paymentAmount.toLocaleString() + "원";
+    }
+
+    function requestPayment() {
+        if (selectedPoints === 0) {
+            alert("충전할 금액을 선택해주세요.");
+            return;
+        }
+
+        const method = document.getElementById("paymentMethodSelect").value;
+        if (method === 'BANK_TRANSFER') {
+            alert("카카오뱅크 333311114444 계좌로 " + paymentAmount.toLocaleString() + "원을 입금해주세요.\n\n입금 후 관리자에게 전화나 문자를 보내주시면 확인 후 충전해 드립니다.");
+            closePaymentModal();
+            return;
+        }
+    }
+</script>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[9999]" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative" style="background:#fff; border-radius:1rem; padding:1.5rem; width:90%; max-width:400px; position:relative;">
+        <button onclick="closePaymentModal()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <h3 class="text-xl font-bold mb-4" style="font-size:1.25rem; font-weight:bold; margin-bottom:1rem;">포인트 충전</h3>
+
+        <!-- Amount Selection -->
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem; margin-bottom:1rem;">
+            <button type="button" onclick="selectAmount(10000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">1만원</button>
+            <button type="button" onclick="selectAmount(30000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">3만원</button>
+            <button type="button" onclick="selectAmount(50000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">5만원</button>
+            <button type="button" onclick="selectAmount(100000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">10만원</button>
+            <button type="button" onclick="selectAmount(500000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">50만원</button>
+            <button type="button" onclick="selectAmount(1000000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">100만원</button>
+        </div>
+        <p style="text-align:right; font-size:1.125rem; font-weight:bold; color:#2563eb; margin-bottom:1rem;" id="selectedAmountDisplay">0원</p>
+
+        <!-- Payment Method Selection -->
+        <div style="margin-bottom:1rem;">
+            <label style="display:block; font-size:0.875rem; font-weight:bold; color:#374151; margin-bottom:0.25rem;">결제 수단</label>
+            <select id="paymentMethodSelect" style="width:100%; border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; font-size:0.875rem; font-weight:bold; background:#fff;">
+                <option value="BANK_TRANSFER">🏦 무통장 입금 (카카오뱅크)</option>
+            </select>
+        </div>
+
+        <button onclick="requestPayment()" style="width:100%; background:#2563eb; color:#fff; border:none; border-radius:0.75rem; padding:0.75rem; font-weight:bold; cursor:pointer; margin-top:0.5rem;">
+            충전하기
+        </button>
+    </div>
+</div>
+
+<!-- Toast Alert Notification -->
+<div id="toastAlert" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #27ae60; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; pointer-events: none; white-space: nowrap;">
+    📋 메시지가 복사되었습니다! 문자나 카카오톡 창에 붙여넣어 주세요.
+</div>
+{% endblock %}

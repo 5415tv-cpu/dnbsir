@@ -2,382 +2,195 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>동네비서 파트너스 - 비서 채용하기</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>동네비서 1분 자동 입점</title>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Noto Sans KR', sans-serif; background: #f1f5f9; color: #1e293b; }
-
-        .header { background: #1a1a1a; color: white; padding: 18px 20px; text-align: center; }
-        .header h1 { font-size: 1.4rem; font-weight: 900; }
-
-        .referrer-band { background: linear-gradient(90deg,#f59e0b,#d97706); color: white; padding: 11px 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; }
-
-        .container { padding: 24px 18px 60px; max-width: 480px; margin: 0 auto; }
-
-        /* 카카오 메인 카드 */
-        .kakao-card {
-            background: white; border-radius: 20px;
-            padding: 32px 24px 28px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-            text-align: center; margin-bottom: 16px;
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
-        .tier-badge { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 800; margin-bottom: 18px; }
-        .tier-badge.vip { background:#fef3c7; color:#d97706; border:1px solid #fde68a; }
-        .tier-badge.general { background:#f1f5f9; color:#475569; border:1px solid #e2e8f0; }
-
-        .kakao-card h2 { font-size: 1.55rem; font-weight: 900; color: #0f172a; margin-bottom: 8px; line-height: 1.3; }
-        .kakao-card .sub { color: #64748b; font-size: 0.92rem; line-height: 1.6; margin-bottom: 28px; }
-
-        .benefit-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; text-align: left; }
-        .benefit-item { display: flex; align-items: center; gap: 12px; background: #f8fafc; border-radius: 12px; padding: 11px 14px; font-size: 0.88rem; color: #475569; }
-        .benefit-item .ico { font-size: 1.3rem; flex-shrink: 0; }
-        .benefit-item strong { display: block; font-size: 0.92rem; color: #1e293b; }
-
-        /* 카카오 버튼 공식 가이드 */
-        .btn-kakao {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            width: 100%; height: 60px; padding: 0 20px;
-            background: #FEE500; color: #3C1E1E;
-            border: none; border-radius: 14px;
-            font-family: 'Noto Sans KR', sans-serif;
-            font-size: 1.12rem; font-weight: 900;
-            cursor: pointer; text-decoration: none;
-            transition: transform .15s, box-shadow .15s;
-            box-shadow: 0 4px 16px rgba(254,229,0,.4);
-            letter-spacing: -0.02em;
-        }
-        .btn-kakao:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(254,229,0,.5); }
-        .btn-kakao:active { transform: none; filter: brightness(.93); }
-        .btn-kakao svg { width: 24px; height: 24px; flex-shrink: 0; }
-
-        .kakao-note { font-size: 0.78rem; color: #94a3b8; margin-top: 14px; line-height: 1.6; }
-        .kakao-note a { color: #6366f1; text-decoration: none; }
-
-        /* 구분선 */
-        .divider { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; }
-        .divider::before, .divider::after { content:''; flex:1; height:1px; background:#e2e8f0; }
-        .divider span { font-size: 0.78rem; color: #94a3b8; white-space: nowrap; }
-
-        /* 토글 버튼 */
-        .toggle-btn {
-            width: 100%;
-            padding: 18px 20px;
-            background: linear-gradient(135deg, #1e293b, #334155);
-            border: none;
+        .container {
+            background: white;
+            padding: 40px;
             border-radius: 16px;
-            font-size: 1.05rem;
-            font-weight: 900;
-            color: #ffffff;
-            cursor: pointer;
-            transition: .2s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+        h1 {
+            margin-top: 0;
+            color: #111;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        p.subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        input[type="text"], input[type="file"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .domain-input-group {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 14px rgba(30,41,59,0.25);
-            letter-spacing: -0.3px;
         }
-        .toggle-btn:hover { background: linear-gradient(135deg, #0f172a, #1e293b); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(30,41,59,0.35); }
-        .toggle-btn:active { transform: translateY(0); }
-
-        /* 폼 카드 */
-        .form-card { background: white; border-radius: 20px; padding: 28px 22px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); margin-top: 14px; display: none; }
-        .form-card.open { display: block; }
-        .form-card h3 { font-size: 1.1rem; font-weight: 900; margin-bottom: 20px; color: #0f172a; }
-
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: 800; margin-bottom: 7px; color: #334155; font-size: 0.95rem; }
-        .form-group label span { color: #ef4444; }
-        .form-input { width: 100%; padding: 13px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; transition: .2s; background: #f8fafc; }
-        .form-input:focus { border-color: #3b82f6; outline: none; background: white; box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
-
-        .row { display: flex; gap: 8px; }
-        .action-btn { padding: 13px 16px; border-radius: 10px; font-size: 0.92rem; font-weight: 800; border: none; cursor: pointer; transition: .2s; white-space: nowrap; }
-        .action-btn.primary { background: #1a1a1a; color: white; width: 100%; font-size: 1.1rem; padding: 16px; }
-        .action-btn.blue { background: #3b82f6; color: white; flex-shrink: 0; }
-        .action-btn.gray { background: #64748b; color: white; flex-shrink: 0; }
-        .action-btn:disabled { background: #94a3b8; cursor: not-allowed; }
-
-        .info-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 13px; border-radius: 10px; font-size: 0.88rem; line-height: 1.5; margin-top: 20px; }
-        .error-msg { display: none; background: #fee2e2; color: #ef4444; padding: 13px; border-radius: 10px; font-weight: bold; text-align: center; margin-bottom: 16px; }
-        .success-text { color: #10b981; font-weight: bold; margin-top: 7px; display: none; font-size: 0.9rem; }
-        .error-text { color: #ef4444; font-weight: bold; margin-top: 7px; display: none; font-size: 0.9rem; }
-        .sep { height: 1px; background: #f1f5f9; margin: 20px 0; }
+        .domain-input-group input {
+            flex: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .domain-suffix {
+            background: #f1f3f5;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-left: none;
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            color: #555;
+            font-size: 14px;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: #FF5A5F;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #E0484D;
+        }
+        .security-notice {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>
-
-<div class="header"><h1>동네비서 파트너스센터</h1></div>
-
-{% if ref %}
-<div class="referrer-band">
-    <svg viewBox="0 0 24 24" width="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
-    <span>{{ referrer_name }} 기사님의 특별 초대로 접속중입니다</span>
-</div>
-{% endif %}
-
-<div class="container">
-
-    <!-- ★ 카카오 메인 카드 (가입의 첫 번째 화면) -->
-    <div class="kakao-card">
-        <div class="tier-badge {{ tier }}">
-            {{ '👑 VIP 프리미엄 비서 채용' if tier == 'vip' else '📦 일반 비서 채용' }}
-        </div>
-        <h2>카카오로 3초 만에<br>가입하기</h2>
-        <p class="sub">별도 회원가입·비밀번호 없이<br>카카오 계정으로 바로 시작합니다</p>
-
-        <div class="benefit-list">
-            <div class="benefit-item">
-                <span class="ico">📦</span>
-                <div><strong>택배 접수 완전 자동화</strong>주소 타이핑 없이 AI가 알아서 정리</div>
-            </div>
-            <div class="benefit-item">
-                <span class="ico">🔔</span>
-                <div><strong>24시간 손님 응대 자동화</strong>전화 못 받을 때도 비서가 대신 응답</div>
-            </div>
-            <div class="benefit-item">
-                <span class="ico">💰</span>
-                <div><strong>가입비 전액 포인트 환원</strong>실질 비용 0원, 바로 문자 발송에 사용</div>
-            </div>
-        </div>
-
-        <!-- 카카오 버튼: REST_API_KEY 절대 미노출, 서버 /auth/kakao/login 이 처리 -->
-        <a href="/auth/kakao/login" id="btnKakao" class="btn-kakao" onclick="saveSignupCookies()">
-            <svg viewBox="0 0 24 24" fill="#3C1E1E" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 3C6.477 3 2 6.477 2 10.8c0 2.717 1.6 5.105 4.01 6.51l-1.02 3.78 4.37-2.88C10.42 18.38 11.2 18.5 12 18.5c5.523 0 10-3.477 10-7.7S17.523 3 12 3z"/>
-            </svg>
-            카카오로 3초 만에 가입하기
-        </a>
-
-        <div class="kakao-note">
-            로그인 시 <a href="/terms">이용약관</a> 및 <a href="/terms#privacy">개인정보처리방침</a>에 동의합니다.<br>
-            카카오 계정의 이름·전화번호만 사용되며 안전하게 보관됩니다.
-        </div>
-    </div>
-
-    <!-- 구분선 -->
-    <div class="divider"><span>또는 직접 입력</span></div>
-
-    <!-- 자세히 가입하기 토글 -->
-    <button class="toggle-btn" onclick="toggleForm(this)">
-        <span style="font-size:1.3rem;">📋</span>
-        <span>자세히 가입하기</span>
-        <span style="font-size:0.85rem; opacity:0.7; margin-left:4px;">(전화번호·사업자 입력)</span>
-    </button>
-
-    <!-- 폼 카드 (기본 숨김 — 토글로 열림) -->
-    <div class="form-card" id="formCard">
-        <h3>가맹점 정보 입력</h3>
-        <div id="errorMsgBox" class="error-msg"></div>
-
-        <form id="detailForm">
-            <input type="hidden" name="mode" value="signup">
-            <input type="hidden" name="ref" value="{{ ref }}">
-            <input type="hidden" name="tier" value="{{ tier }}">
-
+    <div class="container">
+        <h1>동네비서 파트너 입점</h1>
+        <p class="subtitle">사진 1장과 이름만 입력하면 즉시 나만의 상점이 완성됩니다.</p>
+        
+        <!-- 보안상 enctype="multipart/form-data" 필수 -->
+        <form action="/onboard" method="POST" enctype="multipart/form-data">
+            
             <div class="form-group">
-                <label>휴대폰 번호 (아이디) <span>*</span></label>
-                <div class="row">
-                    <input type="tel" id="store_id" name="store_id" class="form-input" placeholder="010-XXXX-XXXX" required>
-                    <button type="button" class="action-btn blue" onclick="sendOTP()">인증번호</button>
+                <label for="subdomain">원하시는 인터넷 주소 (영문)</label>
+                <div class="domain-input-group">
+                    <input type="text" id="subdomain" name="subdomain" placeholder="kimfarm" required pattern="[a-zA-Z0-9-]+" title="영문자와 숫자, 하이픈만 가능합니다.">
+                    <div class="domain-suffix">.dongnebiseo.com</div>
                 </div>
             </div>
 
-            <div class="form-group" id="authCodeGroup" style="display:none;">
-                <label>인증번호 <span>*</span></label>
-                <div class="row">
-                    <input type="text" id="auth_code" class="form-input" placeholder="6자리 입력">
-                    <button type="button" class="action-btn blue" onclick="verifyOTP()">확인</button>
-                </div>
-                <div id="authSuccess" class="success-text">✅ 본인인증 완료</div>
+            <div class="form-group">
+                <label for="store_name">상점 이름</label>
+                <input type="text" id="store_name" name="store_name" placeholder="예: 소백산 김씨농장" required>
             </div>
 
-            <div class="sep"></div>
+            <div class="form-group">
+                <label for="description">간단한 소개 (선택)</label>
+                <textarea id="description" name="description" rows="3" placeholder="예: 당일 수확한 신선한 사과만 보내드립니다."></textarea>
+            </div>
 
             <div class="form-group">
-                <label>상호명 <span>*</span></label>
-                <input type="text" name="name" class="form-input" placeholder="예: 맛있는 과일나라" required>
-            </div>
-            <div class="form-group">
-                <label>사장님 성함 <span>*</span></label>
-                <input type="text" name="owner_name" class="form-input" placeholder="예: 홍길동" required>
-            </div>
-            <div class="form-group">
-                <label>사업자등록번호 <span>*</span></label>
-                <div class="row">
-                    <input type="text" id="biz_number" name="biz_number" class="form-input" placeholder="숫자 10자리" required>
-                    <button type="button" class="action-btn gray" onclick="verifyBizNumber()">국세청 조회</button>
-                </div>
-                <div id="bizSuccess" class="success-text">✅ 정식 사업자 확인 완료</div>
-                <div id="bizError" class="error-text">유효하지 않습니다</div>
-            </div>
-            <div class="form-group">
-                <label>가게 주소 <span>*</span></label>
-                <input type="text" name="address" class="form-input" placeholder="도로명 또는 지번 주소" required>
-            </div>
-            <div class="form-group">
-                <label>업종 <span>*</span></label>
-                <select name="category" id="category" class="form-input" required onchange="updateCategoryPreview(this.value)">
-                    <option value="" disabled selected>업종을 선택해주세요</option>
-                    <option value="택배">📦 택배 / 물류</option>
-                    <option value="식당">🍽️ 식당 / 분식</option>
-                    <option value="카페">☕ 카페 / 음료</option>
-                    <option value="미용">💇 미용 / 네일</option>
-                    <option value="병원">🏥 병원 / 약국</option>
-                    <option value="마트">🛒 소매 / 마트</option>
-                    <option value="기타">🏪 기타 / 일반</option>
-                </select>
-                <div id="categoryPreview" style="display:none; margin-top:10px; padding:12px; background:#f0f7ff; border-radius:8px; border-left:3px solid #3b82f6; font-size:0.88rem; color:#334155; line-height:1.6;">
-                    <b style="color:#2563eb;">📱 고객에게 발송될 콜백 문자 미리보기</b><br>
-                    <span id="previewText" style="color:#475569;"></span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>가게 사진 (가짜 상점 방지) <span>*</span></label>
-                <input type="file" name="biz_photo" class="form-input" accept="image/*" capture="environment" style="background:white;" required>
+                <label for="store_image">대표 사진 업로드 (5MB 이하, JPG/PNG)</label>
+                <input type="file" id="store_image" name="store_image" accept=".jpg, .jpeg, .png" required>
             </div>
 
-            <div style="margin:20px 0; padding:14px; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
-                <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:0.92rem; font-weight:bold; color:#334155;">
-                    <input type="checkbox" name="auth_consent" id="auth_consent" required style="width:18px;height:18px;margin-top:2px;">
-                    [필수] 실제 매장을 운영 중이며 <b>{{ referrer_name }}</b> 기사님의 안내를 받아 가입합니다.
-                </label>
-            </div>
-
-            <button type="submit" class="action-btn primary" id="submitBtn">비서 채용하기 (실 지출 0원)</button>
+            <button type="submit">1분 만에 상점 만들기</button>
         </form>
 
-        <div class="info-box">
-            💡 <b>안내</b><br>가입 후 첫 택배 발송 매칭 시 <b>{{ referrer_name }}</b> 기사님께 파트너스 지원수수료가 지급됩니다.
+        <div class="security-notice">
+            🔒 <b>보안 시스템 가동 중</b>: 해킹 방지를 위해 이미지 확장자 변조 검사 및 파일 헤더 분석이 자동으로 수행되며, 5MB 이상의 파일은 업로드가 원천 차단됩니다.
         </div>
     </div>
-
-</div>
-
-<script>
-    function saveSignupCookies() {
-        var ref  = document.querySelector('[name="ref"]').value;
-        var tier = document.querySelector('[name="tier"]').value;
-        // URL의 type 파라미터 읽기 (merchant / farmer / citizen)
-        var urlParams = new URLSearchParams(window.location.search);
-        var signupType = urlParams.get('type') || 'merchant';
-        document.cookie = "signup_ref="   + ref       + "; path=/; max-age=3600";
-        document.cookie = "signup_tier="  + tier      + "; path=/; max-age=3600";
-        document.cookie = "signup_type="  + signupType + "; path=/; max-age=3600";
-    }
-
-    function toggleForm(btn) {
-        var card = document.getElementById('formCard');
-        var open = card.classList.toggle('open');
-        btn.textContent = open ? '▲ 직접 입력 접기' : '📝 전화번호로 직접 가입하기';
-    }
-
-    var isPhoneVerified = false, isBizVerified = false;
-
-    async function sendOTP() {
-        var phone = document.getElementById('store_id').value.replace(/-/g,'').trim();
-        if (!phone || phone.length < 10) { alert("정확한 번호를 입력해주세요."); return; }
-        try {
-            var r = await fetch('/api/auth/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone: phone}) });
-            var d = await r.json();
-            document.getElementById('authCodeGroup').style.display = 'block';
-            alert(d.debug_code ? "[테스트] 인증번호: " + d.debug_code : "인증번호가 발송되었습니다.");
-        } catch(e) { alert("오류가 발생했습니다."); }
-    }
-
-    async function verifyOTP() {
-        var phone = document.getElementById('store_id').value.replace(/-/g,'').trim();
-        var code  = document.getElementById('auth_code').value.trim();
-        if (!code) { alert("인증번호를 입력해주세요."); return; }
-        try {
-            var r = await fetch('/api/auth/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({phone: phone, code: code}) });
-            var d = await r.json();
-            if (d.success) {
-                isPhoneVerified = true;
-                document.getElementById('authSuccess').style.display = 'block';
-                document.getElementById('store_id').readOnly = true;
-            } else { alert("인증번호가 일치하지 않습니다."); }
-        } catch(e) { alert("오류가 발생했습니다."); }
-    }
-
-    async function verifyBizNumber() {
-        var biz = document.getElementById('biz_number').value;
-        if (!biz || biz.length < 10) { alert("사업자 번호 10자리를 입력해주세요."); return; }
-        try {
-            var fd = new FormData(); fd.append("biz_number", biz);
-            var r = await fetch('/api/validate_biz', { method:'POST', body:fd });
-            var d = await r.json();
-            isBizVerified = d.is_valid;
-            document.getElementById('bizSuccess').style.display = d.is_valid ? 'block' : 'none';
-            document.getElementById('bizError').style.display  = d.is_valid ? 'none'  : 'block';
-            if (d.is_valid) document.getElementById('biz_number').readOnly = true;
-        } catch(e) { alert("서버 연결에 실패했습니다."); }
-    }
-
-    document.getElementById('detailForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        if (!isPhoneVerified) { alert("휴대폰 인증을 먼저 완료해주세요."); return; }
-        if (!isBizVerified)   { alert("사업자 국세청 조회를 먼저 완료해주세요."); return; }
-        var btn = document.getElementById('submitBtn');
-        var errorBox = document.getElementById('errorMsgBox');
-        btn.textContent = "처리 중..."; btn.disabled = true;
-        errorBox.style.display = 'none';
-        try {
-            var r = await fetch('/login', { method:'POST', body: new FormData(this) });
-            if (r.status === 200 || r.redirected || r.status === 303 || r.status === 0) {
-                alert("가입이 완료되었습니다!\n휴대폰으로 초기 비밀번호를 발송했습니다.");
-                window.location.href = "/admin";
-            } else if (r.status === 409) {
-                errorBox.innerHTML = "이미 등록된 번호입니다.";
-                errorBox.style.display = 'block';
-                btn.textContent = "로그인 하러 가기"; btn.disabled = false;
-                btn.onclick = function() { window.location.href = "/admin"; };
-            } else {
-                errorBox.textContent = "오류가 발생했습니다 (Code: " + r.status + ")";
-                errorBox.style.display = 'block';
-                btn.textContent = "다시 시도"; btn.disabled = false;
+    
+    <script>
+        document.querySelector('form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('store_image');
+            const submitBtn = document.querySelector('button[type="submit"]');
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("대표 사진을 반드시 선택해주세요.");
+                return;
             }
-        } catch(err) {
-            errorBox.textContent = "네트워크 오류";
-            errorBox.style.display = 'block';
-            btn.textContent = "다시 시도"; btn.disabled = false;
-        }
-    });
-    // ★ 업종별 콜백 문자 미리보기
-    const _categoryPreviews = {
-        '택배': '[상호명] 전화 감사합니다.\n택배 접수를 바로 해드립니다 ▶ dongnebiseo.com/c?id=상호명',
-        '식당': '[상호명] 전화 주셔서 감사합니다.\n메뉴 확인 및 주문 ▶ dongnebiseo.com/c?id=상호명',
-        '카페': '[상호명] 전화 감사합니다.\n음료 미리 주문하고 편하게 픽업하세요 ▶ dongnebiseo.com/c?id=상호명',
-        '미용': '[상호명] 전화 주셔서 감사합니다.\n예약 문의는 링크에서 편하게 해주세요 ▶ dongnebiseo.com/c?id=상호명',
-        '병원': '[상호명] 전화 주셔서 감사합니다.\n진료 예약을 링크에서 남겨주세요 ▶ dongnebiseo.com/c?id=상호명',
-        '마트': '[상호명] 전화 감사합니다.\n상품 확인 및 주문 ▶ dongnebiseo.com/c?id=상호명',
-        '기타': '[상호명] 전화 주셔서 감사합니다.\n아래 링크에서 바로 문의하실 수 있습니다 ▶ dongnebiseo.com/c?id=상호명',
-    };
-    function updateCategoryPreview(val) {
-        const preview = document.getElementById('categoryPreview');
-        const text    = document.getElementById('previewText');
-        const storeName = document.querySelector('[name="name"]').value || '상호명';
-        if (val && _categoryPreviews[val]) {
-            text.textContent = _categoryPreviews[val].replace(/상호명/g, storeName);
-            text.style.whiteSpace = 'pre-line';
-            preview.style.display = 'block';
-        } else {
-            preview.style.display = 'none';
-        }
-    }
-    // 상호명 입력 시 미리보기도 즉시 갱신
-    document.addEventListener('DOMContentLoaded', function() {
-        const nameInput = document.querySelector('[name="name"]');
-        if (nameInput) {
-            nameInput.addEventListener('input', function() {
-                const cat = document.getElementById('category');
-                if (cat && cat.value) updateCategoryPreview(cat.value);
-            });
-        }
-    });
-</script>
+            
+            const file = fileInput.files[0];
+            
+            // 버튼 상태 변경
+            const originalBtnText = submitBtn.innerText;
+            submitBtn.innerText = "사진을 최적화하는 중입니다...";
+            submitBtn.disabled = true;
+            submitBtn.style.backgroundColor = "#999";
+            
+            try {
+                // 압축 옵션 설정
+                const options = {
+                    maxSizeMB: 1,          // 최대 1MB
+                    maxWidthOrHeight: 1920, // 가로/세로 최대 1920px
+                    useWebWorker: true,
+                    fileType: 'image/jpeg', // JPEG 변환
+                    initialQuality: 0.8
+                };
+                
+                // browser-image-compression 실행 (EXIF Orientation 자동 처리됨)
+                const compressedFile = await imageCompression(file, options);
+                
+                // 새로운 File 객체 생성 (기존 파일명 유지, 확장자는 .jpg)
+                const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+                const newFileObj = new File([compressedFile], newFileName, {
+                    type: "image/jpeg",
+                });
+                
+                // fileInput 값 교체
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(newFileObj);
+                fileInput.files = dataTransfer.files;
+                
+                // 폼 강제 제출 (이벤트 리스너 우회)
+                HTMLFormElement.prototype.submit.call(this);
+                
+            } catch (error) {
+                console.error("이미지 압축 중 오류 발생:", error);
+                alert("이미지 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+                submitBtn.innerText = originalBtnText;
+                submitBtn.disabled = false;
+                submitBtn.style.backgroundColor = ""; // 원래 색상으로 복구 (CSS 클래스 의존)
+            }
+        });
+    </script>
 </body>
 </html>
