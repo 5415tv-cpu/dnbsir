@@ -12,7 +12,7 @@
         <div id="tokenChip" class="token-chip {% if store.points|default(0) < 1000 %}warning{% endif %}" style="background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.1); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: all 0.3s ease;">
             🪙 <span id="tokenBalance">{{ store.points|default(0) }}</span> 토큰
         </div>
-        <button onclick="location.href='/admin/wallet'" style="background: #1e3c72; color: #fff; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">충전하기</button>
+        <button onclick="openPaymentModal()" style="background: #1e3c72; color: #fff; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">충전하기</button>
         <button id="dashboard-hamburger-btn" onclick="toggleDashboardSidebar(true)" style="background: none; border: none; font-size: 1.8rem; color: #1e3c72; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
             ☰
         </button>
@@ -1011,7 +1011,73 @@
             }
         }
     });
+
+    let selectedPoints = 0;
+    let paymentAmount = 0;
+
+    function openPaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        modal.style.display = 'flex';
+    }
+
+    function closePaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        modal.style.display = 'none';
+    }
+
+    function selectAmount(points) {
+        selectedPoints = points;
+        paymentAmount = Math.ceil(points * 1.1); // 10% VAT
+        document.getElementById('selectedAmountDisplay').innerHTML =
+            `<span style="font-size:0.875rem; color:#6b7280; font-weight:normal;">부가세 포함</span> ` +
+            paymentAmount.toLocaleString() + "원";
+    }
+
+    function requestPayment() {
+        if (selectedPoints === 0) {
+            alert("충전할 금액을 선택해주세요.");
+            return;
+        }
+
+        const method = document.getElementById("paymentMethodSelect").value;
+        if (method === 'BANK_TRANSFER') {
+            alert("카카오뱅크 333311114444 계좌로 " + paymentAmount.toLocaleString() + "원을 입금해주세요.\n\n입금 후 관리자에게 전화나 문자를 보내주시면 확인 후 충전해 드립니다.");
+            closePaymentModal();
+            return;
+        }
+    }
 </script>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-[9999]" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl relative" style="background:#fff; border-radius:1rem; padding:1.5rem; width:90%; max-width:400px; position:relative;">
+        <button onclick="closePaymentModal()" style="position:absolute; top:1rem; right:1rem; background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <h3 class="text-xl font-bold mb-4" style="font-size:1.25rem; font-weight:bold; margin-bottom:1rem;">포인트 충전</h3>
+
+        <!-- Amount Selection -->
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:0.5rem; margin-bottom:1rem;">
+            <button type="button" onclick="selectAmount(10000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">1만원</button>
+            <button type="button" onclick="selectAmount(30000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">3만원</button>
+            <button type="button" onclick="selectAmount(50000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">5만원</button>
+            <button type="button" onclick="selectAmount(100000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">10만원</button>
+            <button type="button" onclick="selectAmount(500000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">50만원</button>
+            <button type="button" onclick="selectAmount(1000000)" style="border:1px solid #ccc; border-radius:0.5rem; padding:0.75rem; background:#fff; font-weight:bold; cursor:pointer; width:100%;">100만원</button>
+        </div>
+        <p style="text-align:right; font-size:1.125rem; font-weight:bold; color:#2563eb; margin-bottom:1rem;" id="selectedAmountDisplay">0원</p>
+
+        <!-- Payment Method Selection -->
+        <div style="margin-bottom:1rem;">
+            <label style="display:block; font-size:0.875rem; font-weight:bold; color:#374151; margin-bottom:0.25rem;">결제 수단</label>
+            <select id="paymentMethodSelect" style="width:100%; border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; font-size:0.875rem; font-weight:bold; background:#fff;">
+                <option value="BANK_TRANSFER">🏦 무통장 입금 (카카오뱅크)</option>
+            </select>
+        </div>
+
+        <button onclick="requestPayment()" style="width:100%; background:#2563eb; color:#fff; border:none; border-radius:0.75rem; padding:0.75rem; font-weight:bold; cursor:pointer; margin-top:0.5rem;">
+            충전하기
+        </button>
+    </div>
+</div>
 
 <!-- Toast Alert Notification -->
 <div id="toastAlert" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #27ae60; color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 0.95rem; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 9999; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); opacity: 0; pointer-events: none; white-space: nowrap;">
