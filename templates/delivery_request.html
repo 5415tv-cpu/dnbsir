@@ -8,14 +8,14 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #0d0f14;
-      --panel: #181c27;
+      --bg: #f5f7fa;
+      --panel: #ffffff;
       --accent: #4f8ef7;
       --accent2: #7c5cfc;
       --gold: #f5c842;
-      --text: #e0e6f0;
-      --muted: #6b7a99;
-      --border: #252c3f;
+      --text: #1a2340;
+      --muted: #8a96b0;
+      --border: #e0e5ef;
       --success: #2ec4b6;
       --danger: #ff4d4d;
       --radius: 18px;
@@ -41,7 +41,7 @@
     .page-title {
       font-size: 20px;
       font-weight: 900;
-      color: #fff;
+      color: #1a2340;
       text-align: center;
       margin-bottom: 6px;
     }
@@ -56,15 +56,23 @@
       font-weight: 700;
     }
 
-    /* ── AI 카메라/마이크 중앙 블록 ── */
+    /* ── AI 카메라/마이크 가로 나란히 ── */
     .ai-center {
       width: 100%;
       max-width: 420px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
-      margin-bottom: 28px;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .ai-btns-row {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      width: 100%;
     }
 
     /* 카메라 뷰파인더 */
@@ -73,10 +81,10 @@
       width: 200px;
       height: 200px;
       border-radius: 50%;
-      background: #11151e;
+      background: #f0f3fa;
       border: 2px solid var(--border);
       overflow: hidden;
-      box-shadow: 0 0 0 6px rgba(79,142,247,0.08), 0 0 40px rgba(79,142,247,0.12);
+      box-shadow: 0 0 0 6px rgba(79,142,247,0.06), 0 4px 20px rgba(79,142,247,0.10);
     }
     .cam-ring video {
       width: 100%;
@@ -119,18 +127,25 @@
 
     /* 마이크 버튼 */
     .mic-btn {
-      width: 64px;
-      height: 64px;
+      width: 110px;
+      height: 110px;
       border-radius: 50%;
       border: 2px solid var(--border);
-      background: var(--panel);
-      font-size: 28px;
+      background: #f0f3fa;
+      font-size: 36px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.2s;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      box-shadow: 0 0 0 6px rgba(79,142,247,0.06), 0 4px 20px rgba(79,142,247,0.10);
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mic-btn span.mic-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
     }
     .mic-btn.active {
       background: linear-gradient(135deg, #f5a623, #e8850a);
@@ -173,15 +188,15 @@
     }
 
     .step-q {
-      font-size: 17px;
-      font-weight: 700;
-      color: #fff;
+      font-size: 19px;
+      font-weight: 900;
+      color: var(--text);
       margin-bottom: 4px;
       line-height: 1.5;
     }
     .step-q em { color: var(--accent); font-style: normal; }
     .step-sub {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
       margin-bottom: 16px;
     }
@@ -189,13 +204,13 @@
     /* 인풋 */
     .inp {
       width: 100%;
-      background: rgba(255,255,255,0.04);
+      background: #f5f7fa;
       border: 1.5px solid var(--border);
       border-radius: 12px;
-      color: #fff;
+      color: var(--text);
       font-family: 'Noto Sans KR', sans-serif;
-      font-size: 15px;
-      padding: 13px 14px;
+      font-size: 16px;
+      padding: 14px 16px;
       outline: none;
       transition: all 0.2s;
     }
@@ -226,13 +241,13 @@
     /* 박스 크기 선택 칩 */
     .chip-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
     .chip {
-      padding: 8px 16px;
+      padding: 9px 18px;
       border-radius: 24px;
       border: 1.5px solid var(--border);
       background: transparent;
       color: var(--muted);
       font-family: 'Noto Sans KR', sans-serif;
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.2s;
@@ -253,7 +268,7 @@
       transition: all 0.2s;
     }
     .qty-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .qty-val { font-size: 22px; font-weight: 900; color: #fff; min-width: 36px; text-align: center; }
+    .qty-val { font-size: 24px; font-weight: 900; color: var(--text); min-width: 36px; text-align: center; }
     .qty-label { font-size: 12px; color: var(--muted); }
 
     /* 다음 버튼 */
@@ -311,6 +326,126 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ══ 전체화면 카메라 모달 ══ */
+    #cam-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #000;
+      flex-direction: column;
+    }
+    #cam-modal.open { display: flex; }
+
+    /* 안내멘트 오버레이 */
+    #cam-guide {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.92) 80%, transparent);
+      padding: 28px 20px 36px;
+      z-index: 10001;
+      text-align: center;
+    }
+    #cam-guide .guide-title {
+      font-size: 17px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: -0.3px;
+    }
+    #cam-guide .guide-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    #cam-guide .guide-tag {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 5px 14px;
+    }
+    #cam-guide .guide-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.6;
+    }
+    #cam-guide .guide-desc strong {
+      color: #f5c842;
+    }
+
+    /* 전체화면 비디오 */
+    #cam-modal video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      inset: 0;
+    }
+
+    /* 하단 버튼 영역 */
+    #cam-bottom {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 24px 24px 40px;
+      background: linear-gradient(0deg, rgba(0,0,0,0.85) 70%, transparent);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 32px;
+      z-index: 10001;
+    }
+    #cam-close-btn {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.5);
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #cam-capture-btn {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: #fff;
+      border: 4px solid rgba(255,255,255,0.6);
+      color: #000;
+      font-size: 32px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 6px rgba(255,255,255,0.2);
+      transition: transform 0.1s;
+    }
+    #cam-capture-btn:active { transform: scale(0.92); }
+    #cam-switch-btn {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 2px solid rgba(255,255,255,0.5);
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    /* 가이드 닙기 버튼 */
+    #cam-guide-toggle {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 12px;
+      cursor: pointer;
+      z-index: 10002;
+    }
+
     /* 완료 패널 */
     .done-panel {
       width: 100%;
@@ -325,7 +460,7 @@
     }
     .done-panel.show { display: flex; }
     .done-icon { font-size: 60px; }
-    .done-panel h2 { font-size: 22px; font-weight: 900; color: #fff; }
+    .done-panel h2 { font-size: 24px; font-weight: 900; color: var(--text); }
     .done-panel p { font-size: 14px; color: var(--muted); line-height: 1.6; }
     .waybill-box {
       background: var(--panel);
@@ -356,7 +491,7 @@
       background: var(--panel);
       border: 1.5px solid var(--border);
       border-radius: var(--radius);
-      color: #fff;
+      color: var(--text);
       font-family: 'Noto Sans KR', sans-serif;
       font-size: 14px;
       font-weight: 700;
@@ -497,22 +632,27 @@
   <div class="step-card" id="step-7">
     <div class="step-q">7. <em>박스 크기와 수량</em>을<br>선택해 주세요.</div>
     <div class="step-sub">여러 크기를 동시에 선택할 수 있습니다</div>
-
     <div id="box-list"></div><!-- JS로 렌더 -->
   </div>
 
-  <!-- ══ AI 마이크 + 카메라 (입력 필드 바로 아래) ══ -->
-  <div class="ai-center" id="ai-center">
-    <div class="cam-ring" id="camRing" style="width:160px;height:160px;cursor:pointer;" onclick="toggleCamera()" title="탭하면 카메라 켜짐/꺼짐">
-      <video id="camVideo" autoplay muted playsinline></video>
-      <div class="cam-off-msg" id="camOffMsg">
-        <span class="icon">📷</span>
-        <span>탭하면 카메라 켜짐</span>
-      </div>
-    </div>
-    <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
-    <div class="ai-status" id="aiStatus">📷 탭 → 카메라 | 🎤 탭 → 음성 입력</div>
+  <!-- ══ 송장 스캔 ══ -->
+  <div id="ai-center" style="width:100%;max-width:420px;display:flex;gap:10px;margin-bottom:8px;">
+
+    <input type="file" id="cameraInput"  accept="image/*" capture="camera" style="display:none;" onchange="handleScanFile(this)">
+    <input type="file" id="galleryInput" accept="image/*"                  style="display:none;" onchange="handleScanFile(this)">
+
+    <button onclick="document.getElementById('cameraInput').click()"
+      style="flex:1;padding:14px 0;background:#1e40af;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">
+      📷 카메라
+    </button>
+    <button onclick="document.getElementById('galleryInput').click()"
+      style="flex:1;padding:14px 0;background:#065f46;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">
+      🖼️ 갤러리
+    </button>
+
   </div>
+
+
 
   <!-- ══ 엑셀 대량등록 (카메라 아래) ══ -->
   <div class="excel-section" id="excel-section" style="width:100%;max-width:420px;margin-bottom:20px;margin-top:16px;">
@@ -531,7 +671,7 @@
            ondragleave="this.classList.remove('drag-over')"
            ondrop="handleDrop(event)">
         <div style="font-size:32px;margin-bottom:6px;">📂</div>
-        <div style="font-size:14px;font-weight:700;color:#fff;">파일을 끌어오거나 탭해서 선택</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">파일을 끌어오거나 탭해서 선택</div>
         <div style="font-size:11px;color:var(--muted);margin-top:4px;">.xlsx / .xls / .csv 지원</div>
         <div id="excel-filename" style="font-size:12px;color:var(--accent);margin-top:6px;display:none;"></div>
       </div>
@@ -546,7 +686,7 @@
         </div>
       </div>
       <div id="excel-result" style="display:none;margin-top:14px;">
-        <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;" id="excel-result-summary"></div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;" id="excel-result-summary"></div>
         <div style="max-height:200px;overflow-y:auto;border-radius:10px;border:1px solid var(--border);">
           <table style="width:100%;border-collapse:collapse;font-size:12px;">
             <thead>
@@ -584,7 +724,13 @@
 
 </div><!-- /page -->
 
+<!-- ══ 전체화면 카메라 모달 ══ -->
+<!-- cam-modal 제거됨: 기기 네이티브 스캔으로 대체 -->
+
 <script>
+// ──────────────────────────────────────────────
+// Kakao Vision OCR 서버 프록시 로 호출 (코드 제거)
+
 // ──────────────────────────────────────────────
 // 상태
 // ──────────────────────────────────────────────
@@ -592,10 +738,280 @@ const TOTAL_STEPS = 7;
 let curStep = 1;
 let micActive = false;
 let recognition = null;
-let camStream = null;
 
 // 토스 클라이언트 키 (서버에서 주입)
 const TOSS_CLIENT_KEY = '{{ toss_client_key }}';
+
+// ──────────────────────────────────────────────
+// OCR 상태 관리 (sessionStorage 기반)
+// ──────────────────────────────────────────────
+const OCR_KEY = 'dnbsir_ocr_data';
+
+/** OCR 결과를 sessionStorage에 저장 */
+function saveOcrData(parsed) {
+  sessionStorage.setItem(OCR_KEY, JSON.stringify(parsed));
+}
+
+/** sessionStorage → 폼 필드에 pre-fill */
+function prefillFromOcr() {
+  const raw = sessionStorage.getItem(OCR_KEY);
+  if (!raw) return 0;
+  let p;
+  try { p = JSON.parse(raw); } catch { return 0; }
+
+  let filled = 0;
+  const set = (id, val) => {
+    if (!val) return;
+    const el = document.getElementById(id);
+    if (el) { el.value = val.trim(); el.classList.remove('err'); filled++; }
+  };
+  set('receiver_name',   p.receiver_name);
+  set('receiver_phone',  p.receiver_phone);
+  set('receiver_addr',   p.receiver_addr);
+  set('receiver_detail', p.receiver_detail);
+  set('sender_name',     p.sender_name);
+  set('sender_phone',    p.sender_phone);
+  set('sender_addr',     p.sender_addr);
+  set('sender_detail',   p.sender_detail);
+
+  // ── 우편번호: 카카오 API가 정제한 값 우선, 없으면 '직접입력'
+  if (p.receiver_addr) {
+    const pc = document.getElementById('receiver_postcode');
+    if (pc) pc.value = p.receiver_postcode || '직접입력';
+  }
+  if (p.sender_addr) {
+    const pc = document.getElementById('sender_postcode');
+    if (pc && !pc.value) pc.value = '직접입력';
+  }
+
+  // ── 주소 검증 실패 경고 (카카오 API 0건 = 전국에 없는 주소 가능)
+  if (p.is_address_verified === false) {
+    const addrEl = document.getElementById('receiver_addr');
+    if (addrEl) {
+      addrEl.classList.add('err');
+      addrEl.style.outline = '2px solid #ef4444';
+    }
+    // 기존 경고 제거 후 새로 삽입
+    const existing = document.getElementById('addr-verify-warn');
+    if (existing) existing.remove();
+    const warn = document.createElement('div');
+    warn.id = 'addr-verify-warn';
+    warn.style.cssText = 'margin-top:6px;padding:8px 12px;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;font-size:12px;color:#dc2626;';
+    warn.innerHTML = '⚠️ 주소를 찾을 수 없습니다. <b>주소 검색 버튼</b>으로 정확한 주소를 선택해 주세요.';
+    if (addrEl) addrEl.insertAdjacentElement('afterend', warn);
+  }
+
+  // ── 자동 정제 성공 시 초록 뱃지
+  if (p.is_address_verified === true && p.is_auto_corrected) {
+    const addrEl = document.getElementById('receiver_addr');
+    if (addrEl) addrEl.style.outline = '2px solid #22c55e';
+    // 1.5초 후 제거
+    setTimeout(() => { if (addrEl) addrEl.style.outline = ''; }, 1500);
+  }
+
+  return filled;
+}
+
+/** 재촬영 버튼 클릭 시 → 기존 데이터 초기화 */
+function clearOcrData() {
+  sessionStorage.removeItem(OCR_KEY);
+}
+
+// ──────────────────────────────────────────────
+// 카메라: W3C 표준 HTML input capture 방식
+// getUserMedia/WebRTC 사용 안 함 — OS에 완전 위임
+// ──────────────────────────────────────────────
+
+// 네이티브 스캔 입력 핸들러
+// ──────────────────────────────────────────────
+
+async function handleScanFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  // input 초기화 (같은 파일 재선택 시 onChange 재발화)
+  input.value = '';
+
+  // ── 1단계: Canvas 압축 (max 1920px, JPEG 0.82)
+  const bitmap = await createImageBitmap(file);
+  const MAX_SIDE = 1920;
+  let sw = bitmap.width, sh = bitmap.height;
+  if (Math.max(sw, sh) > MAX_SIDE) {
+    const ratio = MAX_SIDE / Math.max(sw, sh);
+    sw = Math.round(sw * ratio);
+    sh = Math.round(sh * ratio);
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = sw; canvas.height = sh;
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, sw, sh);
+  bitmap.close();
+
+  canvas.toBlob(async blob => {
+    console.log(`[OCR] ${sw}x${sh}px · ${(blob.size/1024/1024).toFixed(2)}MB`);
+
+    // ── 2단계: 로딩 UI 즉시 표시 + 완전 차단
+    showOcrLoading(true);
+
+    // ── 3단계: 15초 타임아웃 AbortController
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 15000);
+
+    try {
+      const form = new FormData();
+      form.append('image', blob, 'capture.jpg');
+
+      const resp = await fetch('/api/ocr/kakao', {
+        method: 'POST',
+        body: form,
+        signal: ctrl.signal
+      });
+      clearTimeout(timer);
+
+      if (!resp.ok) throw new Error('서버 오류: ' + resp.status);
+      const data = await resp.json();
+
+      // ── 4단계: sessionStorage 저장 (검증 플래그 포함)
+      const p = data.parsed || {};
+      p.is_address_verified = data.is_address_verified ?? null;
+      p.is_auto_corrected   = data.is_auto_corrected   ?? false;
+      if (data.ai_raw_address) p.ai_raw_address = data.ai_raw_address;
+      sessionStorage.setItem('dnbsir_ocr_data', JSON.stringify(p));
+
+      // ── 5단계: 로딩 해제 후 접수 1단계로 리다이렉트
+      // (페이지 재로드 시 DOMContentLoaded에서 sessionStorage 읽어 prefill)
+      showOcrLoading(false);
+      window.location.href = window.location.pathname;
+
+    } catch(err) {
+      clearTimeout(timer);
+      showOcrLoading(false);
+      console.error('[OCR]', err);
+      // 에러: alert 후 1단계로
+      alert('판독에 실패했습니다. 직접 입력해 주세요.');
+      window.location.href = window.location.pathname;
+    }
+  }, 'image/jpeg', 0.82);
+}
+
+function setField(id, val) {
+  const el = document.getElementById(id);
+  if (el && val) { el.value = val.trim(); el.classList.remove('err'); }
+}
+
+// ── 로딩 UX: 전면 차단 + 완전 이벤트 블록 ───────────
+function showOcrLoading(show) {
+  let el = document.getElementById('ocr-loading');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ocr-loading';
+    el.style.cssText = [
+      'position:fixed;inset:0;z-index:99999',
+      'background:rgba(10,10,20,0.92)',
+      'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px',
+      'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)',
+      // 터치·클릭·스크롤 모두 차단
+      'touch-action:none;pointer-events:all;user-select:none;'
+    ].join(';');
+    // 이벤트 버블링 완전 차단
+    ['click','touchstart','touchend','touchmove','mousedown','mouseup','keydown']
+      .forEach(ev => el.addEventListener(ev, e => e.stopPropagation(), true));
+    el.innerHTML = `
+      <div style="position:relative;width:72px;height:72px;">
+        <div style="position:absolute;inset:0;border-radius:50%;border:3px solid rgba(255,255,255,0.08);"></div>
+        <div style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#60a5fa;animation:spin 0.9s linear infinite;"></div>
+        <div style="position:absolute;inset:8px;border-radius:50%;border:2px solid transparent;border-top-color:#a78bfa;animation:spin 1.3s linear infinite reverse;"></div>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;">📋</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="color:#fff;font-size:17px;font-weight:800;letter-spacing:-0.3px;margin-bottom:8px;">송장 정보를 꼼꼼히 판독하고 있습니다...</div>
+        <div id="ocr-step-msg" style="color:rgba(255,255,255,0.6);font-size:13px;min-height:18px;">잠시만 기다려 주세요</div>
+      </div>
+      <div style="width:220px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden;">
+        <div id="ocr-progress-bar" style="height:100%;width:15%;background:linear-gradient(90deg,#60a5fa,#a78bfa);border-radius:2px;transition:width 1.4s ease;"></div>
+      </div>
+      <div style="color:rgba(255,255,255,0.3);font-size:11px;">화면을 터치하지 마세요</div>
+    `;
+    document.body.appendChild(el);
+  }
+  if (show) {
+    el.style.display = 'flex';
+    document.body.style.overflow = 'hidden';   // 스크롤 잠금
+    setTimeout(() => { const pb = document.getElementById('ocr-progress-bar'); if(pb) pb.style.width='55%'; }, 100);
+    setTimeout(() => { const pb = document.getElementById('ocr-progress-bar'); if(pb) pb.style.width='80%'; }, 2000);
+    setTimeout(() => { const pb = document.getElementById('ocr-progress-bar'); if(pb) pb.style.width='92%'; }, 8000);
+  } else {
+    document.body.style.overflow = '';         // 스크롤 잠금 해제
+    const pb = document.getElementById('ocr-progress-bar');
+    if(pb) { pb.style.transition='width 0.3s'; pb.style.width='100%'; }
+    setTimeout(() => { if(el) el.style.display='none'; }, 320);
+  }
+}
+
+function updateOcrStep(msg) {
+  const el = document.getElementById('ocr-step-msg');
+  if (el) el.textContent = msg;
+}
+
+function showOcrToast(msg, type) {
+  const old = document.getElementById('ocr-toast'); if(old) old.remove();
+  const t = document.createElement('div');
+  t.id = 'ocr-toast';
+  const isOk = type === 'ok';
+  const bg = isOk
+    ? 'linear-gradient(135deg,#22c55e,#16a34a)'
+    : 'linear-gradient(135deg,#f59e0b,#d97706)';
+  const icon = isOk ? '✅' : '📝';
+  t.style.cssText = [
+    'position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-10px)',
+    `z-index:9999;background:${bg};color:#fff`,
+    'padding:16px 24px;border-radius:18px',
+    'font-size:14px;font-weight:700;text-align:center;white-space:pre-line',
+    'box-shadow:0 6px 24px rgba(0,0,0,0.3);max-width:320px;line-height:1.6',
+    'opacity:0;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1)'
+  ].join(';');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => {
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(-8px)';
+    setTimeout(() => t.remove(), 350);
+  }, 4500);
+}
+
+function parseDeliveryText(text) {
+  const r = {};
+  const lines = text.replace(/\r/g,'').split('\n').map(l=>l.trim()).filter(Boolean);
+  const full = lines.join(' ');
+  const phoneRe = /0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}/g;
+  const phones = [...full.matchAll(phoneRe)].map(m=>m[0].replace(/\s/g,''));
+  const addrRe = /([가-힣]+(?:시|도)\s+[가-힣]+(?:시|군|구)[^\n,，]{2,40})/g;
+  const addrs = [...full.matchAll(addrRe)].map(m=>m[1].trim());
+  const rName = full.match(/(?:받는\s*사람|수신인|받는분|수령인|수취인)\s*[：:]\s*([가-힣]{2,5})/);
+  const sName = full.match(/(?:보내는\s*사람|발송인|보내는분|발신인)\s*[：:]\s*([가-힣]{2,5})/);
+  if (rName) r.receiver_name = rName[1];
+  if (sName) r.sender_name   = sName[1];
+  if (!r.receiver_name) { const m=full.match(/(?<![가-힣])([가-힣]{2,4})(?=\s*님|\s*귀중)/); if(m) r.receiver_name=m[1]; }
+  if (phones[0]) r.receiver_phone = phones[0];
+  if (addrs[0])  r.receiver_addr  = addrs[0];
+  if (phones[1]) r.sender_phone   = phones[1];
+  if (addrs[1])  r.sender_addr    = addrs[1];
+  return r;
+}
+
+function toggleGuide() {
+  const guide = document.getElementById('cam-guide');
+  const btn   = document.getElementById('cam-guide-toggle');
+  guideVisible = !guideVisible;
+  guide.style.display = guideVisible ? 'block' : 'none';
+  btn.textContent = guideVisible ? '안내 닫기 ✕' : '안내 보기 ℹ️';
+}
+
+function stopCamera() {
+  closeFullCam();
+}
 
 // 박스 크기별 수량 (소/중/대)
 const SIZES = [
@@ -605,49 +1021,8 @@ const SIZES = [
 ];
 
 // ──────────────────────────────────────────────
-// 카메라 — 탭하면 켜고, 다시 탭하면 끔
+// 카메라 — 탭하면 전체화면 모달 열림 (구버전 제거됨)
 // ──────────────────────────────────────────────
-let camOn = false;
-
-async function toggleCamera() {
-  if (camOn) {
-    stopCamera();
-  } else {
-    await startCamera();
-  }
-}
-
-async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
-    camStream = stream;
-    camOn = true;
-    const vid = document.getElementById('camVideo');
-    vid.srcObject = stream;
-    vid.style.display = 'block';
-    document.getElementById('camOffMsg').style.display = 'none';
-    document.getElementById('camRing').classList.add('ai-active');
-    setStatus('카메라 켜짐 — 마이크를 눌러 말씀해 주세요', 'active');
-  } catch(e) {
-    document.getElementById('camOffMsg').innerHTML = '<span class="icon">📷</span><span>카메라 권한 필요</span>';
-    setStatus('카메라 권한을 허용해 주세요', '');
-    console.warn('Camera:', e);
-  }
-}
-
-function stopCamera() {
-  if (camStream) {
-    camStream.getTracks().forEach(t => t.stop());
-    camStream = null;
-  }
-  camOn = false;
-  const vid = document.getElementById('camVideo');
-  if (vid) { vid.srcObject = null; vid.style.display = 'none'; }
-  const offMsg = document.getElementById('camOffMsg');
-  if (offMsg) { offMsg.innerHTML = '<span class="icon">📷</span><span>탭하면 카메라 켜짐</span>'; offMsg.style.display = 'flex'; }
-  document.getElementById('camRing').classList.remove('ai-active');
-  setStatus('마이크를 눌러 말씀해 주세요', '');
-}
 
 
 // ──────────────────────────────────────────────
@@ -758,6 +1133,31 @@ function onInput() {
 
 function nextStep() {
   if (!validateStep(curStep)) return;
+
+  // ── Step 3 완료 시: 주소 수정값을 오답 노트에 자동 학습
+  if (curStep === 3) {
+    const raw = sessionStorage.getItem(OCR_KEY);
+    const ocrData = raw ? JSON.parse(raw) : {};
+    const aiAddr    = ocrData.receiver_addr || '';  // AI 원본
+    const finalAddr = document.getElementById('receiver_addr').value.trim();
+    const phone     = document.getElementById('receiver_phone').value.trim();
+    const name      = document.getElementById('receiver_name').value.trim();
+
+    if (phone || finalAddr) {
+      fetch('/api/ocr/correction', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          ai_text:          (aiAddr !== finalAddr) ? aiAddr : '',
+          corrected:        (aiAddr !== finalAddr) ? finalAddr : '',
+          phone:            phone,
+          receiver_name:    name,
+          receiver_address: finalAddr
+        })
+      }).catch(() => {});
+    }
+  }
+
   if (curStep < TOTAL_STEPS) {
     curStep++;
     updateStepUI();
@@ -982,7 +1382,103 @@ function printWaybill() {
     <h2>📦 동네비서 송장</h2>
     <p style="font-size:28px;font-weight:bold;letter-spacing:4px;">${code}</p>
     <script>window.print(); window.close();<\/script>
-    </body></html>
+    
+<!-- KAKAOPAY MODAL INJECTION -->
+<style>
+#kakao-payment-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 999999; justify-content: center; align-items: center;
+}
+.kakao-modal-content {
+    background: #fff; padding: 30px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: 'Pretendard', sans-serif;
+}
+.kakao-btn {
+    display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
+    font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;
+}
+.kakao-pay-btn { background: #FEE500; color: #000; }
+.kakao-pay-btn:hover { background: #e5cd00; }
+.toss-pay-btn { background: #f2f4f6; color: #8b95a1; cursor: not-allowed; }
+.close-modal-btn { background: transparent; color: #888; text-decoration: underline; margin-top: 10px; }
+</style>
+
+<div id="kakao-payment-modal">
+    <div class="kakao-modal-content">
+        <h2 style="margin-top:0; font-size:1.5rem; color:#333;">결제 수단 선택</h2>
+        <p style="color:#666; margin-bottom:20px;">원하시는 결제 수단을 선택해 주세요.</p>
+        <button class="kakao-btn kakao-pay-btn" id="modal-btn-kakao">카카오페이 결제</button>
+        <button class="kakao-btn toss-pay-btn" onclick="alert('토스 결제는 현재 준비 중입니다.')">토스페이먼츠 (준비중)</button>
+        <button class="kakao-btn close-modal-btn" onclick="document.getElementById('kakao-payment-modal').style.display='none'">취소</button>
+    </div>
+</div>
+
+<script>
+window.pendingPaymentOptions = null;
+
+// Catch tossPayments.requestPayment
+const originalToss = window.TossPayments;
+if (originalToss) {
+    window.TossPayments = function(clientKey) {
+        const instance = originalToss(clientKey);
+        instance.requestPayment = function(method, options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            // return a dummy promise that never resolves so original code waits
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+// Intercept Toss PaymentWidget for Kiosk
+const originalPaymentWidget = window.PaymentWidget;
+if (originalPaymentWidget) {
+    window.PaymentWidget = function(clientKey, customerKey) {
+        const instance = originalPaymentWidget(clientKey, customerKey);
+        const origRequest = instance.requestPayment.bind(instance);
+        instance.requestPayment = function(options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+document.getElementById('modal-btn-kakao').addEventListener('click', function() {
+    if (!window.pendingPaymentOptions) return;
+    const opts = window.pendingPaymentOptions;
+    
+    // Prepare Kakao API call
+    fetch('/api/payment/kakao/ready', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            orderId: opts.orderId,
+            amount: opts.amount,
+            itemName: opts.orderName || "결제",
+            userId: opts.customerName || "USER",
+            returnUrl: opts.successUrl || (window.location.origin + "/api/pay/success")
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.next_redirect_pc_url) {
+            window.location.href = data.next_redirect_pc_url;
+        } else {
+            alert("카카오페이 요청 실패: " + JSON.stringify(data));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("서버 통신 오류");
+    });
+});
+</script>
+<!-- END KAKAOPAY MODAL INJECTION -->
+
+</body></html>
   `);
   printWin.document.close();
 
@@ -999,7 +1495,29 @@ window.addEventListener('DOMContentLoaded', () => {
   applyRef();
   renderBoxList();
   updateStepUI();
-  // 카메라는 자동으로 켜지지 않음 — 카메라 링을 탭하면 켜짐
+
+  // sessionStorage에 OCR 데이터가 남아있으면 폼 pre-fill
+  if (sessionStorage.getItem(OCR_KEY)) {
+    const cnt = prefillFromOcr();
+    if (cnt > 0) console.log(`[OCR] sessionStorage에서 ${cnt}개 항목 복원`);
+  }
+
+  // 수동 입력도 실시간으로 sessionStorage 업데이트
+  // (사용자가 OCR 이후 수정한 값도 보존)
+  const FORM_FIELDS = [
+    'receiver_name','receiver_phone','receiver_addr','receiver_detail',
+    'sender_name','sender_phone','sender_addr','sender_detail'
+  ];
+  FORM_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', () => {
+      const raw = sessionStorage.getItem(OCR_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      data[id] = el.value.trim();
+      sessionStorage.setItem(OCR_KEY, JSON.stringify(data));
+    });
+  });
 });
 
 // ──────────────────────────────────────────────
@@ -1097,6 +1615,107 @@ function downloadSample() {
   a.click();
   URL.revokeObjectURL(url);
 }
+// ──────────────────────────────────────────────
+// 페이지 시작 시 초기화
+// ──────────────────────────────────────────────
+// sessionStorage 성공 후 자동 정리 (successUrl 리다이렉트 제외, 이안전장치)
+// 실제 정리는 /api/pay/success 에서 맡담, 여기선 할 일 없음
 </script>
+
+<!-- KAKAOPAY MODAL INJECTION -->
+<style>
+#kakao-payment-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 999999; justify-content: center; align-items: center;
+}
+.kakao-modal-content {
+    background: #fff; padding: 30px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: 'Pretendard', sans-serif;
+}
+.kakao-btn {
+    display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
+    font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;
+}
+.kakao-pay-btn { background: #FEE500; color: #000; }
+.kakao-pay-btn:hover { background: #e5cd00; }
+.toss-pay-btn { background: #f2f4f6; color: #8b95a1; cursor: not-allowed; }
+.close-modal-btn { background: transparent; color: #888; text-decoration: underline; margin-top: 10px; }
+</style>
+
+<div id="kakao-payment-modal">
+    <div class="kakao-modal-content">
+        <h2 style="margin-top:0; font-size:1.5rem; color:#333;">결제 수단 선택</h2>
+        <p style="color:#666; margin-bottom:20px;">원하시는 결제 수단을 선택해 주세요.</p>
+        <button class="kakao-btn kakao-pay-btn" id="modal-btn-kakao">카카오페이 결제</button>
+        <button class="kakao-btn toss-pay-btn" onclick="alert('토스 결제는 현재 준비 중입니다.')">토스페이먼츠 (준비중)</button>
+        <button class="kakao-btn close-modal-btn" onclick="document.getElementById('kakao-payment-modal').style.display='none'">취소</button>
+    </div>
+</div>
+
+<script>
+window.pendingPaymentOptions = null;
+
+// Catch tossPayments.requestPayment
+const originalToss = window.TossPayments;
+if (originalToss) {
+    window.TossPayments = function(clientKey) {
+        const instance = originalToss(clientKey);
+        instance.requestPayment = function(method, options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            // return a dummy promise that never resolves so original code waits
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+// Intercept Toss PaymentWidget for Kiosk
+const originalPaymentWidget = window.PaymentWidget;
+if (originalPaymentWidget) {
+    window.PaymentWidget = function(clientKey, customerKey) {
+        const instance = originalPaymentWidget(clientKey, customerKey);
+        const origRequest = instance.requestPayment.bind(instance);
+        instance.requestPayment = function(options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+document.getElementById('modal-btn-kakao').addEventListener('click', function() {
+    if (!window.pendingPaymentOptions) return;
+    const opts = window.pendingPaymentOptions;
+    
+    // Prepare Kakao API call
+    fetch('/api/payment/kakao/ready', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            orderId: opts.orderId,
+            amount: opts.amount,
+            itemName: opts.orderName || "결제",
+            userId: opts.customerName || "USER",
+            returnUrl: opts.successUrl || (window.location.origin + "/api/pay/success")
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.next_redirect_pc_url) {
+            window.location.href = data.next_redirect_pc_url;
+        } else {
+            alert("카카오페이 요청 실패: " + JSON.stringify(data));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("서버 통신 오류");
+    });
+});
+</script>
+<!-- END KAKAOPAY MODAL INJECTION -->
+
 </body>
 </html>

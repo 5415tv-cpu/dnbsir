@@ -122,42 +122,23 @@
                 </div>
                 
                 <!-- Home/Clock Standby Shortcut (Absolute First Item) -->
-                <button class="sidebar-btn" onclick="location.href='/admin/dashboard'" style="background: #1e3c72; border: 2px solid #ffd700; color: #ffd700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.15rem; padding: 14px; margin-bottom: 1rem; width: 100%; box-sizing: border-box; font-weight: 900; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                <button class="sidebar-btn" onclick="location.href='/admin/dashboard'" style="background: #1e3c72; border: 2px solid #ffd700; color: #ffd700; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1.15rem; padding: 14px; margin-bottom: 0.5rem; width: 100%; box-sizing: border-box; font-weight: 900; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
                     ⏰ 홈 / 대기화면 (시계)
                 </button>
-                
-                <!-- COURIER INTEGRATION SETTINGS -->
-                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 1.2rem;">
-                    <h4 style="margin: 0 0 12px 0; color: #39ff14; font-size: 1.05rem; font-weight: 900; display: flex; align-items: center; gap: 6px;">
-                        🚚 택배사 자동 연동 설정
-                    </h4>
-                    <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
-                        <div>
-                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">연동 택배사 선택</label>
-                            <select id="courier-carrier-select" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
-                                <option value="kr.logen">로젠택배 (Logen)</option>
-                                <option value="kr.hanjin">한진택배 (Hanjin)</option>
-                                <option value="kr.cjlogistics">CJ대한통운 (CJ Logistics)</option>
-                                <option value="kr.lotte">롯데택배 (Lotte)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">택배사 시스템 아이디 (사번)</label>
-                            <input type="text" id="courier-id-input" placeholder="예: 79802 또는 영업소 코드" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
-                        </div>
-                        <div>
-                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">택배사 비밀번호 (Password)</label>
-                            <input type="password" id="courier-pw-input" placeholder="택배사 시스템 비밀번호" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
-                        </div>
-                        <div>
-                            <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">차량번호 (4자리)</label>
-                            <input type="text" id="courier-car-input" placeholder="예: 5016" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
-                        </div>
-                        <button onclick="saveCourierSettings()" style="width: 100%; padding: 10px; background: #39ff14; color: #000; font-weight: 900; font-size: 0.9rem; border: none; border-radius: 8px; cursor: pointer; margin-top: 5px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                            연동 설정 저장하기
-                        </button>
-                    </div>
+
+                <!-- 홈 바로 아래: 단계별 택배 접수 + 동네마켓 둘러보기 -->
+                <div style="display: flex; gap: 8px; margin-bottom: 1rem;">
+                    <button class="sidebar-btn" onclick="location.href='/delivery/request'" style="flex: 1; background: rgba(57,255,20,0.12); border: 1.5px solid #39ff14; color: #39ff14; font-size: 0.92rem; font-weight: 900; padding: 12px 6px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                        <span style="font-size: 1.4rem;">📦</span>
+                        단계별 택배 접수
+                    </button>
+                    <button class="sidebar-btn" onclick="location.href='/citizen/market'" style="flex: 1; background: rgba(251,191,36,0.12); border: 1.5px solid #fbbf24; color: #fbbf24; font-size: 0.92rem; font-weight: 900; padding: 12px 6px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                        <span style="font-size: 1.4rem;">🛒</span>
+                        동네마켓 둘러보기
+                    </button>
                 </div>
+                
+                <!-- COURIER INTEGRATION SETTINGS block moved to above logout -->
 
                 <!-- MANUAL SMS SENDER -->
                 <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 14px; padding: 1.2rem;">
@@ -203,9 +184,6 @@
                     <button class="sidebar-btn" onclick="location.href='/admin/calls'">
                         ☎️ 미수신 전화 목록
                     </button>
-                    <button class="sidebar-btn" onclick="location.href='/admin/auto-reply'">
-                        💬 알림톡 발송 설정
-                    </button>
                     <button class="sidebar-btn" onclick="location.href='/delivery-dashboard'" style="background: rgba(30, 144, 255, 0.15); border-color: rgba(30, 144, 255, 0.25); color: #60a5fa;">
                         🚚 배달·수거 현황 (기사앱)
                     </button>
@@ -215,7 +193,46 @@
                     <button class="sidebar-btn" onclick="toggleVideoForm()" id="btn-video-req" style="background: rgba(255, 204, 0, 0.15); border-color: rgba(255, 204, 0, 0.25); color: #ffd700;">
                         🎬 동네비서 비디오 솔루션
                     </button>
-                    <button class="sidebar-btn" onclick="if(confirm('로그아웃 하시겠습니까?')) { location.href='/logout'; }" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.25); color: #f87171; margin-top: 10px;">
+
+                    <!-- 로그아웃 바로 위: 택배사 연동 설정 -->
+                    <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(57,255,20,0.25); border-radius: 14px; padding: 1.2rem; margin-top: 6px;">
+                        <h4 style="margin: 0 0 12px 0; color: #39ff14; font-size: 1.0rem; font-weight: 900; display: flex; align-items: center; gap: 6px;">
+                            🚚 택배사 연동 설정
+                        </h4>
+                        <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+                            <div>
+                                <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">연동 택배사 선택</label>
+                                <select id="courier-carrier-select" style="width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                                    <option value="kr.logen">로젠택배 (Logen)</option>
+                                    <option value="kr.hanjin">한진택배 (Hanjin)</option>
+                                    <option value="kr.cjlogistics">CJ대한통운 (CJ Logistics)</option>
+                                    <option value="kr.lotte">롯데택배 (Lotte)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">택배사 시스템 아이디 (사번)</label>
+                                <input type="text" id="courier-id-input" placeholder="예: 79802 또는 영업소 코드" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">택배사 비밀번호 (Password)</label>
+                                <input type="password" id="courier-pw-input" placeholder="택배사 시스템 비밀번호" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.8rem; color: #cbd5e1; display: block; margin-bottom: 4px;">차량번호 (4자리)</label>
+                                <input type="text" id="courier-car-input" placeholder="예: 5016" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; outline: none;">
+                            </div>
+                            <button onclick="saveCourierSettings()" style="width: 100%; padding: 10px; background: #39ff14; color: #000; font-weight: 900; font-size: 0.9rem; border: none; border-radius: 8px; cursor: pointer; margin-top: 5px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                                연동 설정 저장하기
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 알림톡 발송 설정 (로그아웃 바로 위) -->
+                    <button class="sidebar-btn" onclick="location.href='/admin/auto-reply'" style="background: rgba(139,92,246,0.15); border-color: rgba(139,92,246,0.35); color: #c084fc; font-weight: 900;">
+                        💬 알림톡 발송 설정
+                    </button>
+
+                    <button class="sidebar-btn" onclick="if(confirm('로그아웃 하시겠습니까?')) { location.href='/logout'; }" style="background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.25); color: #f87171; margin-top: 4px;">
                         🔓 로그아웃
                     </button>
                 </div>

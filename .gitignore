@@ -1,111 +1,11 @@
-# ==========================================
-# 동네비서 - Git 제외 파일
-# [2026-07-05 구조조정 업데이트]
-# ==========================================
+# 파이썬 가상환경 폴더 (용량이 커서 올리지 않음)
+venv/
+venv_worker/
 
-# Python
+# 파이썬 캐시 파일 (시스템에서 자동 생성되므로 불필요)
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-*.egg-info/
-.eggs/
-dist/
-build/
 
-# 가상환경
-venv/
-.venv/
-env/
+# 환경 변수 및 보안 키 파일 (절대 올라가면 안 됨 ⭐)
 .env
-.env.*
-!.env.example
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# 시크릿 / 인증 정보
-.streamlit/secrets.toml
-service_account.json
-secrets.toml
-google_stt_api_key.txt
-
-# 로컬 테스트/임시 파일
-stores.json
-ngrok.exe
-
-# OS 파일
-.DS_Store
-Thumbs.db
-
-# 주문/테스트 데이터
-주문장부.txt
-test_input.txt
-
-# Local DB
-*.db
-*.db-shm
-*.db-wal
-
-# Node.js
-node_modules/
-npm-debug.log*
-package-lock.json
-
-# ─────────────────────────────────────────
-# [구조조정 추가] 대용량 바이너리 — Git 저장소 부적합
-# ─────────────────────────────────────────
-*.zip
-*.exe
-*.deb
-*.apk
-*.aab
-*.jar
-release.zip
-deploy_app.zip
-deploy_tantan_web.zip
-jdk17.zip
-jdk17/
-
-# Android APK 빌드 결과물
-android_app_src/app/build/
-android_app_src/.gradle/
-android_app_src/local.properties
-
-# 영상/이미지 대용량 파일
-static/videos/
-static/apps/
-*.mp4
-*.avi
-*.mov
-dummy.jpg
-
-# ─────────────────────────────────────────
-# [구조조정 추가] deprecated/ 폴더 — 아카이브 (추적 제외)
-# ─────────────────────────────────────────
-deprecated/
-
-# ─────────────────────────────────────────
-# [구조조정 추가] media_worker 출력물
-# ─────────────────────────────────────────
-media_worker/media_output/
-media_worker/logs/
-core_engine/ComfyUI/output/
-core_engine/batch_input/
-
-# 로그 파일
-*.log
-server_watchdog.log
-pyngrok.log
-uvicorn.log
-
-# 임시 텍스트 결과물
-*_results.txt
-*_broad.txt
-*_matches.txt
-*_lines.txt
-
+secret.json

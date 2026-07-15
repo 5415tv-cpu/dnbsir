@@ -2,6 +2,16 @@ from flask import Flask, request, jsonify
 import google.generativeai as genai
 from celery import Celery
 import os
+import uuid
+import sys
+from pathlib import Path
+
+# media_worker 모듈 임포트를 위한 sys.path 설정
+ROOT = Path(r"C:\Users\A\Desktop\AI_Store")
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from media_worker.pipeline.script_generator import generate_script
 
 # ==========================================
 # 1. 제미나이 AI 및 워커(Celery) 세팅
@@ -14,9 +24,90 @@ celery_app = Celery('webhook_client', broker=REDIS_URL)
 
 app = Flask(__name__)
 
-# 임시 메모리 저장소: 고객별 승인 대기 상태 관리
+# 영상 결과물을 제공할 정적 폴더 생성
+VIDEO_DIR = ROOT / "static" / "videos"
+VIDEO_DIR.mkdir(parents=True, exist_ok=True)
+
+@app.route('/videos/<path:filename>')
+def serve_video(filename):
+    from flask import send_from_directory
+    return send_from_directory(str(VIDEO_DIR), filename)
+
+# 임시 메모리 저장소: 앱에서 요청한 대본 세션 상태 관리
+APP_SESSIONS = {}
+
+# 임시 메모리 저장소: 고객별 승인 대기 상태 관리 (카카오 챗봇용)
 # 구조: { user_id: { 'script': '대본 내용', 'status': 'WAITING_APPROVAL' } }
 PENDING_ORDERS = {}
+
+# ==========================================
+# 2. App 연동 API 라우트
+# ==========================================
+
+@app.route('/api/v1/app/video/request', methods=['POST'])
+def app_video_request():
+    """앱에서 농장 정보를 받아 영상 대본(Script)을 생성해 반환"""
+    try:
+        body = request.get_json(force=True)
+        user_id = body.get('user_id', 'unknown_user')
+        merchant_facts = body.get('merchant_facts', {})
+        
+        if not merchant_facts:
+            return jsonify({"status": "error", "message": "merchant_facts is required"}), 400
+
+        print(f"[{user_id}] App에서 영상 대본 생성 요청 수신")
+        
+        script_json = generate_script(merchant_facts)
+        
+        session_id = str(uuid.uuid4())
+        APP_SESSIONS[session_id] = {
+            'user_id': user_id,
+            'script_json': script_json,
+            'status': 'WAITING_APPROVAL'
+        }
+        
+        return jsonify({
+            "status": "success",
+            "session_id": session_id,
+            "script_json": script_json
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/v1/app/video/confirm', methods=['POST'])
+def app_video_confirm():
+    """앱에서 대본을 확인하고 렌더링(제작)을 승인"""
+    try:
+        body = request.get_json(force=True)
+        user_id = body.get('user_id')
+        session_id = body.get('session_id')
+        script_json = body.get('script_json') 
+        
+        if not session_id or session_id not in APP_SESSIONS:
+            return jsonify({"status": "error", "message": "Invalid session_id"}), 404
+            
+        session_data = APP_SESSIONS[session_id]
+        if not script_json:
+            script_json = session_data['script_json']
+            
+        # 워커로 프리미엄 렌더링 작업 전송
+        task = celery_app.send_task(
+            'worker.render_short_form_video',
+            args=[user_id, script_json]
+        )
+        print(f"[{user_id}] 프리미엄 렌더링 작업 전송. Task ID: {task.id}")
+        
+        del APP_SESSIONS[session_id]
+        return jsonify({
+            "status": "processing",
+            "task_id": task.id
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# ==========================================
+# 3. 기존 카카오 챗봇용 라우트
+# ==========================================
 
 @app.route('/api', methods=['POST']) 
 def kakao_chat():

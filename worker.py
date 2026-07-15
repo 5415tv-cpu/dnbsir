@@ -43,107 +43,150 @@ def get_history(prompt_id):
         return json.loads(response.read())
 
 # 2단계: 실제 렌더링 작업을 수행하는 함수 정의 (Task)
-# @app.task 데코레이터가 붙은 함수가 Redis 큐에 들어오는 작업 단위가 됩니다.
-@app.task(bind=True, max_retries=2, default_retry_delay=60) # 실패 시 60초 후 재시도 (최대 2번)
-def render_short_form_video(self, user_id, image_url, text_prompt):
+@app.task(bind=True, max_retries=2, default_retry_delay=60)
+def render_short_form_video(self, user_id, script_json, image_urls=None):
     """
     클라우드 웹 서버에서 이 함수를 호출하면, 
     로컬 PC가 이 함수 안의 내용을 실행합니다.
     """
-    print(f"[작업 시작] 사용자 {user_id}의 영상 렌더링 지시 수신 완료")
+    import time
+    import shutil
+    import requests
+    from pathlib import Path
+    import sys
+
+    # media_worker 연동
+    ROOT = Path(r"C:\Users\A\Desktop\AI_Store")
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    
+    from media_worker.pipeline.tts_sync import generate_sync_metadata
+    from media_worker.renderer.video_renderer import render_premium_shortform_video
+    
+    print(f"[작업 시작] 사용자 {user_id}의 프리미엄 영상 렌더링 지시 수신 완료")
     
     try:
-        print(f"[{user_id}] 1. 원본 이미지 데이터 확인: {image_url}")
+        JOB_ID = f"premium-{user_id}-{int(time.time())}"
         
-        # 주의: 실제 상용 서비스 시에는 ComfyUI에서 'Save (API Format)'로 내보낸 
-        # 복잡한 워크플로우 JSON으로 교체해야 합니다. 아래는 가장 기초적인 Text-to-Image 예시입니다.
-        prompt_workflow = {
-            "3": {
-                "class_type": "KSampler",
-                "inputs": {
-                    "seed": int(time.time()), # 매번 다른 결과 생성을 위한 난수 시드
-                    "steps": 20,
-                    "cfg": 8,
-                    "sampler_name": "euler",
-                    "scheduler": "normal",
-                    "denoise": 1,
-                    "model": ["4", 0],
-                    "positive": ["6", 0],
-                    "negative": ["7", 0],
-                    "latent_image": ["5", 0]
-                }
+        # 1. TTS 생성
+        TTS_DIR = ROOT / "media_worker" / "output" / f"{JOB_ID}_tts"
+        TTS_DIR.mkdir(parents=True, exist_ok=True)
+        
+        print(f"[{user_id}] 1. TTS 생성 시작...")
+        sync_metadata = generate_sync_metadata(
+            script=script_json,
+            work_dir=TTS_DIR,
+            google_voice="ko-KR-Neural2-C",
+            openai_voice="onyx",
+            openai_model="tts-1-hd",
+            bgm_preset=1
+        )
+        
+        # 2. 프리미엄 렌더링
+        print(f"[{user_id}] 2. GPU 가속 영상 렌더링 시작...")
+        assets = {
+            "bg_images": [], # 추후 image_urls 다운로드 로직 추가 시 확장
+            "tts_voice": "onyx",
+            "tts_model": "tts-1-hd",
+            "bgm_preset": 1,
+            "render": {
+                "resolution": "1080x1920",
+                "fps": 30,
+                "bitrate": "8M",
+                "bg_color": "#0A0E1A"
             },
-            "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "v1-5-pruned-emaonly.safetensors"}},
-            "5": {"class_type": "EmptyLatentImage", "inputs": {"batch_size": 1, "width": 512, "height": 512}},
-            "6": {"class_type": "CLIPTextEncode", "inputs": {"text": text_prompt, "clip": ["4", 1]}}, # 고객 프롬프트 주입
-            "7": {"class_type": "CLIPTextEncode", "inputs": {"text": "bad quality, blurry, worst quality", "clip": ["4", 1]}},
-            "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["4", 2]}},
-            "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": f"dongne_{user_id}", "images": ["8", 0]}}
+            "subtitle_style": {
+                "title_size": 68,
+                "body_size":  46,
+                "color":      "#FFFFFF",
+                "highlight":  "#FFD700"
+            }
         }
         
-        print(f"[{user_id}] 2. RTX 4070 GPU 렌더링 시작 (ComfyUI 연동)... 프롬프트: {text_prompt}")
+        render_result = render_premium_shortform_video(
+            job_id=JOB_ID,
+            script_json=script_json,
+            sync_metadata=sync_metadata,
+            assets=assets
+        )
         
-        # ComfyUI로 작업 전송
-        queued_data = queue_prompt(prompt_workflow)
-        prompt_id = queued_data['prompt_id']
-        print(f"[{user_id}] - ComfyUI 작업 할당 성공 (Prompt ID: {prompt_id})")
+        # 3. 완성된 영상을 정적 서빙 폴더로 이동
+        final_video_path = Path(render_result["output_path"])
+        static_video_dir = ROOT / "static" / "videos"
+        static_video_dir.mkdir(parents=True, exist_ok=True)
         
-        # 작업 완료 대기 (무한 루프 방지를 위해 Celery 타임아웃 300초 제한의 보호를 받음)
-        result_filename = "unknown_error.png"
-        while True:
-            history = get_history(prompt_id)
-            # 렌더링이 끝나면 history 딕셔너리에 prompt_id 키가 생성됨
-            if prompt_id in history:
-                print(f"[{user_id}] - ComfyUI 렌더링 완료!")
-                
-                # 결과물 파일명 추출 로직
-                outputs = history[prompt_id]['outputs']
-                for node_id in outputs:
-                    node_output = outputs[node_id]
-                    if 'images' in node_output: # 또는 영상일 경우 'gifs', 'videos' 등
-                        image_data = node_output['images'][0]
-                        result_filename = image_data['filename']
-                        break
-                break
+        serve_path = static_video_dir / f"{JOB_ID}.mp4"
+        shutil.copy(str(final_video_path), str(serve_path))
+        print(f"[{user_id}] 3. 영상 렌더링 성공! 웹 서빙 경로: {serve_path}")
+        
+        # 4. Solapi 알림톡 발송
+        video_url = f"https://dongnebiseo.com/videos/{JOB_ID}.mp4"
+        
+        import urllib.request
+        from datetime import datetime
+        import uuid
+        import hmac
+        import hashlib
+        import json
+        
+        api_key = os.environ.get("SOLAPI_API_KEY")
+        api_secret = os.environ.get("SOLAPI_API_SECRET")
+        sender = os.environ.get("SOLAPI_SENDER_NUMBER")
+        pf_id = os.environ.get("SOLAPI_PF_ID")
+        template_id = os.environ.get("SOLAPI_TEMPLATE_ID")
+        
+        if api_key and api_secret and pf_id:
+            print(f"[{user_id}] 4. 카카오 알림톡 발송 시작...")
+            receiver = user_id if user_id.startswith('010') else sender 
             
-            print(f"[{user_id}] - 렌더링 진행 중... (5초 후 상태 재확인)")
-            time.sleep(5)
+            date = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+            salt = str(uuid.uuid4().hex)
+            msg = date + salt
+            signature = hmac.new(api_secret.encode('utf-8'), msg.encode('utf-8'), hashlib.sha256).hexdigest()
+            auth = f'HMAC-SHA256 apiKey={api_key}, date={date}, salt={salt}, signature={signature}'
             
-        # ComfyUI 기본 output 폴더 경로 (환경에 따라 수정 필요)
-        comfy_output_path = f"C:/ComfyUI/output/{result_filename}"
-        
-        # 3. FFmpeg를 이용한 영상 인코딩 및 워터마크 합성
-        final_video_path = f"C:/ComfyUI/output/final_{user_id}.mp4"
-        print(f"[{user_id}] 3. FFmpeg 영상 인코딩 및 워터마크 합성 시작")
-        
-        # 예시: 생성된 이미지를 바탕으로 5초짜리 mp4 영상 생성 (실제로는 프레임 이미지 조합 등 사용)
-        try:
-            subprocess.run([
-                "ffmpeg", "-y", 
-                "-loop", "1", "-i", comfy_output_path, 
-                "-c:v", "libx264", "-t", "5", "-pix_fmt", "yuv420p", 
-                final_video_path
-            ], check=True, capture_output=True)
-            print(f"[{user_id}] - FFmpeg 렌더링 성공! 최종 영상: {final_video_path}")
-        except Exception as e:
-            print(f"[{user_id}] - FFmpeg 인코딩 에러 발생: {e}")
-            final_video_path = comfy_output_path # 실패 시 원본 이미지 경로 반환
+            headers = {
+                'Authorization': auth,
+                'Content-Type': 'application/json'
+            }
             
-        # 4단계: 렌더링 완료된 영상을 클라우드 웹 서버로 전송 (또는 스토리지 업로드)
-        # 렌더링 결과(URL 등)를 클라우드 웹 서버의 Webhook으로 쏴주어, 
-        # 클라우드 서버가 고객에게 카카오 알림톡을 발송하게 합니다.
-        # webhook_url = 'http://cloud-server-ip/api/rendering/complete'
-        # requests.post(webhook_url, json={'user_id': user_id, 'video_url': final_video_path})
+            # 테스트용 변수. 템플릿에 맞게 수정 필요 시 여기에 매핑
+            variables = {
+                "#{url}": video_url
+            }
+            
+            data = {
+                "message": {
+                    "to": receiver,
+                    "from": sender,
+                    "kakaoOptions": {
+                        "pfId": pf_id,
+                        "templateId": template_id,
+                        # "variables": variables # 실제 템플릿 변수가 있을 경우 사용
+                    },
+                    "text": f"[동네비서] 고객님의 홍보 영상이 완성되었습니다!\n확인하기: {video_url}"
+                }
+            }
+            
+            try:
+                req = urllib.request.Request("https://api.solapi.com/messages/v4/send", data=json.dumps(data).encode('utf-8'), headers=headers)
+                response = urllib.request.urlopen(req)
+                print(f"[{user_id}] - 알림톡/메시지 발송 완료! Response: {response.read().decode('utf-8')}")
+            except Exception as e:
+                print(f"[{user_id}] - 카카오 발송 실패: {e}")
+        else:
+            print(f"[{user_id}] - SOLAPI 설정이 누락되어 발송하지 않습니다.")
         
         return {
             'status': 'success',
             'user_id': user_id,
-            'result': final_video_path
+            'result': video_url
         }
 
     except Exception as exc:
         print(f"[에러 발생] {user_id} 렌더링 중 오류: {exc}")
-        # 예상치 못한 에러(메모리 부족, 네트워크 단절 등) 발생 시 재시도 트리거
+        import traceback
+        traceback.print_exc()
         raise self.retry(exc=exc)
 
 if __name__ == '__main__':

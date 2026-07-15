@@ -5,15 +5,14 @@
     android:orientation="vertical"
     android:background="#F8F9FA">
 
-    <!-- WebView (대시보드 웹뷰) -->
+    <!-- WebView (대시보드 웹뷰) — 전체 화면 점유 -->
     <WebView
         android:id="@+id/webViewDashboard"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
         android:visibility="visible" />
 
-    <!-- 기존 수신/기록 및 설정 전체 UI -->
+    <!-- 기존 수신/기록 및 설정 전체 UI (숨김 — 필요 시 코드에서 toggle) -->
     <LinearLayout
         android:id="@+id/layoutLocalFeatures"
         android:layout_width="match_parent"
@@ -220,54 +219,6 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- 5. 하단 고정 바 (토글 버튼들) -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:background="#FFFFFF"
-            android:elevation="8dp"
-            android:padding="8dp"
-            android:gravity="center">
-
-            <!-- 다이얼패드 토글 버튼 -->
-            <Button
-                android:id="@+id/btnToggleDialer"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:text="📞 전화번호 입력"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#1E3C72"
-                android:layout_marginEnd="4dp"/>
-
-            <!-- 설정 토글 버튼 -->
-            <Button
-                android:id="@+id/btnToggleSettings"
-                android:layout_width="0dp"
-                android:layout_height="52dp"
-                android:layout_weight="1"
-                android:text="⚙️ 설정"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#607D8B"
-                android:layout_marginStart="4dp"/>
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="v1.7.1 (Internal Architecture)"
-            android:textSize="9sp"
-            android:textColor="#BBBBBB"
-            android:layout_gravity="center_horizontal"
-            android:paddingVertical="4dp"/>
-
     </LinearLayout>
-
-
 
 </LinearLayout>

@@ -95,81 +95,42 @@ async def reserve_courier(data: CourierReservationRequest, request: Request, use
     
     try:
         from fastapi.concurrency import run_in_threadpool
-        import logen_delivery
-        import logen_crypto
-        
+
         total_fee = 3000 * data.quantity
-        margin_logic = logen_crypto.calculate_margin(total_fee)
-        
-        # 로젠택배 API에 전송할 데이터 구조 매핑 (플랫폼 수익이 완전히 제거된 원가만 담기)
-        package_dict = {
-            "type": "박스",
-            "weight": 2.5,  # 폼에서 전달되지 않을 경우 임시값
-            "size": "소형",
-            "contents": data.item_type,
-            "price": data.item_value,
-            "fee": margin_logic['base_fee'], # 기사용 단말기에 찍힐 순수 원가 배송비
-            "is_prepaid": data.payment_type == "prepaid" or data.payment_type == "선불"
-        }
-        
-        sender_dict = {
-            "name": data.sender_name,
-            "phone": data.sender_phone,
-            "address": data.sender_addr1,
-            "detail_address": data.sender_addr2
-        }
-        
-        receiver_dict = {
-            "name": data.receiver_name,
-            "phone": data.receiver_phone,
-            "address": data.receiver_addr1,
-            "detail_address": data.receiver_addr2
+
+        # ── 로젠 웹 자동화 마이크로서비스 호출 ──────────────────────
+        import logen_client
+        waybill_order = {
+            "receiver_name":    data.receiver_name,
+            "receiver_phone":   data.receiver_phone.replace("-", ""),
+            "receiver_addr1":   data.receiver_addr1,
+            "receiver_addr2":   data.receiver_addr2 or "",
+            "receiver_zipcode": getattr(data, "receiver_zipcode", "00000"),
+            "item_name":        data.item_type or "일반상품",
+            "item_qty":         data.quantity,
+            "item_weight":      3,
+            "item_price":       data.item_value or 30000,
+            "message":          getattr(data, "memo", "") or "",
         }
 
-        # DB에서 기사님(사장님)의 개별 로젠 계정 정보 조회
-        settings = db.get_all_settings(store_id) if hasattr(db, "get_all_settings") else {}
-        logen_id = settings.get("logen_id")
-        logen_pw = settings.get("logen_pw")
+        waybill_result = await logen_client.create_waybill(waybill_order)
 
-        # 정식 API 통신
-        logen_delivery.USE_REAL_API = True
-        res_data, err = await run_in_threadpool(
-            logen_delivery.create_delivery_reservation,
-            sender=sender_dict,
-            receiver=receiver_dict,
-            package=package_dict,
-            pickup_date=data.pickup_date,
-            memo="",
-            agent_id=logen_id,
-            agent_pw=logen_pw
-        )
-        
-        # [자동 캐치 및 업데이트 로직] 비밀번호 변경으로 인한 로그인 실패 시
-        if err == "AUTH_FAILED":
-            try:
-                import sms_manager
-                store = db.get_store(store_id)
-                admin_phone = store.get("phone") if store else "010-2384-7447"
-                
-                # 사장님/기사님 폰으로 즉각 알림톡 쏘고 비밀번호 갱신 유도
-                alimtalk_msg = f"[로젠택배 연동 오류]\n사장님, 로젠택배 로그인에 실패했습니다. (비밀번호 변경 의심)\n\n원활한 택배 자동 접수를 위해 아래 동네비서 전용 링크를 눌러 새 로젠 비밀번호를 동기화해 주세요!\n\n▶ 업데이트 링크: {request.base_url}admin/logen/settings"
-                
-                sms_manager.send_alimtalk(
-                    to_phone=admin_phone, 
-                    message=alimtalk_msg, 
-                    template_id="tmp_logen_auth", 
-                    variables={}
+        if not waybill_result.get("success"):
+            err_msg = waybill_result.get("error", "알 수 없는 오류")
+            # 로젠 TMS 구조 변경 감지
+            if "구조 변경" in err_msg or "DOM" in err_msg or "프레임" in err_msg:
+                print(f"🚨 [Courier] 로젠 TMS 구조 변경 감지! 긴급 점검 필요: {err_msg}")
+                raise HTTPException(
+                    status_code=503,
+                    detail="로젠 TMS 시스템 점검 중입니다. 잠시 후 다시 시도해 주세요."
                 )
-            except Exception as e:
-                print(f"Alimtalk Auth Error warning: {e}")
-                
-            raise HTTPException(status_code=401, detail="로젠택배 로그인이 만료되었거나 비밀번호가 변경되었습니다. 카카오톡으로 발송된 알림톡을 확인하여 새 비밀번호를 등록해주세요.")
-        
-        if err:
-            raise HTTPException(status_code=500, detail=f"로젠택배 서버 접수 에러: {err}")
-            
-        real_tracking_code = res_data.get('waybill_number', delivery_data['tracking_code'])
+            raise HTTPException(status_code=500, detail=f"로젠택배 접수 실패: {err_msg}")
+
+        real_tracking_code = waybill_result["slip_no"]
         delivery_data["tracking_code"] = real_tracking_code
+        delivery_data["status"] = "접수완료"
+        print(f"✅ [Courier] 웹 자동화 성공: 송장={real_tracking_code}, seq={waybill_result.get('seq')}")
+
 
         # DB 저장
         if hasattr(db, 'save_store_delivery'):

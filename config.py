@@ -12,12 +12,12 @@ config.py ???덇굅???명솚 釉뚮┸吏
   import config
   key = config.get_secret("GOOGLE_API_KEY")
 
-  # ?좉퇋 沅뚯옣 諛⑹떇 (?먯쭊?곸쑝濡?援먯껜)
+  # 신규 권장 방식 (점진적으로 교체)
   from dongnebiseo_app.config.settings import get_settings
   key = get_settings().app.gemini_api_key
 """
 
-# ???ㅼ젙 紐⑤뱢?먯꽌 ?덇굅???명솚 ?⑥닔 ?ъ닔異?from dongnebiseo_app.config.settings import get_secret, get_settings  # noqa: F401
+# 설정 모듈에서 레거시 호환 함수를 가져옵니다.
+from dongnebiseo_app.config.settings import get_secret, get_settings
 
 __all__ = ["get_secret", "get_settings"]
-

@@ -14,9 +14,32 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 from templates_config import templates
 
 @router.get("/market", response_class=HTMLResponse)
-async def market_page(request: Request):
+async def market_page(request: Request, focus: str = ""):
+    """
+    동네마켓 메인 페이지.
+    ?focus={slug}: 콜백 링크로 진입한 경우 해당 가게 상품을 상단에 강조.
+    """
     products = db.get_all_products()
-    return templates.TemplateResponse(request, "market.html", {"request": request, "products": products})
+    focused_store = None
+    focused_products = []
+    other_products = products or []
+
+    if focus:
+        import db_sqlite as _dbs
+        focused_store = _dbs.get_store_by_slug(focus)
+        if focused_store:
+            fid = focused_store.get("store_id", "")
+            focused_products = [p for p in (products or []) if str(p.get("store_id", "")) == fid]
+            other_products   = [p for p in (products or []) if str(p.get("store_id", "")) != fid]
+
+    return templates.TemplateResponse(request, "market.html", {
+        "request":          request,
+        "products":         products,
+        "focused_store":    focused_store,
+        "focused_products": focused_products,
+        "other_products":   other_products,
+        "focus_slug":       focus,
+    })
 
 @router.get("/market/refund", response_class=HTMLResponse)
 async def market_refund_page(request: Request):
@@ -395,7 +418,31 @@ async def market_success_page(
             {"request": request, "error_msg": "필수 결제 정보(paymentKey, orderId, amount)가 누락되었습니다."}
         )
 
-    # 1. 토스 결제 승인 API 호출 (Confirm)
+    # 1. [선행] DB 중복 주문 확인 — 토스 confirm 전에 먼저 체크 (ALREADY_PROCESSED_PAYMENT 방지)
+    try:
+        _conn = db_postgres.get_connection() if hasattr(db_postgres, 'get_connection') else None
+        if _conn is None and hasattr(db_postgres, 'get_db_session'):
+            _conn = db_postgres.get_db_session()
+        if _conn is not None:
+            pre_cur = _conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            pre_cur.execute("SELECT order_id, product_name, total_amount FROM market_orders WHERE order_id = %s", (orderId,))
+            existing_order = pre_cur.fetchone()
+            pre_cur.close()
+            if existing_order:
+                return templates.TemplateResponse(
+                    request,
+                    "market_success.html",
+                    {
+                        "request": request,
+                        "order_name": existing_order.get("product_name", "마켓 주문 상품"),
+                        "order_id": orderId,
+                        "amount": f"{existing_order.get('total_amount', amount):,}"
+                    }
+                )
+    except Exception as pre_e:
+        print(f"[중복체크 선행 오류 - 스킵] {pre_e}")
+
+    # 2. 토스 결제 승인 API 호출 (Confirm)
     toss_secret_key = config.get_secret("TOSS_SECRET_KEY")
     if not toss_secret_key:
         return templates.TemplateResponse(
@@ -429,18 +476,31 @@ async def market_success_page(
         resp_data = response.json()
         
         if response.status_code != 200:
+            error_code = resp_data.get("code", "")
             error_msg = resp_data.get("message", "토스 결제 승인 실패")
+            # ALREADY_PROCESSED_PAYMENT: 토스에선 이미 처리됐으나 DB 누락된 엣지케이스
+            if error_code == "ALREADY_PROCESSED_PAYMENT":
+                return templates.TemplateResponse(
+                    request,
+                    "market_success.html",
+                    {
+                        "request": request,
+                        "order_name": "마켓 주문 상품",
+                        "order_id": orderId,
+                        "amount": f"{amount:,}"
+                    }
+                )
             return templates.TemplateResponse(
                 request, 
                 "market_fail.html", 
-                {"request": request, "error_msg": f"토스 API 에러: {error_msg} (코드: {resp_data.get('code')})"}
+                {"request": request, "error_msg": f"토스 API 에러: {error_msg} (코드: {error_code})"}
             )
             
         # 승인 완료된 정보 추출
         product_name = resp_data.get("orderName", "마켓 주문 상품")
         total_amount = resp_data.get("totalAmount", amount)
         
-        # 2. PostgreSQL 트랜잭션 기록 (Atomicity 보장)
+        # 3. PostgreSQL 트랜잭션 기록 (Atomicity 보장)
         conn = db_postgres.get_connection()
         if conn is None:
             return templates.TemplateResponse(
@@ -453,7 +513,7 @@ async def market_success_page(
             conn.autocommit = False
             cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
             
-            # 중복 주문 확인 (멱등성 보장)
+            # 최종 중복 주문 확인 (DB 트랜잭션 락 기반 멱등성 보장)
             cur.execute("SELECT order_id FROM market_orders WHERE order_id = %s FOR UPDATE", (orderId,))
             existing_order = cur.fetchone()
             

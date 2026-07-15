@@ -69,8 +69,12 @@ class MainActivity : AppCompatActivity() {
         if (::tvStatusMessage.isInitialized) {
             updateStatusText()
         }
+        // ★ 반드시 권한 재확인: 설정 화면에서 돌아왔을 때도 재요청
+        isPopupActive = false
         if (hasRequiredPermissions()) {
             startPersistentService()
+        } else {
+            startWaterfallPermissions()
         }
     }
 
@@ -242,82 +246,6 @@ class MainActivity : AppCompatActivity() {
             webViewDashboard.webChromeClient = android.webkit.WebChromeClient()
             webViewDashboard.loadUrl("https://dongnebiseo.com/admin/dashboard")
             
-            // [토글] 전화번호 입력 버튼 → 다이얼패드 표시/숨기기
-            val btnToggleDialer = findViewById<Button>(R.id.btnToggleDialer)
-            btnToggleDialer.setOnClickListener {
-                if (layoutDialer.visibility == View.VISIBLE) {
-                    layoutDialer.visibility = View.GONE
-                    layoutSettings.visibility = View.GONE
-                    btnToggleDialer.text = "📞 전화번호 입력"
-                } else {
-                    layoutDialer.visibility = View.VISIBLE
-                    layoutSettings.visibility = View.GONE
-                    btnToggleDialer.text = "▼ 닫기"
-                }
-            }
-
-            // [토글] 설정 버튼
-            val btnToggleSettings = findViewById<Button>(R.id.btnToggleSettings)
-            btnToggleSettings.setOnClickListener {
-                if (layoutSettings.visibility == View.VISIBLE) {
-                    layoutSettings.visibility = View.GONE
-                } else {
-                    layoutSettings.visibility = View.VISIBLE
-                    layoutDialer.visibility = View.GONE
-                    btnToggleDialer.text = "📞 전화번호 입력"
-                }
-            }
-
-            // 숫자 패드 버튼 연결 (0-9, *, #)
-            val buttonIds = arrayOf(
-                R.id.btn0, R.id.btn1, R.id.btn2, R.id.btn3, R.id.btn4,
-                R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9,
-                R.id.btnStar, R.id.btnHash
-            )
-            buttonIds.forEach { id ->
-                findViewById<Button>(id)?.setOnClickListener {
-                    val btn = it as Button
-                    val currentText = etDialNumber.text.toString()
-                    etDialNumber.setText(currentText + btn.text.toString())
-                }
-            }
-
-            // 기능 버튼 연결
-            val btnCall = findViewById<ImageButton>(R.id.btnCall)
-            val btnSms = findViewById<ImageButton>(R.id.btnSms)
-            val btnDelete = findViewById<ImageButton>(R.id.btnDelete)
-
-            btnDelete?.setOnClickListener {
-                val text = etDialNumber.text.toString()
-                if (text.isNotEmpty()) {
-                    etDialNumber.setText(text.substring(0, text.length - 1))
-                }
-            }
-
-            btnCall?.setOnClickListener {
-                val number = etDialNumber.text.toString()
-                if (number.isNotEmpty()) {
-                    val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-                        startActivity(intent)
-                        // 서버에 통화 이벤트 보고 (여기서 콜백 발송 유도)
-                        reportCallEventToServer(number)
-                    } else {
-                        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CALL_PHONE), 1001)
-                    }
-                }
-            }
-
-            btnSms?.setOnClickListener {
-                val number = etDialNumber.text.toString()
-                if (number.isNotEmpty()) {
-                    val smsIntent = Intent(Intent.ACTION_SENDTO).apply {
-                        data = Uri.parse("smsto:$number")
-                        putExtra("sms_body", "[동네비서] 비즈니스 관련하여 연락 드립니다.")
-                    }
-                    startActivity(smsIntent)
-                }
-            }
 
             // 스마트 설정 (체크박스)
             val cbOutgoing = findViewById<CheckBox>(R.id.cbOutgoing)
@@ -347,26 +275,32 @@ class MainActivity : AppCompatActivity() {
     private fun startWaterfallPermissions() {
         if (isPopupActive) return
         isPopupActive = true
-        
-        if (!hasRequiredPermissions()) {
-            val permissions = mutableListOf(
-                Manifest.permission.CALL_PHONE,
-                Manifest.permission.READ_CONTACTS,
-                Manifest.permission.READ_CALL_LOG,
-                Manifest.permission.READ_PHONE_STATE
-            )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                permissions.add(Manifest.permission.POST_NOTIFICATIONS)
-            }
-            ActivityCompat.requestPermissions(this, permissions.toTypedArray(), 1001)
-        } else {
+
+        val needed = mutableListOf(
+            Manifest.permission.CALL_PHONE,
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_CALL_LOG,   // ★ Android 9+에서 수신 번호 독출 필수
+            Manifest.permission.READ_CONTACTS
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            needed.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        val deniedPerms = needed.filter { perm ->
+            ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (deniedPerms.isEmpty()) {
             isPopupActive = false
             updateStatusText()
             loadHistory()
             requestBatteryOptimization()
             startPersistentService()
-            requestCallScreeningRole() // 권한 허용 완료 시 기본 앱 설정 팝업 자동 실행
+            requestCallScreeningRole()
+            return
         }
+
+        ActivityCompat.requestPermissions(this, deniedPerms.toTypedArray(), 1001)
     }
 
     private fun requestCallScreeningRole() {
@@ -438,12 +372,54 @@ class MainActivity : AppCompatActivity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        isPopupActive = false
+
         if (requestCode == 1001) {
-            loadHistory()
-            updateStatusText()
-            requestBatteryOptimization()
-            startPersistentService()
-            requestCallScreeningRole() // 권한 요청 종료 시 기본앱 요청 팝업 유도
+            val stillDenied = permissions.indices
+                .filter { grantResults.getOrElse(it) { PackageManager.PERMISSION_DENIED } == PackageManager.PERMISSION_DENIED }
+                .map { permissions[it] }
+
+            if (stillDenied.isNotEmpty()) {
+                // 영구 거부("다시 묻지 않기") 여부 판단
+                val permanentlyDenied = stillDenied.any { perm ->
+                    !ActivityCompat.shouldShowRequestPermissionRationale(this, perm)
+                }
+
+                if (permanentlyDenied) {
+                    // ★ 설정으로 강제 이동 — 닫기 불가
+                    AlertDialog.Builder(this)
+                        .setTitle("⚠️ 필수 권한 설정 필요")
+                        .setMessage(
+                            "통화 기록 또는 연락처 권한이 '다시 묻지 않기'로 거부되었습니다.\n\n" +
+                            "[설정 이동] 후 동네비서 앱의 모든 권한을 '허용'으로 바꿔주세요.\n\n" +
+                            "• 전화\n• 통화 기록\n• 연락처"
+                        )
+                        .setPositiveButton("📱 설정으로 이동") { _, _ ->
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            intent.data = Uri.fromParts("package", packageName, null)
+                            startActivity(intent)
+                        }
+                        .setCancelable(false)   // ★ 닫기 불가
+                        .show()
+                } else {
+                    // 재요청 가능 — 닫기 불가 안내 다이얼로그 후 재요청
+                    AlertDialog.Builder(this)
+                        .setTitle("권한이 필요합니다")
+                        .setMessage("부재중 전화 감지와 콜백 문자 발송을 위해\n통화 기록·연락처 권한이 반드시 필요합니다.")
+                        .setPositiveButton("다시 허용하기") { _, _ ->
+                            startWaterfallPermissions()
+                        }
+                        .setCancelable(false)   // ★ 닫기 불가
+                        .show()
+                }
+            } else {
+                // 모든 권한 허용 완료
+                updateStatusText()
+                loadHistory()
+                requestBatteryOptimization()
+                startPersistentService()
+                requestCallScreeningRole()
+            }
         }
     }
 
@@ -626,5 +602,66 @@ class MainActivity : AppCompatActivity() {
             android.util.Log.e("DongneBiseo", "설치 실패: ${e.message}")
             Toast.makeText(this, "설치 화면을 열지 못했습니다. 파일 관리자에서 DongneBiseo_update.apk를 실행해 주세요.", Toast.LENGTH_LONG).show()
         }
+    }
+
+    /**
+     * 삼성 갤럭시 순정 카메라를 런처(전체 UI) 모드로 강제 실행합니다.
+     *
+     * ★ ACTION_IMAGE_CAPTURE 를 쓰면 캡처 전용 모드로 열려
+     *   QR 스캐너 · 문자 추출 · 빅스비 비전 아이콘이 숨겨집니다.
+     *   getLaunchIntentForPackage 로 열어야 뷰파인더 전체 기능이 보입니다.
+     *
+     * 폴백 순서:
+     *  1) 삼성 갤럭시 순정 카메라  (com.sec.android.app.camera)
+     *  2) STILL_IMAGE_CAMERA 인텐트 — 기기 기본 카메라를 런처 모드로 열기
+     *  3) resolveActivity 로 기기 기본 카메라 패키지 탐색 후 런처 실행
+     *  4) 모두 실패 시 토스트
+     */
+    private fun openSamsungCamera() {
+        // ── 1단계: 삼성 갤럭시 순정 카메라 패키지 강제 지정 ──────────────────
+        // com.sec.android.app.camera = Galaxy 전 기종 순정 카메라 패키지명
+        val samsungPkg = "com.sec.android.app.camera"
+        val pm = packageManager
+
+        val samsungIntent = pm.getLaunchIntentForPackage(samsungPkg)?.apply {
+            // FLAG_ACTIVITY_NEW_TASK         : 기존 태스크와 독립 실행
+            // FLAG_ACTIVITY_RESET_TASK_IF_NEEDED : 이미 실행 중이면 상태 초기화
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+        }
+
+        if (samsungIntent != null) {
+            startActivity(samsungIntent)
+            return
+        }
+
+        // ── 2단계 (타사 기기): 시스템 기본 카메라를 런처 모드로 열기 ─────────
+        // android.media.action.STILL_IMAGE_CAMERA 는 캡처 모드가 아닌
+        // 카메라 앱 전체 UI(뷰파인더)를 엽니다.
+        try {
+            val cameraAppIntent = Intent("android.media.action.STILL_IMAGE_CAMERA").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(cameraAppIntent)
+            return
+        } catch (_: Exception) { }
+
+        // ── 3단계 (최후 폴백): 기기에 설치된 카메라 앱 패키지를 직접 탐색 ───
+        try {
+            val queryIntent = Intent("android.media.action.STILL_IMAGE_CAMERA")
+            val resolveInfo = pm.resolveActivity(queryIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+            val fallbackPkg = resolveInfo?.activityInfo?.packageName
+            if (fallbackPkg != null) {
+                val fallbackIntent = pm.getLaunchIntentForPackage(fallbackPkg)?.apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+                }
+                if (fallbackIntent != null) {
+                    startActivity(fallbackIntent)
+                    return
+                }
+            }
+        } catch (_: Exception) { }
+
+        // ── 모두 실패 ──────────────────────────────────────────────────────────
+        Toast.makeText(this, "카메라 앱을 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
     }
 }

@@ -56,6 +56,23 @@ class SyncRequest(BaseModel):
 otp_store = {}
 
 
+def _resolve_referrer_store_id(ref: str) -> str:
+    """
+    추천인 코드(DNBXK7A2 등) 또는 전화번호를 받아서
+    실제 referrer_id(추천인 store_id)를 반환합니다.
+    - DNB로 시작하는 코드: get_store_by_referral_code()로 조회
+    - 그 외(전화번호 등): 그대로 반환 (기존 방식 호환)
+    - 조회 실패 시: 원본 ref 반환
+    """
+    if not ref:
+        return ""
+    if hasattr(db, 'get_store_by_referral_code') and ref.upper().startswith("DNB"):
+        referrer = db.get_store_by_referral_code(ref)
+        if referrer:
+            return referrer.get('store_id', ref)
+    return ref
+
+
 async def get_current_user(request: Request):
     store_id = request.cookies.get("admin_session")
     if not store_id:
@@ -114,7 +131,10 @@ async def register_select_page(request: Request):
 async def register_detail_page(request: Request, ref: str = "", tier: str = "general", type: str = "merchant"):
     referrer_name = "담당 배송 기사"
     if ref:
-        referrer_store = db.get_store(ref)
+        # 주어진 ref가 추천인 코드(DNBXXX 형식)일 때는 코드로 조회, 아니면 폴백으로 store_id로 조회
+        referrer_store = db.get_store_by_referral_code(ref) if hasattr(db, 'get_store_by_referral_code') else None
+        if not referrer_store:
+            referrer_store = db.get_store(ref)  # 기존 폴백 (전화번호 다이렉트)
         if referrer_store:
             referrer_name = referrer_store.get('name', '담당 배송 기사')
 
@@ -188,7 +208,7 @@ async def farmer_signup(
             "id_front":          encrypt_resident_number(id_front) if id_front else "",  # AES-256 암호화 저장
             "biz_number":        biz_number,
             "biz_type":          biz_type,
-            "referrer_id":       ref,
+            "referrer_id":       _resolve_referrer_store_id(ref),  # 코드 또는 store_id 모두 지원
             "subscription_tier": tier,
             "marketing_agreed":  "1" if marketing_agreed else "0",
             "points":            0,
@@ -237,7 +257,8 @@ async def login(
     name: str = Form("사장님"),
     owner_name: str = Form("미입력"),
     biz_number: str = Form("미입력"),
-    address: str = Form("미입력")
+    address: str = Form("미입력"),
+    category: str = Form("기타"),
 ):
     print(f"DEBUG: Login flow. store_id={store_id}, mode={mode}, next={next_url}")
     
@@ -279,6 +300,9 @@ async def login(
         # 비밀번호 자동 생성
         temp_password = "".join(random.choices(string.digits, k=6))
         
+        # url_slug: 상호명 공백 제거
+        url_slug = name.replace(' ', '').replace('	', '').strip() or store_id
+
         new_store_data = {
             "store_id": store_id,
             "password": temp_password,
@@ -289,8 +313,10 @@ async def login(
             "phone": store_id,
             "points": 0,
             "membership": "free",
-            "referrer_id": ref,
+            "referrer_id": _resolve_referrer_store_id(ref),  # 코드 또는 store_id 모두 지원
             "subscription_tier": tier,
+            "category": category,
+            "url_slug": url_slug,
             "status": "pending" if is_pending else "active"
         }
         res = db.save_store(store_id, new_store_data)

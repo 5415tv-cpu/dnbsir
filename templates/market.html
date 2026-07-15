@@ -913,7 +913,8 @@
 
         let currentProducts = [...products];
         let activeIndex = 0;
-        const tossPayments = TossPayments('test_ck_PBal2vxj81ND2OPW6a7135RQgOAN');
+        const tossPayments = TossPayments('{{ toss_client_key }}');
+
 
         // 2. 동적 카드 렌더링
         const wrapper = document.getElementById("swiperWrapper");
@@ -1306,6 +1307,102 @@
             </div>
         </div>
     </div>
+
+
+<!-- KAKAOPAY MODAL INJECTION -->
+<style>
+#kakao-payment-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 999999; justify-content: center; align-items: center;
+}
+.kakao-modal-content {
+    background: #fff; padding: 30px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: 'Pretendard', sans-serif;
+}
+.kakao-btn {
+    display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
+    font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;
+}
+.kakao-pay-btn { background: #FEE500; color: #000; }
+.kakao-pay-btn:hover { background: #e5cd00; }
+.toss-pay-btn { background: #f2f4f6; color: #8b95a1; cursor: not-allowed; }
+.close-modal-btn { background: transparent; color: #888; text-decoration: underline; margin-top: 10px; }
+</style>
+
+<div id="kakao-payment-modal">
+    <div class="kakao-modal-content">
+        <h2 style="margin-top:0; font-size:1.5rem; color:#333;">결제 수단 선택</h2>
+        <p style="color:#666; margin-bottom:20px;">원하시는 결제 수단을 선택해 주세요.</p>
+        <button class="kakao-btn kakao-pay-btn" id="modal-btn-kakao">카카오페이 결제</button>
+        <button class="kakao-btn toss-pay-btn" onclick="alert('토스 결제는 현재 준비 중입니다.')">토스페이먼츠 (준비중)</button>
+        <button class="kakao-btn close-modal-btn" onclick="document.getElementById('kakao-payment-modal').style.display='none'">취소</button>
+    </div>
+</div>
+
+<script>
+window.pendingPaymentOptions = null;
+
+// Catch tossPayments.requestPayment
+const originalToss = window.TossPayments;
+if (originalToss) {
+    window.TossPayments = function(clientKey) {
+        const instance = originalToss(clientKey);
+        instance.requestPayment = function(method, options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            // return a dummy promise that never resolves so original code waits
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+// Intercept Toss PaymentWidget for Kiosk
+const originalPaymentWidget = window.PaymentWidget;
+if (originalPaymentWidget) {
+    window.PaymentWidget = function(clientKey, customerKey) {
+        const instance = originalPaymentWidget(clientKey, customerKey);
+        const origRequest = instance.requestPayment.bind(instance);
+        instance.requestPayment = function(options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+document.getElementById('modal-btn-kakao').addEventListener('click', function() {
+    if (!window.pendingPaymentOptions) return;
+    const opts = window.pendingPaymentOptions;
+    
+    // Prepare Kakao API call
+    fetch('/api/payment/kakao/ready', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            orderId: opts.orderId,
+            amount: opts.amount,
+            itemName: opts.orderName || "결제",
+            userId: opts.customerName || "USER",
+            returnUrl: opts.successUrl || (window.location.origin + "/api/pay/success")
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.next_redirect_pc_url) {
+            window.location.href = data.next_redirect_pc_url;
+        } else {
+            alert("카카오페이 요청 실패: " + JSON.stringify(data));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("서버 통신 오류");
+    });
+});
+</script>
+<!-- END KAKAOPAY MODAL INJECTION -->
 
 </body>
 </html>

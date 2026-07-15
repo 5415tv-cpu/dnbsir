@@ -547,6 +547,45 @@
         </div>
 
 
+        <!-- 🎁 내 추천인 코드 카드 -->
+        {% if store.my_referral_code %}
+        <div style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #1e3c72 100%); border-radius: 20px; padding: 22px; box-shadow: 0 8px 30px rgba(30,60,114,0.22); position: relative; overflow: hidden;">
+            <!-- 배경 데코 -->
+            <div style="position: absolute; top: -20px; right: -20px; width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.06); pointer-events: none;"></div>
+            <div style="position: absolute; bottom: -30px; left: 30px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,0.04); pointer-events: none;"></div>
+
+            <div style="position: relative; z-index: 1;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                    <span style="font-size: 1.3rem;">🎁</span>
+                    <div>
+                        <div style="font-size: 0.78rem; color: rgba(255,255,255,0.7); font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase;">내 추천인 코드</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.55); font-weight: 500;">친구에게 공유하고 리워드를 받으세요!</div>
+                    </div>
+                </div>
+
+                <!-- 코드 표시 영역 -->
+                <div style="background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; backdrop-filter: blur(4px);">
+                    <span id="myReferralCode" style="font-size: 1.55rem; font-weight: 900; color: #ffffff; letter-spacing: 3px; font-family: 'Courier New', monospace; text-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                        {{ store.my_referral_code }}
+                    </span>
+                    <button onclick="copyReferralCode()" id="copyCodeBtn" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 5px; white-space: nowrap;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        <span id="copyIcon">📋</span> 복사
+                    </button>
+                </div>
+
+                <!-- 공유 버튼들 -->
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="shareReferralLink()" style="flex: 1; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: #fff; padding: 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+                        🔗 링크 공유
+                    </button>
+                    <button onclick="shareKakao()" style="flex: 1; background: #fee500; border: none; color: #3c1e1e; padding: 10px; border-radius: 12px; font-size: 0.82rem; font-weight: 800; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        💬 카카오 공유
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- 📝 오늘 주문 목록 (Notebook Style Orders) -->
         <div class="notebook-card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -662,6 +701,70 @@
 </main>
 
 <script>
+    // ===============================
+    // 추천인 코드 복사 / 공유 기능
+    // ===============================
+    const _REFERRAL_CODE = "{{ store.my_referral_code or '' }}";
+    const _REFERRAL_LINK = `${location.origin}/store/landing?ref=${_REFERRAL_CODE}`;
+
+    function copyReferralCode() {
+        if (!_REFERRAL_CODE) return;
+        navigator.clipboard.writeText(_REFERRAL_CODE).then(() => {
+            const btn = document.getElementById('copyCodeBtn');
+            const icon = document.getElementById('copyIcon');
+            if (icon) icon.textContent = '✅';
+            if (btn) btn.style.background = 'rgba(39,174,96,0.35)';
+            setTimeout(() => {
+                if (icon) icon.textContent = '📋';
+                if (btn) btn.style.background = 'rgba(255,255,255,0.2)';
+            }, 2000);
+        }).catch(() => {
+            // 폴백: textarea 방식
+            const ta = document.createElement('textarea');
+            ta.value = _REFERRAL_CODE;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            alert('📋 코드가 복사되었습니다: ' + _REFERRAL_CODE);
+        });
+    }
+
+    function shareReferralLink() {
+        if (!_REFERRAL_CODE) return;
+        if (navigator.share) {
+            navigator.share({
+                title: '동네비서 가입 초대',
+                text: `제 추천 코드(${_REFERRAL_CODE})로 동네비서에 가입하면 혜택을 드려요!`,
+                url: _REFERRAL_LINK
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(_REFERRAL_LINK).then(() => {
+                alert('🔗 가입 링크가 클립보드에 복사되었습니다!\n\n' + _REFERRAL_LINK);
+            }).catch(() => {
+                prompt('아래 링크를 복사하세요:', _REFERRAL_LINK);
+            });
+        }
+    }
+
+    function shareKakao() {
+        // 카카오 SDK 미설치 시 링크 복사로 폴백
+        if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+            Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: '동네비서 가입 초대',
+                    description: `제 추천 코드(${_REFERRAL_CODE})로 가입하면 특별 혜택을 드려요!`,
+                    imageUrl: location.origin + '/static/logo.png',
+                    link: { mobileWebUrl: _REFERRAL_LINK, webUrl: _REFERRAL_LINK }
+                },
+                buttons: [{ title: '지금 가입하기', link: { mobileWebUrl: _REFERRAL_LINK, webUrl: _REFERRAL_LINK } }]
+            });
+        } else {
+            shareReferralLink();
+        }
+    }
+
     // 시계 갱신 로직 (식당 사장님용)
     setInterval(() => {
         const clock = document.getElementById('liveClock');

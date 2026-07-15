@@ -125,30 +125,63 @@ async def handle_call_event(payload: CallEventRequest, request: Request):
 async def get_comm_history(store_id: str = "SYSTEM", limit: int = 50):
     """
     Fetches the recent communication/call history for the app.
+    call_logs + ai_call_logs 를 합산하여 최신순 반환.
     """
+    import sqlite3, os
+    history = []
+
+    # ── 1. call_logs (앱 직접 발신 기록) ──────────────────────────
     try:
-        # Fetching from call_logs for history
         from db_async import database
         query = "SELECT * FROM call_logs ORDER BY received_at DESC LIMIT :limit"
         rows = await database.fetch_all(query=query, values={"limit": limit})
-        return {"success": True, "history": [dict(row) for row in rows]}
-    except Exception as e:
-        # Fallback to sms logs if call_logs table doesn't exist or error
-        try:
-            logs = db.get_sms_logs(store_id, limit)
-            history = []
-            if hasattr(logs, "to_dict"):
-                logs = logs.to_dict(orient="records")
-            for row in logs:
-                history.append({
-                    "customer_phone": row.get("phone", "알 수 없음"),
-                    "call_type": "발신" if row.get("category") == "APP_COMM" else "수신",
-                    "received_at": row.get("created_at", ""),
-                    "status": row.get("status", "완료")
-                })
-            return {"success": True, "history": history}
-        except Exception as e2:
-            return {"success": False, "error": str(e), "fallback_error": str(e2)}
+        for row in rows:
+            r = dict(row)
+            history.append({
+                "customer_phone": r.get("customer_phone", "알 수 없음"),
+                "call_type": r.get("call_type", "발신"),
+                "received_at": r.get("received_at", ""),
+                "status": r.get("status", "완료"),
+            })
+    except Exception:
+        pass
+
+    # ── 2. ai_call_logs (웹훅 콜백 기록) — 핵심 ───────────────────
+    # 이게 부재중 수신전화 콜백 발송 내역으로, 앱 목록의 주요 데이터
+    try:
+        db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'database.db')
+        conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
+        c = conn.cursor()
+        c.execute("""
+            SELECT customer_phone, intent, summary, event_type, created_at
+            FROM ai_call_logs
+            ORDER BY id DESC LIMIT ?
+        """, (limit,))
+        for row in c.fetchall():
+            r = dict(row)
+            event = r.get("event_type", "")
+            if event == "CALLBACK_SUCCESS":
+                status = "SMS 콜백 완료"
+            elif event == "CALLBACK_FAILED":
+                status = "콜백 실패"
+            else:
+                status = r.get("summary", "완료")[:20]
+            history.append({
+                "customer_phone": r.get("customer_phone", "알 수 없음"),
+                "call_type": "부재중 수신",
+                "received_at": r.get("created_at", ""),
+                "status": status,
+            })
+        conn.close()
+    except Exception as ai_err:
+        print(f"[comm/history] ai_call_logs 조회 실패: {ai_err}")
+
+    # ── 3. 최신순 정렬 후 limit 적용 ─────────────────────────────
+    history.sort(key=lambda x: x.get("received_at", ""), reverse=True)
+    history = history[:limit]
+
+    return {"success": True, "history": history}
 
 @router.post("/send-message")
 async def send_custom_message(payload: MessageRequest):

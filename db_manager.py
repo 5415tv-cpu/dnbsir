@@ -66,6 +66,17 @@ def update_store_agreement(store_id, owner_name, marketing_agreed):
         print(f"[!] DB Error (update_store_agreement): {e}")
         return False
 
+def get_store_by_referral_code(code: str):
+    """추천인 코드(DNBXK7A2 형식)로 가게 정보 조회"""
+    try:
+        if hasattr(db, 'get_store_by_referral_code'):
+            return db.get_store_by_referral_code(code)
+        return None
+    except Exception as e:
+        print(f"[!] DB Error (get_store_by_referral_code): {e}")
+        return None
+
+
 def get_store(store_id):
     """가게 정보 조회"""
     try:
@@ -646,6 +657,29 @@ def mark_ai_call_read(log_id, store_id):
     if hasattr(db, 'mark_ai_call_read'):
         return db.mark_ai_call_read(log_id, store_id)
     return False
+
+# ==========================================
+# ★ Webhook Blackbox Logging Wrappers
+# ==========================================
+def save_webhook_log(**kwargs):
+    if hasattr(db, 'save_webhook_log'):
+        return db.save_webhook_log(**kwargs)
+    return None
+
+def update_webhook_log(log_id, **kwargs):
+    if hasattr(db, 'update_webhook_log'):
+        return db.update_webhook_log(log_id, **kwargs)
+    return False
+
+def get_webhook_logs(**kwargs):
+    if hasattr(db, 'get_webhook_logs'):
+        return db.get_webhook_logs(**kwargs)
+    return []
+
+def get_webhook_stats(**kwargs):
+    if hasattr(db, 'get_webhook_stats'):
+        return db.get_webhook_stats(**kwargs)
+    return {"total": 0}
 
 def delete_store(store_id):
     if hasattr(db, 'delete_store'):

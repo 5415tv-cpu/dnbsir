@@ -548,15 +548,15 @@ def send_smart_callback(store_id, customer_phone, store_name=""):
     """
     스마트 콜백 문자 발송 (순수 SMS 전용)
     """
-    # ★ 최우선 차단: smart_callback_on=0 이면 어디서 호출해도 즉시 중단
+    # 명시적으로 smart_callback_on=0으로 설정된 경우만 차단 (미등록이면 기본 허용)
     try:
         _store = db.get_store(store_id)
-        if not _store or not _store.get("smart_callback_on", 0):
+        if _store is not None and _store.get("smart_callback_on", 1) == 0:
             print(f"[SmartCallback] BLOCKED — smart_callback_on=0 (store={store_id}, to={customer_phone})")
             return False, "차단됨: smart_callback_on=0", ""
     except Exception as _e:
-        print(f"[SmartCallback] DB 체크 오류, 안전을 위해 차단: {_e}")
-        return False, "차단됨: DB 체크 실패", ""
+        # DB 오류 시 차단하지 않고 계속 진행 (발송 우선)
+        print(f"[SmartCallback] DB 체크 오류, 발송 계속: {_e}")
 
     if not store_name:
          store_name = "매장"
@@ -577,14 +577,31 @@ def send_smart_callback(store_id, customer_phone, store_name=""):
         custom_msg = store.get("auto_reply_msg", "") or store.get("smart_callback_text", "")
             
     if custom_msg:
+        # 1순위: 사장님이 직접 입력한 커스텀 메시지
         msg = custom_msg.replace("{store_name}", store_name)
-    elif is_courier:
-        link = f"{base_url}/delivery/request?ref={customer_phone}"
-        msg = f"[{store_name}] 전화 감사합니다. 바로 접수하기: {link}"
     else:
-        link = f"{base_url}/?id={store_id}"
+        # 2순위: 업종별 템플릿 조회
+        try:
+            import db_sqlite as _dbs
+            slug = _dbs.ensure_store_slug(store_id) if store else store_id
+            category = (store or {}).get("category", "기타")
+            tmpl = _dbs.get_callback_template(category)
+        except Exception as _e:
+            print(f"[SmartCallback] 템플릿 조회 실패, 기본값 사용: {_e}")
+            slug = store_id
+            tmpl = {
+                'message_template': '[{store_name}] 전화 주셔서 감사합니다.\n아래 링크에서 바로 주문하실 수 있습니다 ▶ {link}',
+                'redirect_path': '/market',
+            }
+
+        link = f"{base_url}/c?id={slug}&ref={customer_phone}"
         now_str = datetime.datetime.now().strftime("%H:%M:%S")
-        msg = f"[{store_name}] 전화 주셔서 감사합니다.\n기다리지 않고 아래 링크에서 바로 주문하실 수 있습니다.\n\n▶ 모바일 매장 접속:\n{link}\n\n(발송: {now_str})"
+        msg = tmpl['message_template'].format(
+            store_name=store_name,
+            link=link,
+            slug=slug,
+            now=now_str,
+        )
     
     # 순수 SMS(LMS) 전송
     success, ret_msg = send_sms(customer_phone, msg, store_id=store_id)

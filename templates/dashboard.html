@@ -1,122 +1,122 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>{{ store_name }} - 파트너 대시보드</title>
+    <style>
+        /* 기본 리셋 및 100vh 잠금 */
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%; 
+            overflow: hidden; /* 스크롤 완벽 차단 */
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; 
+            background-color: #ffffff; 
+            touch-action: none; /* 브라우저 당겨서 새로고침 등 방지 */
+        }
+        
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh; /* 전체 화면 채움 */
+            padding: 12px;
+            gap: 12px; /* 타일 간격 */
+        }
 
-{% block page_header %}
-<div class="page-header" style="text-align: left; padding: 20px;">
-    <div class="current-menu-label" style="font-size: 1rem; color: #666;">{{ today_date }}</div>
-    <div class="page-title" style="font-size: 1.8rem; font-weight: 900;">사장님, 안녕하세요!</div>
-</div>
-{% endblock %}
+        /* 층별 세로 비율 정의 */
+        .layer-1 {
+            flex: 4; /* 세로 40% */
+            display: flex;
+            width: 100%;
+        }
+        
+        .layer-2 {
+            flex: 4; /* 세로 40% */
+            display: flex;
+            width: 100%;
+            gap: 12px;
+        }
 
-{% block content %}
-<!-- AI Briefing Hero (Prominent) -->
-<div class="kiosk-card highlight"
-    style="background: #1A1A1A; color: #fff; min-height: 200px; margin-bottom: 25px; align-items: flex-start; text-align: left;">
-    <div style="display: flex; justify-content: space-between; width: 100%;">
-        <div class="ai-badge" style="background: #00FF88; color: #1A1A1A;">탄탄한 동네비서 리포트</div>
-        <div class="ai-badge" style="background: #3b82f6; color: white;">이번 달 요약</div>
-    </div>
-    <div style="margin-top: 15px;">
-        <div style="font-size: 1rem; color: #ccc;">구출한 고객 수 (놓친 전화 콜백)</div>
-        <div style="font-size: 2.5rem; font-weight: 900; color: #00FF88;">
-            {{ stats.rescued_customers | default("42") }}명
+        .layer-3 {
+            flex: 2; /* 세로 20% */
+            display: flex;
+            width: 100%;
+            gap: 12px;
+        }
+
+        /* 공통 타일 스타일: 고급스러운 옅은 회색 */
+        .tile {
+            background-color: #f5f5f7; /* 고급 옅은 회색 */
+            border: 1px solid #eaeaea;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 100%;
+            height: 100%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03); /* 아주 옅은 그림자 */
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            color: #1d1d1f; /* 진한 회색 (거의 검정) */
+        }
+        
+        .tile:active {
+            transform: scale(0.98);
+            background-color: #e5e5ea; /* 눌렸을 때 조금 더 진해짐 */
+        }
+
+        /* 텍스트 크기 등 세부 조정 */
+        .title { font-size: 24px; font-weight: 800; line-height: 1.3; }
+        .sub { font-size: 16px; color: #86868b; margin-top: 8px; font-weight: 600; }
+        .emoji { font-size: 40px; margin-bottom: 12px; }
+
+        .layer-3 .title { font-size: 20px; }
+        .layer-3 .emoji { font-size: 28px; margin-bottom: 6px; }
+        .layer-3 .sub { font-size: 14px; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 1층: 가장 크고 넓은 100% 특대형 타일 -->
+        <div class="layer-1">
+            <div class="tile" onclick="window.location.href='/manage_orders'">
+                <div class="emoji">📞</div>
+                <div class="title">고객 콜백 및<br>주문 확인</div>
+                <div class="sub">실시간 주문 내역을 확인하고 고객에게 연락하세요</div>
+            </div>
+        </div>
+        
+        <!-- 2층: 정사각형 50% 분할 타일 -->
+        <div class="layer-2">
+            <div class="tile" onclick="alert('숏폼 만들기 페이지로 이동합니다.')">
+                <div class="emoji">🎬</div>
+                <div class="title">홍보 숏폼<br>만들기</div>
+                <div class="sub">AI 자동 생성</div>
+            </div>
+            <div class="tile" onclick="window.location.href='/ai_assistant'">
+                <div class="emoji">🤖</div>
+                <div class="title">AI 비서<br>(세무/매출)</div>
+                <div class="sub">매출 통계 분석</div>
+            </div>
+        </div>
+        
+        <!-- 3층: 가로 50% 분할 타일 -->
+        <div class="layer-3">
+            <div class="tile" onclick="window.location.href='/token_history'">
+                <div class="emoji">🪙</div>
+                <div class="title">내 토큰 잔액</div>
+                <div class="sub">잔여 1,500 🔮</div>
+            </div>
+            <div class="tile token-recharge" onclick="window.location.href='/token_recharge'">
+                <div class="emoji">⚡</div>
+                <div class="title">토큰 충전 요청</div>
+                <div class="sub">10원 = 1🔮</div>
+            </div>
         </div>
     </div>
-    <div style="margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; width: 100%;">
-        <div style="font-size: 1rem; color: #a1a1aa;">추정 추가 매출</div>
-        <div style="font-size: 1.5rem; font-weight: bold; color: #fff;">
-            +{{ "{:,}".format(stats.estimated_extra_revenue | default(1260000)) }}원
-        </div>
-    </div>
-</div>
-
-<!-- Quick Settings (Schedule & Links) -->
-<div class="kiosk-card" style="background: #f8f9fc; border: 1px solid #e2e8f0; margin-bottom: 25px; align-items: flex-start; text-align: left;">
-    <div style="font-size: 1.2rem; font-weight: 900; color: #1e3a8a; margin-bottom: 15px;">⚙️ 간편 설정 (10초 반영)</div>
-    <form action="/admin/quick_settings" method="post" style="width: 100%;">
-        <div style="margin-bottom: 10px;">
-            <label style="font-size: 0.9rem; font-weight: bold; color: #475569;">휴무 시 고객 안내 문구</label>
-            <input type="text" name="closed_message" value="{{ store.closed_message | default('현재 매장 부재중이거나 통화가 어렵습니다.') }}" 
-                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px;">
-        </div>
-        <div style="margin-bottom: 15px;">
-            <label style="font-size: 0.9rem; font-weight: bold; color: #475569;">고객 예약/주문 링크 (콜백 포함)</label>
-            <input type="url" name="reservation_link" value="{{ store.reservation_link | default('https://dongnebiseo.com/?id=' ~ store.store_id) }}" 
-                   style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 5px;">
-        </div>
-        <button type="submit" style="background-color: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; cursor: pointer;">
-            변경 내용 즉시 적용
-        </button>
-    </form>
-</div>
-
-<!-- Kiosk Grid Layout -->
-<div class="kiosk-grid">
-
-    <!-- 1. Receipts (Rozen) -->
-    <a href="/courier" class="kiosk-card">
-        <div class="ai-badge">AI 자동접수</div>
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">📦</div>
-        <div style="font-size: 1.3rem; font-weight: 800;">로젠택배<br>접수</div>
-    </a>
-
-    <!-- 2. Tax Center (Smart Logic) -->
-    <a href="/admin/tax" class="kiosk-card">
-        <div class="ai-badge" style="background: #FF5252;">필수</div>
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">💰</div>
-        {% if current_month in [1, 7] %}
-        <div style="font-size: 1.3rem; font-weight: 800;">부가가치세<br>신고센터</div>
-        {% elif current_month == 5 %}
-        <div style="font-size: 1.3rem; font-weight: 800;">종합소득세<br>신고센터</div>
-        {% else %}
-        <div style="font-size: 1.3rem; font-weight: 800;">세무<br>센터</div>
-        {% endif %}
-    </a>
-
-    <!-- 3. Farm Orders -->
-    <a href="/admin/farm/orders" class="kiosk-card">
-        <div class="ai-badge">AI 연동</div>
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">🚜</div>
-        <div style="font-size: 1.3rem; font-weight: 800;">농가<br>주문관리</div>
-    </a>
-
-    <!-- 4. Expenses -->
-    <a href="/admin/expenses" class="kiosk-card">
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">💳</div>
-        <div style="font-size: 1.3rem; font-weight: 800;">간편<br>비용기장</div>
-    </a>
-
-    <!-- [NEW] 5. Regular Management -->
-    <a href="#" class="kiosk-card" onclick="alert('준비 중인 프리미엄 기능입니다.')">
-        <div class="ai-badge">AI 추천</div>
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">👥</div>
-        <div style="font-size: 1.3rem; font-weight: 800;">단골<br>관리</div>
-    </a>
-
-    <!-- [NEW] 6. Table Order -->
-    <a href="#" class="kiosk-card" onclick="alert('준비 중인 프리미엄 기능입니다.')">
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">🍽️</div>
-        <div style="font-size: 1.3rem; font-weight: 800;">테이블<br>주문</div>
-    </a>
-
-    <!-- [NEW] 7. Store Management -->
-    <a href="/admin/store" class="kiosk-card">
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">🏪</div>
-        <div style="font-size: 1.3rem; font-weight: 800;">매장<br>관리</div>
-    </a>
-
-    <!-- [NEW] 8. Delivery Integration -->
-    <a href="#" class="kiosk-card" onclick="alert('배달의민족/요기요/쿠팡이츠 연동 준비 중입니다.')">
-        <div class="ai-badge">매출통합</div>
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">🛵</div>
-        <div style="font-size: 1.3rem; font-weight: 800;">배달매출<br>통합</div>
-    </a>
-
-    <!-- [NEW] 9. Android App Download -->
-    <a href="/static/apps/dongnebiseo_latest.apk" download class="kiosk-card" style="background: #ecfdf5; border: 1.5px dashed #10b981;">
-        <div class="ai-badge" style="background: #10b981; color: white;">추천</div>
-        <div style="font-size: 3.5rem; margin-bottom: 15px;">📱</div>
-        <div style="font-size: 1.3rem; font-weight: 800; color: #047857;">동네비서<br>앱 다운로드</div>
-    </a>
-
-</div>
-{% endblock %}
+</body>
+</html>

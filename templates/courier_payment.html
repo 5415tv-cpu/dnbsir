@@ -12,12 +12,65 @@
         h2 { font-size: 28px; margin-bottom: 30px; }
         .price-btn {
             display: block; width: 100%; padding: 25px; margin: 15px 0;
-            font-size: 24px; font-weight: bold; background-color: #3182f6; /* 토스페이먼츠 블루 */
+            font-size: 24px; font-weight: bold; background-color: #3182f6;
             color: white; border: none; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer; transition: opacity 0.2s;
+        }
+        .price-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* ── 결제 처리 중 전체 화면 잠금 오버레이 ── */
+        #payment-overlay {
+            display: none;                      /* 평소엔 숨김 */
+            position: fixed;
+            inset: 0;                           /* top/right/bottom/left 전부 0 */
+            z-index: 9999;                      /* 모든 요소 위에 표시 */
+            background: rgba(0, 0, 0, 0.75);   /* 반투명 블랙 */
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            /* 터치/클릭 이벤트를 이 레이어가 모두 흡수하여 뒤쪽 버튼 차단 */
+            pointer-events: all;
+            touch-action: none;
+        }
+        #payment-overlay.active {
+            display: flex;
+        }
+        .overlay-spinner {
+            width: 64px; height: 64px;
+            border: 6px solid rgba(255,255,255,0.2);
+            border-top-color: #3182f6;
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .overlay-text {
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: -0.3px;
+        }
+        .overlay-sub {
+            color: rgba(255,255,255,0.6);
+            font-size: 15px;
         }
     </style>
 </head>
 <body>
+
+    <!-- ★ 결제 처리 중 전체 화면 잠금 오버레이 ★
+         이 div가 활성화되면 뒤에 있는 버튼을 포함한 모든 화면 조작이 차단됩니다. -->
+    <div id="payment-overlay" aria-live="assertive" aria-label="결제 처리 중">
+        <div class="overlay-spinner"></div>
+        <div class="overlay-text">결제 처리 중입니다...</div>
+        <div class="overlay-sub">화면을 터치하지 말고 잠시만 기다려 주세요</div>
+    </div>
+
     <h2>택배 상자 크기를 선택해주세요</h2>
     
     <!-- 2. 직관적인 3단 정액제 버튼 (금액을 확정하여 분쟁 차단) -->
@@ -27,14 +80,28 @@
 
     <script>
         // 발급받으신 토스페이먼츠 '클라이언트 키' (화면용이므로 공개되어도 안전함)
-        const clientKey = '{{ toss_client_key }}' || 'test_ck_PBal2vxj81ND2OPW6a7135RQgOAN';
+        const clientKey = '{{ toss_client_key }}' || 'live_ck_ma60RZblrqolKRNa1n9x3wzYWBn1';
         const tossPayments = TossPayments(clientKey);
 
+        /* ── 오버레이 잠금 / 해제 헬퍼 ── */
+        function lockScreen() {
+            document.getElementById('payment-overlay').classList.add('active');
+            // 혹시 모를 포커스 이동도 차단
+            document.querySelectorAll('.price-btn').forEach(btn => btn.disabled = true);
+        }
+        function unlockScreen() {
+            document.getElementById('payment-overlay').classList.remove('active');
+            document.querySelectorAll('.price-btn').forEach(btn => btn.disabled = false);
+        }
+
         function startPayment(amount, orderName) {
-            // [방어] 각 주문을 구별하는 고유 번호 (실전에서는 DB의 주문번호 TNB-XXX를 사용)
-            const orderId = "TNB-" + new Date().getTime(); 
+            // [방어] 각 주문을 구별하는 고유 번호 (COURIER- 접두어로 서버 분기 처리)
+            const orderId = "COURIER-" + new Date().getTime();
 
             const PUBLIC_SERVER_URL = "https://dongnebiseo.com";
+
+            // ★ 결제창 열기 직전 화면 전체를 잠금
+            lockScreen();
 
             // 3. 토스페이먼츠 통합 결제창 띄우기 (카카오톡 내에서 리다이렉트 방식으로 구동)
             tossPayments.requestPayment('카드', {
@@ -42,12 +109,13 @@
                 orderId: orderId,
                 orderName: orderName,
                 customerName: '김탄탄', // 서버에서 받아온 어르신 성함 매칭
-                
+
                 // 토스 본사 서버가 동네비서 서버로 돈을 확인하러 오는 유일한 정식 주소
-                successUrl: PUBLIC_SERVER_URL + '/api/payment/success', 
+                successUrl: PUBLIC_SERVER_URL + '/api/pay/success',
                 failUrl: PUBLIC_SERVER_URL + '/api/payment/fail'
             }).catch(function (error) {
-                // 어르신이 결제창을 중간에 닫았을 때의 에러 처리
+                // 어르신이 결제창을 닫거나 오류가 났을 때 → 잠금 해제 후 안내
+                unlockScreen();
                 if (error.code === 'USER_CANCEL') {
                     alert("결제를 취소하셨습니다. 다시 눌러주세요.");
                 } else {
@@ -56,5 +124,101 @@
             });
         }
     </script>
+
+<!-- KAKAOPAY MODAL INJECTION -->
+<style>
+#kakao-payment-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 999999; justify-content: center; align-items: center;
+}
+.kakao-modal-content {
+    background: #fff; padding: 30px; border-radius: 16px; text-align: center; max-width: 400px; width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); font-family: 'Pretendard', sans-serif;
+}
+.kakao-btn {
+    display: block; width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 8px;
+    font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: 0.2s;
+}
+.kakao-pay-btn { background: #FEE500; color: #000; }
+.kakao-pay-btn:hover { background: #e5cd00; }
+.toss-pay-btn { background: #f2f4f6; color: #8b95a1; cursor: not-allowed; }
+.close-modal-btn { background: transparent; color: #888; text-decoration: underline; margin-top: 10px; }
+</style>
+
+<div id="kakao-payment-modal">
+    <div class="kakao-modal-content">
+        <h2 style="margin-top:0; font-size:1.5rem; color:#333;">결제 수단 선택</h2>
+        <p style="color:#666; margin-bottom:20px;">원하시는 결제 수단을 선택해 주세요.</p>
+        <button class="kakao-btn kakao-pay-btn" id="modal-btn-kakao">카카오페이 결제</button>
+        <button class="kakao-btn toss-pay-btn" onclick="alert('토스 결제는 현재 준비 중입니다.')">토스페이먼츠 (준비중)</button>
+        <button class="kakao-btn close-modal-btn" onclick="document.getElementById('kakao-payment-modal').style.display='none'">취소</button>
+    </div>
+</div>
+
+<script>
+window.pendingPaymentOptions = null;
+
+// Catch tossPayments.requestPayment
+const originalToss = window.TossPayments;
+if (originalToss) {
+    window.TossPayments = function(clientKey) {
+        const instance = originalToss(clientKey);
+        instance.requestPayment = function(method, options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            // return a dummy promise that never resolves so original code waits
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+// Intercept Toss PaymentWidget for Kiosk
+const originalPaymentWidget = window.PaymentWidget;
+if (originalPaymentWidget) {
+    window.PaymentWidget = function(clientKey, customerKey) {
+        const instance = originalPaymentWidget(clientKey, customerKey);
+        const origRequest = instance.requestPayment.bind(instance);
+        instance.requestPayment = function(options) {
+            window.pendingPaymentOptions = options;
+            document.getElementById('kakao-payment-modal').style.display = 'flex';
+            return new Promise(() => {});
+        };
+        return instance;
+    };
+}
+
+document.getElementById('modal-btn-kakao').addEventListener('click', function() {
+    if (!window.pendingPaymentOptions) return;
+    const opts = window.pendingPaymentOptions;
+    
+    // Prepare Kakao API call
+    fetch('/api/payment/kakao/ready', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            orderId: opts.orderId,
+            amount: opts.amount,
+            itemName: opts.orderName || "결제",
+            userId: opts.customerName || "USER",
+            returnUrl: opts.successUrl || (window.location.origin + "/api/pay/success")
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.next_redirect_pc_url) {
+            window.location.href = data.next_redirect_pc_url;
+        } else {
+            alert("카카오페이 요청 실패: " + JSON.stringify(data));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("서버 통신 오류");
+    });
+});
+</script>
+<!-- END KAKAOPAY MODAL INJECTION -->
+
 </body>
 </html>

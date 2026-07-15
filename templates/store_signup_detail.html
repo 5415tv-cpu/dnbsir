@@ -219,6 +219,23 @@
                 <input type="text" name="address" class="form-input" placeholder="도로명 또는 지번 주소" required>
             </div>
             <div class="form-group">
+                <label>업종 <span>*</span></label>
+                <select name="category" id="category" class="form-input" required onchange="updateCategoryPreview(this.value)">
+                    <option value="" disabled selected>업종을 선택해주세요</option>
+                    <option value="택배">📦 택배 / 물류</option>
+                    <option value="식당">🍽️ 식당 / 분식</option>
+                    <option value="카페">☕ 카페 / 음료</option>
+                    <option value="미용">💇 미용 / 네일</option>
+                    <option value="병원">🏥 병원 / 약국</option>
+                    <option value="마트">🛒 소매 / 마트</option>
+                    <option value="기타">🏪 기타 / 일반</option>
+                </select>
+                <div id="categoryPreview" style="display:none; margin-top:10px; padding:12px; background:#f0f7ff; border-radius:8px; border-left:3px solid #3b82f6; font-size:0.88rem; color:#334155; line-height:1.6;">
+                    <b style="color:#2563eb;">📱 고객에게 발송될 콜백 문자 미리보기</b><br>
+                    <span id="previewText" style="color:#475569;"></span>
+                </div>
+            </div>
+            <div class="form-group">
                 <label>가게 사진 (가짜 상점 방지) <span>*</span></label>
                 <input type="file" name="biz_photo" class="form-input" accept="image/*" capture="environment" style="background:white;" required>
             </div>
@@ -327,6 +344,38 @@
             errorBox.textContent = "네트워크 오류";
             errorBox.style.display = 'block';
             btn.textContent = "다시 시도"; btn.disabled = false;
+        }
+    });
+    // ★ 업종별 콜백 문자 미리보기
+    const _categoryPreviews = {
+        '택배': '[상호명] 전화 감사합니다.\n택배 접수를 바로 해드립니다 ▶ dongnebiseo.com/c?id=상호명',
+        '식당': '[상호명] 전화 주셔서 감사합니다.\n메뉴 확인 및 주문 ▶ dongnebiseo.com/c?id=상호명',
+        '카페': '[상호명] 전화 감사합니다.\n음료 미리 주문하고 편하게 픽업하세요 ▶ dongnebiseo.com/c?id=상호명',
+        '미용': '[상호명] 전화 주셔서 감사합니다.\n예약 문의는 링크에서 편하게 해주세요 ▶ dongnebiseo.com/c?id=상호명',
+        '병원': '[상호명] 전화 주셔서 감사합니다.\n진료 예약을 링크에서 남겨주세요 ▶ dongnebiseo.com/c?id=상호명',
+        '마트': '[상호명] 전화 감사합니다.\n상품 확인 및 주문 ▶ dongnebiseo.com/c?id=상호명',
+        '기타': '[상호명] 전화 주셔서 감사합니다.\n아래 링크에서 바로 문의하실 수 있습니다 ▶ dongnebiseo.com/c?id=상호명',
+    };
+    function updateCategoryPreview(val) {
+        const preview = document.getElementById('categoryPreview');
+        const text    = document.getElementById('previewText');
+        const storeName = document.querySelector('[name="name"]').value || '상호명';
+        if (val && _categoryPreviews[val]) {
+            text.textContent = _categoryPreviews[val].replace(/상호명/g, storeName);
+            text.style.whiteSpace = 'pre-line';
+            preview.style.display = 'block';
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+    // 상호명 입력 시 미리보기도 즉시 갱신
+    document.addEventListener('DOMContentLoaded', function() {
+        const nameInput = document.querySelector('[name="name"]');
+        if (nameInput) {
+            nameInput.addEventListener('input', function() {
+                const cat = document.getElementById('category');
+                if (cat && cat.value) updateCategoryPreview(cat.value);
+            });
         }
     });
 </script>

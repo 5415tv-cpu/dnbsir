@@ -4,6 +4,7 @@ import json
 import hmac
 import hashlib
 import os
+import re
 import db_manager as db
 import sms_manager as sms
 import server.logen_service as logen
@@ -240,7 +241,7 @@ from dongne_biseo import models
 
 _recent_callbacks = {}  # (store_id, customer_phone) -> timestamp  [메모리 쿨다운 — 1차 방어]
 _call_state_cache = {}   # (store_id, customer_phone) -> {state 정보}
-COOLDOWN_SECONDS  = 3600  # 1시간
+COOLDOWN_SECONDS  = 300   # ★ 5분 (테스트용 — 운영 전환 시 3600으로 복원)
 
 # ── 전역 Rate Limiter (분당 최대 발송 수) ────────────────────────────────
 _rate_window_start = 0.0   # 현재 분 창 시작 시각
@@ -299,7 +300,8 @@ def log_callback_sent(sender: str, receiver: str, content: str, success: bool):
     finally:
         db_session.close()
 
-def _process_async_callback(customer_phone: str):
+def _process_async_callback(customer_phone: str, _log_id=None):
+    """★ log_id가 있으면 SMS 결과를 블랙박스에도 기록"""
     """
     백그라운드 콜백 발송 — send_smart_callback 단일 경로 통일
 
@@ -314,9 +316,10 @@ def _process_async_callback(customer_phone: str):
         import config
         store_id = config.get_secret("SENDER_PHONE", "SYSTEM")
 
-        # ── [1] smart_callback_on 스위치 ──────────────────────────────────
+        # ── [1] smart_callback_on 스위치 ─────────────────────────────────────
         store = db.get_store(store_id)
-        if not store or not store.get("smart_callback_on", 0):
+        # 명시적으로 0으로 설정된 경우만 차단 — store가 None(미등록)일 때는 기본 허용
+        if store is not None and store.get("smart_callback_on", 1) == 0:
             print(f"[SmartCallback] 비활성화 상태 → 발송 중단 (store_id={store_id})")
             return
 
@@ -332,7 +335,7 @@ def _process_async_callback(customer_phone: str):
             print(f"[SmartCallback] 차단: 사장님 번호에 발송 불가 ({customer_phone})")
             return
 
-        # ── [3] 메모리 쿨다운 (1시간, 1차 방어) ──────────────────────────
+        # ── [3] 메모리 쿨다운 (5분, 1차 방어) ───────────────────────────
         now = time.time()
         key = (store_id, customer_phone)
         if now - _recent_callbacks.get(key, 0) < COOLDOWN_SECONDS:
@@ -340,9 +343,9 @@ def _process_async_callback(customer_phone: str):
             print(f"[SmartCallback Cooldown(메모리)] {elapsed:.1f}분 전 발송 → 차단: {customer_phone}")
             return
 
-        # ── [4] DB 쿨다운 (1시간, 2차 방어 — 재시작 후에도 유지) ─────────
-        if check_recent_callback_db(customer_phone, hours=1):
-            print(f"[SmartCallback Cooldown(DB)] 1시간 이내 발송 이력 있음 → 차단: {customer_phone}")
+        # ── [4] DB 쿨다운 (5분, 2차 방어 — 재시작 후에도 유지) ──────────
+        if check_recent_callback_db(customer_phone, hours=5/60):  # ★ 5분
+            print(f"[SmartCallback Cooldown(DB)] 5분 이내 발송 이력 있음 → 차단: {customer_phone}")
             return
 
         # ── [5] 전역 Rate Limiter ─────────────────────────────────────────
@@ -363,6 +366,17 @@ def _process_async_callback(customer_phone: str):
             store_name=store_name
         )
         print(f"[SmartCallback] {'성공' if success else '실패'}: {ret_msg}")
+
+        # ── ★ 블랙박스: SMS 결과 업데이트 ──────────────────────────────
+        try:
+            db.update_webhook_log(
+                _log_id,
+                stage='SMS_OK' if success else 'SMS_FAIL',
+                result_msg=ret_msg[:500],
+                sms_sent=1 if success else -1
+            )
+        except Exception:
+            pass
 
         # ── DB 로그 기록 (callback_logs — 중복방지용) ────────────────────
         try:
@@ -398,15 +412,15 @@ def _process_async_callback(customer_phone: str):
 async def android_app_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     안드로이드 앱에서 통화 수신/부재중 감지 시 호출되는 웹훅.
-    - POST: 신규 APK (HTTPS 직접 전송)
-    - GET:  구버전 APK (301 리다이렉트로 POST→GET 변환된 경우 호환 처리)
+    ★ 블랙박스: 인증/처리 결과와 무관하게 수신 즉시 webhook_logs에 기록
     """
-    import config
+    import config, json as _json
     import re
 
     APP_API_TOKEN = os.environ.get("APP_API_TOKEN", "DONGNE_BISEO_APP_SECRET_2026_!@")
+    source_ip = request.headers.get("X-Real-IP") or request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or str(request.client.host)
 
-    # ── 페이로드 파싱 (POST=JSON body, GET=query string) ──────────────
+    # ── 페이로드 파싱 ────────────────────────────────────────────────────
     if request.method == "POST":
         try:
             body = await request.json()
@@ -414,36 +428,92 @@ async def android_app_webhook(request: Request, background_tasks: BackgroundTask
             body = {}
         customer_phone = body.get("customer_number") or body.get("phone_number", "")
         call_state     = body.get("call_state", "").upper().strip()
-        # call_type 기본값을 빈 문자열로 — 알 수 없는 전화는 발신으로 간주하지 않음
         call_type      = body.get("call_type", "").strip()
         auth_token     = body.get("auth_token", "")
-    else:  # GET (구버전 앱 호환)
+        raw_payload    = _json.dumps(body, ensure_ascii=False)[:2000]
+    else:
         params         = dict(request.query_params)
         customer_phone = params.get("customer_number") or params.get("phone_number", "")
         call_state     = params.get("call_state", "").upper().strip()
         call_type      = params.get("call_type", "").strip()
         auth_token     = params.get("auth_token", "")
+        raw_payload    = _json.dumps(params, ensure_ascii=False)[:2000]
 
-    # 인증
+    # ── ★ 블랙박스: 수신 즉시 기록 ──────────────────────────────────────
+    _log_id = None
+    try:
+        _log_id = db.save_webhook_log(
+            source_ip=source_ip,
+            method=request.method,
+            path=str(request.url.path),
+            auth_ok=0,
+            customer_phone=customer_phone,
+            call_state=call_state,
+            call_type=call_type,
+            raw_payload=raw_payload,
+            stage='RECEIVED',
+        )
+    except Exception as _le:
+        print(f"[BlackBox] 초기 기록 실패: {_le}")
+
+    def _log(stage, result_msg='', sms_sent=0, auth_ok=None):
+        """처리 단계 업데이트 헬퍼"""
+        try:
+            kw = dict(stage=stage, result_msg=result_msg, sms_sent=sms_sent)
+            if auth_ok is not None:
+                kw['auth_ok'] = auth_ok
+            db.update_webhook_log(_log_id, **kw)
+        except Exception:
+            pass
+
+    # ── 인증: 다중 토큰 허용 (토큰 만료/교체 시에도 중단 없음) ────────────
+    # 우선순위: 1) POST body auth_token  2) X-Webhook-Token 헤더
     token = auth_token or request.headers.get("X-Webhook-Token", "")
-    if token and token != APP_API_TOKEN:
+
+    # 유효 토큰 집합 — 주 토큰 + 백업 토큰 모두 허용
+    _primary  = os.environ.get("APP_API_TOKEN",        "DONGNE_BISEO_APP_SECRET_2026_!@")
+    _backup   = os.environ.get("APP_API_TOKEN_BACKUP", "DONGNE_BISEO_PERMANENT_KEY")
+    valid_tokens = {t for t in [_primary, _backup] if t}
+
+    if token and token not in valid_tokens:
+        _log('AUTH_FAIL', f'인증 토큰 불일치 (수신: {token[:10]}...)', auth_ok=0)
+        # ★ AUTH_FAIL 발생 즉시 관리자에게 SMS 경보
+        try:
+            admin_phone = os.environ.get("ADMIN_ALERT_PHONE", "01023847447")
+            sms.send_cloud_sms(
+                admin_phone,
+                f"[동네비서 경보] 콜백 인증 실패!\n수신 토큰: {token[:12]}...\nIP: {source_ip}\n→ 앱 토큰이 서버와 달라졌습니다. 즉시 확인 필요.",
+                store_id="SYSTEM"
+            )
+        except Exception:
+            pass
         raise HTTPException(status_code=401, detail="Unauthorized")
+    _log('RECEIVED', '인증 통과', auth_ok=1)
 
     if not customer_phone:
+        _log('PHONE_INVALID', '전화번호 없음')
         return {"result": "ignored", "message": "전화번호가 없습니다."}
 
     customer_phone = re.sub(r'[^0-9]', '', customer_phone)
     if not customer_phone.startswith("01") or len(customer_phone) < 9:
+        _log('PHONE_INVALID', f'유효하지 않은 번호: {customer_phone}')
         return {"result": "ignored", "message": "유효하지 않은 휴대폰 번호입니다."}
+
+    # 전화번호 확정 후 업데이트
+    try:
+        db.update_webhook_log(_log_id, customer_phone=customer_phone)
+    except Exception:
+        pass
 
     store_id = config.get_secret("SENDER_PHONE", "SYSTEM")
 
-    # ── 발신 전화 제일 먼저 차단 (항상 유효) ──────────────────────────
+    # ── 발신 차단 ────────────────────────────────────────────────────────
     if call_filter.is_outgoing(call_type):
         print(f"[Webhook] 발신전화 차단: {customer_phone}")
+        _log('OUTGOING_SKIP', '발신전화 — 발송 안 함')
         return {"result": "ignored", "message": "발신전화 — 발송 안 함"}
 
-    # ── State Machine (POST 신규 앱) ───────────────────────────────────────
+    # ── State Machine (POST 신규 앱) ─────────────────────────────────────
     if call_state and request.method == "POST":
         key   = (store_id, customer_phone)
         entry = _call_state_cache.get(key) or {
@@ -464,18 +534,83 @@ async def android_app_webhook(request: Request, background_tasks: BackgroundTask
             _call_state_cache.pop(key, None)
             if should_send:
                 print(f"[State Machine] {reason} → SMS 발송: {customer_phone}")
-                background_tasks.add_task(_process_async_callback, customer_phone)
+                _log('SMS_QUEUED', reason)
+                background_tasks.add_task(_process_async_callback, customer_phone, _log_id)
                 return {"result": "success", "message": f"{reason} — SMS 발송 등록"}
+            _log('COOLDOWN' if '쿨다운' in reason or 'Cooldown' in reason else 'STATE_CACHED', reason)
             print(f"[State Machine] {reason}: {customer_phone}")
             return {"result": "ignored", "message": reason}
+        _log('STATE_CACHED', f'상태 캐싱 ({call_state})')
         return {"result": "ignored", "message": f"상태 캐싱 ({call_state})"}
 
     # ── GET 구버전 앱 / 레거시 폴백 ─────────────────────────────────────
     should_send, reason = call_filter.should_send_sms_legacy(call_type, call_state)
     if should_send:
         print(f"[Legacy] {reason} → SMS 발송: {customer_phone}")
-        background_tasks.add_task(_process_async_callback, customer_phone)
+        _log('SMS_QUEUED', reason)
+        background_tasks.add_task(_process_async_callback, customer_phone, _log_id)
         return {"result": "success", "message": f"{reason} — SMS 발송 등록"}
 
+    _log('COOLDOWN' if '쿨다운' in reason else 'STATE_CACHED', reason)
     print(f"[Legacy] 차단: {reason} ({customer_phone})")
     return {"result": "ignored", "message": reason}
+
+
+# ═══════════════════════════════════════════════════════════
+# 토스페이먼츠 결제 웹훅 (결제 완료/취소 서버 알림)
+# 토스 개발자센터 → 웹훅 메뉴에 아래 URL 등록:
+#   https://dongnebiseo.com/api/toss/webhook
+# ═══════════════════════════════════════════════════════════
+@router.post("/api/toss/webhook")
+async def toss_payment_webhook(request: Request, background_tasks: BackgroundTasks):
+    """토스페이먼츠 결제 완료/취소 웹훅 수신"""
+    try:
+        payload_bytes = await request.body()
+        payload = json.loads(payload_bytes)
+    except Exception as e:
+        print(f"[Toss Webhook] 페이로드 파싱 실패: {e}")
+        raise HTTPException(status_code=400, detail="Invalid payload")
+
+    # 서명 검증 (TOSS_WEBHOOK_SECRET 환경변수 사용)
+    webhook_secret = os.environ.get("TOSS_WEBHOOK_SECRET", "")
+    if webhook_secret:
+        signature = request.headers.get("TossPayments-Signature", "")
+        expected = hmac.new(
+            webhook_secret.encode(),
+            payload_bytes,
+            hashlib.sha256
+        ).hexdigest()
+        if not hmac.compare_digest(signature, expected):
+            print("[Toss Webhook] 서명 불일치 — 거부")
+            raise HTTPException(status_code=401, detail="Invalid signature")
+
+    event_type = payload.get("eventType", "")
+    data = payload.get("data", {})
+    order_id = data.get("orderId", "")
+    payment_key = data.get("paymentKey", "")
+    status = data.get("status", "")
+    amount = data.get("totalAmount", 0)
+
+    print(f"[Toss Webhook] 이벤트: {event_type} | 주문: {order_id} | 상태: {status} | 금액: {amount}")
+
+    # 결제 완료 처리
+    if event_type == "PAYMENT_STATUS_CHANGED" and status == "DONE":
+        print(f"[Toss Webhook] ✅ 결제 완료: {order_id} / {amount}원")
+        # 마켓 주문이면 상태 업데이트
+        if order_id.startswith("MK-"):
+            try:
+                db.update_market_order_status(order_id, "PAID", payment_key) if hasattr(db, "update_market_order_status") else None
+            except Exception as e:
+                print(f"[Toss Webhook] 마켓 주문 상태 업데이트 실패: {e}")
+        # 택배 주문이면 상태 업데이트
+        elif order_id.startswith("COURIER-"):
+            try:
+                db.update_delivery_order_status(order_id, "REQUESTED") if hasattr(db, "update_delivery_order_status") else None
+            except Exception as e:
+                print(f"[Toss Webhook] 택배 주문 상태 업데이트 실패: {e}")
+
+    # 결제 취소 처리
+    elif event_type == "PAYMENT_STATUS_CHANGED" and status in ("CANCELED", "PARTIAL_CANCELED"):
+        print(f"[Toss Webhook] ❌ 결제 취소: {order_id}")
+
+    return {"result": "ok"}

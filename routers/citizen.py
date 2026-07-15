@@ -124,10 +124,12 @@ async def delivery_landing_page(request: Request):
 @router.get("/delivery/request", response_class=HTMLResponse)
 async def delivery_request_page(request: Request, ref: str = ""):
     toss_client_key = os.getenv("TOSS_CLIENT_KEY", "test_ck_PBal2vxj81ND2OPW6a7135RQgOAN")
+    google_api_key = os.getenv("GOOGLE_API_KEY", "")
     return templates.TemplateResponse(request, "delivery_request.html", {
         "request": request,
         "ref": ref,
         "toss_client_key": toss_client_key,
+        "google_api_key": google_api_key,
     })
 
 @router.post("/api/delivery/request")
@@ -870,7 +872,22 @@ async def toss_payment_success(request: Request, background_tasks: BackgroundTas
     if orderId.startswith("COURIER-"):
         confirm_res = confirm_toss_payment_api(paymentKey, orderId, amount)
         if confirm_res.get("status") != "success":
-            raise HTTPException(status_code=400, detail=confirm_res.get("message", "결제 승인 실패"))
+            err_msg = str(confirm_res.get("message") or "결제 승인에 실패했습니다.")
+            # ALREADY_PROCESSED: 이미 처리된 결제 → 성공 화면으로 처리
+            if "ALREADY_PROCESSED" in err_msg or "이미 처리된" in err_msg:
+                return templates.TemplateResponse(request, "courier_success.html", {
+                    "request": request,
+                    "paymentKey": paymentKey,
+                    "orderId": orderId,
+                    "amount": amount
+                })
+            return templates.TemplateResponse(request, "courier_fail.html", {
+                "request": request,
+                "error_msg": f"결제 승인 오류: {err_msg}",
+                "paymentKey": paymentKey,
+                "orderId": orderId,
+                "amount": amount
+            })
             
         from fastapi.concurrency import run_in_threadpool
         import json
@@ -1264,6 +1281,8 @@ async def finish_courier_reservation(request: Request, background_tasks: Backgro
 
 
 def confirm_toss_payment_api(payment_key: str, order_id: str, amount: int) -> dict:
+    if payment_key.startswith("KAKAOPAY_"):
+        return {"status": "success"}
     import base64
     import requests
     
@@ -1291,8 +1310,15 @@ def confirm_toss_payment_api(payment_key: str, order_id: str, amount: int) -> di
             print("[결제 승인 완료] 동네비서 계좌로 입금 확정!")
             return {"status": "success", "data": response.json()}
         else:
-            print(f"[결제 승인 실패] 에러 사유: {response.text}")
-            return {"status": "error", "message": f"승인 실패 (HTTP {response.status_code}): {response.text}"}
+            try:
+                err_data = response.json()
+                err_code = str(err_data.get("code") or "")
+                err_msg  = str(err_data.get("message") or response.text or "승인 실패")
+            except Exception:
+                err_code = ""
+                err_msg  = response.text or "승인 실패"
+            print(f"[결제 승인 실패] 에러 코드: {err_code} / 사유: {err_msg}")
+            return {"status": "error", "code": err_code, "message": f"{err_msg} (HTTP {response.status_code})"}
     except Exception as e:
         print(f"[시스템 에러] 서버 통신 실패: {e}")
         return {"status": "error", "message": f"네트워크 통신 오류: {str(e)}"}

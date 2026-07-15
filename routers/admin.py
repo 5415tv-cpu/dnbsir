@@ -19,6 +19,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 from templates_config import templates
 API_URL = os.environ.get("API_URL", "")
 
+@router.get("/admin/dongnae", response_class=HTMLResponse)
+async def dongnae_dashboard(
+    request: Request,
+    cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")
+):
+    """동네비서 물류 관리 대시보드 (마스터 전용)"""
+    MASTER_IDS = {"master", "010-2384-7447", "01023847447", "admin8705"}
+    if cookie_store_id not in MASTER_IDS:
+        return RedirectResponse(url="/admin?mode=login", status_code=303)
+    return templates.TemplateResponse(request, "dongnae_dashboard.html", {
+        "request": request
+    })
+
+
 @router.get("/admin/master", response_class=HTMLResponse)
 async def master_dashboard(request: Request, cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):
     ADMIN_ACCOUNTS = ["master", "010-2384-7447", "01023847447"]

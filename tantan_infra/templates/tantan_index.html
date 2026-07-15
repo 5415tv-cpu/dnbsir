@@ -221,8 +221,100 @@
             font-size: 0.9rem;
         }
 
+        
+        /* 동네비서 바로가기 카드 */
+        .dnbsir-card {
+            background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+            border: 1px solid rgba(255, 204, 0, 0.3);
+            border-radius: 24px;
+            padding: 40px 30px;
+            margin: 40px auto 0;
+            max-width: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            text-align: left;
+            animation: fadeInUp 1s ease-out 0.4s backwards;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .dnbsir-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(255, 204, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 204, 0, 0.6);
+        }
+
+        .dnbsir-card-content {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .dnbsir-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        .dnbsir-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .dnbsir-title span {
+            color: var(--main-gold);
+        }
+
+        .dnbsir-desc {
+            font-size: 1.15rem;
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-weight: 500;
+            word-break: keep-all;
+        }
+
+        .dnbsir-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--main-gold);
+            color: #000;
+            padding: 16px 32px;
+            font-size: 1.25rem;
+            font-weight: 800;
+            border-radius: 50px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(255, 204, 0, 0.2);
+            white-space: nowrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .dnbsir-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 25px rgba(255, 204, 0, 0.4);
+            background-color: #ffdb4d;
+        }
+
         /* AI 인생 기록관 바로가기 카드 */
-        .docu-card {
+        
+            .dnbsir-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 30px 20px;
+                gap: 20px;
+            }
+            .docu-card {
             background: linear-gradient(135deg, #064e3b 0%, #0f766e 100%);
             border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 24px;
@@ -321,6 +413,13 @@
         }
 
         @media (max-width: 768px) {
+            
+            .dnbsir-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 30px 20px;
+                gap: 20px;
+            }
             .docu-card {
                 flex-direction: column;
                 text-align: center;
@@ -381,6 +480,17 @@
             <h1>세상에서 가장 <span>따뜻한 AI</span></h1>
             <p>탄탄제작소는 인공지능 기술을 통해 소상공인과 농민, 그리고 지역사회를 단단하게 연결합니다. 복잡한 업무는 '동네비서'에게 맡기고, 당신의 본업에 집중하세요.</p>
             
+            
+            <!-- 동네비서 바로가기 카드 -->
+            <div class="dnbsir-card">
+                <div class="dnbsir-card-content">
+                    <div class="dnbsir-icon">🚀</div>
+                    <div class="dnbsir-title"><span>동네비서</span> 서비스 바로가기</div>
+                    <div class="dnbsir-desc">소상공인과 농가를 위한 무설치 AI 콜백·주문 자동화 시스템! 동네비서를 통해 복잡한 업무를 맡기고 본업에만 집중하세요.</div>
+                </div>
+                <a href="https://dongnebiseo.com" class="dnbsir-btn" target="_blank">동네비서 시작하기</a>
+            </div>
+
             <!-- AI 인생 기록관 바로가기 카드 -->
             <div class="docu-card">
                 <div class="docu-card-content">
@@ -502,7 +612,8 @@
             <p>대표: 이영준 <span style="margin: 0 10px; color: #444;">|</span> 사업자등록번호: 442-32-01655</p>
             <p>주소: 강원특별자치도 태백시 태붐로 54, 1003동 1903호 (황지동, 포레스트애시앙 1단지)</p>
             <p>업태: 정보통신업 <span style="margin: 0 10px; color: #444;">|</span> 종목: 응용 소프트웨어 개발 및 공급업, 전자상거래 소매 중개업</p>
-            <p>대표 이메일: ceo@tantanfab.com</p>
+            <p>대표 이메일: ceo@tantanfab.com <span style="margin: 0 10px; color: #444;">|</span> 고객센터: 010-2384-7447</p>
+            <p>상표 출원번호: 4-2026-023525-4</p>
             <p style="margin-top: 20px; font-size: 0.85rem; color: #666;">&copy; 2026 탄탄제작소 (Tantanfab). All Rights Reserved.</p>
         </div>
     </footer>
