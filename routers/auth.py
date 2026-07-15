@@ -864,7 +864,8 @@ async def process_new_onboard(
         shutil.copyfileobj(store_image.file, buffer)
         
     try:
-        with sqlite3.connect("stores.db") as conn:
+        db_path = BASE_DIR / "stores.db"
+        with sqlite3.connect(str(db_path)) as conn:
             existing = conn.execute("SELECT id FROM stores WHERE subdomain = ?", (subdomain,)).fetchone()
             if existing:
                 conn.execute(
