@@ -157,21 +157,79 @@
             submitBtn.style.backgroundColor = "#999";
             
             try {
-                // 압축 옵션 설정
-                const options = {
-                    maxSizeMB: 1,          // 최대 1MB
-                    maxWidthOrHeight: 1920, // 가로/세로 최대 1920px
+                // 1. EXIF 회전 문제 해결 및 초기 리사이즈 (OOM 방지를 위해 가로세로 최대 2560px 제한)
+                const preOptions = {
+                    maxSizeMB: 5,
+                    maxWidthOrHeight: 2560,
                     useWebWorker: true,
-                    fileType: 'image/jpeg', // JPEG 변환
+                    fileType: 'image/jpeg'
+                };
+                const orientedBlob = await imageCompression(file, preOptions);
+                
+                // 2. Blob을 Image 객체로 로드하여 16:9 중앙 크롭
+                const imageUrl = URL.createObjectURL(orientedBlob);
+                const image = new Image();
+                
+                await new Promise((resolve, reject) => {
+                    image.onload = resolve;
+                    image.onerror = reject;
+                    image.src = imageUrl;
+                });
+                
+                URL.revokeObjectURL(imageUrl);
+                
+                const canvas = document.createElement('canvas');
+                const targetRatio = 16 / 9;
+                const originalRatio = image.width / image.height;
+                
+                let sourceX = 0, sourceY = 0, sourceWidth = image.width, sourceHeight = image.height;
+                
+                if (originalRatio > targetRatio) {
+                    // 이미지가 더 넓음 (가로를 자름)
+                    sourceWidth = image.height * targetRatio;
+                    sourceX = (image.width - sourceWidth) / 2;
+                } else {
+                    // 이미지가 더 높음 (세로를 자름)
+                    sourceHeight = image.width / targetRatio;
+                    sourceY = (image.height - sourceHeight) / 2;
+                }
+                
+                // 최종 캔버스 크기 (최대 가로 1920 기준)
+                const finalWidth = Math.min(1920, sourceWidth);
+                const finalHeight = finalWidth / targetRatio;
+                
+                canvas.width = finalWidth;
+                canvas.height = finalHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(
+                    image, 
+                    sourceX, sourceY, sourceWidth, sourceHeight,
+                    0, 0, finalWidth, finalHeight
+                );
+                
+                // 3. 캔버스를 Blob으로 변환
+                const croppedBlob = await new Promise((resolve) => {
+                    canvas.toBlob(resolve, 'image/jpeg', 0.9);
+                });
+                
+                if (!croppedBlob) throw new Error("Canvas to Blob failed");
+                
+                // 4. 최종 1MB 이하로 재압축 보장
+                const finalOptions = {
+                    maxSizeMB: 1,
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true,
+                    fileType: 'image/jpeg',
                     initialQuality: 0.8
                 };
                 
-                // browser-image-compression 실행 (EXIF Orientation 자동 처리됨)
-                const compressedFile = await imageCompression(file, options);
+                const croppedFileObj = new File([croppedBlob], "temp.jpg", { type: "image/jpeg" });
+                const finalCompressedFile = await imageCompression(croppedFileObj, finalOptions);
                 
                 // 새로운 File 객체 생성 (기존 파일명 유지, 확장자는 .jpg)
-                const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
-                const newFileObj = new File([compressedFile], newFileName, {
+                const newFileName = file.name.replace(/\.[^/.]+$/, "") + "_cropped.jpg";
+                const newFileObj = new File([finalCompressedFile], newFileName, {
                     type: "image/jpeg",
                 });
                 
