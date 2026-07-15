@@ -1,49 +1,428 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ store_name }} - 로그인</title>
-    <style>
-        body { margin: 0; padding: 0; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background-color: #f8f9fa; color: #333; }
-        .header { background: white; padding: 16px 20px; text-align: center; border-bottom: 1px solid #e9ecef; position: sticky; top: 0; z-index: 100; font-weight: 800; font-size: 18px; }
-        .back-btn { position: absolute; left: 20px; top: 16px; text-decoration: none; color: #333; font-size: 20px; font-weight: bold; }
-        .container { padding: 40px 20px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
-        .form-group input { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .form-group input:focus { border-color: #333; outline: none; }
-        .submit-btn { background-color: #333; color: white; border: none; padding: 16px; width: 100%; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        .submit-btn:hover { background-color: #111; }
-        .error-msg { color: #FF4B4F; font-size: 14px; margin-bottom: 20px; text-align: center; }
-        .signup-link { display: block; text-align: center; margin-top: 24px; color: #666; text-decoration: none; font-size: 15px; }
-        .signup-link strong { color: #333; text-decoration: underline; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <a href="/cart" class="back-btn">←</a>
-        로그인
-    </div>
-    
-    <div class="container">
-        {% if error %}
-        <div class="error-msg">{{ error }}</div>
-        {% endif %}
-        
-        <form action="/login" method="POST">
-            <div class="form-group">
-                <label>아이디</label>
-                <input type="text" name="user_id" placeholder="아이디를 입력해주세요" required>
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-wrapper"
+    style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80vh; background-color: #f8f9fa;">
+
+    <div class="login-box"
+        style="background: #fff; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 90%; max-width: 400px;">
+
+        <!-- Tabs -->
+        <div style="display: flex; margin-bottom: 30px; border-bottom: 2px solid #eee;">
+            <div id="tab-login" onclick="switchTab('login')"
+                style="flex: 1; text-align: center; padding: 15px; cursor: pointer; font-weight: bold; color: #1a1a1a; border-bottom: 3px solid #1a1a1a;">
+                로그인
             </div>
-            <div class="form-group">
-                <label>비밀번호</label>
-                <input type="password" name="password" placeholder="비밀번호를 입력해주세요" required>
+            <div id="tab-signup" onclick="switchTab('signup')"
+                style="flex: 1; text-align: center; padding: 15px; cursor: pointer; font-weight: bold; color: #aaa; border-bottom: 3px solid transparent;">
+                무료 회원가입
             </div>
-            <button type="submit" class="submit-btn">로그인</button>
+        </div>
+
+        <div style="text-align: center; margin-bottom: 25px;">
+            <img src="{{ static_url('icons/dnbsir-icon-192.png') }}" alt="탄탄한 동네비서 로고" onclick="installPWA()" title="클릭하여 PC/모바일 앱 설치하기" style="width: 120px; height: 120px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s ease; border-radius: 20px;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+            <h2 id="formTitle" class="app-title" style="font-size: 1.8rem; margin-bottom: 10px;">사장님 로그인</h2>
+            <p id="formDesc" style="font-size: 1rem; color: #666; word-break: keep-all;">가게 ID와 비밀번호를 입력해주세요</p>
+        </div>
+
+        <div style="background: #e3f2fd; color: #1e3a8a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; text-align: center; border: 1px solid #bfdbfe;">
+            <strong>[Toss Payments PG 심사 안내]</strong><br>
+            임의의 휴대폰 번호(예: 010-1234-5678)와 비밀번호를 입력하시면 <b>즉시 시연용 계정(100원 이상 결제 테스트 가능)</b>으로 접속됩니다.
+        </div>
+
+        <form id="loginForm">
+            <input type="hidden" id="authMode" name="mode" value="login">
+
+            <!-- 1초 간편 로그인 (소셜/OAuth) -->
+            <button type="button" onclick="loginWithKakao()"
+                style="width: 100%; padding: 15px; font-size: 1.05rem; border-radius: 10px; background: #FEE500; color: #000000; border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 10px rgba(254, 229, 0, 0.25);">
+                <img src="https://developers.kakao.com/assets/img/about/logos/kakaolink/kakaolink_btn_small.png" alt="Kakao" style="width: 20px;">
+                카카오로 시작하기
+            </button>
+            
+            <button type="button" onclick="location.href='/auth/google/login'"
+                style="width: 100%; padding: 15px; font-size: 1.05rem; border-radius: 10px; background: #ffffff; color: #3c4043; border: 1px solid #dadce0; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.08);">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" style="width: 20px;">
+                Google로 시작하기
+            </button>
+
+            <!-- 구분선 -->
+            <div style="margin: 25px 0 15px; display: flex; align-items: center; justify-content: center;">
+                <hr style="flex: 1; border: none; border-top: 1px solid #ddd;">
+                <span style="padding: 0 10px; font-size: 0.85rem; color: #888; font-weight: bold;">또는 일반 ID/비밀번호 로그인</span>
+                <hr style="flex: 1; border: none; border-top: 1px solid #ddd;">
+            </div>
+
+            <!-- 일반 로그인/가입 입력부 -->
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">휴대폰 번호 (아이디)</label>
+                <input type="tel" id="store_id" name="store_id" class="login-input" placeholder="010-0000-0000" required
+                    style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 700;">비밀번호</label>
+                <input type="password" id="password" name="password" class="login-input" placeholder="6자리 이상 입력"
+                    required
+                    style="width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 1rem;">
+            </div>
+
+            <button type="submit" id="submitBtn" class="main-btn"
+                style="width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 10px; background: #1a1a1a; color: #fff; border: none; font-weight: bold; cursor: pointer;">
+                로그인하기
+            </button>
+            
+            <!-- 정식 서비스 이용하기 (앱 전용) 버튼 (모바일 웹 브라우저에서만 노출) -->
+            <button type="button" id="forceAppBtn" onclick="triggerDeepLink(event)" class="main-btn"
+                style="width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 10px; background: #1a1a1a; color: #fff; border: none; font-weight: bold; cursor: pointer; margin-top: 15px; display: none; text-align: center;">
+                정식 서비스 이용하기 (앱 전용)
+            </button>
         </form>
-        
-        <a href="/signup" class="signup-link">아직 계정이 없으신가요? <strong>회원가입하기</strong></a>
+
+        <p style="text-align: center; font-size: 0.9rem; margin-top: 25px; color: #888; line-height: 1.5;">
+            * 가입 즉시 <b>모든 기능</b>을 무료로 체험할 수 있습니다.<br>
+            (초기 설정이나 서류 제출 없이 바로 시작하세요)
+        </p>
+
+        <!-- 가입 유형 선택 버튼 -->
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
+            <p style="font-size: 0.85rem; color: #888; margin: 0 0 12px 0;">처음 오셨나요? 가입 유형을 선택하세요</p>
+            <button onclick="openRoleModal()" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 15px; background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%); color: white; border-radius: 10px; font-weight: 900; font-size: 1.05rem; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: transform 0.2s ease;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">
+                🏪 사장님 가입하기
+            </button>
+        </div>
     </div>
-</body>
-</html>
+
+    <!-- 가입 유형 선택 모달 -->
+    <div id="roleModal" onclick="if(event.target===this)closeRoleModal()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:99999; align-items:center; justify-content:center; padding:1rem;">
+        <div style="background:#fff; border-radius:24px; padding:32px 24px; width:100%; max-width:360px; text-align:center; box-shadow:0 25px 50px rgba(0,0,0,0.3); animation: slideUp 0.25s ease-out;">
+            <h3 style="font-size:1.3rem; font-weight:900; color:#1e293b; margin:0 0 8px 0;">가입 유형을 선택해주세요</h3>
+            <p style="font-size:0.85rem; color:#94a3b8; margin:0 0 24px 0;">해당하는 유형을 선택하시면<br>맞춤 가입 페이지로 이동합니다</p>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <button onclick="handleRoleSelect('merchant')" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; border:none; border-radius:16px; font-size:1.05rem; font-weight:800; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <span style="font-size:1.6rem;">🏪</span>
+                    <div style="text-align:left;">
+                        <div>소상공인 (사장님)</div>
+                        <div style="font-size:0.75rem; opacity:0.8; font-weight:600;">가게·식당·매장 운영자</div>
+                    </div>
+                </button>
+
+                <button onclick="handleRoleSelect('farmer')" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:linear-gradient(135deg,#16a34a,#15803d); color:white; border:none; border-radius:16px; font-size:1.05rem; font-weight:800; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <span style="font-size:1.6rem;">🌾</span>
+                    <div style="text-align:left;">
+                        <div>농어민</div>
+                        <div style="font-size:0.75rem; opacity:0.8; font-weight:600;">농장·수산물 생산자</div>
+                    </div>
+                </button>
+
+                <button onclick="handleRoleSelect('citizen')" style="display:flex; align-items:center; gap:14px; padding:16px 20px; background:#f1f5f9; color:#334155; border:2px solid #e2e8f0; border-radius:16px; font-size:1.05rem; font-weight:800; cursor:pointer; transition:transform 0.15s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <span style="font-size:1.6rem;">👤</span>
+                    <div style="text-align:left;">
+                        <div>일반 시민</div>
+                        <div style="font-size:0.75rem; opacity:0.6; font-weight:600;">택배·마켓 이용 고객</div>
+                    </div>
+                </button>
+            </div>
+
+            <button onclick="closeRoleModal()" style="margin-top:20px; background:none; border:none; color:#94a3b8; font-size:0.9rem; cursor:pointer; text-decoration:underline;">닫기</button>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+    </style>
+
+    <script>
+        function openRoleModal() {
+            var m = document.getElementById('roleModal');
+            m.style.display = 'flex';
+        }
+        function closeRoleModal() {
+            document.getElementById('roleModal').style.display = 'none';
+        }
+        function handleRoleSelect(role) {
+            closeRoleModal();
+            if (role === 'merchant') {
+                window.location.href = '/register/detail?type=merchant';
+            } else if (role === 'farmer') {
+                window.location.href = '/register/detail?type=farmer';
+            } else if (role === 'citizen') {
+                window.location.href = '/admin';
+            }
+        }
+    </script>
+
+    <!-- A2HS Bottom Sheet -->
+    <div id="a2hsBottomSheet"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99999; flex-direction: column; justify-content: flex-end; backdrop-filter: blur(2px); transition: opacity 0.3s ease;">
+        <div
+            style="background: #fff; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 30px 20px 40px; box-shadow: 0 -5px 25px rgba(0,0,0,0.1); position: relative; animation: slideUp 0.3s ease-out forwards;">
+
+            <script>
+                if (!document.getElementById('slideUpStyle')) {
+                    const style = document.createElement('style');
+                    style.id = 'slideUpStyle';
+                    style.innerHTML = `
+                        @keyframes slideUp {
+                            from { transform: translateY(100%); }
+                            to { transform: translateY(0); }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+            </script>
+
+            <button onclick="skipA2hs()"
+                style="position: absolute; top: 15px; right: 20px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">✕</button>
+
+            <div style="text-align: center; margin-bottom: 25px;">
+                <div style="font-size: 3rem; margin-bottom: 15px;">📱</div>
+                <h3 style="margin-top: 0; font-size: 1.5rem; font-weight: 900; color: #1a1a1a; margin-bottom: 10px;">가입을
+                    축하합니다!</h3>
+                <p style="font-size: 1rem; color: #555; line-height: 1.6; word-break: keep-all;">
+                    이제 앱처럼 <b>바탕화면에 설치</b>해두고<br>
+                    1초 만에 스마트하게 접속하세요.<br><br>
+                    <span
+                        style="font-size: 0.9rem; background: #f1f3f5; padding: 10px; border-radius: 8px; display: inline-block;">
+                        💡 <b>iPhone:</b> 하단 [공유 <span style="font-size:1.2rem;">⍐</span>] ➔ [홈 화면에 추가 +]<br>
+                        💡 <b>Android:</b> 상단 [메뉴 <span style="font-size:1.2rem;">⋮</span>] ➔ [홈 화면에 추가 +]
+                    </span>
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <!-- On Android/PWA, we could trigger native prompt here, but native browser instructions usually require manual user action -->
+                <button onclick="skipA2hs()" class="main-btn"
+                    style="width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 12px; background: #1a1a1a; color: #fff; border: none; font-weight: bold;">
+                    확인 및 대시보드 이동
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- App Download Required Modal -->
+<div id="appDownloadModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100000; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #fff; border: 4px solid #1a1a1a; padding: 2.5rem; width: 100%; max-width: 400px; text-align: center; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h2 style="color: #1a1a1a; font-size: 2rem; font-weight: 900; margin-bottom: 1.5rem;">📱 전용 앱 설치 안내</h2>
+        <p style="font-size: 1.1rem; line-height: 1.6; color: #333; word-break: keep-all; margin-bottom: 2rem;">
+            정확한 <strong style="color: #ff073a;">블루투스 송장 출력</strong>과 <strong style="color: #1e3c72;">실시간 PWA 알림</strong>(예약 발생 등), 그리고 하드웨어 수준의 <strong style="color: #1e3c72;">암호화 보안</strong>을 위해 동네비서 전용 앱 설치가 필수입니다.<br><br>
+            <span style="font-size: 0.9rem; color: #888;">웹 브라우저(Showroom)에서는 구경만 가능하며, 실제 업무(Workstation)는 앱에서 지원합니다.</span>
+        </p>
+        <button onclick="alert('앱스토어/플레이스토어 다운로드 페이지로 이동합니다.')" style="width: 100%; padding: 1.5rem; background: #1a1a1a; color: #fff; font-size: 1.2rem; font-weight: 900; border: none; border-radius: 10px; margin-bottom: 1rem; cursor: pointer;">
+            전용 앱 다운로드 하러가기
+        </button>
+        <button onclick="document.getElementById('appDownloadModal').style.display='none'" style="width: 100%; padding: 1rem; background: transparent; color: #888; border: 2px solid #ccc; font-size: 1.1rem; font-weight: bold; border-radius: 10px; cursor: pointer;">
+            닫기
+        </button>
+    </div>
+</div>
+
+<script>
+    // Kakao SDK Integration
+    (function() {
+        const script = document.createElement('script');
+        script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js';
+        script.integrity = 'sha384-ihxb5W9KZN7S50y20zHQvwX7y4+91Uf85gK5+4y2vdfj+4B4R';
+        script.crossOrigin = 'anonymous';
+        script.onload = function() {
+            fetch('/api/auth/kakao-key')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.js_key && data.js_key !== 'dummy_js_key') {
+                        Kakao.init(data.js_key);
+                        console.log('Kakao JS SDK Initialized');
+                    }
+                })
+                .catch(err => console.error('Kakao Key fetch failed:', err));
+        };
+        document.head.appendChild(script);
+    })();
+
+    function loginWithKakao() {
+        if (typeof Kakao !== 'undefined' && Kakao.isInitialized()) {
+            Kakao.Auth.authorize({
+                redirectUri: window.location.origin + '/auth/kakao/callback'
+            });
+        } else {
+            window.location.href = '/auth/kakao/login';
+        }
+    }
+
+    // Initial State based on URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialMode = urlParams.get('mode') || 'login';
+    
+    // Initialize tab switching
+    switchTab(initialMode);
+
+    function triggerDeepLink(e) {
+        if (e) e.preventDefault();
+        const hiddenInput = document.getElementById('authMode');
+        const target = (hiddenInput && hiddenInput.value) || 'store';
+        
+        // 딥링크 호출
+        window.location.href = 'dnbsir://login?target=' + target;
+        
+        // 앱이 응답하지 않으면 1.5초 후 폴백 모달 표출
+        setTimeout(() => {
+            document.getElementById('appDownloadModal').style.display = 'flex';
+        }, 1500);
+    }
+
+    function switchTab(mode) {
+        const loginTab = document.getElementById('tab-login');
+        const signupTab = document.getElementById('tab-signup');
+        const title = document.getElementById('formTitle');
+        const desc = document.getElementById('formDesc');
+        const btn = document.getElementById('submitBtn');
+        const hiddenInput = document.getElementById('authMode');
+
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const isApp = navigator.userAgent.includes("DongneBiseoApp");
+        
+        // 메인 버튼은 모바일 브라우저에서도 항시 일반 로그인/회원가입 텍스트 유지
+        const btnText = (mode === 'signup' ? '무료로 시작하기' : '로그인하기');
+        btn.innerText = btnText;
+
+        // 구글 로그인 밑의 "정식 서비스 이용하기 (앱 전용)" 버튼 표시 제어 (모바일 브라우저이되 앱이 아닐 때 노출)
+        const forceAppBtn = document.getElementById('forceAppBtn');
+        if (forceAppBtn) {
+            forceAppBtn.style.display = (isMobile && !isApp) ? 'block' : 'none';
+        }
+
+        if (mode === 'signup') {
+            // Activate Signup
+            signupTab.style.color = '#1a1a1a';
+            signupTab.style.borderBottom = '3px solid #1a1a1a';
+            loginTab.style.color = '#aaa';
+            loginTab.style.borderBottom = '3px solid transparent';
+
+            title.innerText = '30초면 가입 완료!';
+            desc.innerText = '휴대폰 번호만으로 간편하게 시작하세요.';
+            hiddenInput.value = 'signup';
+
+            // Update URL without reload
+            const currentParams = new URLSearchParams(window.location.search);
+            currentParams.set('mode', 'signup');
+            window.history.replaceState(null, '', '/admin?' + currentParams.toString());
+        } else {
+            // Activate Login
+            loginTab.style.color = '#1a1a1a';
+            loginTab.style.borderBottom = '3px solid #1a1a1a';
+            signupTab.style.color = '#aaa';
+            signupTab.style.borderBottom = '3px solid transparent';
+
+            title.innerText = '사장님 로그인';
+            desc.innerText = '가게 ID와 비밀번호를 입력해주세요';
+            hiddenInput.value = 'login';
+
+            const currentParams = new URLSearchParams(window.location.search);
+            currentParams.set('mode', 'login');
+            window.history.replaceState(null, '', '/admin?' + currentParams.toString());
+        }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        // [UX] Prevent double click for PC users
+        const btn = this.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = '처리 중...';
+
+        const formData = new FormData(this);
+        // Backend expects 'store_id' for authentication, but input is named 'phone'
+        if (formData.get('phone') && !formData.get('store_id')) {
+            formData.append('store_id', formData.get('phone'));
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const nextUrl = urlParams.get('next');
+        if (nextUrl) {
+             formData.append('next_url', nextUrl);
+        }
+
+        try {
+            const API_BASE_URL = "";
+
+            // Same backend endpoint for both logic (Auto-signup handling)
+            const response = await fetch(`${API_BASE_URL}/login`, {
+                method: 'POST',
+                body: formData,
+                redirect: 'manual'
+            });
+
+            if (response.type === 'opaqueredirect' || response.status === 0 || response.status === 303 || response.status === 200) {
+                if (formData.get('mode') === 'signup') {
+                    alert('가입이 완료되었습니다!\n입력하신 번호로 발송된 [초기 비밀번호] 문자메시지를 확인 후 로그인해주세요.');
+                    switchTab('login');
+                    document.getElementById('password').value = '';
+                    document.getElementById('password').focus();
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                } else {
+                    // 로그인 시
+                    document.cookie = "admin_session=" + formData.get('store_id') + "; path=/; max-age=86400";
+                    const params = new URLSearchParams(window.location.search);
+                    const nextUrl = params.get('next');
+                    if (nextUrl) {
+                        window.location.href = nextUrl;
+                    } else {
+                        window.location.href = "/admin/dashboard";
+                    }
+                }
+            } else {
+                let errorMsg = '오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                try {
+                    const errData = await response.json();
+                    if (errData.detail) errorMsg = errData.detail;
+                } catch (e) {
+                    // Ignore json parse error
+                }
+
+                if (response.status === 404) {
+                    alert('가입되지 않은 회원입니다. [무료 회원가입] 탭 이용해주세요.');
+                    switchTab('signup');
+                } else if (response.status === 409) {
+                    alert('이미 가입된 번호입니다. [로그인] 탭을 이용해주세요.');
+                    switchTab('login');
+                } else if (response.status === 401) {
+                    alert('비밀번호가 일치하지 않습니다.');
+                } else {
+                    alert('오류가 발생했습니다. (Code: ' + response.status + ') ' + errorMsg);
+                }
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        } catch (error) {
+            console.error('Login Error:', error);
+            alert('오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    });
+
+    document.addEventListener("visibilitychange", function() {
+        if (document.visibilityState === 'visible') {
+            const modal = document.getElementById('appDownloadModal');
+            if (modal) modal.style.display = 'none';
+        }
+    });
+
+    function skipA2hs() {
+        const modal = document.getElementById('a2hsBottomSheet');
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.display = 'none';
+            window.location.href = "/admin/dashboard";
+        }, 300);
+    }
+</script>
+{% endblock %}
