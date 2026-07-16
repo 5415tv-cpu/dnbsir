@@ -1232,10 +1232,9 @@ async def ai_query(request: Request, query_type: str = Form(None), custom_text: 
         reply = "현재 '사과 세트'가 가장 많이 팔리고 있습니다. 이 상품으로 홍보용 숏폼을 하나 더 만들어볼까요? (예상비용: 10 🔮)"
         return {"reply": reply, "action": "create_shortform"}
     elif custom_text:
-        if "주문" in custom_text or "얼마" in custom_text:
-            reply = "명령어를 정확히 인식하기 위해 위에 있는 자동 질문 버튼을 이용해 주시면 더 빠르고 정확하게 안내해 드릴 수 있습니다!"
-        else:
-            reply = f"사장님, 말씀하신 '{custom_text}'에 대해 지금은 답변이 어렵습니다. 추후 업데이트를 기대해주세요!"
+        import ai_manager
+        system_prompt = "당신은 가맹점 사장님을 돕는 친절한 비서입니다. 사장님의 질문에 전문적이고 명확하게 짧게 답하세요."
+        reply = ai_manager.get_ai_response(custom_text, system_prompt=system_prompt, tool_set='admin')
         return {"reply": reply, "action": None}
     return {"reply": "잘못된 요청입니다.", "action": None}
 
