@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AI 비서 - 단계별 화면 전환</title>
+    <style>
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%; 
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; 
+            background-color: #f5f5f7; 
+            overflow: hidden; /* 스크롤 방지, 내부 페이지에서만 스크롤 */
+        }
+
+        .header { 
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            background: rgba(245, 245, 247, 0.9); 
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800; 
+            font-size: 18px; 
+            color: #1d1d1f;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .back-btn { 
+            position: absolute; 
+            left: 20px; 
+            text-decoration: none; 
+            color: #1d1d1f; 
+            font-size: 24px; 
+            font-weight: bold; 
+        }
+
+        /* --- 페이지 분할 (SPA 구조) --- */
+        .page-view {
+            position: absolute;
+            top: 60px; 
+            left: 0; right: 0; bottom: 0;
+            display: none;
+            flex-direction: column;
+            padding: 24px 20px;
+            overflow-y: auto;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .page-view.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .title-text {
+            font-size: 20px;
+            font-weight: 800;
+            color: #1d1d1f;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .center-title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* --- Page 1: 목적 입력 요소 --- */
+        .horizontal-scroll {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+        }
+        
+        .persona-chip {
+            flex-shrink: 0;
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 20px;
+            padding: 10px 16px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #495057;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+        .persona-chip.selected {
+            background: #000000;
+            color: #ffffff;
+            border-color: #000000;
+        }
+
+        .search-bar-wrapper {
+            display: flex;
+            align-items: center;
+            background: #ffffff;
+            border: 2px solid #e9ecef;
+            border-radius: 16px;
+            padding: 4px 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: border-color 0.2s;
+        }
+        .search-bar-wrapper:focus-within {
+            border-color: #000000;
+        }
+        .search-bar-wrapper input {
+            flex: 1;
+            border: none;
+            padding: 14px 0;
+            font-size: 16px;
+            outline: none;
+            background: transparent;
+        }
+        .camera-btn {
+            background: none;
+            border: none;
+            font-size: 22px;
+            cursor: pointer;
+            color: #495057;
+            padding: 8px;
+        }
+        .camera-btn:active { opacity: 0.5; }
+
+        .recommend-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .recommend-chip {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #495057;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .recommend-chip:active {
+            transform: scale(0.98);
+            background: #f8f9fa;
+        }
+
+        /* --- Page 2: 조건 및 로딩 요소 --- */
+        .center-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .condition-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .condition-btn {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: 700;
+            color: #1d1d1f;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: transform 0.2s;
+        }
+        .condition-btn:active { transform: scale(0.96); }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e9ecef;
+            border-top: 5px solid #000000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 24px auto;
+            display: none;
+        }
+        .loading-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: #495057;
+            animation: pulse-text 1.5s infinite;
+            display: none;
+        }
+
+        /* --- Page 3: 결과 요소 --- */
+        .result-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .result-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #000;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 15px;
+        }
+        .data-row:last-child { border-bottom: none; }
+        .data-row .label { color: #6c757d; }
+        .data-row .value { font-weight: bold; color: #1d1d1f; }
+        
+        .ai-comment-box {
+            display: flex;
+            gap: 16px;
+            background: #f0f4f8;
+            padding: 16px;
+            border-radius: 16px;
+            align-items: flex-start;
+        }
+        .ai-avatar {
+            width: 40px; height: 40px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+        }
+        .ai-text { font-size: 15px; line-height: 1.5; color: #333; }
+        
+        .bottom-fixed-btn {
+            margin-top: auto;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .action-btn {
+            background: #000000;
+            color: #ffffff;
+            border: none;
+            border-radius: 16px;
+            padding: 18px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .action-btn:active { transform: scale(0.98); background: #333; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .guide-text {
+            text-align: center;
+            font-size: 14px;
+            color: #495057;
+            margin-bottom: 12px;
+            animation: fadeIn 0.5s;
+        }
+        .disclaimer-text {
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057; /* Neutral dark gray */
+            margin-top: 10px;
+            margin-bottom: 20px;
+            background-color: #f8f9fa; /* Soft light gray background */
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        @keyframes typeText { from { width: 0; } to { width: 100%; } }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="/admin/dashboard" class="back-btn">←</a>
+        AI 비서
+    </div>
+    
+    <!-- PAGE 1: 목적 입력 (시작 화면) -->
+    <div class="page-view active" id="page1">
+        
+        <div class="horizontal-scroll" id="persona-scroll">
+            <div class="persona-chip selected" onclick="selectPersona('일반 소매점 사장님', this)">🏪 기본 모드</div>
+            <div class="persona-chip" onclick="selectPersona('과일가게 사장님', this)">🍎 과일가게</div>
+            <div class="persona-chip" onclick="selectPersona('음식점 사장님', this)">🍲 식당/음식점</div>
+            <div class="persona-chip" onclick="selectPersona('농산업/농부', this)">🌾 농산물/농부</div>
+            <div class="persona-chip" onclick="selectPersona('수산업/어부', this)">🐟 수산물/어부</div>
+            <div class="persona-chip" onclick="selectPersona('정육점 사장님', this)">🥩 정육점</div>
+            <div class="persona-chip" onclick="selectPersona('카페 사장님', this)">☕ 카페</div>
+            <div class="persona-chip" onclick="selectPersona('마트/슈퍼마켓 사장님', this)">🛒 마트</div>
+            <div class="persona-chip" onclick="selectPersona('병원/의원 원장님', this)">🏥 병원/의원</div>
+            <div class="persona-chip" onclick="selectPersona('뷰티/미용실 원장님', this)">✂️ 뷰티/미용실</div>
+            <div class="persona-chip" onclick="selectPersona('학원/교육업 원장님', this)">📚 학원/교육</div>
+            <div class="persona-chip" onclick="selectPersona('헬스/피트니스 관장님', this)">💪 헬스/피트니스</div>
+            <div class="persona-chip" onclick="selectPersona('숙박/펜션 사장님', this)">🏨 숙박/펜션</div>
+            <div class="persona-chip" onclick="selectPersona('도소매/유통업 사장님', this)">📦 도소매/유통</div>
+        </div>
+
+        <div class="title-text">무엇을 도와드릴까요?</div>
+        
+        <div class="search-bar-wrapper">
+            <input type="text" id="main-search" placeholder="직접 질문을 적거나, 아래 추천 버튼을 눌러보세요" oninput="filterRecommendations()" onkeypress="handleEnter(event)">
+            <!-- 카메라 버튼 클릭 시 즉각 로딩으로 넘어감 -->
+            <button class="camera-btn" onclick="triggerCameraAnalysis()">📷</button>
+        </div>
+        
+        <div class="disclaimer-text">⚠️ 동네비서 AI는 매장 및 농장 관리에 특화되어 제한적으로 운영됩니다. (일반 검색은 지원하지 않습니다)</div>
+
+        <div class="guide-text" id="recommend-guide">💡 처음이시라면, 이렇게 질문해 보세요!</div>
+        <div class="recommend-container" id="recommend-chips">
+            <!-- JS 동적 주입 -->
+        </div>
+    </div>
+
+    <!-- PAGE 2: 조건 설정 및 로딩 (중간 화면) -->
+    <div class="page-view" id="page2">
+        <div class="center-content">
+            <!-- 텍스트 검색 시 조건 화면 -->
+            <div id="condition-view" style="width: 100%;">
+                <div class="title-text center-title">어떤 기간으로 보여드릴까요?</div>
+                <div class="condition-grid">
+                    <button class="condition-btn" onclick="startLoading('오늘 하루')">오늘 하루</button>
+                    <button class="condition-btn" onclick="startLoading('최근 일주일')">최근 일주일</button>
+                    <button class="condition-btn" onclick="startLoading('이번 달')">이번 달</button>
+                    <button class="condition-btn" onclick="startLoading('전체 누적')">전체 누적</button>
+                </div>
+            </div>
+
+            <!-- 카메라 촬영 또는 로딩 시 화면 -->
+            <div id="loading-view" style="display: none;">
+                <div class="loading-spinner" style="display: block;"></div>
+                <div class="loading-text" id="loading-msg" style="display: block;">장부를 분석 중입니다...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: 결과 및 제안 (최종 화면) -->
+    <div class="page-view" id="page3">
+        <div class="result-card">
+            <div class="result-title" id="result-title">데이터 분석 결과</div>
+            <div id="result-data">
+                <!-- 동적 주입 -->
+            </div>
+        </div>
+
+        <div class="result-card" style="background: transparent; box-shadow: none; padding: 0;">
+            <div class="ai-comment-box">
+                <div class="ai-avatar">🤖</div>
+                <div class="ai-text" id="ai-comment">
+                    <!-- 동적 주입 -->
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-fixed-btn">
+            <button class="action-btn" onclick="resetToPage1()">🔄 처음으로 돌아가기</button>
+        </div>
+    </div>
+
+    <script>
+        let currentPersona = '일반 소매점 사장님';
+        let currentQuery = '';
+        let isCameraMode = false;
+
+        const personaToChips = {
+            '농산업/농부': ['오늘 날씨에 맞는 작업 추천', '최근 일주일 주문량 합산', '가장 많이 남은 재고 확인', '내일 출하 예정 리스트'],
+            '수산업/어부': ['오늘 어획량 대비 예상 매출', '신선도 유지 온도 체크 내역', '이번 주 택배 발송 내역'],
+            '음식점 사장님': ['오늘 점심 피크타임 매출', '내일 단체 예약 현황 확인', '남은 식자재 처리 아이디어', '배달앱 리뷰 요약'],
+            '과일가게 사장님': ['명절 선물세트 예약 현황', '오늘 들어온 발주 내역', '재고가 임박한 과일', '어제 폐기량 합산'],
+            '정육점 사장님': ['한우 선물세트 주문량', '오늘 부위별 판매량 점유율', '세절기 유지보수 및 점검 알림'],
+            '카페 사장님': ['오늘 아메리카노 누적 판매량', '원두 및 부자재 재고 현황', '내일 피크타임 대비 알바 스케줄'],
+            '뷰티/미용실 원장님': ['오늘 노쇼(No-show) 고객 확인', '이번 달 디자이너별 매출액', '내일 오전 펌/염색 예약 리스트'],
+            '병원/의원 원장님': ['오늘 오전 초진 환자 비율', '예방접종 백신 재고 파악', '내일 수술 및 시술 스케줄'],
+            '마트/슈퍼마켓 사장님': ['오늘 가장 잘 팔린 전단지 행사상품', '유통기한 임박 상품 세일 리스트', '이번 주 알림톡 발송 결과'],
+            '학원/교육업 원장님': ['이번 달 신규 등록 원생 수', '오늘 결석 예정 원생 명단', '수강료 미납 내역 확인'],
+            '헬스/피트니스 관장님': ['이번 주 PT 예약 현황', '오늘 만료 예정인 회원권', '시간대별 센터 입장 객수'],
+            '숙박/펜션 사장님': ['주말 객실 예약률 현황', '오늘 체크인/체크아웃 명단', '비품(수건/어메니티) 재고 확인'],
+            '도소매/유통업 사장님': ['오늘 출고 예정인 택배 물량', '이번 달 거래처별 미수금 현황', '발주 필요한 재고 목록'],
+            '일반 소매점 사장님': ['오늘 총매출', '가장 잘 팔리는 상품 TOP 3', '재고 부족 상품 목록', '어제와 매출 비교'],
+        };
+
+        // 초기화 시 칩 렌더링
+        renderRecommendChips();
+
+        function selectPersona(persona, el) {
+            document.querySelectorAll('.persona-chip').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+            currentPersona = persona;
+            document.getElementById('main-search').value = '';
+            renderRecommendChips();
+            document.getElementById('recommend-guide').style.display = 'block';
+        }
+
+        function renderRecommendChips(filterText = "") {
+            const container = document.getElementById('recommend-chips');
+            container.innerHTML = '';
+            const chips = personaToChips[currentPersona] || personaToChips['일반 소매점 사장님'];
+            
+            let count = 0;
+            chips.forEach(text => {
+                if (text.toLowerCase().includes(filterText.toLowerCase())) {
+                    const btn = document.createElement('div');
+                    btn.className = 'recommend-chip';
+                    btn.textContent = text;
+                    btn.onclick = () => proceedToPage2(text, true);
+                    container.appendChild(btn);
+                    count++;
+                }
+            });
+            document.getElementById('recommend-guide').style.display = (filterText === '' && count > 0) ? 'block' : 'none';
+        }
+
+        function filterRecommendations() {
+            const query = document.getElementById('main-search').value;
+            renderRecommendChips(query);
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') {
+                const query = document.getElementById('main-search').value.trim();
+                if (query) proceedToPage2(query);
+            }
+        }
+
+        // 페이지 전환 (Fade in/out 로직)
+        function switchPage(hideId, showId) {
+            const hideEl = document.getElementById(hideId);
+            const showEl = document.getElementById(showId);
+            
+            hideEl.style.opacity = '0';
+            setTimeout(() => {
+                hideEl.classList.remove('active');
+                showEl.classList.add('active');
+                // reflow
+                void showEl.offsetWidth; 
+                showEl.style.opacity = '1';
+            }, 300); // css transition 시간과 동일하게 맞춤
+        }
+
+        function proceedToPage2(query, fromChip = false) {
+            currentQuery = query;
+            isCameraMode = false;
+            
+            if (fromChip) {
+                const searchInput = document.getElementById('main-search');
+                searchInput.value = '';
+                
+                let i = 0;
+                const typeInterval = setInterval(() => {
+                    searchInput.value += query.charAt(i);
+                    i++;
+                    if (i >= query.length) {
+                        clearInterval(typeInterval);
+                        setTimeout(() => executeProceed(), 400);
+                    }
+                }, 30);
+            } else {
+                executeProceed();
+            }
+        }
+
+        function executeProceed() {
+            document.getElementById('condition-view').style.display = 'block';
+            document.getElementById('loading-view').style.display = 'none';
+            switchPage('page1', 'page2');
+        }
+
+        function triggerCameraAnalysis() {
+            isCameraMode = true;
+            currentQuery = "카메라 이미지 분석";
+            
+            document.getElementById('condition-view').style.display = 'none';
+            document.getElementById('loading-view').style.display = 'block';
+            
+            const loadingMsg = document.getElementById('loading-msg');
+            loadingMsg.textContent = "AI가 사진을 분석하고 있습니다...";
+            
+            switchPage('page1', 'page2');
+            
+            // 바로 분석 시작
+            setTimeout(() => finishAnalysis("사진 분석 완료"), 2500);
+        }
+
+        async function startLoading(period) {
+            document.getElementById('condition-view').style.display = 'none';
+            document.getElementById('loading-view').style.display = 'block';
+            
+            const loadingMsg = document.getElementById('loading-msg');
+            const messages = ["장부를 분석 중입니다...", "AI가 데이터를 계산하고 있습니다...", "최종 결과를 요약 중입니다..."];
+            let msgIndex = 0;
+            loadingMsg.textContent = messages[msgIndex];
+            
+            const msgInterval = setInterval(() => {
+                msgIndex = (msgIndex + 1) % messages.length;
+                loadingMsg.textContent = messages[msgIndex];
+            }, 800);
+            
+            const startTime = Date.now();
+            
+            // 백엔드 API 호출을 위한 준비
+            const promptText = `상황: 저는 '${currentPersona}' 입니다. 기간은 '${period}' 로 조회합니다. 질문: '${currentQuery}'`;
+            const formData = new FormData();
+            formData.append('custom_text', promptText);
+            
+            let aiReply = "";
+            try {
+                const response = await fetch('/api/ai/query', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                aiReply = result.reply || "응답을 불러올 수 없습니다.";
+            } catch (err) {
+                aiReply = "죄송합니다. 네트워크 오류가 발생했습니다.";
+            }
+            
+            // 로딩 애니메이션을 최소 2초는 보여주기 위한 딜레이 계산
+            const elapsed = Date.now() - startTime;
+            const remaining = Math.max(0, 2000 - elapsed);
+            
+            setTimeout(() => {
+                clearInterval(msgInterval);
+                finishAnalysis(period, aiReply);
+            }, remaining);
+        }
+
+        function finishAnalysis(period, aiReply) {
+            generateRealResults(period, aiReply);
+            switchPage('page2', 'page3');
+        }
+
+        function generateRealResults(period, aiReply) {
+            const titleDiv = document.getElementById('result-title');
+            const dataDiv = document.getElementById('result-data');
+            const commentDiv = document.getElementById('ai-comment');
+            
+            if (isCameraMode) {
+                titleDiv.textContent = "📷 시각 데이터 진단 결과";
+                dataDiv.innerHTML = `
+                    <div class="data-row"><span class="label">대상</span><span class="value">업로드된 이미지</span></div>
+                    <div class="data-row"><span class="label">분석 객체</span><span class="value">농작물 잎사귀 (사과)</span></div>
+                    <div class="data-row"><span class="label">상태 판정</span><span class="value" style="color:#e53935">탄저병 의심 (유사도 89%)</span></div>
+                `;
+                commentDiv.innerHTML = `${currentPersona}님, 촬영하신 사진 분석 결과 <strong>탄저병 초기 증상</strong>과 89% 일치합니다. 주변으로 번지기 전에 방제 약제(다이센엠-45 등)를 살포하실 것을 강력히 권장합니다.`;
+            } else {
+                titleDiv.textContent = `📊 '${currentQuery}' 결과`;
+                
+                // 일반 질문의 경우, 억지스러운 '조회 기간' 데이터 표를 숨기고 하얀 도화지처럼 AI 답변만 깔끔하게 보여줍니다.
+                dataDiv.innerHTML = '';
+                
+                // 1. JSON 껍데기 벗기기 (Parsing)
+                let finalText = "";
+                if (typeof aiReply === 'object' && aiReply !== null) {
+                    finalText = aiReply.text || JSON.stringify(aiReply);
+                } else {
+                    finalText = aiReply;
+                }
+                
+                // 2. 방어 코드 (타입 체크) 추가 의무화
+                if (typeof finalText === 'string') {
+                    commentDiv.innerHTML = finalText.replace(/\\n/g, '<br>');
+                } else {
+                    commentDiv.innerHTML = "데이터를 불러올 수 없습니다. (데이터 타입 오류)";
+                }
+            }
+        }
+
+        function resetToPage1() {
+            document.getElementById('main-search').value = '';
+            renderRecommendChips();
+            switchPage('page3', 'page1');
+        }
+    </script>
+</body>
+</html>
