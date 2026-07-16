@@ -1,7 +1,7 @@
 import config
-import google.generativeai as genai
 import os
 os.environ["GRPC_DNS_RESOLVER"] = "native"
+import google.generativeai as genai
 from pydantic import BaseModel, Field
 from typing import Optional
 
