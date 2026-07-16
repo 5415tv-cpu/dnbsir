@@ -63,7 +63,7 @@ def get_project_structure():
 admin_tools = [get_current_time, get_store_orders_stat, read_file_content]
 customer_tools = [get_current_time] # Do NOT expose read_file_content to customers!
 
-def get_gemini_client(model_name='gemini-flash-latest', tool_set='customer'):
+def get_gemini_client(model_name='gemini-2.0-flash', tool_set='customer'):
     """Gemini API 클라이언트 초기화"""
     try:
         api_key = config.get_settings().app.gemini_api_key
@@ -108,9 +108,9 @@ def determine_model_tier(text):
     # Heuristic 2: Keywords
     complex_keywords = ["분석", "비교", "이유", "해결", "기획", "작성", "요약"]
     if any(keyword in text for keyword in complex_keywords):
-        return 'gemini-flash-latest'
+        return 'gemini-2.0-flash'
         
-    return 'gemini-flash-latest'
+    return 'gemini-2.0-flash'
 
 def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set='customer'):
     """AI 상담원 응답 생성 (Composite Mode: Function Calling Enabled)"""
