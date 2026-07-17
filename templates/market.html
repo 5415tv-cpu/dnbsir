@@ -761,9 +761,15 @@
 <body>
 
     <!-- 헤더 영역 -->
-    <header>
-        <div class="market-badge">시니어 맞춤 장터</div>
-        <h1>동네비서 산지직송 마켓</h1>
+    <header style="display: flex; justify-content: space-between; align-items: center; padding-right: 16px;">
+        <div style="display: flex; flex-direction: column;">
+            <div class="market-badge">시니어 맞춤 장터</div>
+            <h1>상품 선택</h1>
+        </div>
+        <div class="header-total" style="cursor: pointer; background: rgba(251,191,36,0.15); padding: 5px 12px; border-radius: 12px; border: 1px solid #fbbf24; text-align: center; line-height: 1.2;" onclick="document.getElementById('btnPay').click()">
+            <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">🛒 장바구니</span><br>
+            <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
+        </div>
         
         <!-- 지역 검색 및 선택 영역 -->
         <div class="region-search-container">
@@ -808,14 +814,14 @@
         <!-- 사업자정보 (카드사 심사 필수) -->
         <div style="
             text-align: center;
-            font-size: 0.62rem;
-            color: #475569;
+            font-size: 0.85rem;
+            color: #94a3b8;
             line-height: 1.8;
             padding: 6px 16px 6px;
         ">
-            상호: 탄탄제작소 &nbsp;|&nbsp; 대표: 이영준 &nbsp;|&nbsp; 사업자등록번호: 442-32-01655<br>
-            통신판매업 신고번호: 제2026-강원태백-0013호 &nbsp;|&nbsp;
-            <a href="/citizen/market/refund" style="color:#fbbf24; text-decoration:none;">환불정책</a>
+            <span style="font-weight: 700;">상호: 탄탄제작소 &nbsp;|&nbsp; 대표: 이영준 &nbsp;|&nbsp; 사업자등록번호: 442-32-01655</span><br>
+            <span style="font-weight: 700;">통신판매업 신고번호: 제2026-강원태백-0013호 &nbsp;|&nbsp;</span>
+            <a href="/citizen/market/refund" style="color:#fbbf24; font-size: 0.95rem; font-weight: 700; text-decoration:none;">환불정책</a>
         </div>
         <button class="pay-btn" id="btnPay" onclick="handlePayment()">
             <span>결제하기</span>
@@ -1033,16 +1039,19 @@
             });
 
             const btnPay = document.getElementById("btnPay");
+            const headerTotal = document.getElementById("headerTotal");
             if (totalItems > 0) {
                 btnPay.innerHTML = `<span>총 ${totalItems}건 / 총 ${totalAmount.toLocaleString()}원 결제하기</span>`;
                 btnPay.disabled = false;
                 btnPay.style.opacity = "1";
                 btnPay.style.cursor = "pointer";
+                if(headerTotal) headerTotal.textContent = totalAmount.toLocaleString() + "원";
             } else {
                 btnPay.innerHTML = `<span>상품을 선택해 주세요 (수량 +)</span>`;
                 btnPay.disabled = true;
                 btnPay.style.opacity = "0.6";
                 btnPay.style.cursor = "not-allowed";
+                if(headerTotal) headerTotal.textContent = "0원";
             }
         }
 
@@ -1292,18 +1301,18 @@
         padding: 20px 20px 30px;
         text-align: center;
         font-family: 'Noto Sans KR', sans-serif;
-        color: #475569;
-        font-size: 0.78rem;
+        color: #94a3b8;
+        font-size: 0.9rem;
         line-height: 2;
         margin-top: 10px;
     ">
-        <div style="max-width: 480px; margin: 0 auto;">
-            <div style="margin-bottom: 4px; color: #64748b; font-weight: 700;">상호: 탄탄제작소 &nbsp;|&nbsp; 대표: 이영준</div>
+        <div style="max-width: 480px; margin: 0 auto; font-weight: 700;">
+            <div style="margin-bottom: 4px; color: #cbd5e1;">상호: 탄탄제작소 &nbsp;|&nbsp; 대표: 이영준</div>
             <div>사업자등록번호: 442-32-01655 &nbsp;|&nbsp; 통신판매업 신고번호: 제2026-강원태백-0013호</div>
             <div>사업장 주소: 강원특별자치도 태백시 태붐로 54</div>
-            <div>고객센터: 010-2384-7447 &nbsp;|&nbsp; <a href="mailto:support@dongnebiseo.com" style="color:#64748b; text-decoration:none;">support@dongnebiseo.com</a></div>
+            <div>고객센터: 010-2384-7447 &nbsp;|&nbsp; <a href="mailto:support@dongnebiseo.com" style="color:#cbd5e1; text-decoration:none;">support@dongnebiseo.com</a></div>
             <div style="margin-top: 6px;">
-                <a href="/citizen/market/refund" style="color:#fbbf24; font-size:0.75rem; text-decoration:none;">환불정책 안내 →</a>
+                <a href="/citizen/market/refund" style="color:#fbbf24; font-size:1rem; font-weight: 900; text-decoration:none;">환불정책 안내 →</a>
             </div>
         </div>
     </div>
