@@ -106,11 +106,6 @@ class CourierRequestZero(BaseModel):
 
 class PublicReservationRequest(BaseModel):
     store_id: str
-
-class CitizenChatRequest(BaseModel):
-    message: str
-    phone: str = ""
-    store_id: str = ""
     customer_name: str
     customer_phone: str
     res_date: str
@@ -119,6 +114,11 @@ class CitizenChatRequest(BaseModel):
     menu_summary: str = ""
     request_note: str = ""
     consent: bool = False
+
+class CitizenChatRequest(BaseModel):
+    message: str
+    phone: str = ""
+    store_id: str = ""
 
 from fastapi.responses import HTMLResponse, RedirectResponse
 
