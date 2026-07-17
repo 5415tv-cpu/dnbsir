@@ -193,6 +193,11 @@ async def root_redirect(request: Request):
         "toss_client_key": toss_client_key
     })
 
+@app.get("/home", response_class=HTMLResponse)
+async def home_alias(request: Request):
+    """SEO/과거 링크 호환을 위해 /home을 / 로 영구 이동 처리"""
+    return RedirectResponse(url="/", status_code=301)
+
 @app.get("/store/landing", response_class=HTMLResponse)
 async def store_landing_redirect(request: Request, ref: str = ""):
     return templates.TemplateResponse(request, "store_register_landing.html", {
