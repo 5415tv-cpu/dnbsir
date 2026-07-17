@@ -141,7 +141,7 @@ def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set=
         
         # Enforce Token Limit for Cost Control (Approx 500 tokens ~ 2000 chars)
         generation_config = genai.types.GenerationConfig(
-            max_output_tokens=500,
+            max_output_tokens=1000,
             temperature=0.7
         )
         
