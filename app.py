@@ -187,6 +187,12 @@ async def root_redirect(request: Request):
             elif products is None:
                 products = []
 
+            for p in products:
+                try:
+                    p['price'] = int(p.get('price', 0))
+                except (ValueError, TypeError):
+                    p['price'] = 0
+
             import urllib.parse
             import glob
             
