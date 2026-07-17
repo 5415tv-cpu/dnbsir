@@ -761,14 +761,16 @@
 <body>
 
     <!-- 헤더 영역 -->
-    <header style="display: flex; justify-content: space-between; align-items: center; padding-right: 16px;">
-        <div style="display: flex; flex-direction: column;">
-            <div class="market-badge">시니어 맞춤 장터</div>
-            <h1>상품 선택</h1>
-        </div>
-        <div class="header-total" style="cursor: pointer; background: rgba(251,191,36,0.15); padding: 5px 12px; border-radius: 12px; border: 1px solid #fbbf24; text-align: center; line-height: 1.2;" onclick="document.getElementById('btnPay').click()">
-            <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">🛒 장바구니</span><br>
-            <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
+    <header style="display: flex; flex-direction: column; gap: 12px; padding-right: 16px;">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="display: flex; flex-direction: column;">
+                <div class="market-badge">시니어 맞춤 장터</div>
+                <h1 style="margin: 0; padding: 0;">상품 선택</h1>
+            </div>
+            <div class="header-total" style="cursor: pointer; background: rgba(251,191,36,0.15); padding: 5px 16px; border-radius: 12px; border: 1px solid #fbbf24; text-align: center; line-height: 1.2;" onclick="document.getElementById('btnPay').click()">
+                <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">🛒 장바구니</span><br>
+                <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
+            </div>
         </div>
         
         <!-- 지역 검색 및 선택 영역 -->

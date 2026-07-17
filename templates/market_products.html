@@ -386,14 +386,16 @@
 <body>
 
 <!-- 헤더 -->
-<header>
-    <div class="header-left">
-        <div class="market-badge">시니어 맞춤 장터</div>
-        <div class="header-title">상품 선택</div>
-    </div>
-    <div class="header-total" style="cursor: pointer; background: rgba(251,191,36,0.15); padding: 5px 12px; border-radius: 12px; border: 1px solid #fbbf24;" onclick="openModal()">
-        🛒 장바구니<br>
-        <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
+<header style="display: flex; flex-direction: column; gap: 12px; padding-right: 16px;">
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <div class="header-left" style="margin: 0; padding: 0;">
+            <div class="market-badge">시니어 맞춤 장터</div>
+            <div class="header-title">상품 선택</div>
+        </div>
+        <div class="header-total" style="cursor: pointer; background: rgba(251,191,36,0.15); padding: 5px 16px; border-radius: 12px; border: 1px solid #fbbf24; text-align: center; line-height: 1.2;" onclick="openModal()">
+            <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">🛒 장바구니</span><br>
+            <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
+        </div>
     </div>
 </header>
 
