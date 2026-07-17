@@ -555,7 +555,15 @@
         if (ex) ex.qty+=qty; else cart.push({...PRODUCT, qty});
         saveCart(cart); updateCartBadge();
         const t=document.getElementById('toast');
-        t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000);
+        t.classList.add('show'); 
+        setTimeout(() => {
+            t.classList.remove('show');
+            if (document.referrer) {
+                window.location.href = document.referrer;
+            } else {
+                window.location.href = '/citizen/market';
+            }
+        }, 800);
     }
 
     function buyNow() {
