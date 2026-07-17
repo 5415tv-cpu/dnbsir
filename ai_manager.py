@@ -99,18 +99,18 @@ def determine_model_tier(text):
     - Flash (Basic): Short, simple queries.
     - Pro (Advanced): Long, complex, reasoning-heavy queries.
     """
-    if not text: return 'gemini-flash-latest'
+    if not text: return 'gemini-3.5-flash'
 
     # Heuristic 1: Length
     if len(text) > 100:
-        return 'gemini-pro-latest'
+        return 'gemini-3.5-flash'
         
     # Heuristic 2: Keywords
     complex_keywords = ["분석", "비교", "이유", "해결", "기획", "작성", "요약"]
     if any(keyword in text for keyword in complex_keywords):
-        return 'gemini-flash-latest'
+        return 'gemini-3.5-flash'
         
-    return 'gemini-flash-latest'
+    return 'gemini-3.5-flash'
 
 def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set='customer'):
     """AI 상담원 응답 생성 (Composite Mode: Function Calling Enabled)"""
