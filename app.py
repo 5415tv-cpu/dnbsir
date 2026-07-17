@@ -182,6 +182,11 @@ async def root_redirect(request: Request):
         store = db.get_store(store_id)
         if store:
             products = db.get_products(store_id)
+            if hasattr(products, 'to_dict'):
+                products = products.to_dict('records')
+            elif products is None:
+                products = []
+
             import urllib.parse
             import glob
             
