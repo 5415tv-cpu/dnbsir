@@ -138,7 +138,7 @@ async def delivery_request_page(request: Request, ref: str = ""):
     })
 
 @router.post("/api/payment/success")
-async def process_payment_success_api(payload: PaymentSuccessPayload, request: Request):
+async def process_payment_success_api(payload: dict, request: Request):
     print("Process Payment Success API Called with payload:", payload)
     return {"success": True, "message": "결제 처리가 완료되었습니다."}
 
