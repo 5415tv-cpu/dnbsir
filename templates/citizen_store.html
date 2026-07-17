@@ -1,230 +1,667 @@
-<!DOCTYPE html>
-<html lang="ko">
+{% extends "base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>동네비서 - 가게 상세</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
-    <link rel="manifest" href="{{ static_url('manifest.json') }}">
-    <meta name="theme-color" content="#3b82f6">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/static/service-worker.js');
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-        }
-    </style>
-</head>
-
-<body class="bg-gray-50 pb-20">
-
-    <!-- Header -->
-    <div class="relative h-64 bg-gray-300 bg-cover bg-center" style="background-image: url('{{ store.image_url }}');">
-        <div class="absolute inset-0 bg-black/30"></div>
-        <button onclick="history.back()"
-            class="absolute top-4 left-4 bg-white/20 backdrop-blur rounded-full p-2 text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
-        </button>
+{% block page_header %}
+<div class="page-header" style="background: #1A1A1A; color: #fff; padding: 16px 20px; text-align: center; border-bottom: 4px solid #000; position: sticky; top: 0; z-index: 50;">
+    <div style="font-size: 1.2rem; font-weight: 900; letter-spacing: -0.5px; display: flex; justify-content: space-between; align-items: center;">
+        <button onclick="history.back()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">←</button>
+        <span>🍔 {{ store.name }}</span>
+        <div style="width: 24px;"></div>
     </div>
+</div>
+{% endblock %}
 
-    <!-- Content -->
-    <main class="max-w-md mx-auto -mt-8 relative z-10 px-4">
-        <div class="bg-white rounded-xl shadow-sm p-6">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">{{ store.name }}</h1>
-                    <p class="text-sm text-gray-500 mt-1">{{ store.category }}</p>
-                </div>
-                <div class="flex flex-col items-end">
-                    <span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded">영업중</span>
-                    <span class="text-xs text-gray-400 mt-1">⭐ 4.8 (120)</span>
-                </div>
-            </div>
+{% block content %}
+<style>
+    body {
+        background-color: #f5f5f5;
+        font-family: 'Noto Sans KR', sans-serif;
+        padding-bottom: 100px;
+    }
+    
+    /* Store Header Area */
+    .store-hero {
+        width: 100%;
+        height: 250px;
+        background-color: #ddd;
+        background-image: url('{{ store.image_url }}');
+        background-size: cover;
+        background-position: center;
+        border-bottom: 4px solid #1A1A1A;
+    }
 
-            <div class="mt-6 space-y-4">
-                <div class="flex items-start gap-3">
-                    <span class="text-gray-400">📍</span>
-                    <p class="text-sm text-gray-600">위치 정보가 없습니다. (데모 데이터)</p>
-                </div>
-                <div class="flex items-start gap-3">
-                    <span class="text-gray-400">📞</span>
-                    <a href="tel:{{ store.phone }}" class="text-sm text-blue-600 hover:underline">{{ store.phone }}</a>
-                </div>
-                <div class="flex items-start gap-3">
-                    <span class="text-gray-400">📝</span>
-                    <p class="text-sm text-gray-600 leading-relaxed">{{ store.info }}</p>
-                </div>
-            </div>
+    .store-info-card {
+        background: #ffffff;
+        border: 4px solid #1A1A1A;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 6px 6px 0px #1A1A1A;
+        margin: -40px 20px 20px 20px;
+        position: relative;
+        z-index: 10;
+    }
 
-            <!-- Action Buttons -->
-            <div class="flex gap-3 mt-8">
-                <button onclick="toggleChat()"
-                    class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition">
-                    바로 예약하기
-                </button>
-                <button
-                    onclick="window.open(`https://map.kakao.com/link/search/{{ store.address | urlencode }}`, '_blank')"
-                    class="flex-1 bg-gray-100 text-gray-700 py-3 rounded-xl font-bold active:scale-95 transition">
-                    지도 보기
-                </button>
-            </div>
-        </div>
+    .store-name {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #1A1A1A;
+        margin-bottom: 4px;
+    }
 
-        <!-- Menu Preview (Optional) -->
-        {% if store.menu_text %}
-        <div class="bg-white rounded-xl shadow-sm p-6 mt-4">
-            <h2 class="font-bold text-lg mb-4">대표 메뉴</h2>
-            <div class="space-y-3">
-                <p class="text-sm text-gray-600 whitespace-pre-wrap">{{ store.menu_text }}</p>
+    .store-category {
+        display: inline-block;
+        padding: 4px 10px;
+        border: 2px solid #1A1A1A;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 800;
+        background: #ffde59;
+        color: #1A1A1A;
+        margin-bottom: 12px;
+    }
+
+    .store-desc {
+        font-size: 0.95rem;
+        color: #444;
+        font-weight: 600;
+        margin-bottom: 16px;
+    }
+
+    /* Actions */
+    .action-btn-group {
+        display: flex;
+        gap: 12px;
+    }
+
+    .btn-brutalist {
+        flex: 1;
+        padding: 12px 0;
+        background: #fff;
+        border: 3px solid #1A1A1A;
+        border-radius: 12px;
+        font-weight: 900;
+        font-size: 1rem;
+        color: #1A1A1A;
+        box-shadow: 4px 4px 0px #1A1A1A;
+        cursor: pointer;
+        transition: transform 0.1s;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .btn-brutalist.primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-brutalist:active {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0px #1A1A1A;
+    }
+
+    /* Menu Section */
+    .menu-section {
+        padding: 0 20px 20px 20px;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 900;
+        color: #1A1A1A;
+        margin-bottom: 16px;
+        border-bottom: 4px solid #1A1A1A;
+        display: inline-block;
+        padding-bottom: 4px;
+    }
+
+    .product-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .product-card {
+        background: #ffffff;
+        border: 3px solid #1A1A1A;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 4px 4px 0px #1A1A1A;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+    }
+
+    .product-image {
+        width: 80px;
+        height: 80px;
+        background: #f0f0f0;
+        border: 2px solid #1A1A1A;
+        border-radius: 8px;
+        background-size: cover;
+        background-position: center;
+        flex-shrink: 0;
+    }
+
+    .product-info {
+        flex: 1;
+    }
+
+    .product-name {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #1A1A1A;
+        margin-bottom: 4px;
+    }
+
+    .product-price {
+        font-size: 1rem;
+        font-weight: 900;
+        color: #2563eb;
+    }
+
+    .btn-add-cart {
+        background: #ffde59;
+        border: 3px solid #1A1A1A;
+        border-radius: 8px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 900;
+        cursor: pointer;
+        box-shadow: 2px 2px 0px #1A1A1A;
+        transition: transform 0.1s;
+    }
+
+    .btn-add-cart:active {
+        transform: translate(2px, 2px);
+        box-shadow: 0px 0px 0px #1A1A1A;
+    }
+
+    /* Cart Bottom Bar */
+    .cart-bottom-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #1A1A1A;
+        color: white;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        border-top: 4px solid #ffde59;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+    }
+
+    .cart-bottom-bar.show {
+        transform: translateY(0);
+    }
+
+    .cart-summary {
+        font-size: 1.1rem;
+        font-weight: 900;
+    }
+
+    .btn-view-cart {
+        background: #ffde59;
+        color: #1A1A1A;
+        border: 3px solid #000;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    /* Cart Modal */
+    .cart-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 200;
+        display: none;
+        align-items: flex-end;
+    }
+
+    .cart-content {
+        background: #fff;
+        width: 100%;
+        height: 80vh;
+        border-top: 6px solid #1A1A1A;
+        border-radius: 24px 24px 0 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 4px solid #1A1A1A;
+        padding-bottom: 12px;
+        margin-bottom: 16px;
+    }
+
+    .cart-title {
+        font-size: 1.5rem;
+        font-weight: 900;
+    }
+
+    .cart-close {
+        font-size: 2rem;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding-bottom: 20px;
+    }
+
+    .cart-item {
+        border: 3px solid #1A1A1A;
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .cart-checkbox {
+        width: 24px;
+        height: 24px;
+        border: 3px solid #1A1A1A;
+        border-radius: 4px;
+        cursor: pointer;
+        accent-color: #2563eb;
+    }
+
+    .cart-item-info {
+        flex: 1;
+    }
+
+    .cart-item-name {
+        font-weight: 800;
+        font-size: 1.1rem;
+    }
+
+    .cart-item-price {
+        font-weight: 900;
+        color: #2563eb;
+    }
+
+    .cart-qty-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .qty-btn {
+        width: 30px;
+        height: 30px;
+        background: #f0f0f0;
+        border: 2px solid #1A1A1A;
+        border-radius: 6px;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .cart-actions {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .btn-delete-selected {
+        flex: 1;
+        padding: 12px;
+        background: #ff4444;
+        color: white;
+        border: 3px solid #1A1A1A;
+        border-radius: 12px;
+        font-weight: 900;
+        font-size: 1rem;
+        cursor: pointer;
+    }
+
+    .btn-checkout {
+        flex: 2;
+        padding: 12px;
+        background: #2563eb;
+        color: white;
+        border: 3px solid #1A1A1A;
+        border-radius: 12px;
+        font-weight: 900;
+        font-size: 1.2rem;
+        cursor: pointer;
+    }
+
+    /* AI Chat Widget */
+    #aiChatWidget {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        z-index: 99;
+    }
+
+    #chatToggleBtn {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #2563eb;
+        border: 4px solid #1A1A1A;
+        box-shadow: 4px 4px 0px #1A1A1A;
+        color: white;
+        font-size: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+</style>
+
+<!-- Store Hero Image -->
+<div class="store-hero"></div>
+
+<!-- Store Info -->
+<div class="store-info-card">
+    <div class="store-category">{{ store.category or '동네가게' }}</div>
+    <div class="store-name">{{ store.name }}</div>
+    <div style="font-size: 0.9rem; color: #666; margin-bottom: 12px;">⭐ 4.8 (120) | 영업중</div>
+    <div class="store-desc">{{ store.info or '아직 등록된 매장 소개가 없습니다.' }}</div>
+    
+    <div class="action-btn-group">
+        <button class="btn-brutalist primary" onclick="toggleChat()">🤖 AI 예약/문의</button>
+        <a href="https://map.kakao.com/link/search/{{ store.address | urlencode }}" target="_blank" class="btn-brutalist">📍 지도 보기</a>
+    </div>
+</div>
+
+<!-- Product List -->
+<div class="menu-section">
+    <div class="section-title">메뉴 / 상품</div>
+    
+    <div class="product-grid">
+        {% if products %}
+            {% for p in products %}
+            <div class="product-card">
+                <div class="product-image" style="background-image: url('{{ p.image_path or 'https://ui-avatars.com/api/?name=상품&background=f0f0f0&color=1A1A1A' }}')"></div>
+                <div class="product-info">
+                    <div class="product-name">{{ p.name }}</div>
+                    <div class="product-price">{{ "{:,}".format(p.price) }}원</div>
+                </div>
+                <button class="btn-add-cart" onclick="addToCart('{{ p.product_id }}', '{{ p.name }}', {{ p.price }})">+</button>
             </div>
-        </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 40px; border: 4px dashed #1A1A1A; border-radius: 16px;">
+                <div style="font-size: 2rem;">😢</div>
+                <div style="font-weight: 900; margin-top: 8px;">등록된 메뉴가 없습니다.</div>
+            </div>
         {% endif %}
-    </main>
+    </div>
+</div>
 
-    <!-- AI Chat Widget (Customized for Store) -->
-    <div id="aiChatWidget"
-        style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; font-family: 'Noto Sans KR', sans-serif;">
-        <!-- Chat Button -->
-        <button id="chatToggleBtn" onclick="toggleChat()" style="
-            width: 60px; height: 60px; border-radius: 50%; background: #2563eb; color: white; border: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 24px; transition: transform 0.2s;
-        ">
-            💬
-        </button>
+<!-- Cart Bottom Bar -->
+<div class="cart-bottom-bar" id="cartBottomBar">
+    <div class="cart-summary">총 <span id="cartTotalItems">0</span>개 담음</div>
+    <button class="btn-view-cart" onclick="openCart()">장바구니 보기</button>
+</div>
 
-        <!-- Chat Window -->
-        <div id="chatWindow" style="
-            display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; max-width: 90vw;
-            background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-            flex-direction: column; overflow: hidden; border: 1px solid #eee;
-        ">
-            <!-- Header -->
-            <div
-                style="padding: 15px; background: #2563eb; color: white; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: bold;">🤖 {{ store.name }} AI 매니저</span>
-                <span onclick="toggleChat()" style="cursor: pointer; padding: 0 5px;">✕</span>
-            </div>
+<!-- Cart Modal -->
+<div class="cart-modal" id="cartModal">
+    <div class="cart-content">
+        <div class="cart-header">
+            <div class="cart-title">🛒 장바구니</div>
+            <div class="cart-close" onclick="closeCart()">×</div>
+        </div>
+        
+        <div class="cart-items" id="cartItemsContainer">
+            <!-- Items rendered via JS -->
+        </div>
 
-            <!-- Messages -->
-            <div id="chatMessages"
-                style="flex: 1; padding: 15px; overflow-y: auto; background: #f5f5f5; display: flex; flex-direction: column; gap: 10px;">
-                <div
-                    style="align-self: flex-start; background: white; padding: 10px 14px; border-radius: 12px 12px 12px 0; max-width: 85%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); font-size: 0.95rem;">
-                    안녕하세요! {{ store.name }}입니다.<br>
-                    예약이나 주문, 메뉴에 대해 무엇이든 편하게 물어보세요! 😊
-                </div>
-            </div>
+        <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 1.3rem; margin-bottom: 16px;">
+            <span>총 결제금액:</span>
+            <span style="color: #2563eb;"><span id="cartTotalPrice">0</span>원</span>
+        </div>
 
-            <!-- Input -->
-            <div style="padding: 10px; background: white; border-top: 1px solid #eee; display: flex; gap: 5px;">
-                <input type="text" id="chatInput" placeholder="메시지 입력..." onkeypress="handleEnter(event)" style="
-                    flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 0.95rem;
-                ">
-                <button onclick="sendMessage()" style="
-                    background: #2563eb; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 0.95rem;
-                ">전송</button>
-            </div>
+        <div class="cart-actions">
+            <button class="btn-delete-selected" onclick="deleteSelectedItems()">선택 삭제</button>
+            <button class="btn-checkout" onclick="checkout()">결제하기</button>
         </div>
     </div>
+</div>
 
-    <script>
-        const STORE_ID = '{{ store.store_id }}';
-        let userPhone = localStorage.getItem('chatUserPhone') || generateRandomPhone();
+<!-- AI Chat Widget -->
+<div id="aiChatWidget">
+    <button id="chatToggleBtn" onclick="toggleChat()">💬</button>
+    <div id="chatWindow" style="
+        display: none; position: absolute; bottom: 80px; right: 0; width: 350px; height: 500px; max-width: 90vw;
+        background: #fff; border: 4px solid #1A1A1A; border-radius: 16px; box-shadow: 6px 6px 0px #1A1A1A;
+        flex-direction: column; overflow: hidden;
+    ">
+        <!-- Header -->
+        <div style="padding: 15px; background: #1A1A1A; color: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #1A1A1A;">
+            <span style="font-weight: 900; font-size: 1.1rem;">🤖 AI 매니저</span>
+            <span onclick="toggleChat()" style="cursor: pointer; font-weight: 900; font-size: 1.5rem;">×</span>
+        </div>
 
-        function generateRandomPhone() {
-            const phone = '010-' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000);
-            localStorage.setItem('chatUserPhone', phone);
-            return phone;
+        <!-- Messages -->
+        <div id="chatMessages" style="flex: 1; padding: 15px; overflow-y: auto; background: #f5f5f5; display: flex; flex-direction: column; gap: 12px;">
+            <div style="align-self: flex-start; background: white; padding: 12px 16px; border: 3px solid #1A1A1A; border-radius: 16px 16px 16px 0; max-width: 85%; font-weight: 600; box-shadow: 2px 2px 0px #1A1A1A;">
+                안녕하세요! {{ store.name }}입니다.<br>
+                예약이나 주문, 메뉴에 대해 무엇이든 편하게 물어보세요! 😊
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div style="padding: 12px; background: white; border-top: 4px solid #1A1A1A; display: flex; gap: 8px;">
+            <input type="text" id="chatInput" placeholder="메시지를 입력하세요..." onkeypress="handleEnter(event)" style="
+                flex: 1; padding: 12px; border: 3px solid #1A1A1A; border-radius: 12px; outline: none; font-weight: 700;
+            ">
+            <button onclick="sendMessage()" style="
+                background: #ffde59; color: #1A1A1A; border: 3px solid #1A1A1A; padding: 0 16px; border-radius: 12px; font-weight: 900; cursor: pointer; box-shadow: 2px 2px 0px #1A1A1A;
+            ">전송</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cart State
+    let cart = {};
+
+    function updateCartUI() {
+        const totalItems = Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
+        document.getElementById('cartTotalItems').textContent = totalItems;
+        
+        const bottomBar = document.getElementById('cartBottomBar');
+        if (totalItems > 0) {
+            bottomBar.classList.add('show');
+        } else {
+            bottomBar.classList.remove('show');
+            closeCart();
         }
 
-        function toggleChat() {
-            const window = document.getElementById('chatWindow');
-            const btn = document.getElementById('chatToggleBtn');
-            if (window.style.display === 'none' || window.style.display === '') {
-                window.style.display = 'flex';
-                btn.style.transform = 'rotate(90deg)';
-                // AI에게 첫 인사 시키고 싶다면 여기서 초기 트리거를 날릴 수 있습니다.
+        renderCartModal();
+    }
+
+    function addToCart(id, name, price) {
+        if (!cart[id]) {
+            cart[id] = { id, name, price, quantity: 0, selected: true };
+        }
+        cart[id].quantity += 1;
+        updateCartUI();
+        
+        // Visual feedback
+        const btn = event.currentTarget;
+        const originalText = btn.textContent;
+        btn.textContent = '✓';
+        btn.style.background = '#2563eb';
+        btn.style.color = 'white';
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '#ffde59';
+            btn.style.color = '#1A1A1A';
+        }, 300);
+    }
+
+    function updateQty(id, delta) {
+        if (cart[id]) {
+            cart[id].quantity += delta;
+            if (cart[id].quantity <= 0) {
+                delete cart[id];
+            }
+            updateCartUI();
+        }
+    }
+
+    function toggleSelect(id) {
+        if (cart[id]) {
+            cart[id].selected = !cart[id].selected;
+        }
+    }
+
+    function deleteSelectedItems() {
+        for (const id in cart) {
+            if (cart[id].selected) {
+                delete cart[id];
+            }
+        }
+        updateCartUI();
+    }
+
+    function renderCartModal() {
+        const container = document.getElementById('cartItemsContainer');
+        container.innerHTML = '';
+        let totalPrice = 0;
+
+        for (const id in cart) {
+            const item = cart[id];
+            totalPrice += item.price * item.quantity;
+
+            const el = document.createElement('div');
+            el.className = 'cart-item';
+            el.innerHTML = `
+                <input type="checkbox" class="cart-checkbox" ${item.selected ? 'checked' : ''} onchange="toggleSelect('${id}')">
+                <div class="cart-item-info">
+                    <div class="cart-item-name">${item.name}</div>
+                    <div class="cart-item-price">${(item.price * item.quantity).toLocaleString()}원</div>
+                </div>
+                <div class="cart-qty-controls">
+                    <button class="qty-btn" onclick="updateQty('${id}', -1)">-</button>
+                    <span style="font-weight: 900; width: 20px; text-align: center;">${item.quantity}</span>
+                    <button class="qty-btn" onclick="updateQty('${id}', 1)">+</button>
+                </div>
+            `;
+            container.appendChild(el);
+        }
+
+        document.getElementById('cartTotalPrice').textContent = totalPrice.toLocaleString();
+    }
+
+    function openCart() {
+        document.getElementById('cartModal').style.display = 'flex';
+        renderCartModal();
+    }
+
+    function closeCart() {
+        document.getElementById('cartModal').style.display = 'none';
+    }
+
+    function checkout() {
+        const itemsToCheckout = [];
+        for (const id in cart) {
+            itemsToCheckout.push({
+                product_id: id,
+                quantity: cart[id].quantity
+            });
+        }
+        
+        if (itemsToCheckout.length === 0) {
+            alert('장바구니가 비어있습니다.');
+            return;
+        }
+        
+        // Pass to market checkout
+        const dataStr = encodeURIComponent(JSON.stringify(itemsToCheckout));
+        window.location.href = `/market/checkout?data=${dataStr}`;
+    }
+
+    // AI Chat Logic
+    const STORE_ID = '{{ store.store_id }}';
+    let userPhone = localStorage.getItem('chatUserPhone') || generateRandomPhone();
+
+    function generateRandomPhone() {
+        const phone = '010-' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000);
+        localStorage.setItem('chatUserPhone', phone);
+        return phone;
+    }
+
+    function toggleChat() {
+        const cw = document.getElementById('chatWindow');
+        cw.style.display = cw.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        addMessage(text, 'user');
+
+        try {
+            const response = await fetch('/api/citizen/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: text,
+                    store_id: STORE_ID,
+                    phone: userPhone
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                addMessage(data.response, 'ai');
             } else {
-                window.style.display = 'none';
-                btn.style.transform = 'rotate(0deg)';
+                addMessage(`오류가 발생했습니다: ${data.error}`, 'ai');
             }
+        } catch (error) {
+            addMessage('서버 통신 중 오류가 발생했습니다.', 'ai');
         }
+    }
 
-        function handleEnter(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('chatInput');
-            const messages = document.getElementById('chatMessages');
-            const text = input.value.trim();
-            if (!text) return;
-
-            // Add User Message
-            appendMessage(text, 'user');
-            input.value = '';
-
-            // Loading Indicator
-            const loadingId = appendMessage('생각 중...', 'ai', true);
-
-            try {
-                const response = await fetch('/api/citizen/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        message: text,
-                        phone: userPhone,
-                        store_id: STORE_ID
-                    })
-                });
-
-                const data = await response.json();
-
-                // Remove Loading
-                document.getElementById(loadingId).remove();
-
-                if (data.success) {
-                    appendMessage(data.response, 'ai');
-                } else {
-                    appendMessage('오류가 발생했습니다: ' + data.error, 'ai');
-                }
-            } catch (e) {
-                document.getElementById(loadingId).remove();
-                appendMessage('서버통신 오류', 'ai');
-            }
-        }
-
-        function appendMessage(text, sender, isLoading = false) {
-            const messages = document.getElementById('chatMessages');
-            const div = document.createElement('div');
-            div.id = isLoading ? 'msg-loading-' + Date.now() : '';
-            div.style.alignSelf = sender === 'user' ? 'flex-end' : 'flex-start';
-            div.style.background = sender === 'user' ? '#2563eb' : 'white';
-            div.style.color = sender === 'user' ? 'white' : 'black';
-            div.style.padding = '10px 14px';
-            div.style.fontSize = '0.95rem';
-            div.style.lineHeight = '1.5';
-            div.style.borderRadius = sender === 'user' ? '12px 12px 0 12px' : '12px 12px 12px 0';
-            div.style.maxWidth = '85%';
-            div.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-            // Convert newlines to br tags roughly
-            div.innerHTML = text.replace(/\n/g, '<br>');
-            messages.appendChild(div);
-            messages.scrollTop = messages.scrollHeight;
-            return div.id;
-        }
-    </script>
-</body>
-
-</html>
+    function addMessage(text, sender) {
+        const container = document.getElementById('chatMessages');
+        const msgDiv = document.createElement('div');
+        
+        msgDiv.style.alignSelf = sender === 'user' ? 'flex-end' : 'flex-start';
+        msgDiv.style.background = sender === 'user' ? '#ffde59' : '#ffffff';
+        msgDiv.style.color = '#1A1A1A';
+        msgDiv.style.padding = '12px 16px';
+        msgDiv.style.border = '3px solid #1A1A1A';
+        msgDiv.style.borderRadius = sender === 'user' ? '16px 16px 0 16px' : '16px 16px 16px 0';
+        msgDiv.style.maxWidth = '85%';
+        msgDiv.style.fontWeight = '600';
+        msgDiv.style.boxShadow = '2px 2px 0px #1A1A1A';
+        msgDiv.innerHTML = text.replace(/\n/g, '<br>');
+        
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+</script>
+{% endblock %}

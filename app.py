@@ -181,10 +181,21 @@ async def root_redirect(request: Request):
     if store_id:
         store = db.get_store(store_id)
         if store:
+            products = db.get_products(store_id)
+            import urllib.parse
+            import glob
+            
+            matched_images = glob.glob(f"static/uploads/{store_id}_*")
+            if matched_images:
+                store['image_url'] = "/" + matched_images[0].replace('\\\\', '/')
+            elif not store.get('image_url'):
+                store['image_url'] = f"https://ui-avatars.com/api/?name={urllib.parse.quote(store.get('name', 'AI'))}&background=1A1A1A&color=ffde59&size=512"
+            
             return templates.TemplateResponse(request, "citizen_store.html", {
                 "request": request,
                 "api_url": os.environ.get("API_URL", ""),
-                "store": store
+                "store": store,
+                "products": products
             })
 
     cookie_store_id = request.cookies.get("admin_session")
