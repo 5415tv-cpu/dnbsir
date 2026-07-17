@@ -820,7 +820,7 @@
             <a href="/citizen/market/refund" style="color:#fbbf24; font-size: 0.95rem; font-weight: 700; text-decoration:none;">환불정책</a>
         </div>
         <div style="display: flex; gap: 8px; width: 100%;">
-            <div style="background: rgba(251,191,36,0.15); border: 1px solid #fbbf24; border-radius: 16px; padding: 0 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0;" onclick="document.getElementById('btnPay').click()">
+            <div style="background: rgba(251,191,36,0.15); border: 1px solid #fbbf24; border-radius: 16px; padding: 0 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0;" onclick="promptCheckout()">
                 <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">🛒 장바구니</span>
                 <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
             </div>
@@ -930,11 +930,33 @@
 
         let quantities = {};
 
+        function syncCartToSession() {
+            let cart = [];
+            products.forEach(prod => {
+                const q = quantities[prod.id] || 0;
+                if (q > 0) {
+                    cart.push({ id: prod.id, name: prod.name, price: prod.price, qty: q, image: prod.image, region: prod.region });
+                }
+            });
+            sessionStorage.setItem('cart', JSON.stringify(cart));
+        }
+
         // 렌더링 전 이전 상태 배열/객체 초기화 함수 (마운트 시점 엄수)
         function initQuantitiesState() {
             quantities = {};
+            let cartStr = sessionStorage.getItem('cart');
+            if (cartStr) {
+                try {
+                    let cart = JSON.parse(cartStr);
+                    cart.forEach(item => {
+                        quantities[item.id] = item.qty;
+                    });
+                } catch(e) {}
+            }
             products.forEach(prod => {
-                quantities[prod.id] = 0;
+                if (quantities[prod.id] === undefined) {
+                    quantities[prod.id] = 0;
+                }
             });
         }
 
@@ -1024,6 +1046,7 @@
                     qtyEl.innerText = next;
                 }
                 updateFooterPrice();
+                syncCartToSession();
             }
         }
 
@@ -1141,6 +1164,21 @@
         renderProductsList(products);
 
         // 6. Toss Payments 실전 결제 연동 (배송지 입력 모달 연동)
+        function promptCheckout() {
+            let totalItems = 0;
+            products.forEach(prod => {
+                const qty = quantities[prod.id] || 0;
+                if (qty > 0) totalItems += qty;
+            });
+            if (totalItems === 0) {
+                alert("장바구니가 비어 있습니다. 상품을 추가해주세요.");
+                return;
+            }
+            if (confirm("결제하시겠습니까?\n'취소'를 누르시면 상품을 더 추가하실 수 있습니다.")) {
+                handlePayment();
+            }
+        }
+
         function handlePayment() {
             // 결제 전 큼직한 배송 정보 입력 모달 창 띄우기
             document.getElementById("orderModal").style.display = "flex";
