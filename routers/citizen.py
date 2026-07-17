@@ -725,6 +725,17 @@ async def public_create_reservation(data: PublicReservationRequest):
         print(f"[X] Reservation Save Failed: {e}")
         raise HTTPException(status_code=500, detail="예약 저장 실패")
 
+@router.get("/citizen/restaurants", response_class=HTMLResponse)
+async def public_restaurants_page(request: Request):
+    """단골식당 목록 둘러보기"""
+    stores_df = db.get_all_stores()
+    stores = []
+    if stores_df is not None and not stores_df.empty:
+        # owner 계정만 추출 (상점)
+        owner_stores = stores_df[stores_df['role'] == 'owner']
+        stores = owner_stores.to_dict(orient="records")
+    return templates.TemplateResponse(request, "citizen_restaurants.html", {"request": request, "stores": stores})
+
 @router.get("/citizen/market", response_class=HTMLResponse)
 async def public_market_page(request: Request):
     """상품 선택 그리드 화면 (마켓 시작 화면)"""
