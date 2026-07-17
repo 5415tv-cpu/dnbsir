@@ -179,7 +179,7 @@
             const loadingId = appendMessage('생각 중...', 'ai', true);
 
             try {
-                const response = await fetch('/api/chat', {
+                const response = await fetch('/api/citizen/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

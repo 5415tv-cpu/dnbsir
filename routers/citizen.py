@@ -106,6 +106,11 @@ class CourierRequestZero(BaseModel):
 
 class PublicReservationRequest(BaseModel):
     store_id: str
+
+class CitizenChatRequest(BaseModel):
+    message: str
+    phone: str = ""
+    store_id: str = ""
     customer_name: str
     customer_phone: str
     res_date: str
@@ -131,6 +136,47 @@ async def delivery_request_page(request: Request, ref: str = ""):
         "toss_client_key": toss_client_key,
         "google_api_key": google_api_key,
     })
+
+@router.post("/api/payment/success")
+async def process_payment_success_api(payload: PaymentSuccessPayload, request: Request):
+    print("Process Payment Success API Called with payload:", payload)
+    return {"success": True, "message": "결제 처리가 완료되었습니다."}
+
+@router.post("/api/citizen/chat")
+async def citizen_chat(payload: CitizenChatRequest, request: Request):
+    """일반 고객(시민) 전용 AI 매니저 채팅 엔드포인트"""
+    user_message = payload.message.strip()
+    store_id = payload.store_id
+    
+    if not user_message:
+         return {"success": False, "error": "질문 내용을 입력해주세요."}
+    
+    store = db.get_store(store_id)
+    store_name = store.get("name", "해당 매장") if store else "해당 매장"
+    store_type = store.get("store_type", "") if store else ""
+    
+    system_prompt = f"""당신은 '{store_name}' 매장을 방문한 고객을 응대하는 친절하고 유능한 AI 매니저입니다.
+업종: {store_type}
+
+고객의 질문에 친절하고 상세하게 안내하세요. 가급적 길고 상세한 문장으로 답변을 제공해도 좋습니다.
+예약이나 주문 방법, 매장 위치 등을 묻는다면 웹페이지의 버튼과 기능을 이용하라고 안내하세요."""
+
+    try:
+        import ai_manager
+        result = ai_manager.get_ai_response(
+            user_input=user_message,
+            system_prompt=system_prompt,
+            tool_set='customer'
+        )
+        if isinstance(result, dict):
+            response_text = result.get("text", "답변을 생성할 수 없습니다.")
+        else:
+            response_text = str(result)
+            
+        return {"success": True, "response": response_text}
+    except Exception as e:
+        print(f"[/api/citizen/chat] AI Error: {e}")
+        return {"success": False, "error": "AI 서버 오류가 발생했습니다."}
 
 @router.post("/api/delivery/request")
 async def api_delivery_request_zero(data: CourierRequestZero, request: Request):
