@@ -33,7 +33,7 @@
                 <div style="flex: 1;">
                     <div style="font-size: 1rem; font-weight: 900;">{{ product.name }}</div>
                     <div style="font-size: 0.9rem; color: #666; margin-top: 6px;">
-                        {{ "{:,}".format(product.price) }}원
+                        {{ "{:,}".format(product.price|int) }}원
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
