@@ -508,7 +508,7 @@
             price:  {{ p.price }},
             region: "{{ p.name.split(' ')[0] }}",
             img:    "{{ p.image_path }}",
-            desc:   "{{ p.description | truncate(30, true, '') }}"
+            desc:   "{{ (p.description or '') | truncate(30, true, '') }}"
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
