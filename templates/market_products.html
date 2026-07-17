@@ -386,16 +386,10 @@
 <body>
 
 <!-- 헤더 -->
-<header style="display: flex; flex-direction: column; gap: 12px; padding-right: 16px;">
-    <div style="display: flex; align-items: center; gap: 20px;">
-        <div class="header-left" style="margin: 0; padding: 0;">
-            <div class="market-badge">시니어 맞춤 장터</div>
-            <div class="header-title">상품 선택</div>
-        </div>
-        <div class="header-total" style="cursor: pointer; background: rgba(251,191,36,0.15); padding: 5px 16px; border-radius: 12px; border: 1px solid #fbbf24; text-align: center; line-height: 1.2;" onclick="openModal()">
-            <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">🛒 장바구니</span><br>
-            <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
-        </div>
+<header>
+    <div class="header-left">
+        <div class="market-badge">시니어 맞춤 장터</div>
+        <div class="header-title">동네비서 산지직송 마켓</div>
     </div>
 </header>
 
@@ -432,9 +426,13 @@
 </div>
 
 <!-- 하단 결제 바 -->
-<div class="pay-bar">
-    <button class="pay-btn" id="payBtn" disabled onclick="openModal()">
-        🛒 상품을 선택해 주세요
+<div class="pay-bar" style="display: flex; gap: 8px;">
+    <div style="background: rgba(251,191,36,0.15); border: 1px solid #fbbf24; border-radius: 16px; padding: 0 16px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0;" onclick="openModal()">
+        <span style="font-size: 0.8rem; color: #94a3b8; font-weight: 600;">🛒 장바구니</span>
+        <span id="headerTotal" style="font-size: 1.1rem; color: #fbbf24; font-weight: 900;">0원</span>
+    </div>
+    <button class="pay-btn" id="payBtn" disabled onclick="openModal()" style="flex: 1;">
+        상품을 선택해 주세요
     </button>
 </div>
 
@@ -553,11 +551,11 @@
         const btn = document.getElementById('payBtn');
         const hdr = document.getElementById('headerTotal');
         if (total > 0) {
-            hdr.textContent = total.toLocaleString() + '원';
+            if(hdr) hdr.textContent = total.toLocaleString() + '원';
             btn.disabled = false;
-            btn.innerHTML = `🛒 &nbsp;${count}건 / ${total.toLocaleString()}원 결제하기`;
+            btn.innerHTML = `${count}건 / ${total.toLocaleString()}원 결제하기`;
         } else {
-            hdr.textContent = '0원';
+            if(hdr) hdr.textContent = '0원';
             btn.disabled = true;
             btn.innerHTML = '상품을 눌러 담아보세요';
         }
