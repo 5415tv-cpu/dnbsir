@@ -102,7 +102,7 @@
 <div class="restaurant-grid">
     {% if stores %}
         {% for store in stores %}
-        <a href="/citizen/reserve?store_id={{ store.store_id }}" class="restaurant-card">
+        <a href="/?id={{ store.store_id }}" class="restaurant-card">
             <div class="restaurant-icon">🍽️</div>
             <div class="restaurant-info">
                 <div class="restaurant-name">{{ store.name or '이름 없는 식당' }}</div>

@@ -175,6 +175,18 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
 @app.get("/", response_class=HTMLResponse)
 async def root_redirect(request: Request):
     import os
+    
+    # Check if a specific store is requested via query string
+    store_id = request.query_params.get("id")
+    if store_id:
+        store = db.get_store(store_id)
+        if store:
+            return templates.TemplateResponse(request, "citizen_store.html", {
+                "request": request,
+                "api_url": os.environ.get("API_URL", ""),
+                "store": store
+            })
+
     cookie_store_id = request.cookies.get("admin_session")
     if cookie_store_id:
         store = db.get_store(cookie_store_id)
