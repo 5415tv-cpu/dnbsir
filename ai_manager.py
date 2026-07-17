@@ -112,12 +112,20 @@ def determine_model_tier(text):
         
     return 'gemini-3.5-flash'
 
+
+def calculate_cost_and_intent(user_input):
+    complex_keywords = ["예약", "결제", "주문", "통계", "취소", "환불"]
+    for k in complex_keywords:
+        if k in user_input:
+            return 50, "Action/System"
+    return 10, "Simple Query"
+
 def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set='customer', user_id=None):
     """AI 상담원 응답 생성 (Composite Mode: Function Calling Enabled & Billing/Auth injected)"""
     
     # [Authentication & Billing Phase]
     is_premium = False
-    credit_cost = 10
+    credit_cost, intent_category = calculate_cost_and_intent(user_input)
     
     if user_id:
         is_premium = db.check_ai_member(user_id)
@@ -130,7 +138,7 @@ def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set=
             # Simple Mode: Check free usage limits
             allowed, count = db.check_and_increment_free_usage(user_id, max_count=3)
             if not allowed:
-                return {"text": "무료 이용 횟수(3회)를 모두 소진하셨습니다. 더 많은 서비스를 이용하시려면 회원 가입을 해주세요.", "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}}
+                return {"text": "무료 이용 횟수(3회)를 모두 소진하셨습니다. 더 많은 서비스를 이용하시려면 <a href='/token-recharge' style='color: blue; text-decoration: underline;'>회원 가입 및 적립금 충전</a>을 진행해주세요.", "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}}
     
     # [Routing] Determine Model
     model_name = determine_model_tier(user_input)
@@ -178,6 +186,10 @@ def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set=
                 "output_tokens": len(text) // 4,
                 "total_tokens": (len(full_prompt) + len(text)) // 4
             }
+            
+        # Log Usage for Platform OS Analytics
+        if is_premium and user_id:
+            db.log_ai_usage(user_id, intent_category, credit_cost)
             
         return {
             "text": text,
