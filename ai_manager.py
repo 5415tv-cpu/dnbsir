@@ -108,9 +108,9 @@ def determine_model_tier(text):
     # Heuristic 2: Keywords
     complex_keywords = ["분석", "비교", "이유", "해결", "기획", "작성", "요약"]
     if any(keyword in text for keyword in complex_keywords):
-        return 'gemini-3.5-flash'
+        return 'gemini-1.5-flash'
         
-    return 'gemini-3.5-flash'
+    return 'gemini-1.5-flash'
 
 def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set='customer'):
     """AI 상담원 응답 생성 (Composite Mode: Function Calling Enabled)"""
