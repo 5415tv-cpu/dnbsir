@@ -112,16 +112,35 @@ def determine_model_tier(text):
         
     return 'gemini-3.5-flash'
 
-def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set='customer'):
-    """AI 상담원 응답 생성 (Composite Mode: Function Calling Enabled)"""
+def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set='customer', user_id=None):
+    """AI 상담원 응답 생성 (Composite Mode: Function Calling Enabled & Billing/Auth injected)"""
+    
+    # [Authentication & Billing Phase]
+    is_premium = False
+    credit_cost = 10
+    
+    if user_id:
+        is_premium = db.check_ai_member(user_id)
+        if is_premium:
+            # Premium Mode: Deduct credits atomically
+            success, msg = db.deduct_credit_atomically(user_id, amount=credit_cost)
+            if not success:
+                return {"text": msg, "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}}
+        else:
+            # Simple Mode: Check free usage limits
+            allowed, count = db.check_and_increment_free_usage(user_id, max_count=3)
+            if not allowed:
+                return {"text": "무료 이용 횟수(3회)를 모두 소진하셨습니다. 더 많은 서비스를 이용하시려면 회원 가입을 해주세요.", "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}}
     
     # [Routing] Determine Model
     model_name = determine_model_tier(user_input)
-    # print(f"[*] Routing to Model: {model_name}") # Optional logging
     
     model = get_gemini_client(model_name, tool_set=tool_set)
     if not model:
         print(f"Model is None! model_name: {model_name}, tool_set: {tool_set}")
+        # Refund if premium
+        if is_premium and user_id:
+            db.refund_credit(user_id, amount=credit_cost)
         return "죄송합니다. 현재 AI 시스템이 오프라인 상태입니다. 나중에 다시 시도해주세요."
     
     try:
@@ -136,10 +155,8 @@ def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set=
 
         chat = model.start_chat(enable_automatic_function_calling=True)
         
-        # [Billing] Calculate input tokens approximately or rely on response metadata
         full_prompt = f"{system_prompt}\n\n사용자: {user_input}"
         
-        # Enforce Token Limit for Cost Control (Approx 500 tokens ~ 2000 chars)
         generation_config = genai.types.GenerationConfig(
             max_output_tokens=1000,
             temperature=0.7
@@ -149,8 +166,6 @@ def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set=
         
         text = response.text.strip()
         
-        # [Billing] Extract Token Usage
-        # Handle cases where usage_metadata might be missing or different structure
         try:
             usage = {
                 "input_tokens": response.usage_metadata.prompt_token_count,
@@ -158,7 +173,6 @@ def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set=
                 "total_tokens": response.usage_metadata.total_token_count
             }
         except:
-            # Fallback estimation if metadata is missing (1 char ~ 0.25 token)
             usage = {
                 "input_tokens": len(full_prompt) // 4,
                 "output_tokens": len(text) // 4,
@@ -171,8 +185,13 @@ def get_ai_response(user_input, chat_history=None, system_prompt=None, tool_set=
         }
     except Exception as e:
         print(f"AI Error: {e}")
+        # [Refund Phase] If AI fails, restore deducted credits for premium members
+        if is_premium and user_id:
+            db.refund_credit(user_id, amount=credit_cost)
+            print(f"Refunded {credit_cost} credits to {user_id} due to AI error.")
+            
         return {
-            "text": "죄송합니다. 오류가 발생했습니다.",
+            "text": "죄송합니다. 오류가 발생하여 답변을 생성하지 못했습니다. (차감된 적립금은 환불되었습니다)",
             "usage": {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
         }
 

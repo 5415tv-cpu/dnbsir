@@ -148,6 +148,9 @@ async def citizen_chat(payload: CitizenChatRequest, request: Request):
     user_message = payload.message.strip()
     store_id = payload.store_id
     
+    # Use phone as user_id, fallback to IP address for free users
+    user_id = payload.phone.strip() if payload.phone else request.client.host
+    
     if not user_message:
          return {"success": False, "error": "질문 내용을 입력해주세요."}
     
@@ -169,7 +172,8 @@ async def citizen_chat(payload: CitizenChatRequest, request: Request):
         result = ai_manager.get_ai_response(
             user_input=user_message,
             system_prompt=system_prompt,
-            tool_set='customer'
+            tool_set='customer',
+            user_id=user_id
         )
         if isinstance(result, dict):
             response_text = result.get("text", "답변을 생성할 수 없습니다.")
