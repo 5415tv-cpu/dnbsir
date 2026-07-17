@@ -347,9 +347,13 @@
         document.getElementById('content').innerHTML = `
             <!-- 주문 상품 -->
             <div class="section">
-                <div class="section-title">🛒 주문 상품</div>
-                ${cart.map(item => `
-                    <div class="order-item">
+                <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>🛒 주문 상품</span>
+                    <button class="btn" style="padding:6px 12px; font-size:0.85rem; font-weight:700; background:#334155; color:#f8fafc; border:none; border-radius:8px; cursor:pointer;" onclick="deleteSelectedItems()">선택 삭제</button>
+                </div>
+                ${cart.map((item, index) => `
+                    <div class="order-item" style="align-items:center;">
+                        <input type="checkbox" class="cart-checkbox" data-index="${index}" style="margin-right:12px; width:20px; height:20px; cursor:pointer; accent-color:#fbbf24;">
                         <img class="order-img" src="${item.img}" alt="${item.name}" onerror="this.src='/static/images/potato_pack.png'">
                         <div class="order-info">
                             <div class="order-name">${item.name}</div>
@@ -485,6 +489,34 @@
             unlockScreen();
             if (err.code !== 'USER_CANCEL') alert('결제 오류: ' + err.message);
         });
+    }
+
+    // 다음 우편번호 레이어 닫기
+    function closeDaumPostcode() {
+        document.getElementById('daumLayer').style.display = 'none';
+    }
+
+    // 선택 상품 삭제
+    function deleteSelectedItems() {
+        const checkboxes = document.querySelectorAll('.cart-checkbox');
+        const indicesToDelete = [];
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                indicesToDelete.push(parseInt(cb.getAttribute('data-index')));
+            }
+        });
+        
+        if (indicesToDelete.length === 0) {
+            alert("삭제할 상품을 체크박스로 선택해주세요.");
+            return;
+        }
+        
+        if (confirm("선택하신 상품을 장바구니에서 삭제하시겠습니까?")) {
+            let cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
+            cart = cart.filter((_, idx) => !indicesToDelete.includes(idx));
+            sessionStorage.setItem('cart', JSON.stringify(cart));
+            window.location.reload();
+        }
     }
 
     /* ── 오버레이 잠금 / 해제 헬퍼 ── */
