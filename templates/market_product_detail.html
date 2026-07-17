@@ -554,16 +554,16 @@
         const ex = cart.find(i=>i.id===PRODUCT.id);
         if (ex) ex.qty+=qty; else cart.push({...PRODUCT, qty});
         saveCart(cart); updateCartBadge();
-        const t=document.getElementById('toast');
-        t.classList.add('show'); 
-        setTimeout(() => {
-            t.classList.remove('show');
+        
+        if (confirm("장바구니에 담겼습니다.\n지금 바로 결제 화면으로 이동할까요?\n\n('취소'를 누르시면 이전 화면으로 돌아가 상품을 더 추가할 수 있습니다.)")) {
+            window.location.href = '/citizen/market/checkout';
+        } else {
             if (document.referrer) {
                 window.location.href = document.referrer;
             } else {
                 window.location.href = '/citizen/market';
             }
-        }, 800);
+        }
     }
 
     function buyNow() {
