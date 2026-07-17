@@ -748,7 +748,9 @@ async def market_product_detail_page(request: Request, product_id: int):
 @router.get("/citizen/market/checkout", response_class=HTMLResponse)
 async def market_checkout_page(request: Request):
     """배송 정보 입력 및 결제 화면"""
-    return templates.TemplateResponse(request, "market_checkout.html", {"request": request})
+    import config
+    toss_client_key = config.get_settings().app.toss_client_key
+    return templates.TemplateResponse(request, "market_checkout.html", {"request": request, "toss_client_key": toss_client_key})
 
 @router.get("/citizen/market/refund", response_class=HTMLResponse)
 async def market_refund_page(request: Request):
