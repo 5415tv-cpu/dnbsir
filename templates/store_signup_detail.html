@@ -3,145 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>동네비서 1분 자동 입점</title>
+    <title>동네비서 1분 자동 입점 (키오스크)</title>
     <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.1/dist/browser-image-compression.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
+        
         body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-            background-color: #f8f9fa;
-            color: #333;
+            font-family: 'Outfit', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
         }
-        .container {
-            background: white;
+
+        .kiosk-container {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
             padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             width: 100%;
-            max-width: 500px;
+            max-width: 560px;
+            box-sizing: border-box;
         }
+
         h1 {
             margin-top: 0;
-            color: #111;
-            font-size: 24px;
+            font-size: 2.2rem;
+            font-weight: 900;
+            text-align: center;
+            color: #ffffff;
+            letter-spacing: -1px;
             margin-bottom: 8px;
         }
+
         p.subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 15px;
+            color: #94a3b8;
+            text-align: center;
+            margin-bottom: 35px;
+            font-size: 1.05rem;
+            font-weight: 500;
         }
+
+        /* Stepper */
+        .stepper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .step {
+            width: 38px;
+            height: 38px;
+            border-radius: 50px;
+            background: #334155;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: #ef4444;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+            transform: scale(1.15);
+        }
+
+        .step.completed {
+            background: #10b981;
+            color: #ffffff;
+        }
+
+        .step-line {
+            flex: 0.15;
+            height: 3px;
+            background: #334155;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .step-line.completed {
+            background: #10b981;
+        }
+
+        /* Forms & Steps */
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 25px;
+            color: #ffffff;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+
+        /* Industry Grid */
+        .industry-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+
+        .industry-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 18px 24px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .industry-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .industry-card.selected {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+        }
+
+        .industry-icon {
+            font-size: 2.2rem;
+        }
+
+        .industry-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        /* Inputs */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
+
         label {
             display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            font-size: 14px;
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #cbd5e1;
         }
-        input[type="text"], input[type="file"], textarea {
+
+        input[type="text"], textarea {
             width: 100%;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #ffffff;
+            font-size: 1.1rem;
             box-sizing: border-box;
             font-family: inherit;
+            transition: all 0.3s ease;
         }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
         .domain-input-group {
             display: flex;
             align-items: center;
         }
+
         .domain-input-group input {
             flex: 1;
             border-top-right-radius: 0;
             border-bottom-right-radius: 0;
         }
+
         .domain-suffix {
-            background: #f1f3f5;
-            padding: 12px 16px;
-            border: 1px solid #ddd;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 16px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
             border-left: none;
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
-            color: #555;
-            font-size: 14px;
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+            color: #cbd5e1;
+            font-size: 1.1rem;
+            font-weight: 600;
         }
-        button {
-            width: 100%;
-            padding: 14px;
-            background-color: #FF5A5F;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: bold;
+
+        /* File Upload */
+        .upload-zone {
+            border: 3px dashed rgba(255, 255, 255, 0.15);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
             cursor: pointer;
-            transition: background-color 0.2s;
-            margin-top: 10px;
+            background: rgba(15, 23, 42, 0.4);
+            transition: all 0.3s ease;
         }
-        button:hover {
-            background-color: #E0484D;
+
+        .upload-zone:hover {
+            border-color: #ef4444;
+            background: rgba(15, 23, 42, 0.6);
         }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+        }
+
+        .upload-text {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .upload-subtext {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        #image-preview {
+            width: 100%;
+            max-height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-top: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        /* Buttons navigation */
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 35px;
+        }
+
+        button {
+            flex: 1;
+            padding: 18px;
+            border-radius: 14px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        button.btn-next {
+            background: #ef4444;
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        button.btn-next:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+        }
+
+        button.btn-next:disabled {
+            background: #334155;
+            color: #64748b;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        button.btn-back {
+            background: #334155;
+            color: #cbd5e1;
+            max-width: 130px;
+        }
+
+        button.btn-back:hover {
+            background: #475569;
+            color: #ffffff;
+        }
+
         .security-notice {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 6px;
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: #64748b;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            line-height: 1.5;
+            text-align: center;
+        }
+
+        /* Legal Footer */
+        .legal-footer {
+            background-color: rgba(15, 23, 42, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 40px 20px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.8;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: 40px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="kiosk-container">
         <h1>동네비서 파트너 입점</h1>
         <p class="subtitle">사진 1장과 이름만 입력하면 즉시 나만의 상점이 완성됩니다.</p>
         
-        <!-- 보안상 enctype="multipart/form-data" 필수 -->
-        <form action="/onboard" method="POST" enctype="multipart/form-data">
+        <!-- Stepper Indicator -->
+        <div class="stepper">
+            <div class="step active" id="step-1-indicator">1</div>
+            <div class="step-line" id="line-1"></div>
+            <div class="step" id="step-2-indicator">2</div>
+            <div class="step-line" id="line-2"></div>
+            <div class="step" id="step-3-indicator">3</div>
+        </div>
+
+        <form id="onboardForm" action="/onboard" method="POST" enctype="multipart/form-data">
             
-            <div class="form-group">
-                <label for="subdomain">원하시는 인터넷 주소 (영문)</label>
-                <div class="domain-input-group">
-                    <input type="text" id="subdomain" name="subdomain" placeholder="kimfarm" required pattern="[a-zA-Z0-9-]+" title="영문자와 숫자, 하이픈만 가능합니다.">
-                    <div class="domain-suffix">.dongnebiseo.com</div>
+            <!-- STEP 1: 업종 선택 -->
+            <div class="form-step active" id="step-1">
+                <div class="step-title">어떤 업종의 상점인가요?</div>
+                
+                <!-- Hidden native select for form submission -->
+                <select id="business_type" name="business_type" style="display: none;">
+                    <option value="hotel" selected>호텔/펜션/숙박</option>
+                    <option value="restaurant">음식점/식당</option>
+                    <option value="hair_salon">미용실/뷰티샵</option>
+                    <option value="clinic">병원/클리닉</option>
+                    <option value="rental">장비/렌탈 대여 서비스</option>
+                    <option value="courier">택배/배송 기사</option>
+                    <option value="other">기타 서비스 업종</option>
+                </select>
+
+                <div class="industry-grid">
+                    <div class="industry-card selected" onclick="selectIndustry('hotel')">
+                        <div class="industry-icon">🏨</div>
+                        <div class="industry-name">호텔 / 펜션 / 숙박</div>
+                    </div>
+                    <div class="industry-card" onclick="selectIndustry('restaurant')">
+                        <div class="industry-icon">🍕</div>
+                        <div class="industry-name">음식점 / 식당</div>
+                    </div>
+                    <div class="industry-card" onclick="selectIndustry('hair_salon')">
+                        <div class="industry-icon">✂️</div>
+                        <div class="industry-name">미용실 / 뷰티샵</div>
+                    </div>
+                    <div class="industry-card" onclick="selectIndustry('clinic')">
+                        <div class="industry-icon">🏥</div>
+                        <div class="industry-name">병원 / 클리닉</div>
+                    </div>
+                    <div class="industry-card" onclick="selectIndustry('rental')">
+                        <div class="industry-icon">🎿</div>
+                        <div class="industry-name">장비 / 렌탈 대여 서비스</div>
+                    </div>
+                    <div class="industry-card" onclick="selectIndustry('courier')">
+                        <div class="industry-icon">🚚</div>
+                        <div class="industry-name">택배 기사</div>
+                    </div>
+                    <div class="industry-card" onclick="selectIndustry('other')">
+                        <div class="industry-icon">✨</div>
+                        <div class="industry-name">기타</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-group">
-                <label for="store_name">상점 이름</label>
-                <input type="text" id="store_name" name="store_name" placeholder="예: 소백산 김씨농장" required>
+            <!-- STEP 2: 상점 기본 정보 -->
+            <div class="form-step" id="step-2">
+                <div class="step-title">상점의 기본 정보를 입력하세요</div>
+                
+                <div class="form-group">
+                    <label for="store_name">상점 이름</label>
+                    <input type="text" id="store_name" name="store_name" placeholder="예: 태백 파크 하얏트" required oninput="validateStep2()">
+                </div>
+
+                <div class="form-group">
+                    <label for="subdomain">원하시는 인터넷 주소 (영문)</label>
+                    <div class="domain-input-group">
+                        <input type="text" id="subdomain" name="subdomain" placeholder="myhotel" required pattern="[a-zA-Z0-9-]+" title="영문자와 숫자, 하이픈만 가능합니다." oninput="validateStep2()">
+                        <div class="domain-suffix">.dongnebiseo.com</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">간단한 소개 (선택)</label>
+                    <textarea id="description" name="description" rows="3" placeholder="예: 깨끗하고 안락한 객실과 아름다운 태백산 뷰를 제공합니다."></textarea>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-back" onclick="goToStep(1)">이전</button>
+                    <button type="button" id="next-btn-2" class="btn-next" onclick="goToStep(3)" disabled>다음 단계</button>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="description">간단한 소개 (선택)</label>
-                <textarea id="description" name="description" rows="3" placeholder="예: 당일 수확한 신선한 사과만 보내드립니다."></textarea>
+            <!-- STEP 3: 이미지 업로드 -->
+            <div class="form-step" id="step-3">
+                <div class="step-title">대표 사진을 업로드하세요</div>
+                
+                <div class="form-group">
+                    <label>대표 사진 업로드 (5MB 이하, JPG/PNG)</label>
+                    <div class="upload-zone" onclick="triggerFileInput()">
+                        <div class="upload-icon">📸</div>
+                        <div class="upload-text">사진 찾기 또는 드래그</div>
+                        <div class="upload-subtext">16:9 비율로 자동 맞춤 및 최적화가 진행됩니다</div>
+                        <img id="image-preview" src="#" alt="대표 사진 미리보기">
+                    </div>
+                    <!-- Hidden native file input -->
+                    <input type="file" id="store_image" name="store_image" accept=".jpg, .jpeg, .png" required style="display: none;" onchange="handleFileSelected(event)">
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn-back" onclick="goToStep(2)">이전</button>
+                    <button type="submit" id="submit-btn" class="btn-next" disabled>1분 만에 상점 만들기</button>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="store_image">대표 사진 업로드 (5MB 이하, JPG/PNG)</label>
-                <input type="file" id="store_image" name="store_image" accept=".jpg, .jpeg, .png" required>
-            </div>
-
-            <button type="submit">1분 만에 상점 만들기</button>
         </form>
 
         <div class="security-notice">
             🔒 <b>보안 시스템 가동 중</b>: 해킹 방지를 위해 이미지 확장자 변조 검사 및 파일 헤더 분석이 자동으로 수행되며, 5MB 이상의 파일은 업로드가 원천 차단됩니다.
         </div>
     </div>
-    
+
     <script>
-        document.querySelector('form').addEventListener('submit', async function(e) {
+        // 업종별 동적 플레이스홀더 사전
+        const domainDict = {
+            hotel: {
+                subdomain: "myhotel",
+                store_name: "예: 태백 파크 하얏트",
+                description: "예: 깨끗하고 안락한 객실과 아름다운 태백산 뷰를 제공합니다."
+            },
+            restaurant: {
+                subdomain: "tastyhouse",
+                store_name: "예: 삼수동 한우촌",
+                description: "예: 엄선된 1등급 태백 한우와 깔끔한 반찬을 대접합니다."
+            },
+            hair_salon: {
+                subdomain: "stylehair",
+                store_name: "예: 라비앙 헤어 태백점",
+                description: "예: 1:1 맞춤 상담으로 인생 헤어스타일을 찾아드립니다."
+            },
+            clinic: {
+                subdomain: "drkim",
+                store_name: "예: 속편한 이비인후과",
+                description: "예: 친절하고 정확한 진료로 온 가족의 건강을 지켜드립니다."
+            },
+            rental: {
+                subdomain: "skiplay",
+                store_name: "예: 대관령 스키 렌탈샵",
+                description: "예: 최신 프리미엄 보드 장비와 고기능 방한 의류를 대여해 드립니다."
+            },
+            courier: {
+                subdomain: "couriersong",
+                store_name: "예: 삼수동 우체국택배 송기사",
+                description: "예: 빠르고 안전하게 물건을 배송해 드립니다."
+            },
+            other: {
+                subdomain: "bizpartner",
+                store_name: "예: 태백 세탁소 / 종합인테리어",
+                description: "예: 신뢰할 수 있는 지역 파트너 서비스입니다."
+            }
+        };
+
+        let currentStep = 1;
+
+        function selectIndustry(industry) {
+            // Update hidden select element
+            document.getElementById('business_type').value = industry;
+            
+            // Visual feedback on card selection
+            document.querySelectorAll('.industry-card').forEach(card => card.classList.remove('selected'));
+            event.currentTarget.classList.add('selected');
+            
+            // Update placeholders dynamically
+            const data = domainDict[industry] || domainDict.hotel;
+            document.getElementById('subdomain').placeholder = data.subdomain;
+            document.getElementById('store_name').placeholder = data.store_name;
+            document.getElementById('description').placeholder = data.description;
+            
+            // Auto transition to step 2 after a brief delay for tactile feedback
+            setTimeout(() => {
+                goToStep(2);
+            }, 300);
+        }
+
+        function validateStep2() {
+            const name = document.getElementById('store_name').value.trim();
+            const domain = document.getElementById('subdomain').value.trim();
+            const nextBtn = document.getElementById('next-btn-2');
+            
+            if (name && domain && /^[a-zA-Z0-9-]+$/.test(domain)) {
+                nextBtn.disabled = false;
+            } else {
+                nextBtn.disabled = true;
+            }
+        }
+
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
+            
+            // Show target step
+            document.getElementById(`step-${step}`).classList.add('active');
+            
+            // Update Stepper styling
+            for (let i = 1; i <= 3; i++) {
+                const indicator = document.getElementById(`step-${i}-indicator`);
+                const line = document.getElementById(`line-${i}`);
+                
+                if (i < step) {
+                    indicator.className = 'step completed';
+                    indicator.innerText = '✓';
+                    if (line) line.className = 'step-line completed';
+                } else if (i === step) {
+                    indicator.className = 'step active';
+                    indicator.innerText = i;
+                    if (line) line.className = 'step-line';
+                } else {
+                    indicator.className = 'step';
+                    indicator.innerText = i;
+                    if (line) line.className = 'step-line';
+                }
+            }
+            
+            currentStep = step;
+            if (step === 2) {
+                validateStep2();
+            }
+        }
+
+        function triggerFileInput() {
+            document.getElementById('store_image').click();
+        }
+
+        function handleFileSelected(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('image-preview');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+                submitBtn.disabled = false;
+            } else {
+                preview.src = '#';
+                preview.style.display = 'none';
+                submitBtn.disabled = true;
+            }
+        }
+
+        // Image compression & cropper algorithm before submit
+        document.getElementById('onboardForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const fileInput = document.getElementById('store_image');
-            const submitBtn = document.querySelector('button[type="submit"]');
+            const submitBtn = document.getElementById('submit-btn');
             
             if (!fileInput.files || fileInput.files.length === 0) {
                 alert("대표 사진을 반드시 선택해주세요.");
@@ -150,14 +602,13 @@
             
             const file = fileInput.files[0];
             
-            // 버튼 상태 변경
+            // Tactile feedback on submit button loading
             const originalBtnText = submitBtn.innerText;
-            submitBtn.innerText = "사진을 최적화하는 중입니다...";
+            submitBtn.innerText = "사진 최적화 중입니다...";
             submitBtn.disabled = true;
-            submitBtn.style.backgroundColor = "#999";
             
             try {
-                // 1. EXIF 회전 문제 해결 및 초기 리사이즈 (OOM 방지를 위해 가로세로 최대 2560px 제한)
+                // 1. EXIF rotation and image scaling down to 2560px
                 const preOptions = {
                     maxSizeMB: 5,
                     maxWidthOrHeight: 2560,
@@ -166,7 +617,7 @@
                 };
                 const orientedBlob = await imageCompression(file, preOptions);
                 
-                // 2. Blob을 Image 객체로 로드하여 16:9 중앙 크롭
+                // 2. Load blob to crop into 16:9 aspect ratio
                 const imageUrl = URL.createObjectURL(orientedBlob);
                 const image = new Image();
                 
@@ -185,16 +636,13 @@
                 let sourceX = 0, sourceY = 0, sourceWidth = image.width, sourceHeight = image.height;
                 
                 if (originalRatio > targetRatio) {
-                    // 이미지가 더 넓음 (가로를 자름)
                     sourceWidth = image.height * targetRatio;
                     sourceX = (image.width - sourceWidth) / 2;
                 } else {
-                    // 이미지가 더 높음 (세로를 자름)
                     sourceHeight = image.width / targetRatio;
                     sourceY = (image.height - sourceHeight) / 2;
                 }
                 
-                // 최종 캔버스 크기 (최대 가로 1920 기준)
                 const finalWidth = Math.min(1920, sourceWidth);
                 const finalHeight = finalWidth / targetRatio;
                 
@@ -208,14 +656,13 @@
                     0, 0, finalWidth, finalHeight
                 );
                 
-                // 3. 캔버스를 Blob으로 변환
                 const croppedBlob = await new Promise((resolve) => {
                     canvas.toBlob(resolve, 'image/jpeg', 0.9);
                 });
                 
-                if (!croppedBlob) throw new Error("Canvas to Blob failed");
+                if (!croppedBlob) throw new Error("Canvas parsing failed");
                 
-                // 4. 최종 1MB 이하로 재압축 보장
+                // 3. Compress final file to under 1MB
                 const finalOptions = {
                     maxSizeMB: 1,
                     maxWidthOrHeight: 1920,
@@ -227,28 +674,42 @@
                 const croppedFileObj = new File([croppedBlob], "temp.jpg", { type: "image/jpeg" });
                 const finalCompressedFile = await imageCompression(croppedFileObj, finalOptions);
                 
-                // 새로운 File 객체 생성 (기존 파일명 유지, 확장자는 .jpg)
                 const newFileName = file.name.replace(/\.[^/.]+$/, "") + "_cropped.jpg";
                 const newFileObj = new File([finalCompressedFile], newFileName, {
                     type: "image/jpeg",
                 });
                 
-                // fileInput 값 교체
                 const dataTransfer = new DataTransfer();
                 dataTransfer.items.add(newFileObj);
                 fileInput.files = dataTransfer.files;
                 
-                // 폼 강제 제출 (이벤트 리스너 우회)
+                // Submit native form bypassing event handler
                 HTMLFormElement.prototype.submit.call(this);
                 
             } catch (error) {
-                console.error("이미지 압축 중 오류 발생:", error);
-                alert("이미지 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+                console.error("Image processing error:", error);
+                alert("이미지 처리 중 오류가 발생했습니다. 다시 시도해 주세요.");
                 submitBtn.innerText = originalBtnText;
                 submitBtn.disabled = false;
-                submitBtn.style.backgroundColor = ""; // 원래 색상으로 복구 (CSS 클래스 의존)
             }
         });
     </script>
+
+    <!-- TANTAN LEGAL FOOTER -->
+<footer style="background-color: #f1f3f5; padding: 40px 20px; text-align: center; color: #495057; font-size: 14px; line-height: 1.8; width: 100%; border-top: 1px solid #e9ecef; position: relative; z-index: 9999; clear: both; margin-top: auto;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 8px; color: #212529;">상호명: 탄탄제작소</div>
+    <div>대표자: 이영준</div>
+    <div>사업자등록번호: 442-32-01655</div>
+    <div>주소: 강원특별자치도 태백시 (상세주소)</div>
+    <div>연락처: 010-2384-7447</div>
+    <div>통신판매업 신고번호: 제2026-강원태백-0013호</div>
+    <div>출원된 상표(출원번호: 4-2026-023525-4)</div>
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+        <a href="/agreement" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">이용약관</a>
+        <a href="/agreement?tab=tab2" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">개인정보처리방침</a>
+        <a href="/agreement?tab=tab3" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px;">위치기반서비스 이용약관</a>
+    </div>
+    <div style="margin-top: 15px; font-size: 13px; color: #868e96;">Copyright 2026. Tantan Studio all rights reserved.</div>
+</footer>
 </body>
 </html>

@@ -702,3 +702,43 @@ def get_crm_customers_by_tag(store_id, tag):
         return db.get_crm_customers_by_tag(store_id, tag)
     return pd.DataFrame()
 
+
+
+def setup_ai_member(user_id, initial_balance=0):
+    return db.setup_ai_member(user_id, initial_balance)
+
+def check_ai_member(user_id):
+    return db.check_ai_member(user_id)
+
+def check_and_increment_free_usage(user_id, max_count=3):
+    return db.check_and_increment_free_usage(user_id, max_count)
+
+def deduct_credit_atomically(user_id, amount=10):
+    return db.deduct_credit_atomically(user_id, amount)
+
+def refund_credit(user_id, amount=10):
+    return db.refund_credit(user_id, amount)
+
+def log_ai_usage_analytics(user_id, intent, cost):
+    return db.log_ai_usage_analytics(user_id, intent, cost)
+
+
+# ==========================================
+# 🏨 Room Reservation Module Proxy Mappings
+# ==========================================
+
+def check_room_availability(store_id, room_id, check_in, check_out, exclude_reservation_id=None):
+    return db.check_room_availability(store_id, room_id, check_in, check_out, exclude_reservation_id)
+
+def hold_room_reservation(store_id, room_id, check_in, check_out, guest_info, hold_duration_seconds=600):
+    return db.hold_room_reservation(store_id, room_id, check_in, check_out, guest_info, hold_duration_seconds)
+
+def confirm_room_reservation(reservation_id, store_id):
+    return db.confirm_room_reservation(reservation_id, store_id)
+
+def cleanup_expired_holds():
+    return db.cleanup_expired_holds()
+
+def get_room_reservation(reservation_id, store_id):
+    return db.get_room_reservation(reservation_id, store_id)
+

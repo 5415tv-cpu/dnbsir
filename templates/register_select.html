@@ -8,23 +8,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
+        body, html {
+            width: 100%; height: 100%;
             font-family: 'Noto Sans KR', sans-serif;
-            background: #f1f5f9;
-            min-height: 100vh;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 24px 16px;
         }
 
         .back-btn {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: white;
-            border: 2px solid #e2e8f0;
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             width: 44px;
             height: 44px;
@@ -33,34 +34,42 @@
             justify-content: center;
             font-size: 1.2rem;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             text-decoration: none;
-            color: #334155;
+            color: #f8fafc;
             transition: all 0.2s;
         }
-        .back-btn:hover { background: #f8fafc; transform: scale(1.05); }
+        .back-btn:hover { background: rgba(255, 255, 255, 0.1); transform: scale(1.05); }
 
         .container {
             width: 100%;
             max-width: 420px;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 40px 30px;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin: auto 20px;
         }
 
         .logo-area {
             text-align: center;
-            margin-bottom: 36px;
+            margin-bottom: 30px;
         }
-        .logo-area .emoji { font-size: 3rem; margin-bottom: 12px; display: block; }
+        .logo-area .emoji { font-size: 2.5rem; margin-bottom: 8px; display: block; }
         .logo-area h1 {
             font-size: 1.7rem;
             font-weight: 900;
-            color: #0f172a;
+            color: #f8fafc;
             margin-bottom: 8px;
             line-height: 1.3;
         }
         .logo-area p {
-            font-size: 0.9rem;
-            color: #64748b;
+            font-size: 1.05rem;
+            color: #cbd5e1;
             line-height: 1.6;
+            font-weight: 700;
         }
 
         .role-card {
@@ -83,19 +92,19 @@
         .role-card:active { transform: translateY(0); }
 
         .role-card .icon {
-            font-size: 2.4rem;
+            font-size: 2.2rem;
             flex-shrink: 0;
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         .role-card .text-area { flex: 1; }
-        .role-card .title { font-size: 1.15rem; font-weight: 900; margin-bottom: 4px; }
-        .role-card .desc { font-size: 0.8rem; font-weight: 600; opacity: 0.75; }
-        .role-card .arrow { font-size: 1.2rem; flex-shrink: 0; opacity: 0.6; }
+        .role-card .title { font-size: 1.25rem; font-weight: 900; margin-bottom: 4px; }
+        .role-card .desc { font-size: 0.95rem; font-weight: 800; opacity: 0.95; }
+        .role-card .arrow { font-size: 1.3rem; flex-shrink: 0; opacity: 0.8; }
 
         /* 사장님 카드 */
         .card-merchant {
@@ -117,13 +126,13 @@
 
         /* 일반시민 카드 */
         .card-citizen {
-            background: white;
-            color: #1e293b;
-            border: 2.5px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            background: rgba(255, 255, 255, 0.05);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
-        .card-citizen .icon { background: #f1f5f9; }
-        .card-citizen:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+        .card-citizen .icon { background: rgba(255,255,255,0.05); }
+        .card-citizen:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.3); }
 
         .divider {
             display: flex;
@@ -135,9 +144,9 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: #e2e8f0;
+            background: rgba(255, 255, 255, 0.1);
         }
-        .divider span { font-size: 0.78rem; color: #94a3b8; white-space: nowrap; font-weight: 700; }
+        .divider span { font-size: 0.95rem; color: #cbd5e1; white-space: nowrap; font-weight: 800; }
 
         /* 로그인 카드 */
         .card-login {
@@ -152,7 +161,7 @@
 </head>
 <body>
 
-<a href="/dashboard" class="back-btn">←</a>
+<a href="/" class="back-btn">←</a>
 
 <div class="container">
 
@@ -188,10 +197,10 @@
     <a href="/admin" class="role-card card-citizen">
         <div class="icon">👤</div>
         <div class="text-area">
-            <div class="title" style="color:#1e293b;">일반 시민</div>
-            <div class="desc" style="color:#64748b;">택배 · 마켓 · 음식 이용 고객</div>
+            <div class="title">일반 시민</div>
+            <div class="desc" style="color:#94a3b8;">택배 · 마켓 · 음식 이용 고객</div>
         </div>
-        <span class="arrow" style="color:#94a3b8;">›</span>
+        <span class="arrow">›</span>
     </a>
 
     <!-- 로그인 -->
@@ -205,6 +214,24 @@
     </a>
 
 </div>
+
+
+<!-- TANTAN LEGAL FOOTER -->
+<footer style="background-color: #f1f3f5; padding: 40px 20px; text-align: center; color: #495057; font-size: 14px; line-height: 1.8; width: 100%; border-top: 1px solid #e9ecef; position: relative; z-index: 9999; clear: both; margin-top: auto;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 8px; color: #212529;">상호명: 탄탄제작소</div>
+    <div>대표자: 이영준</div>
+    <div>사업자등록번호: 442-32-01655</div>
+    <div>주소: 강원특별자치도 태백시 (상세주소)</div>
+    <div>연락처: 010-2384-7447</div>
+    <div>통신판매업 신고번호: 제2026-강원태백-0013호</div>
+    <div>출원된 상표(출원번호: 4-2026-023525-4)</div>
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+        <a href="/agreement" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">이용약관</a>
+        <a href="/agreement?tab=tab2" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">개인정보처리방침</a>
+        <a href="/agreement?tab=tab3" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px;">위치기반서비스 이용약관</a>
+    </div>
+    <div style="margin-top: 15px; font-size: 13px; color: #868e96;">Copyright 2026. Tantan Studio all rights reserved.</div>
+</footer>
 
 </body>
 </html>

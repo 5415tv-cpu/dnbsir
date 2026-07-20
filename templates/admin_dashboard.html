@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% set hide_bottom_nav = True %}
+{% set hide_bottom_nav = False %}
 
 {% block header %}
 <!-- 0순위: 상단 고정 HUD (토큰 잔액 칩) -->
@@ -13,6 +13,11 @@
             🪙 <span id="tokenBalance">{{ store.points|default(0) }}</span> 토큰
         </div>
         <button onclick="openPaymentModal()" style="background: #1e3c72; color: #fff; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;">충전하기</button>
+        {% if request.cookies.get("admin_session") %}
+        <a href="/logout" style="font-size: 0.85rem; font-weight: 800; color: #e11d48; text-decoration: none; background: rgba(225, 29, 72, 0.1); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(225, 29, 72, 0.2); white-space: nowrap;">로그아웃</a>
+        {% else %}
+        <a href="/admin?mode=login" style="font-size: 0.85rem; font-weight: 800; color: #1e3c72; text-decoration: none; background: rgba(30, 60, 114, 0.1); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(30, 60, 114, 0.2); white-space: nowrap;">로그인</a>
+        {% endif %}
         <button id="dashboard-hamburger-btn" onclick="toggleDashboardSidebar(true)" style="background: none; border: none; font-size: 1.8rem; color: #1e3c72; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; outline: none; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
             ☰
         </button>

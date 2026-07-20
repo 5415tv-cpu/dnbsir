@@ -2,31 +2,145 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>{{ store_name }} - 로그인</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>로그인 - 동네비서</title>
     <style>
-        body { margin: 0; padding: 0; font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; background-color: #f8f9fa; color: #333; }
-        .header { background: white; padding: 16px 20px; text-align: center; border-bottom: 1px solid #e9ecef; position: sticky; top: 0; z-index: 100; font-weight: 800; font-size: 18px; }
-        .back-btn { position: absolute; left: 20px; top: 16px; text-decoration: none; color: #333; font-size: 20px; font-weight: bold; }
-        .container { padding: 40px 20px; }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 8px; color: #555; }
-        .form-group input { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; font-size: 16px; box-sizing: border-box; }
-        .form-group input:focus { border-color: #333; outline: none; }
-        .submit-btn { background-color: #333; color: white; border: none; padding: 16px; width: 100%; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; margin-top: 10px; }
-        .submit-btn:hover { background-color: #111; }
-        .error-msg { color: #FF4B4F; font-size: 14px; margin-bottom: 20px; text-align: center; }
-        .signup-link { display: block; text-align: center; margin-top: 24px; color: #666; text-decoration: none; font-size: 15px; }
-        .signup-link strong { color: #333; text-decoration: underline; }
+        * { box-sizing: border-box; }
+        body, html { 
+            margin: 0; padding: 0; 
+            width: 100%; height: 100%; 
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; 
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .kiosk-container {
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 40px 30px;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 420px;
+            margin: auto 20px;
+            position: relative;
+        }
+
+        .back-btn { 
+            position: absolute; 
+            left: 24px; 
+            top: 24px; 
+            text-decoration: none; 
+            color: #f8fafc; 
+            font-size: 24px; 
+            font-weight: bold; 
+            transition: transform 0.2s;
+        }
+        .back-btn:active {
+            transform: scale(0.9);
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo-area h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 900;
+            color: #f8fafc;
+        }
+        .logo-area p {
+            margin: 8px 0 0 0;
+            color: #cbd5e1;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+        .form-group label { 
+            display: block; 
+            font-weight: 800; 
+            margin-bottom: 8px; 
+            color: #ffffff; 
+            font-size: 16px;
+        }
+        .form-group input { 
+            width: 100%; 
+            padding: 16px; 
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15); 
+            border-radius: 12px; 
+            font-size: 18px; 
+            color: #ffffff;
+            font-weight: bold;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus { 
+            border-color: #00f2fe; 
+        }
+        .form-group input::placeholder {
+            color: #475569;
+        }
+
+        .submit-btn { 
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #0f172a; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            border-radius: 14px; 
+            font-size: 18px; 
+            font-weight: 900; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            transition: opacity 0.2s;
+        }
+        .submit-btn:active { 
+            opacity: 0.8; 
+        }
+
+        .error-msg { 
+            color: #FF3B30; 
+            font-size: 14px; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            font-weight: bold;
+        }
+        .signup-link { 
+            display: block; 
+            text-align: center; 
+            margin-top: 24px; 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            font-size: 17px; 
+            font-weight: 700;
+        }
+        .signup-link strong { 
+            color: #00f2fe; 
+            text-decoration: underline; 
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <a href="/cart" class="back-btn">←</a>
-        로그인
-    </div>
-    
-    <div class="container">
+    <div class="kiosk-container">
+        <a href="/" class="back-btn">←</a>
+        
+        <div class="logo-area">
+            <h2>동네비서 OS</h2>
+            <p>가맹점 관리자 로그인</p>
+        </div>
+
         {% if error %}
         <div class="error-msg">{{ error }}</div>
         {% endif %}
@@ -34,16 +148,34 @@
         <form action="/login" method="POST">
             <div class="form-group">
                 <label>아이디</label>
-                <input type="text" name="user_id" placeholder="아이디를 입력해주세요" required>
+                <input type="text" name="user_id" placeholder="아이디를 입력하세요" required>
             </div>
             <div class="form-group">
                 <label>비밀번호</label>
-                <input type="password" name="password" placeholder="비밀번호를 입력해주세요" required>
+                <input type="password" name="password" placeholder="비밀번호를 입력하세요" required>
             </div>
             <button type="submit" class="submit-btn">로그인</button>
         </form>
         
-        <a href="/signup" class="signup-link">아직 계정이 없으신가요? <strong>회원가입하기</strong></a>
+        <a href="/register/select" class="signup-link">아직 계정이 없으신가요? <strong>회원가입하기</strong></a>
     </div>
+
+<!-- TANTAN LEGAL FOOTER -->
+<footer style="background-color: #f1f3f5; padding: 40px 20px; text-align: center; color: #495057; font-size: 14px; line-height: 1.8; width: 100%; border-top: 1px solid #e9ecef; position: relative; z-index: 9999; clear: both; margin-top: auto;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 8px; color: #212529;">상호명: 탄탄제작소</div>
+    <div>대표자: 이영준</div>
+    <div>사업자등록번호: 442-32-01655</div>
+    <div>주소: 강원특별자치도 태백시 (상세주소)</div>
+    <div>연락처: 010-2384-7447</div>
+    <div>통신판매업 신고번호: 제2026-강원태백-0013호</div>
+    <div>출원된 상표(출원번호: 4-2026-023525-4)</div>
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+        <a href="/agreement" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">이용약관</a>
+        <a href="/agreement?tab=tab2" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">개인정보처리방침</a>
+        <a href="/agreement?tab=tab3" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px;">위치기반서비스 이용약관</a>
+    </div>
+    <div style="margin-top: 15px; font-size: 13px; color: #868e96;">Copyright 2026. Tantan Studio all rights reserved.</div>
+</footer>
+
 </body>
 </html>

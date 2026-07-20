@@ -66,34 +66,15 @@ def _send_test_notice(app_):
 
 def _process_async_missed_call_common(payload_dict: dict, app_, log_subtype: str):
     """
-    백그라운드에서 부재중 전화/콜백 발송 및 DB 기록을 비동기로 처리
+    백그라운드에서 부재중 전화/콜백 발송 및 DB 기록을 비동기로 처리 (callback_manager 연동)
     """
     try:
-        ok, msg, msg_content = sms.process_missed_call_webhook(payload_dict)
-        db.log_sms(
-            payload_dict.get("store_id") or "UNKNOWN",
-            payload_dict.get("caller_phone") or "",
-            "WEBHOOK",
-            log_subtype,
-            "OK" if ok else "FAIL",
-            msg,
+        import callback_manager
+        ok, msg = callback_manager.handle_incoming_callback_event(
+            event_source=f"telecom_server_{log_subtype}",
+            customer_phone=payload_dict.get("caller_phone") or "",
+            store_id=payload_dict.get("store_id")
         )
-        # Save to ai_call_logs for dashboard visibility
-        try:
-            event_type = "CALLBACK_SUCCESS" if ok else "CALLBACK_FAILED"
-            db.save_ai_call_log(
-                store_id=payload_dict.get("store_id") or "UNKNOWN",
-                customer_phone=payload_dict.get("caller_phone") or "",
-                customer_name="이름 미상",
-                intent="부재중 전화",
-                summary=f"부재중 전화 감지 ({log_subtype}). 자동 콜백 결과: {msg}",
-                audio_url="",
-                event_type=event_type,
-                event_details=msg_content
-            )
-        except Exception as db_err:
-            print(f"Failed to log call to ai_call_logs in webhook: {db_err}")
-
         if ok:
             _send_test_notice(app_)
     except Exception as e:
@@ -301,109 +282,16 @@ def log_callback_sent(sender: str, receiver: str, content: str, success: bool):
         db_session.close()
 
 def _process_async_callback(customer_phone: str, _log_id=None):
-    """★ log_id가 있으면 SMS 결과를 블랙박스에도 기록"""
     """
-    백그라운드 콜백 발송 — send_smart_callback 단일 경로 통일
-
-    ★ 안전장치 5중 방어:
-      1) smart_callback_on 스위치 확인
-      2) 사장님 번호 자기발송 차단
-      3) 메모리 쿨다운 (1시간, 재시작 초기화 가능 — 1차 방어)
-      4) DB 쿨다운 (1시간 이내 성공 이력 체크 — 2차 방어, 재시작 후에도 유지)
-      5) 전역 Rate Limiter (분당 최대 10건)
+    백그라운드 콜백 발송 — callback_manager를 통한 단일 추상화 경로 처리
     """
     try:
-        import config
-        store_id = config.get_secret("SENDER_PHONE", "SYSTEM")
-
-        # ── [1] smart_callback_on 스위치 ─────────────────────────────────────
-        store = db.get_store(store_id)
-        # 명시적으로 0으로 설정된 경우만 차단 — store가 None(미등록)일 때는 기본 허용
-        if store is not None and store.get("smart_callback_on", 1) == 0:
-            print(f"[SmartCallback] 비활성화 상태 → 발송 중단 (store_id={store_id})")
-            return
-
-        # ── [2] 사장님 번호 자기발송 차단 (이중 확인) ────────────────────
-        # store_id(=SENDER_PHONE 환경변수)와 DB에 등록된 phone 필드 둘 다 차단
-        owner_phones = set()
-        owner_phones.add(re.sub(r'[^0-9]', '', store_id))  # SENDER_PHONE
-        _owner_db_phone = (store or {}).get("phone", "")
-        if _owner_db_phone:
-            owner_phones.add(re.sub(r'[^0-9]', '', _owner_db_phone))
-        clean_customer = re.sub(r'[^0-9]', '', customer_phone)
-        if clean_customer in owner_phones:
-            print(f"[SmartCallback] 차단: 사장님 번호에 발송 불가 ({customer_phone})")
-            return
-
-        # ── [3] 메모리 쿨다운 (5분, 1차 방어) ───────────────────────────
-        now = time.time()
-        key = (store_id, customer_phone)
-        if now - _recent_callbacks.get(key, 0) < COOLDOWN_SECONDS:
-            elapsed = (now - _recent_callbacks[key]) / 60
-            print(f"[SmartCallback Cooldown(메모리)] {elapsed:.1f}분 전 발송 → 차단: {customer_phone}")
-            return
-
-        # ── [4] DB 쿨다운 (5분, 2차 방어 — 재시작 후에도 유지) ──────────
-        if check_recent_callback_db(customer_phone, hours=5/60):  # ★ 5분
-            print(f"[SmartCallback Cooldown(DB)] 5분 이내 발송 이력 있음 → 차단: {customer_phone}")
-            return
-
-        # ── [5] 전역 Rate Limiter ─────────────────────────────────────────
-        if not _check_rate_limit():
-            print(f"[SmartCallback RateLimit] 분당 한도 초과 → 차단: {customer_phone}")
-            return
-
-        # 여기까지 통과하면 발송 확정 — 메모리 쿨다운 등록
-        _recent_callbacks[key] = now
-
-        store_name = (store or {}).get("name", "동네비서")
-        print(f"[SmartCallback] 발송 시작 → 고객: {customer_phone} / 가게: {store_id}")
-
-        # ── SMS 발송 ──────────────────────────────────────────────────────
-        success, ret_msg, msg_content = sms.send_smart_callback(
-            store_id=store_id,
+        import callback_manager
+        callback_manager.handle_incoming_callback_event(
+            event_source="android_app",
             customer_phone=customer_phone,
-            store_name=store_name
+            log_id=_log_id
         )
-        print(f"[SmartCallback] {'성공' if success else '실패'}: {ret_msg}")
-
-        # ── ★ 블랙박스: SMS 결과 업데이트 ──────────────────────────────
-        try:
-            db.update_webhook_log(
-                _log_id,
-                stage='SMS_OK' if success else 'SMS_FAIL',
-                result_msg=ret_msg[:500],
-                sms_sent=1 if success else -1
-            )
-        except Exception:
-            pass
-
-        # ── DB 로그 기록 (callback_logs — 중복방지용) ────────────────────
-        try:
-            log_callback_sent(
-                sender=customer_phone,
-                receiver=store_id,
-                content=msg_content,
-                success=success
-            )
-        except Exception as log_err:
-            print(f"[SmartCallback] callback_logs 기록 실패: {log_err}")
-
-        # ── AI 장부 로그 기록 ─────────────────────────────────────────────
-        try:
-            db.save_ai_call_log(
-                store_id=store_id,
-                customer_phone=customer_phone,
-                customer_name="이름 미상",
-                intent="부재중 콜백",
-                summary=f"SMS 콜백 → {customer_phone}: {ret_msg}",
-                audio_url="",
-                event_type="CALLBACK_SUCCESS" if success else "CALLBACK_FAILED",
-                event_details=msg_content
-            )
-        except Exception as db_err:
-            print(f"[SmartCallback] AI 장부 기록 실패: {db_err}")
-
     except Exception as e:
         print(f"[SmartCallback Error] {e}")
 

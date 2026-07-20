@@ -3,46 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AI 비서 - 단계별 화면 전환</title>
+    <title>AI 비서 - 동네비서 OS</title>
     <style>
         * { box-sizing: border-box; }
         body, html { 
             margin: 0; padding: 0; 
             width: 100%; height: 100%; 
+            min-width: 320px;
             font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; 
-            background-color: #f5f5f7; 
-            overflow: hidden; /* 스크롤 방지, 내부 페이지에서만 스크롤 */
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+            overflow: hidden; 
         }
 
         .header { 
             position: absolute;
             top: 0; left: 0; right: 0;
             height: 60px;
-            background: rgba(245, 245, 247, 0.9); 
+            background: rgba(15, 21, 36, 0.85); 
             backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 800; 
             font-size: 18px; 
-            color: #1d1d1f;
+            color: #f8fafc;
             z-index: 100;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         .back-btn { 
             position: absolute; 
             left: 20px; 
             text-decoration: none; 
-            color: #1d1d1f; 
+            color: #f8fafc; 
             font-size: 24px; 
             font-weight: bold; 
         }
 
-        /* --- 페이지 분할 (SPA 구조) --- */
         .page-view {
             position: absolute;
             top: 60px; 
-            left: 0; right: 0; bottom: 0;
+            left: 0; right: 0; bottom: 80px;
             display: none;
             flex-direction: column;
             padding: 24px 20px;
@@ -56,296 +58,315 @@
         }
 
         .title-text {
-            font-size: 20px;
-            font-weight: 800;
-            color: #1d1d1f;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        .center-title {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        /* --- Page 1: 목적 입력 요소 --- */
-        .horizontal-scroll {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            padding-bottom: 12px;
-            margin-bottom: 24px;
-        }
-        
-        .persona-chip {
-            flex-shrink: 0;
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 20px;
-            padding: 10px 16px;
-            font-size: 15px;
-            font-weight: 700;
-            color: #495057;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            transition: all 0.2s;
-        }
-        .persona-chip.selected {
-            background: #000000;
+            font-size: 24px;
+            font-weight: 900;
             color: #ffffff;
-            border-color: #000000;
+            margin-bottom: 16px;
+            text-align: left;
         }
 
         .search-bar-wrapper {
             display: flex;
-            align-items: center;
-            background: #ffffff;
-            border: 2px solid #e9ecef;
+            align-items: flex-start;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            padding: 4px 16px;
+            padding: 16px;
             margin-bottom: 24px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             transition: border-color 0.2s;
+            backdrop-filter: blur(20px);
         }
-        .search-bar-wrapper:focus-within {
-            border-color: #000000;
-        }
-        .search-bar-wrapper input {
-            flex: 1;
-            border: none;
-            padding: 14px 0;
-            font-size: 16px;
-            outline: none;
-            background: transparent;
+        .search-bar-wrapper:focus-within { border-color: rgba(0, 242, 254, 0.3); }
+        .search-bar-wrapper textarea {
+            flex: 1; border: none; padding: 0;
+            font-size: 20px; outline: none; background: transparent;
+            resize: none; height: 100px;
+            font-family: inherit; line-height: 1.5; color: #ffffff;
+            font-weight: bold;
         }
         .camera-btn {
-            background: none;
-            border: none;
-            font-size: 22px;
-            cursor: pointer;
-            color: #495057;
-            padding: 8px;
+            background: none; border: none; font-size: 22px;
+            cursor: pointer; color: #94a3b8; padding: 8px;
         }
-        .camera-btn:active { opacity: 0.5; }
 
-        .recommend-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .recommend-chip {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 16px;
-            padding: 16px 20px;
+        .disclaimer-text {
+            text-align: center;
             font-size: 15px;
-            font-weight: 600;
-            color: #495057;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-            text-align: left;
-            transition: all 0.2s;
-        }
-        .recommend-chip:active {
-            transform: scale(0.98);
-            background: #f8f9fa;
-        }
-
-        /* --- Page 2: 조건 및 로딩 요소 --- */
-        .center-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .condition-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            width: 100%;
-            max-width: 320px;
-        }
-        .condition-btn {
-            background: #ffffff;
-            border: 1px solid #e9ecef;
-            border-radius: 16px;
-            padding: 18px;
-            font-size: 16px;
             font-weight: 700;
-            color: #1d1d1f;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-            transition: transform 0.2s;
-        }
-        .condition-btn:active { transform: scale(0.96); }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #e9ecef;
-            border-top: 5px solid #000000;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 24px auto;
-            display: none;
-        }
-        .loading-text {
-            font-size: 18px;
-            font-weight: 700;
-            color: #495057;
-            animation: pulse-text 1.5s infinite;
-            display: none;
+            color: #00f2fe; 
+            margin-bottom: 24px;
+            background-color: rgba(0, 242, 254, 0.06); 
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 242, 254, 0.2);
         }
 
-        /* --- Page 3: 결과 요소 --- */
-        .result-card {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-        .result-title {
+        .guide-header {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #0d0e12;
+            padding: 16px;
+            border-radius: 16px 16px 0 0;
             font-size: 18px;
             font-weight: 800;
-            margin-bottom: 16px;
-            color: #000;
+            text-align: center;
         }
-        .data-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid #f1f3f5;
-            font-size: 15px;
+
+        .guide-container {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: none;
+            backdrop-filter: blur(20px);
         }
-        .data-row:last-child { border-bottom: none; }
-        .data-row .label { color: #6c757d; }
-        .data-row .value { font-weight: bold; color: #1d1d1f; }
-        
-        .ai-comment-box {
-            display: flex;
-            gap: 16px;
-            background: #f0f4f8;
-            padding: 16px;
-            border-radius: 16px;
-            align-items: flex-start;
-        }
-        .ai-avatar {
-            width: 40px; height: 40px;
-            background: #ffffff;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            flex-shrink: 0;
-        }
-        .ai-text { font-size: 15px; line-height: 1.5; color: #333; }
-        
-        .bottom-fixed-btn {
-            margin-top: auto;
-            padding-top: 20px;
-            padding-bottom: 20px;
-        }
-        .action-btn {
-            background: #000000;
-            color: #ffffff;
-            border: none;
-            border-radius: 16px;
-            padding: 18px;
-            font-size: 16px;
-            font-weight: bold;
-            width: 100%;
+
+        .guide-item {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
             cursor: pointer;
-            transition: 0.2s;
+            transition: transform 0.2s;
         }
-        .action-btn:active { transform: scale(0.98); background: #333; }
+        .guide-item:hover {
+            transform: translateY(-2px);
+        }
+        .guide-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .guide-title {
+            font-size: 19px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .guide-box {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        
+        .guide-label {
+            font-size: 15px;
+            font-weight: 900;
+            color: #cbd5e1;
+            margin-bottom: 4px;
+        }
+        
+        .guide-text-content {
+            font-size: 16px;
+            color: #f1f5f9;
+            line-height: 1.55;
+            font-weight: 700;
+        }
+        .guide-highlight {
+            color: #00f2fe;
+            font-weight: 900;
+        }
+
+        /* Page 2 & 3 styles (Loading, Results) */
+        .center-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .loading-spinner { width: 50px; height: 50px; border: 5px solid rgba(255, 255, 255, 0.08); border-top: 5px solid #00f2fe; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 24px auto; display: none; }
+        .loading-text { font-size: 20px; font-weight: 900; color: #ffffff; animation: pulse-text 1.5s infinite; display: none; }
+        
+        .result-card { background: rgba(30, 41, 59, 0.7); border-radius: 20px; padding: 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); margin-bottom: 20px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); }
+        .result-title { font-size: 20px; font-weight: 900; margin-bottom: 16px; color: #ffffff; }
+        .data-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 17px; }
+        .data-row:last-child { border-bottom: none; }
+        .data-row .label { color: #cbd5e1; font-weight: bold; }
+        .data-row .value { font-weight: 900; color: #ffffff; }
+        
+        .ai-comment-box { display: flex; gap: 16px; background: rgba(255, 255, 255, 0.04); padding: 16px; border-radius: 16px; align-items: flex-start; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .ai-text { flex: 1; min-width: 0; line-height: 1.65; word-break: break-word; font-size: 17px; color: #ffffff; white-space: pre-wrap; font-weight: 700; }
+        .ai-avatar { width: 40px; height: 40px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-shrink: 0; color: #ffffff; }
+        
+        .bottom-fixed-btn { margin-top: auto; padding-top: 20px; padding-bottom: 20px; }
+        .action-btn { background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #0d0e12; border: none; border-radius: 16px; padding: 18px; font-size: 18px; font-weight: 900; width: 100%; cursor: pointer; transition: 0.2s; }
+        .action-btn:active { transform: scale(0.98); background: #00f2fe; }
 
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes pulse-text { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        .guide-text {
-            text-align: center;
-            font-size: 14px;
-            color: #495057;
-            margin-bottom: 12px;
-            animation: fadeIn 0.5s;
+        /* Async Modal Styles */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(8px);
         }
-        .disclaimer-text {
-            text-align: center;
-            font-size: 14px;
-            font-weight: 600;
-            color: #495057; /* Neutral dark gray */
-            margin-top: 10px;
-            margin-bottom: 20px;
-            background-color: #f8f9fa; /* Soft light gray background */
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #e9ecef;
+        .modal-content {
+            background: rgba(30, 41, 59, 0.95); padding: 24px; border-radius: 24px; width: 90%; max-width: 400px;
+            text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); color: #f8fafc; backdrop-filter: blur(20px);
         }
-        @keyframes typeText { from { width: 0; } to { width: 100%; } }
-
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        .modal-desc { font-size: 14px; color: #94a3b8; margin-bottom: 24px; line-height: 1.5; }
+        .modal-btn {
+            display: block; width: 100%; padding: 14px; margin-bottom: 10px;
+            border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-wait { background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #0d0e12; }
+        .btn-kakao { background: #FEE500; color: #000; }
+        .btn-email { background: rgba(255, 255, 255, 0.08); color: #f8fafc; }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            height: 80px;
+            background-color: #1A1A1A;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10000;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.2);
+            padding-bottom: env(safe-area-inset-bottom);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+            text-decoration: none;
+            flex: 1;
+            height: 100%;
+            font-size: 15px;
+            font-weight: 900;
+        }
+        .nav-icon {
+            font-size: 26px;
+            margin-bottom: 4px;
+        }
+        .nav-text {
+            color: #ffffff;
+            font-weight: 900;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
+    <div class="modal-overlay" id="async-modal">
+        <div class="modal-content">
+            <div class="modal-title">⏳ AI 여행 코스 생성 중...</div>
+            <div class="modal-desc" id="async-eta-text">비서가 지금 열심히 여행 일정을 짜고 있습니다.<br>예상 소요 시간은 약 3분입니다.</div>
+            <button class="modal-btn btn-wait" onclick="sendAsyncQuery('wait')">지금 여기서 기다리기</button>
+            <button class="modal-btn btn-kakao" onclick="sendAsyncQuery('kakao')">카톡으로 받기</button>
+            <button class="modal-btn btn-email" onclick="sendAsyncQuery('email')">이메일로 받기</button>
+        </div>
+    </div>
+    <div class="header" style="position: relative;">
         <a href="/admin/dashboard" class="back-btn">←</a>
-        AI 비서
+        <span>동네비서 OS</span>
+        {% if request.cookies.get("admin_session") %}
+        <a href="/logout" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 800; color: #ff4d4d; text-decoration: none; background: rgba(255, 77, 77, 0.15); padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255, 77, 77, 0.3); line-height: 1;">로그아웃</a>
+        {% else %}
+        <a href="/admin?mode=login" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 14px; font-weight: 800; color: #00f2fe; text-decoration: none; background: rgba(0, 242, 254, 0.15); padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(0, 242, 254, 0.3); line-height: 1;">로그인</a>
+        {% endif %}
     </div>
     
     <!-- PAGE 1: 목적 입력 (시작 화면) -->
     <div class="page-view active" id="page1">
         
-        <div class="horizontal-scroll" id="persona-scroll">
-            <div class="persona-chip selected" onclick="selectPersona('일반 소매점 사장님', this)">🏪 기본 모드</div>
-            <div class="persona-chip" onclick="selectPersona('과일가게 사장님', this)">🍎 과일가게</div>
-            <div class="persona-chip" onclick="selectPersona('음식점 사장님', this)">🍲 식당/음식점</div>
-            <div class="persona-chip" onclick="selectPersona('농산업/농부', this)">🌾 농산물/농부</div>
-            <div class="persona-chip" onclick="selectPersona('수산업/어부', this)">🐟 수산물/어부</div>
-            <div class="persona-chip" onclick="selectPersona('정육점 사장님', this)">🥩 정육점</div>
-            <div class="persona-chip" onclick="selectPersona('카페 사장님', this)">☕ 카페</div>
-            <div class="persona-chip" onclick="selectPersona('마트/슈퍼마켓 사장님', this)">🛒 마트</div>
-            <div class="persona-chip" onclick="selectPersona('병원/의원 원장님', this)">🏥 병원/의원</div>
-            <div class="persona-chip" onclick="selectPersona('뷰티/미용실 원장님', this)">✂️ 뷰티/미용실</div>
-            <div class="persona-chip" onclick="selectPersona('학원/교육업 원장님', this)">📚 학원/교육</div>
-            <div class="persona-chip" onclick="selectPersona('헬스/피트니스 관장님', this)">💪 헬스/피트니스</div>
-            <div class="persona-chip" onclick="selectPersona('숙박/펜션 사장님', this)">🏨 숙박/펜션</div>
-            <div class="persona-chip" onclick="selectPersona('도소매/유통업 사장님', this)">📦 도소매/유통</div>
-        </div>
-
-        <div class="title-text">무엇을 도와드릴까요?</div>
-        
         <div class="search-bar-wrapper">
-            <input type="text" id="main-search" placeholder="직접 질문을 적거나, 아래 추천 버튼을 눌러보세요" oninput="filterRecommendations()" onkeypress="handleEnter(event)">
-            <!-- 카메라 버튼 클릭 시 즉각 로딩으로 넘어감 -->
+            <textarea id="main-search" placeholder="무엇을 도와드릴까요? (물가조회, 여행설계, 예약)" onkeypress="handleEnter(event)"></textarea>
             <button class="camera-btn" onclick="triggerCameraAnalysis()">📷</button>
         </div>
         
-        <div class="disclaimer-text">⚠️ 동네비서 AI는 매장 및 농장 관리에 특화되어 제한적으로 운영됩니다. (일반 검색은 지원하지 않습니다)</div>
+        <div class="disclaimer-text">✨ 태백 지역 데이터 기반, AI 스마트 비서</div>
 
-        <div class="guide-text" id="recommend-guide">💡 처음이시라면, 이렇게 질문해 보세요!</div>
-        <div class="recommend-container" id="recommend-chips">
-            <!-- JS 동적 주입 -->
+        <div class="guide-header">
+            💡 동네비서 AI 활용법: 딱 세 가지만 기억하세요
         </div>
-    </div>
-
-    <!-- PAGE 2: 조건 설정 및 로딩 (중간 화면) -->
-    <div class="page-view" id="page2">
-        <div class="center-content">
-            <!-- 텍스트 검색 시 조건 화면 -->
-            <div id="condition-view" style="width: 100%;">
-                <div class="title-text center-title">어떤 기간으로 보여드릴까요?</div>
-                <div class="condition-grid">
-                    <button class="condition-btn" onclick="startLoading('오늘 하루')">오늘 하루</button>
-                    <button class="condition-btn" onclick="startLoading('최근 일주일')">최근 일주일</button>
-                    <button class="condition-btn" onclick="startLoading('이번 달')">이번 달</button>
-                    <button class="condition-btn" onclick="startLoading('전체 누적')">전체 누적</button>
+        <div class="guide-container">
+            <!-- Item 1 -->
+            <div class="guide-item" onclick="proceedToPage2('오늘 배추 한 포기 값이 얼마야?', true)">
+                <div class="guide-title">
+                    <span>🛒</span> 1. 장 볼 때, 물가 확인이 필요할 때
+                </div>
+                <div class="guide-box">
+                    <div class="guide-label">💬 어떻게 말하나요?</div>
+                    <div class="guide-text-content">
+                        "오늘 배추 한 포기 값이 얼마야?" 또는<br>"태백에서 가장 싼 감자 어디서 사?"라고 물어보세요.
+                    </div>
+                </div>
+                <div class="guide-box" style="background:#e7f1ff;">
+                    <div class="guide-label" style="color:#0056b3;">🤖 비서가 해드려요</div>
+                    <div class="guide-text-content">
+                        AI가 매일 변하는 농산물 가격을 전국 자료와 비교하여 가장 알뜰하게 장을 보실 수 있도록 알려드립니다.
+                    </div>
                 </div>
             </div>
 
-            <!-- 카메라 촬영 또는 로딩 시 화면 -->
-            <div id="loading-view" style="display: none;">
+            <!-- Item 2 -->
+            <div class="guide-item" onclick="proceedToPage2('30만 원으로 1박 2일 태백 여행 코스 짜줘, 맛집도 포함해서', true)">
+                <div class="guide-title">
+                    <span>🚂</span> 2. 여행을 떠나고 싶을 때 (교통·숙박·맛집)
+                </div>
+                <div class="guide-box">
+                    <div class="guide-label">💬 어떻게 말하나요?</div>
+                    <div class="guide-text-content">
+                        "30만 원으로 1박 2일 태백 여행 코스 짜줘, 맛집도 포함해서"라고 말씀해 보세요.
+                    </div>
+                </div>
+                <div class="guide-box" style="background:#e7f1ff;">
+                    <div class="guide-label" style="color:#0056b3;">🤖 비서가 해드려요</div>
+                    <div class="guide-text-content">
+                        기차표 예매부터 맛있는 식당, 잠잘 곳까지 한 번에 묶어서 여행 계획을 짜드립니다. 예약과 결제까지 비서가 직접 도와드립니다.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="guide-item" onclick="proceedToPage2('오늘 매출이 얼마지? 요즘 우리 가게에서 뭐가 제일 잘 팔려?', true)">
+                <div class="guide-title">
+                    <span>📊</span> 3. 가게 운영이나 매출이 궁금할 때
+                </div>
+                <div class="guide-box">
+                    <div class="guide-label">💬 어떻게 말하나요?</div>
+                    <div class="guide-text-content">
+                        "오늘 매출이 얼마지?" 또는<br>"요즘 우리 가게에서 뭐가 제일 잘 팔려?"라고 물어보세요.
+                    </div>
+                </div>
+                <div class="guide-box" style="background:#e7f1ff;">
+                    <div class="guide-label" style="color:#0056b3;">🤖 비서가 해드려요</div>
+                    <div class="guide-text-content">
+                        복잡한 장부를 펼치지 않아도 AI가 오늘 매출과 인기 상품을 바로 정리해서 보고해 드립니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 사업자 정보 -->
+        <footer style="background-color: #f1f3f5; padding: 32px 20px; text-align: center; color: #868e96; font-size: 13px; line-height: 1.9; border-top: 1px solid #e9ecef; margin-top: 8px; border-radius: 16px;">
+            <div style="font-weight: 800; font-size: 14px; margin-bottom: 6px; color: #495057;">상호명: 탄탄제작소</div>
+            <div>대표자: 이영준</div>
+            <div>사업자등록번호: 442-32-01655</div>
+            <div>주소: 강원특별자치도 태백시 (상세주소)</div>
+            <div>연락처: 010-2384-7447</div>
+            <div>통신판매업 신고번호: 제2026-강원태백-0013호</div>
+            <div>출원된 상표(출원번호: 4-2026-023525-4)</div>
+            <div style="margin-top: 16px; font-size: 12px;">Copyright 2026. Tantan Studio all rights reserved.</div>
+        </footer>
+    </div>
+
+    <!-- PAGE 2: 로딩 (중간 화면) -->
+    <div class="page-view" id="page2">
+        <div class="center-content">
+            <div id="loading-view" style="display: block;">
                 <div class="loading-spinner" style="display: block;"></div>
-                <div class="loading-text" id="loading-msg" style="display: block;">장부를 분석 중입니다...</div>
+                <div class="loading-text" id="loading-msg" style="display: block;">AI가 데이터를 분석 중입니다...</div>
             </div>
         </div>
     </div>
@@ -354,17 +375,13 @@
     <div class="page-view" id="page3">
         <div class="result-card">
             <div class="result-title" id="result-title">데이터 분석 결과</div>
-            <div id="result-data">
-                <!-- 동적 주입 -->
-            </div>
+            <div id="result-data"></div>
         </div>
 
         <div class="result-card" style="background: transparent; box-shadow: none; padding: 0;">
             <div class="ai-comment-box">
                 <div class="ai-avatar">🤖</div>
-                <div class="ai-text" id="ai-comment">
-                    <!-- 동적 주입 -->
-                </div>
+                <div class="ai-text" id="ai-comment"></div>
             </div>
         </div>
 
@@ -374,71 +391,17 @@
     </div>
 
     <script>
-        let currentPersona = '일반 소매점 사장님';
         let currentQuery = '';
         let isCameraMode = false;
 
-        const personaToChips = {
-            '농산업/농부': ['오늘 날씨에 맞는 작업 추천', '최근 일주일 주문량 합산', '가장 많이 남은 재고 확인', '내일 출하 예정 리스트'],
-            '수산업/어부': ['오늘 어획량 대비 예상 매출', '신선도 유지 온도 체크 내역', '이번 주 택배 발송 내역'],
-            '음식점 사장님': ['오늘 점심 피크타임 매출', '내일 단체 예약 현황 확인', '남은 식자재 처리 아이디어', '배달앱 리뷰 요약'],
-            '과일가게 사장님': ['명절 선물세트 예약 현황', '오늘 들어온 발주 내역', '재고가 임박한 과일', '어제 폐기량 합산'],
-            '정육점 사장님': ['한우 선물세트 주문량', '오늘 부위별 판매량 점유율', '세절기 유지보수 및 점검 알림'],
-            '카페 사장님': ['오늘 아메리카노 누적 판매량', '원두 및 부자재 재고 현황', '내일 피크타임 대비 알바 스케줄'],
-            '뷰티/미용실 원장님': ['오늘 노쇼(No-show) 고객 확인', '이번 달 디자이너별 매출액', '내일 오전 펌/염색 예약 리스트'],
-            '병원/의원 원장님': ['오늘 오전 초진 환자 비율', '예방접종 백신 재고 파악', '내일 수술 및 시술 스케줄'],
-            '마트/슈퍼마켓 사장님': ['오늘 가장 잘 팔린 전단지 행사상품', '유통기한 임박 상품 세일 리스트', '이번 주 알림톡 발송 결과'],
-            '학원/교육업 원장님': ['이번 달 신규 등록 원생 수', '오늘 결석 예정 원생 명단', '수강료 미납 내역 확인'],
-            '헬스/피트니스 관장님': ['이번 주 PT 예약 현황', '오늘 만료 예정인 회원권', '시간대별 센터 입장 객수'],
-            '숙박/펜션 사장님': ['주말 객실 예약률 현황', '오늘 체크인/체크아웃 명단', '비품(수건/어메니티) 재고 확인'],
-            '도소매/유통업 사장님': ['오늘 출고 예정인 택배 물량', '이번 달 거래처별 미수금 현황', '발주 필요한 재고 목록'],
-            '일반 소매점 사장님': ['오늘 총매출', '가장 잘 팔리는 상품 TOP 3', '재고 부족 상품 목록', '어제와 매출 비교'],
-        };
-
-        // 초기화 시 칩 렌더링
-        renderRecommendChips();
-
-        function selectPersona(persona, el) {
-            document.querySelectorAll('.persona-chip').forEach(c => c.classList.remove('selected'));
-            el.classList.add('selected');
-            currentPersona = persona;
-            document.getElementById('main-search').value = '';
-            renderRecommendChips();
-            document.getElementById('recommend-guide').style.display = 'block';
-        }
-
-        function renderRecommendChips(filterText = "") {
-            const container = document.getElementById('recommend-chips');
-            container.innerHTML = '';
-            const chips = personaToChips[currentPersona] || personaToChips['일반 소매점 사장님'];
-            
-            let count = 0;
-            chips.forEach(text => {
-                if (text.toLowerCase().includes(filterText.toLowerCase())) {
-                    const btn = document.createElement('div');
-                    btn.className = 'recommend-chip';
-                    btn.textContent = text;
-                    btn.onclick = () => proceedToPage2(text, true);
-                    container.appendChild(btn);
-                    count++;
-                }
-            });
-            document.getElementById('recommend-guide').style.display = (filterText === '' && count > 0) ? 'block' : 'none';
-        }
-
-        function filterRecommendations() {
-            const query = document.getElementById('main-search').value;
-            renderRecommendChips(query);
-        }
-
         function handleEnter(e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 const query = document.getElementById('main-search').value.trim();
                 if (query) proceedToPage2(query);
             }
         }
 
-        // 페이지 전환 (Fade in/out 로직)
         function switchPage(hideId, showId) {
             const hideEl = document.getElementById(hideId);
             const showEl = document.getElementById(showId);
@@ -447,10 +410,9 @@
             setTimeout(() => {
                 hideEl.classList.remove('active');
                 showEl.classList.add('active');
-                // reflow
                 void showEl.offsetWidth; 
                 showEl.style.opacity = '1';
-            }, 300); // css transition 시간과 동일하게 맞춤
+            }, 300); 
         }
 
         function proceedToPage2(query, fromChip = false) {
@@ -469,52 +431,42 @@
                         clearInterval(typeInterval);
                         setTimeout(() => executeProceed(), 400);
                     }
-                }, 30);
+                }, 15);
             } else {
                 executeProceed();
             }
         }
 
         function executeProceed() {
-            document.getElementById('condition-view').style.display = 'block';
-            document.getElementById('loading-view').style.display = 'none';
             switchPage('page1', 'page2');
+            startLoading();
         }
 
         function triggerCameraAnalysis() {
             isCameraMode = true;
             currentQuery = "카메라 이미지 분석";
             
-            document.getElementById('condition-view').style.display = 'none';
-            document.getElementById('loading-view').style.display = 'block';
-            
             const loadingMsg = document.getElementById('loading-msg');
             loadingMsg.textContent = "AI가 사진을 분석하고 있습니다...";
             
             switchPage('page1', 'page2');
-            
-            // 바로 분석 시작
             setTimeout(() => finishAnalysis("사진 분석 완료"), 2500);
         }
 
-        async function startLoading(period) {
-            document.getElementById('condition-view').style.display = 'none';
-            document.getElementById('loading-view').style.display = 'block';
-            
+        async function startLoading() {
             const loadingMsg = document.getElementById('loading-msg');
-            const messages = ["장부를 분석 중입니다...", "AI가 데이터를 계산하고 있습니다...", "최종 결과를 요약 중입니다..."];
+            const messages = ["필요한 데이터를 조회 중입니다...", "AI가 맞춤형 답변을 생성 중입니다...", "최종 결과를 정리 중입니다..."];
             let msgIndex = 0;
             loadingMsg.textContent = messages[msgIndex];
             
             const msgInterval = setInterval(() => {
                 msgIndex = (msgIndex + 1) % messages.length;
                 loadingMsg.textContent = messages[msgIndex];
-            }, 800);
+            }, 1000);
             
             const startTime = Date.now();
             
-            // 백엔드 API 호출을 위한 준비
-            const promptText = `상황: 저는 '${currentPersona}' 입니다. 기간은 '${period}' 로 조회합니다. 질문: '${currentQuery}'`;
+            const promptText = currentQuery;
             const formData = new FormData();
             formData.append('custom_text', promptText);
             
@@ -525,27 +477,81 @@
                     body: formData
                 });
                 const result = await response.json();
+                
+                if (result.action === "REQUIRE_ASYNC_CHOICE") {
+                    clearInterval(msgInterval);
+                    document.getElementById('async-eta-text').innerHTML = `비서가 지금 열심히 여행 일정을 짜고 있습니다.<br>예상 소요 시간은 <strong>약 ${Math.floor(result.eta_seconds / 60)}분 ${result.eta_seconds % 60}초</strong>입니다.`;
+                    document.getElementById('async-modal').style.display = 'flex';
+                    // Save prompt globally to be used in sendAsyncQuery
+                    window.pendingAsyncPrompt = promptText;
+                    return;
+                }
+                
                 aiReply = result.reply || "응답을 불러올 수 없습니다.";
             } catch (err) {
                 aiReply = "죄송합니다. 네트워크 오류가 발생했습니다.";
             }
             
-            // 로딩 애니메이션을 최소 2초는 보여주기 위한 딜레이 계산
             const elapsed = Date.now() - startTime;
-            const remaining = Math.max(0, 2000 - elapsed);
+            const remaining = Math.max(0, 2500 - elapsed);
             
             setTimeout(() => {
                 clearInterval(msgInterval);
-                finishAnalysis(period, aiReply);
+                finishAnalysis(aiReply);
             }, remaining);
         }
 
-        function finishAnalysis(period, aiReply) {
-            generateRealResults(period, aiReply);
+        async function sendAsyncQuery(deliveryMethod) {
+            document.getElementById('async-modal').style.display = 'none';
+            const formData = new FormData();
+            formData.append('custom_text', window.pendingAsyncPrompt);
+            formData.append('delivery_method', deliveryMethod);
+
+            try {
+                const response = await fetch('/api/ai/async_query', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                
+                if (deliveryMethod === 'wait') {
+                    // Start polling
+                    pollTaskStatus(result.task_id);
+                } else {
+                    alert(result.message);
+                    resetToPage1();
+                }
+            } catch (e) {
+                alert("비동기 요청 중 오류가 발생했습니다.");
+                resetToPage1();
+            }
+        }
+
+        async function pollTaskStatus(taskId) {
+            // Re-show loading if it was hidden
+            switchPage('page1', 'page2');
+            const pollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/ai/task_status/${taskId}`);
+                    const statusData = await res.json();
+                    
+                    if (statusData.status === 'completed') {
+                        clearInterval(pollInterval);
+                        finishAnalysis(statusData.result);
+                    } else if (statusData.status === 'not_found') {
+                        clearInterval(pollInterval);
+                        finishAnalysis("요청을 찾을 수 없습니다.");
+                    }
+                } catch(e) {}
+            }, 3000);
+        }
+
+        function finishAnalysis(aiReply) {
+            generateRealResults(aiReply);
             switchPage('page2', 'page3');
         }
 
-        function generateRealResults(period, aiReply) {
+        function generateRealResults(aiReply) {
             const titleDiv = document.getElementById('result-title');
             const dataDiv = document.getElementById('result-data');
             const commentDiv = document.getElementById('ai-comment');
@@ -557,24 +563,21 @@
                     <div class="data-row"><span class="label">분석 객체</span><span class="value">농작물 잎사귀 (사과)</span></div>
                     <div class="data-row"><span class="label">상태 판정</span><span class="value" style="color:#e53935">탄저병 의심 (유사도 89%)</span></div>
                 `;
-                commentDiv.innerHTML = `${currentPersona}님, 촬영하신 사진 분석 결과 <strong>탄저병 초기 증상</strong>과 89% 일치합니다. 주변으로 번지기 전에 방제 약제(다이센엠-45 등)를 살포하실 것을 강력히 권장합니다.`;
+                commentDiv.innerHTML = `사장님, 촬영하신 사진 분석 결과 <strong>탄저병 초기 증상</strong>과 89% 일치합니다. 주변으로 번지기 전에 방제 약제(다이센엠-45 등)를 살포하실 것을 강력히 권장합니다.`;
             } else {
-                titleDiv.textContent = `📊 '${currentQuery}' 결과`;
-                
-                // 일반 질문의 경우, 억지스러운 '조회 기간' 데이터 표를 숨기고 하얀 도화지처럼 AI 답변만 깔끔하게 보여줍니다.
+                titleDiv.textContent = `🎯 처리 결과`;
                 dataDiv.innerHTML = '';
                 
-                // 1. JSON 껍데기 벗기기 (Parsing)
                 let finalText = "";
+                
                 if (typeof aiReply === 'object' && aiReply !== null) {
                     finalText = aiReply.text || JSON.stringify(aiReply);
                 } else {
                     finalText = aiReply;
                 }
                 
-                // 2. 방어 코드 (타입 체크) 추가 의무화
                 if (typeof finalText === 'string') {
-                    commentDiv.innerHTML = finalText.replace(/\\n/g, '<br>');
+                    commentDiv.innerHTML = finalText.replace(/\n/g, '<br>');
                 } else {
                     commentDiv.innerHTML = "데이터를 불러올 수 없습니다. (데이터 타입 오류)";
                 }
@@ -583,9 +586,30 @@
 
         function resetToPage1() {
             document.getElementById('main-search').value = '';
-            renderRecommendChips();
             switchPage('page3', 'page1');
         }
     </script>
+
+    <!-- Bottom Navigation (Kiosk Style) -->
+    <nav class="bottom-nav">
+        <a href="/admin/dashboard" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">홈</div>
+        </a>
+        <a href="/citizen/market" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-text">마켓</div>
+        </a>
+        <a href="/admin/reservations" class="nav-item">
+            <div class="nav-icon">📅</div>
+            <div class="nav-text">예약</div>
+        </a>
+        <a href="/admin/tax" class="nav-item">
+            <div class="nav-icon">📒</div>
+            <div class="nav-text">장부</div>
+        </a>
+    </nav>
+
 </body>
 </html>
+

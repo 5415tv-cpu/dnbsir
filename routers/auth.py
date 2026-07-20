@@ -436,7 +436,8 @@ async def select_role_page(request: Request):
     if not store_id:
         return RedirectResponse(url="/admin", status_code=303)
         
-    return templates.TemplateResponse(request, "role_select.html", {"request": request, "store_id": store_id})
+    next_url = request.query_params.get("next", "")
+    return templates.TemplateResponse(request, "role_select.html", {"request": request, "store_id": store_id, "next": next_url})
 
 @router.post("/api/validate_biz")
 async def validate_biz_number(biz_number: str = Form(...)):
@@ -482,9 +483,10 @@ async def validate_biz_number(biz_number: str = Form(...)):
 @router.post("/api/select-role")
 async def select_role_api(
     store_id: str = Form(...),
-    role: str = Form(...)
+    role: str = Form(...),
+    next_url: str = Form(None, alias="next")
 ):
-    print(f"[RBAC] User {store_id} selected role: {role}")
+    print(f"[RBAC] User {store_id} selected role: {role}, next_url: {next_url}")
     valid_roles = ["citizen", "farmer", "merchant", "logistics"]
     
     if role not in valid_roles:
@@ -511,7 +513,18 @@ async def select_role_api(
                         
         except Exception as e:
             print(f"[RBAC] Role sync warning: {e}")
-        return RedirectResponse(url="/admin/dashboard", status_code=303)
+            
+        if next_url and next_url.startswith("/"):
+            target_url = next_url
+        elif role == "citizen":
+            target_url = "/citizen/courier"
+        elif role == "farmer":
+            target_url = "/admin/dashboard?mode=farmer"
+        elif role == "logistics":
+            target_url = "/courier"
+        else:
+            target_url = "/admin/dashboard"
+        return RedirectResponse(url=target_url, status_code=303)
     else:
         raise HTTPException(status_code=500, detail="Failed to update role")
 
@@ -556,7 +569,7 @@ async def oauth_login(provider: str, request: Request):
 
         # next 파라미터를 state에 실어 콜백까지 전달
         import urllib.parse, base64, json as _json
-        next_url_param = request.query_params.get("next", "/citizen/courier")
+        next_url_param = request.query_params.get("next") or ""
         state_payload  = base64.urlsafe_b64encode(
             _json.dumps({"next": next_url_param}).encode()
         ).decode()
@@ -720,11 +733,11 @@ async def oauth_callback(
 
         # state에서 next URL 복원 (kakao_login.html → ?next=/citizen/courier)
         import base64 as _b64, json as _json
-        next_param = "/citizen/courier"   # 기본값: 항상 택배접수
+        next_param = ""
         if state:
             try:
                 decoded = _json.loads(_b64.urlsafe_b64decode(state + "==").decode())
-                next_param = decoded.get("next", "/citizen/courier")
+                next_param = decoded.get("next", "")
             except Exception:
                 pass
 
@@ -751,7 +764,7 @@ async def oauth_callback(
 
         # ★ state에 next_param이 있으면 role 무관하게 해당 페이지로 이동
         #    (사장님도 kakao_login.html → /citizen/courier 바로 접근 가능)
-        if state and next_param and next_param != "/citizen/courier":
+        if state and next_param:
             next_url = next_param
         elif role == "owner":
             next_url = "/admin/dashboard"
@@ -774,98 +787,67 @@ async def oauth_callback(
         resp.set_cookie(
             key="admin_session",
             value=mapped_store_id,
-            httponly=True,          # JS 접근 차단
+            httponly=True,
             max_age=86400 * 30,
             samesite="lax",
             secure=is_secure,
             domain=cookie_domain,
         )
         return resp
-
     except Exception as e:
         print(f"[OAuth BFF Error] provider={provider}, error={e}")
         return RedirectResponse(url="/admin?error=oauth_failed", status_code=303)
 
-@router.get("/onboarding", response_class=HTMLResponse)
-async def onboarding_page(request: Request):
-    store_id = request.cookies.get("admin_session")
-    if not store_id:
-        return RedirectResponse(url="/admin", status_code=303)
-    return templates.TemplateResponse(request, "onboarding.html", {"request": request})
 
-@router.post("/onboarding")
-async def process_onboarding(
-    request: Request,
-    role: str = Form(...),
-    biz_number: str = Form(""),
-    store_name: str = Form(""),
-    address: str = Form("")
-):
-    store_id = request.cookies.get("admin_session")
-    if not store_id:
-        return RedirectResponse(url="/admin", status_code=303)
-        
-    store = db.get_store(store_id)
-    if not store:
-        return RedirectResponse(url="/admin", status_code=303)
-        
-    updated_data = store.copy()
-    updated_data["role"] = role
-    
-    if role == "citizen":
-        updated_data["owner_name"] = updated_data.get("name", "시민")
-        next_url = "/dashboard?welcome=true"
-    elif role == "owner":
-        updated_data["biz_number"] = biz_number
-        updated_data["name"] = store_name if store_name else updated_data.get("name", "동네가게")
-        updated_data["address"] = address
-        updated_data["owner_name"] = "사장님"
-        next_url = "/admin/dashboard?welcome=true"
-    elif role == "farmer":
-        updated_data["biz_number"] = biz_number
-        updated_data["name"] = store_name if store_name else updated_data.get("name", "농장")
-        updated_data["address"] = address
-        updated_data["owner_name"] = "농민"
-        next_url = "/admin/dashboard?mode=farmer&welcome=true"
-    else:
-        next_url = "/admin/dashboard?welcome=true"
-        
-    db.save_store(store_id, updated_data)
-    return RedirectResponse(url=next_url, status_code=303)
-
-@router.post("/onboard", response_class=HTMLResponse)
+@router.post("/onboard")
 async def process_new_onboard(
     request: Request,
     subdomain: str = Form(...),
     store_name: str = Form(...),
+    business_type: str = Form("hotel"),
     description: str = Form(""),
     store_image: UploadFile = File(...)
 ):
     import sqlite3
     from pathlib import Path
     import shutil
+    import json
+    from datetime import datetime
+    from fastapi.responses import RedirectResponse
     
     subdomain = subdomain.strip().lower()
     store_name = store_name.strip()
+    business_type = business_type.strip().lower()
     
     if not subdomain or not store_name:
-        return HTMLResponse("서브도메인과 상점 이름은 필수입니다.", status_code=400)
+        raise HTTPException(status_code=400, detail="서브도메인과 상점 이름은 필수입니다.")
         
-    if not store_image or not store_image.filename:
-        return HTMLResponse("선택된 파일이 없습니다.", status_code=400)
-        
-    filename = store_image.filename
-    unique_filename = f"{subdomain}_{filename}"
-    upload_dir = Path("static/uploads")
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    filepath = upload_dir / unique_filename
-    
-    with open(filepath, "wb") as buffer:
-        shutil.copyfileobj(store_image.file, buffer)
-        
+    unique_filename = ""
+    if store_image and store_image.filename:
+        filename = store_image.filename
+        unique_filename = f"{subdomain}_{filename}"
+        upload_dir = Path("static/uploads")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        filepath = upload_dir / unique_filename
+        with open(filepath, "wb") as buffer:
+            shutil.copyfileobj(store_image.file, buffer)
+            
     try:
         db_path = BASE_DIR / "stores.db"
         with sqlite3.connect(str(db_path)) as conn:
+            # Self-healing: Ensure stores table exists in stores.db on the remote/local server
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS stores (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    subdomain TEXT UNIQUE NOT NULL,
+                    store_name TEXT NOT NULL,
+                    description TEXT,
+                    image_filename TEXT,
+                    tokens INTEGER DEFAULT 0
+                )
+            """)
+            conn.commit()
+            
             existing = conn.execute("SELECT id FROM stores WHERE subdomain = ?", (subdomain,)).fetchone()
             if existing:
                 conn.execute(
@@ -878,11 +860,64 @@ async def process_new_onboard(
                     (subdomain, store_name, description, unique_filename)
                 )
     except Exception as e:
-        return HTMLResponse(f"오류가 발생했습니다: {str(e)}", status_code=500)
+        print(f"[Onboard db error] stores.db error: {e}")
+        raise HTTPException(status_code=500, detail=f"subdomain mapping failed: {str(e)}")
         
-    test_url = f"https://{subdomain}.dongnebiseo.com"
-    html = f"<h1>성공적으로 상점이 생성(업데이트)되었습니다!</h1><p>접속 주소: <a href='{test_url}'>{test_url}</a></p>"
-    return HTMLResponse(content=html)
+    try:
+        # 1. 자동 상점 생성 (store_id = subdomain)
+        store_id = subdomain
+        store_data = {
+            "store_id": store_id,
+            "password": "123456",  # 기본 임시 비밀번호 설정
+            "name": store_name,
+            "owner_name": "사장님",
+            "phone": "010-0000-0000",
+            "category": "merchant",
+            "role": "owner",
+            "user_role": "owner",
+            "info": description,
+            "points": 0,
+            "membership": "general",
+            "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "business_type": business_type
+        }
+        db.save_store(store_id, store_data)
+        
+        # 2. 업종에 따른 자원(Resource) 이름 매핑
+        unit_names = {
+            "hotel": "기본 객실 101호",
+            "restaurant": "기본 테이블 1번",
+            "hair_salon": "기본 디자이너 A",
+            "clinic": "제1진료실",
+            "rental": "기본 대여 장비 A"
+        }
+        resource_name = unit_names.get(business_type, "기본 객실 101호")
+        
+        default_config = {
+            "check_in": "15:00",
+            "check_out": "11:00",
+            "business_days": ["월", "화", "수", "목", "금", "토", "일"],
+            "auto_confirm": True,
+            "rooms": [
+                {
+                    "id": "RM-default-1",
+                    "name": resource_name,
+                    "price": 50000,
+                    "description": f"자동 생성된 아늑한 {resource_name}입니다. 상세 정보는 키오스크 화면에서 수정하세요."
+                }
+            ]
+        }
+        config_str = json.dumps(default_config, ensure_ascii=False)
+        db.save_store_setting(store_id, "reservation_config", config_str)
+        
+        # 3. 로그인 세션 쿠키 설정 및 환영 페이지로 리다이렉트
+        response = RedirectResponse(url=f"/admin/welcome?store_id={store_id}", status_code=303)
+        response.set_cookie(key="admin_session", value=store_id, max_age=86400, path="/")
+        return response
+    except Exception as e:
+        print(f"[Onboard logic error] main db register failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Onboarding registration failed: {str(e)}")
+
 
 # ==========================================
 # Legal Compliance: Account Deletion
@@ -982,32 +1017,9 @@ async def verify_otp(req: VerifyOTPRequest, response: Response, request: Request
     
     # Retrieve user from DB
     store = db.get_store(phone)
-    is_new = False
     
     if not store:
-        is_new = True
-        # Standardize formatting for phone
-        formatted_phone = f"{phone[:3]}-{phone[3:7]}-{phone[7:]}" if len(phone) == 11 else phone
-        
-        # Auto signup as citizen (role='citizen', name='동네비서 회원')
-        store = {
-            "store_id": phone,
-            "password": "otp_password_" + "".join(random.choices(string.ascii_letters, k=8)),
-            "name": f"동네주민_{phone[-4:]}",
-            "owner_name": f"동네주민_{phone[-4:]}",
-            "biz_number": "미입력",
-            "address": "미입력",
-            "phone": formatted_phone,
-            "points": 0,
-            "membership": "free",
-            "subscription_tier": "free",
-            "role": "citizen",
-            "user_role": "citizen",
-            "is_signed": True,
-            "status": "active"
-        }
-        db.save_store(phone, store)
-        print(f"[Verify OTP] New user auto-signed up: {phone}")
+        raise HTTPException(status_code=400, detail="REGISTER_REQUIRED")
         
     # Login session cookie
     host = request.headers.get("host", "").lower()
@@ -1026,7 +1038,7 @@ async def verify_otp(req: VerifyOTPRequest, response: Response, request: Request
     
     # Check redirect URL
     redirect_url = "/admin/dashboard"
-    if is_new or store.get("role") == "pending" or store.get("owner_name") == "미입력":
+    if store.get("role") == "pending" or store.get("owner_name") == "미입력":
         redirect_url = "/onboarding"
     elif store.get("role") == "citizen":
         redirect_url = "/"

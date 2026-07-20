@@ -10,113 +10,278 @@
         body, html { 
             margin: 0; padding: 0; 
             width: 100%; height: 100%; 
-            overflow: hidden; /* 스크롤 완벽 차단 */
             font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif; 
-            background-color: #ffffff; 
-            touch-action: none; /* 브라우저 당겨서 새로고침 등 방지 */
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background-attachment: fixed;
+            color: #f8fafc;
+        }
+        body {
+            overflow-y: auto; /* 스크롤 허용 */
+            padding-bottom: 110px; /* 하단 내비게이션 바 공간 확보 */
         }
         
         .dashboard-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2열 그리드 */
+            grid-auto-rows: max-content;
+            width: 100%;
+            min-height: calc(100vh - 200px);
+            padding: 24px 16px;
+            gap: 16px; /* 타일 간격 */
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 공통 타일 스타일: 고급스러운 어두운 글래스모피즘 */
+        .tile {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 24px;
             display: flex;
             flex-direction: column;
-            width: 100%;
-            height: 100vh; /* 전체 화면 채움 */
-            padding: 12px;
-            gap: 12px; /* 타일 간격 */
-        }
-
-        /* 층별 세로 비율 정의 */
-        .layer-1 {
-            flex: 4; /* 세로 40% */
-            display: flex;
-            width: 100%;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            aspect-ratio: 1 / 1; /* 완벽한 정사각형 유지 */
+            color: #f8fafc;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
         }
         
-        .layer-2 {
-            flex: 4; /* 세로 40% */
-            display: flex;
-            width: 100%;
-            gap: 12px;
+        .tile:hover {
+            border-color: rgba(0, 242, 254, 0.3);
+            box-shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
+            background: rgba(47, 58, 79, 0.85);
+            transform: translateY(-2px);
+        }
+        
+        .tile:active {
+            transform: scale(0.96);
+            background: rgba(55, 65, 81, 0.95);
         }
 
-        .layer-3 {
-            flex: 2; /* 세로 20% */
-            display: flex;
+        /* 텍스트 크기 등 세부 조정 */
+        .title { font-size: 20px; font-weight: 900; line-height: 1.35; color: #ffffff; }
+        .sub { font-size: 16px; color: #cbd5e1; margin-top: 8px; font-weight: 700; }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
             width: 100%;
-            gap: 12px;
+            max-width: 600px;
+            height: 85px;
+            background-color: #1A1A1A;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 10000;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.2);
+            padding-bottom: env(safe-area-inset-bottom);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
-
-        /* 공통 타일 스타일: 고급스러운 옅은 회색 */
-        .tile {
-            background-color: #f5f5f7; /* 고급 옅은 회색 */
-            border: 1px solid #eaeaea;
-            border-radius: 20px;
+        .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            text-align: center;
-            width: 100%;
+            color: #FFFFFF;
+            text-decoration: none;
+            flex: 1;
             height: 100%;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03); /* 아주 옅은 그림자 */
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            color: #1d1d1f; /* 진한 회색 (거의 검정) */
+            font-size: 15px;
+            font-weight: 900;
         }
-        
-        .tile:active {
-            transform: scale(0.98);
-            background-color: #e5e5ea; /* 눌렸을 때 조금 더 진해짐 */
+        .nav-icon {
+            font-size: 26px;
+            margin-bottom: 4px;
         }
-
-        /* 텍스트 크기 등 세부 조정 */
-        .title { font-size: 24px; font-weight: 800; line-height: 1.3; }
-        .sub { font-size: 16px; color: #86868b; margin-top: 8px; font-weight: 600; }
-        .emoji { font-size: 40px; margin-bottom: 12px; }
-
-        .layer-3 .title { font-size: 20px; }
-        .layer-3 .emoji { font-size: 28px; margin-bottom: 6px; }
-        .layer-3 .sub { font-size: 14px; margin-top: 4px; }
+        .nav-text {
+            color: #ffffff;
+            font-weight: 900;
+        }
     </style>
 </head>
 <body>
+    <!-- Dashboard Top Header with Login/Logout dynamic card -->
+    <div class="dashboard-header" style="max-width: 600px; margin: 0 auto; padding: 24px 16px 8px 16px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box;">
+        <span style="font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px;">동네비서 OS</span>
+        {% if request.cookies.get("admin_session") %}
+        <a href="/logout" style="font-size: 15px; font-weight: 800; color: #ff4d4d; text-decoration: none; background: rgba(255, 77, 77, 0.12); padding: 8px 16px; border-radius: 20px; border: 1.5px solid rgba(255, 77, 77, 0.25); display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(255, 77, 77, 0.15); transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+            <span>🔓</span> 로그아웃
+        </a>
+        {% else %}
+        <a href="/admin?mode=login" style="font-size: 15px; font-weight: 800; color: #00f2fe; text-decoration: none; background: rgba(0, 242, 254, 0.12); padding: 8px 16px; border-radius: 20px; border: 1.5px solid rgba(0, 242, 254, 0.25); display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0, 242, 254, 0.15); transition: opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+            <span>🔑</span> 로그인
+        </a>
+        {% endif %}
+    </div>
+
     <div class="dashboard-container">
-        <!-- 1층: 가장 크고 넓은 100% 특대형 타일 -->
-        <div class="layer-1">
-            <div class="tile" onclick="window.location.href='/manage_orders'">
-                <div class="emoji">📞</div>
-                <div class="title">고객 콜백 및<br>주문 확인</div>
-                <div class="sub">실시간 주문 내역을 확인하고 고객에게 연락하세요</div>
-            </div>
+        <div class="tile" onclick="window.location.href='/admin/calls'">
+            <div class="emoji" style="font-size: 40px; margin-bottom: 15px;">📞</div>
+            <div class="title">고객 콜백 확인</div>
+            <div class="sub">전화 AI 응대 대장</div>
         </div>
         
-        <!-- 2층: 정사각형 50% 분할 타일 -->
-        <div class="layer-2">
-            <div class="tile" onclick="alert('숏폼 만들기 페이지로 이동합니다.')">
-                <div class="emoji">🎬</div>
-                <div class="title">홍보 숏폼<br>만들기</div>
-                <div class="sub">AI 자동 생성</div>
-            </div>
-            <div class="tile" onclick="window.location.href='/ai_assistant'">
-                <div class="emoji">🤖</div>
-                <div class="title">AI 비서<br>(세무/매출)</div>
-                <div class="sub">매출 통계 분석</div>
-            </div>
+        <div class="tile" onclick="window.location.href='/admin/reservations'">
+            <div class="emoji" style="font-size: 40px; margin-bottom: 15px;">🗓️</div>
+            <div class="title">실시간 예약 및<br>주문 확인</div>
+            <div class="sub">예약 접수 대장</div>
         </div>
         
-        <!-- 3층: 가로 50% 분할 타일 -->
-        <div class="layer-3">
-            <div class="tile" onclick="window.location.href='/token_history'">
-                <div class="emoji">🪙</div>
-                <div class="title">내 토큰 잔액</div>
-                <div class="sub">잔여 1,500 🔮</div>
-            </div>
-            <div class="tile token-recharge" onclick="window.location.href='/token_recharge'">
-                <div class="emoji">⚡</div>
-                <div class="title">토큰 충전 요청</div>
-                <div class="sub">10원 = 1🔮</div>
+        <div class="tile" onclick="openVideoModal()">
+            <div class="emoji" style="font-size: 40px; margin-bottom: 15px;">🎬</div>
+            <div class="title">홍보 숏폼<br>만들기</div>
+            <div class="sub">AI 자동 생성</div>
+        </div>
+        
+        <div class="tile" onclick="window.location.href='/ai_assistant'">
+            <div class="emoji" style="font-size: 40px; margin-bottom: 15px;">🤖</div>
+            <div class="title">AI 비서<br>(세무/매출)</div>
+            <div class="sub">매출 통계 분석</div>
+        </div>
+        
+        <div class="tile" onclick="window.location.href='/token_history'">
+            <div class="emoji" style="font-size: 40px; margin-bottom: 15px;">🪙</div>
+            <div class="title">내 토큰 잔액</div>
+            <div class="sub">잔여 1,500 🔮</div>
+        </div>
+        
+        <div class="tile token-recharge" onclick="window.location.href='/token_recharge'">
+            <div class="emoji" style="font-size: 40px; margin-bottom: 15px;">⚡</div>
+            <div class="title">토큰 충전 요청</div>
+            <div class="sub">10원 = 1🔮</div>
+        </div>
+    </div>
+
+<!-- TANTAN LEGAL FOOTER -->
+<footer style="background-color: #f1f3f5; padding: 40px 20px; text-align: center; color: #495057; font-size: 14px; line-height: 1.8; width: 100%; border-top: 1px solid #e9ecef; position: relative; z-index: 9999; clear: both; margin-top: auto;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 8px; color: #212529;">상호명: 탄탄제작소</div>
+    <div>대표자: 이영준</div>
+    <div>사업자등록번호: 442-32-01655</div>
+    <div>주소: 강원특별자치도 태백시 (상세주소)</div>
+    <div>연락처: 010-2384-7447</div>
+    <div>통신판매업 신고번호: 제2026-강원태백-0013호</div>
+    <div>출원된 상표(출원번호: 4-2026-023525-4)</div>
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+        <a href="/agreement" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">이용약관</a>
+        <a href="/agreement?tab=tab2" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">개인정보처리방침</a>
+        <a href="/agreement?tab=tab3" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px;">위치기반서비스 이용약관</a>
+    </div>
+    <div style="margin-top: 15px; font-size: 13px; color: #868e96;">Copyright 2026. Tantan Studio all rights reserved.</div>
+</footer>
+
+    <div id="video-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 10000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(8px);">
+        <div style="background: rgba(30, 41, 59, 0.95); width: 100%; max-width: 400px; border-radius: 24px; padding: 24px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255, 255, 255, 0.15); color: #f8fafc; backdrop-filter: blur(20px);">
+            <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 20px; color: #f8fafc; font-weight: 700;">🎬 홍보 숏폼 제작 요청</h3>
+            <p style="font-size: 14px; color: #94a3b8; margin-bottom: 20px; line-height: 1.4;">어떤 분위기의 영상을 원하시나요? 감동 다큐부터 예능까지, AI가 제작해 드립니다.</p>
+            
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #f8fafc;">1. 영상 컨셉 선택</label>
+            <select id="video-vibe" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 16px; font-size: 14px; background: rgba(255,255,255,0.05); color: #f8fafc; outline: none;">
+                <option value="[모드 1: 다큐멘터리]" style="background: #0f172a; color: #f8fafc;">감동적인 다큐멘터리 (진정성/기록)</option>
+                <option value="[모드 2: 개그맨/B급 예능]" style="background: #0f172a; color: #f8fafc;">유쾌한 개그맨/B급 예능 (재치/유머)</option>
+            </select>
+
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #f8fafc;">2. 작업 사진 (2장 이상)</label>
+            <input type="file" id="video-images" multiple accept="image/*" style="width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 16px; font-size: 14px; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #f8fafc;">
+
+            <label style="display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: #f8fafc;">3. 사장님의 이야기 (진심)</label>
+            <textarea id="video-story" placeholder="예: 매일 가마솥에 불을 지피며 10년째 이어가고 있습니다..." style="width: 100%; height: 80px; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 20px; font-size: 14px; resize: none; box-sizing: border-box; background: rgba(255,255,255,0.05); color: #f8fafc; outline: none;"></textarea>
+
+            <div style="display: flex; gap: 10px;">
+                <button onclick="closeVideoModal()" style="flex: 1; padding: 14px; border-radius: 12px; border: none; background: rgba(255,255,255,0.08); color: #f8fafc; font-weight: 600; font-size: 16px; cursor: pointer; transition: background 0.2s;">취소</button>
+                <button id="btn-video-submit" onclick="submitVideoRequest()" style="flex: 1.5; padding: 14px; border-radius: 12px; border: none; background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%); color: #0d0e12; font-weight: 700; font-size: 16px; cursor: pointer; transition: opacity 0.2s;">전송하기</button>
             </div>
         </div>
     </div>
+
+    <script>
+    function openVideoModal() {
+        document.getElementById('video-modal-overlay').style.display = 'flex';
+    }
+
+    function closeVideoModal() {
+        document.getElementById('video-modal-overlay').style.display = 'none';
+    }
+
+    async function submitVideoRequest() {
+        const fileInput = document.getElementById('video-images');
+        const storyInput = document.getElementById('video-story');
+        
+        if (fileInput.files.length < 2) {
+            alert("최소 2장 이상의 사진을 선택해 주세요.");
+            return;
+        }
+        if (!storyInput.value.trim()) {
+            alert("원하는 스토리나 내용을 입력해 주세요.");
+            return;
+        }
+
+        const btn = document.getElementById('btn-video-submit');
+        const ogText = btn.innerHTML;
+        btn.innerHTML = "전송 중...";
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+
+        try {
+            const formData = new FormData();
+            const vibe = document.getElementById('video-vibe').value;
+            const finalStory = vibe + "\n" + storyInput.value;
+            formData.append('story', finalStory);
+            for(let i = 0; i < fileInput.files.length; i++) {
+                formData.append('images', fileInput.files[i]);
+            }
+
+            const res = await fetch('/api/admin/video_request', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await res.json();
+            
+            if(data.success) {
+                alert('🎬 홍보 숏폼 영상 제작 요청이 성공적으로 전송되었습니다!\n본사에서 확인 후 신속하게 제작해 드리겠습니다.');
+                closeVideoModal();
+                fileInput.value = '';
+                storyInput.value = '';
+            } else {
+                alert('요청 중 서버 오류가 발생했습니다.');
+            }
+        } catch (e) {
+            alert('네트워크 오류가 발생했습니다.');
+        } finally {
+            btn.innerHTML = ogText;
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }
+    </script>
+
+    <!-- Bottom Navigation (Kiosk Style) -->
+    <nav class="bottom-nav">
+        <a href="/admin/dashboard" class="nav-item">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-text">홈</div>
+        </a>
+        <a href="/citizen/market" class="nav-item">
+            <div class="nav-icon">🛒</div>
+            <div class="nav-text">마켓</div>
+        </a>
+        <a href="/admin/reservations" class="nav-item">
+            <div class="nav-icon">📅</div>
+            <div class="nav-text">예약</div>
+        </a>
+        <a href="/admin/tax" class="nav-item">
+            <div class="nav-icon">📒</div>
+            <div class="nav-text">장부</div>
+        </a>
+    </nav>
+
 </body>
 </html>

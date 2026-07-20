@@ -823,15 +823,15 @@
 
     <!-- 앱 다운로드 섹션 (사업자 전용 - 최하단 배치) -->
     <div style="max-width: 600px; margin: 2rem auto; padding: 1.5rem; background: #ffffff; border: 2px solid #e2e8f0; border-radius: 28px; text-align: center; box-shadow: 0 10px 30px rgba(15, 23, 42, 0.03); box-sizing: border-box;">
-        <div style="font-size: 1.25rem; font-weight: 900; color: #1e3c72; margin-bottom: 0.5rem; letter-spacing: -0.5px;">📱 동네비서 전용 앱 다운로드 (Android)</div>
+        <div style="font-size: 1.25rem; font-weight: 900; color: #1e3c72; margin-bottom: 0.5rem; letter-spacing: -0.5px;">📱 부재중 자동 안내 연동 도구 활성화 (Android)</div>
         <div style="font-size: 0.95rem; font-weight: bold; color: #ef4444; margin-bottom: 1.2rem; line-height: 1.5; word-break: keep-all; padding: 0 10px;">
-            ⚠️ 본 앱은 사업자(상점주 및 기사님) 전용 프로그램입니다.<br>일반 회원은 설치하실 필요가 없습니다.
+            ⚠️ 본 도구는 사업자(상점주 및 기사님) 전용 연동 서비스입니다.<br>일반 회원은 활성화하실 필요가 없습니다.
         </div>
         <a href="/static/apps/dongnebiseo_latest.apk" download class="senior-huge-btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); max-width: 440px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25);">
             <div class="senior-icon-bg" style="animation: none; font-size: 1.8rem; padding: 6px;">📱</div>
             <div class="senior-text-wrapper">
-                <div class="senior-text" style="font-size: 1.4rem;">동네비서 앱 다운로드</div>
-                <div class="senior-subtext" style="font-size: 0.95rem; color: #e6fcf5;">자동 콜백 및 전화 감지용 프로그램</div>
+                <div class="senior-text" style="font-size: 1.4rem;">동네비서 연동 도구 다운로드</div>
+                <div class="senior-subtext" style="font-size: 0.95rem; color: #e6fcf5;">백그라운드 통화 신호 연동 서비스 (단 1회 설정)</div>
             </div>
         </a>
     </div>
@@ -1407,7 +1407,12 @@
                 btn.disabled = false;
                 btn.textContent = "인증 완료 및 시작하기";
                 console.error("Verification Error:", err);
-                showToast(err.message || "인증번호가 일치하지 않습니다. 다시 입력해 주세요.");
+                if (err.message && err.message.includes("REGISTER_REQUIRED")) {
+                    alert("가입되지 않은 휴대폰 번호입니다.\n회원가입 페이지로 이동합니다.");
+                    window.location.href = "/register/select";
+                } else {
+                    showToast(err.message || "인증번호가 일치하지 않습니다. 다시 입력해 주세요.");
+                }
             });
         }
 
@@ -1509,12 +1514,23 @@
             const loginBtn = document.getElementById('header-login-btn');
             if (!navMenu) return;
 
-            // 헤더 로그인 버튼 상태 동기화
+            // 헤더 로그인/로그아웃 버튼 상태 동기화
             if (loginBtn) {
+                loginBtn.style.display = 'block';
                 if (status.authenticated) {
-                    loginBtn.style.display = 'none'; // 로그인 후 숨김
+                    loginBtn.innerHTML = '🔓 로그아웃';
+                    loginBtn.onclick = function() {
+                        if (confirm('로그아웃 하시겠습니까?')) {
+                            location.href = '/logout';
+                        }
+                    };
+                    loginBtn.style.background = 'linear-gradient(135deg, #e11d48, #be123c)';
                 } else {
-                    loginBtn.style.display = 'block'; // 비로그인 시 표시
+                    loginBtn.innerHTML = '🔑 로그인';
+                    loginBtn.onclick = function() {
+                        openLoginModal();
+                    };
+                    loginBtn.style.background = 'linear-gradient(135deg, #1e3c72, #2a5298)';
                 }
             }
             
@@ -1583,7 +1599,7 @@
                     
                     <a href="/static/apps/dongnebiseo_latest.apk" download style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.8rem 1rem; color: #10b981; font-weight: 800; border-radius: 12px; transition: background 0.2s;" onmouseover="this.style.background='#ecfdf5'" onmouseout="this.style.background='transparent'">
                         <span>📱</span>
-                        <span>동네비서 앱 다운로드 (Android)</span>
+                        <span>연동 도구 다운로드 (Android)</span>
                     </a>
                     
                     <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 0.5rem 0;">
@@ -1607,7 +1623,7 @@
                     
                     <a href="/static/apps/dongnebiseo_latest.apk" download style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.8rem 1rem; color: #10b981; font-weight: 800; border-radius: 12px; transition: background 0.2s;" onmouseover="this.style.background='#ecfdf5'" onmouseout="this.style.background='transparent'">
                         <span>📱</span>
-                        <span>동네비서 앱 다운로드 (Android)</span>
+                        <span>연동 도구 다운로드 (Android)</span>
                     </a>
                     
                     <a href="#" onclick="showLoginRequiredAlert(event, '동네비서 AI'); return false;" style="display: flex; align-items: center; gap: 0.75rem; text-decoration: none; padding: 0.8rem 1rem; color: #94a3b8; font-weight: 700; border-radius: 12px; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
@@ -1787,5 +1803,23 @@
             }
         }
     </script>
+
+<!-- TANTAN LEGAL FOOTER -->
+<footer style="background-color: #f1f3f5; padding: 40px 20px; text-align: center; color: #495057; font-size: 14px; line-height: 1.8; width: 100%; border-top: 1px solid #e9ecef; position: relative; z-index: 9999; clear: both; margin-top: auto;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 8px; color: #212529;">상호명: 탄탄제작소</div>
+    <div>대표자: 이영준</div>
+    <div>사업자등록번호: 442-32-01655</div>
+    <div>주소: 강원특별자치도 태백시 (상세주소)</div>
+    <div>연락처: 010-2384-7447</div>
+    <div>통신판매업 신고번호: 제2026-강원태백-0013호</div>
+    <div>출원된 상표(출원번호: 4-2026-023525-4)</div>
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+        <a href="/agreement" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">이용약관</a>
+        <a href="/agreement?tab=tab2" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">개인정보처리방침</a>
+        <a href="/agreement?tab=tab3" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px;">위치기반서비스 이용약관</a>
+    </div>
+    <div style="margin-top: 15px; font-size: 13px; color: #868e96;">Copyright 2026. Tantan Studio all rights reserved.</div>
+</footer>
+
 </body>
 </html>

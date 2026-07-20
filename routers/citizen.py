@@ -478,7 +478,8 @@ async def send_payment_success(request: Request, address: str = "", paymentKey: 
 
 @router.get("/agreement", response_class=HTMLResponse)
 async def agreement_page(request: Request):
-    return templates.TemplateResponse(request, "agreement.html", {"request": request})
+    next_url = request.query_params.get("next", "")
+    return templates.TemplateResponse(request, "agreement.html", {"request": request, "next": next_url})
 
 
 @router.get("/detail/restaurant", response_class=HTMLResponse)

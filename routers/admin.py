@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, Response, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Request, Form, Response, Depends, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -824,7 +824,65 @@ async def get_reservations_api(request: Request):
         print(f"[Reservations API Error] {e}")
         return []
 
+@router.get("/admin/reservation-config", response_class=HTMLResponse)
+async def admin_reservation_config_page(request: Request, current_user: User = Depends(get_current_user)):
+    store_id = current_user.store_id
+    store = db.get_store(store_id)
+    business_type = store.get("business_type") if store else "hotel"
+    if not business_type:
+        business_type = "hotel"
+        
+    return templates.TemplateResponse(request, "reservation_config.html", {
+        "request": request,
+        "user": current_user,
+        "api_url": API_URL,
+        "business_type": business_type
+    })
+
+@router.get("/admin/welcome", response_class=HTMLResponse)
+async def admin_welcome_page(request: Request, store_id: str, current_user: User = Depends(get_current_user)):
+    store = db.get_store(store_id)
+    store_name = store.get("name", "신규 가맹점") if store else "신규 가맹점"
+    return templates.TemplateResponse(request, "welcome.html", {
+        "request": request,
+        "store_id": store_id,
+        "store_name": store_name,
+        "user": current_user
+    })
+
+
+@router.get("/api/admin/reservation-settings")
+async def get_reservation_settings(request: Request):
+    cookie_store_id = request.cookies.get("admin_session")
+    if not cookie_store_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        settings = db.get_all_settings(cookie_store_id)
+        config_str = settings.get("reservation_config", "{}")
+        try:
+            config = json.loads(config_str)
+        except Exception:
+            config = {}
+        return config
+    except Exception as e:
+        print(f"[get_reservation_settings] Error: {e}")
+        return {}
+
+@router.post("/api/admin/reservation-settings")
+async def save_reservation_settings(request: Request, config_data: dict):
+    cookie_store_id = request.cookies.get("admin_session")
+    if not cookie_store_id:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        config_str = json.dumps(config_data, ensure_ascii=False)
+        success = db.save_setting(cookie_store_id, "reservation_config", config_str)
+        return {"success": success}
+    except Exception as e:
+        print(f"[save_reservation_settings] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/api/admin/deliveries")
+
 async def get_deliveries_api(request: Request):
     try:
         res = db.get_store_deliveries("CITIZEN")
@@ -1219,9 +1277,56 @@ async def token_recharge(request: Request, cookie_store_id: Union[str, None] = C
     store = db.get_store(cookie_store_id)
     return templates.TemplateResponse(request, "token_recharge.html", {"request": request, "store_name": store.get("store_name", "내 상점")})
 
+import queue
+import threading
+
+ai_task_results = {}
+ai_task_queue = queue.Queue()
+
+def _ai_worker():
+    import time
+    while True:
+        task = ai_task_queue.get()
+        if task is None: break
+        
+        try:
+            task_id = task['task_id']
+            custom_text = task['custom_text']
+            delivery_method = task['delivery_method']
+            store_id = task.get('store_id')
+            
+            import ai_manager
+            system_prompt = (
+                "당신은 가맹점 사장님과 지역 주민을 돕는 '동네비서'입니다. "
+                "사용자가 1000포인트(원)라는 비용을 지불하고 사용하는 프리미엄 서비스인 만큼, "
+                "답변은 항상 매우 구체적이고, 풍성하며, 친절하고 전문적인 톤을 유지해야 합니다. "
+                "단답형을 피하고, 도구(여행 설계 등)의 결과를 바탕으로 충분한 부연 설명과 가치를 제안하세요. "
+                "★중요★ 만약 도구의 반환값에 [ACTIONS] ... [/ACTIONS] 형태의 텍스트가 포함되어 있다면, 절대 이를 수정하지 말고 답변의 맨 마지막에 원본 그대로 똑같이 복사하여 출력해야 합니다."
+            )
+            reply = ai_manager.get_ai_response(custom_text, system_prompt=system_prompt, tool_set='admin', user_id=store_id)
+            
+            time.sleep(2) # Simulate delay
+            
+            if delivery_method == 'wait':
+                ai_task_results[task_id] = {"status": "completed", "result": reply}
+            elif delivery_method == 'kakao':
+                print(f"[Callback] 사용자 카카오톡으로 발송 완료: {task_id}")
+                ai_task_results[task_id] = {"status": "completed", "result": reply}
+            elif delivery_method == 'email':
+                print(f"[Callback] 사용자 이메일(PDF)로 발송 완료: {task_id}")
+                ai_task_results[task_id] = {"status": "completed", "result": reply}
+        except Exception as e:
+            print(f"Queue Worker Error: {e}")
+        finally:
+            ai_task_queue.task_done()
+
+# Start background daemon worker
+threading.Thread(target=_ai_worker, daemon=True).start()
+
 @router.post("/api/ai/query")
 async def ai_query(request: Request, query_type: str = Form(None), custom_text: str = Form('')):
     custom_text = custom_text.strip() if custom_text else ""
+    cookie_store_id = request.cookies.get("admin_session")
     if query_type == 'orders_today':
         reply = "오늘 총 3건의 신규 주문이 있습니다. (김철수님 외 2건, 총 120,000원 대기 중)"
         return {"reply": reply, "action": None}
@@ -1232,11 +1337,47 @@ async def ai_query(request: Request, query_type: str = Form(None), custom_text: 
         reply = "현재 '사과 세트'가 가장 많이 팔리고 있습니다. 이 상품으로 홍보용 숏폼을 하나 더 만들어볼까요? (예상비용: 10 🔮)"
         return {"reply": reply, "action": "create_shortform"}
     elif custom_text:
+        keywords = ['여행', '코스', '패키지', '짜줘', '추천']
+        if any(k in custom_text for k in keywords):
+            import random
+            eta = random.randint(120, 180) # Mock ETA
+            return {"reply": None, "action": "REQUIRE_ASYNC_CHOICE", "eta_seconds": eta, "prompt": custom_text}
+        
         import ai_manager
-        system_prompt = "당신은 가맹점 사장님을 돕는 친절한 비서입니다. 사장님의 질문에 전문적이고 명확하게 짧게 답하세요."
-        reply = ai_manager.get_ai_response(custom_text, system_prompt=system_prompt, tool_set='admin')
+        system_prompt = (
+            "당신은 가맹점 사장님과 지역 주민을 돕는 '동네비서'입니다. "
+            "사용자가 1000포인트(원)라는 비용을 지불하고 사용하는 프리미엄 서비스인 만큼, "
+            "답변은 항상 매우 구체적이고, 풍성하며, 친절하고 전문적인 톤을 유지해야 합니다. "
+            "단답형을 피하고, 도구(여행 설계 등)의 결과를 바탕으로 충분한 부연 설명과 가치를 제안하세요. "
+            "★중요★ 만약 도구의 반환값에 [ACTIONS] ... [/ACTIONS] 형태의 텍스트가 포함되어 있다면, 절대 이를 수정하지 말고 답변의 맨 마지막에 원본 그대로 똑같이 복사하여 출력해야 합니다."
+        )
+        reply = ai_manager.get_ai_response(custom_text, system_prompt=system_prompt, tool_set='admin', user_id=cookie_store_id)
         return {"reply": reply, "action": None}
     return {"reply": "잘못된 요청입니다.", "action": None}
+
+@router.post("/api/ai/async_query")
+async def async_ai_query(request: Request, custom_text: str = Form(''), delivery_method: str = Form('wait')):
+    import uuid
+    task_id = str(uuid.uuid4())
+    ai_task_results[task_id] = {"status": "processing", "result": None}
+    cookie_store_id = request.cookies.get("admin_session")
+    
+    # Enqueue task to sequential worker
+    ai_task_queue.put({
+        'task_id': task_id,
+        'custom_text': custom_text,
+        'delivery_method': delivery_method,
+        'store_id': cookie_store_id
+    })
+    
+    if delivery_method != 'wait':
+        return {"status": "accepted", "message": f"{delivery_method}으로 발송 예정입니다.", "task_id": task_id}
+    else:
+        return {"status": "processing", "task_id": task_id}
+
+@router.get("/api/ai/task_status/{task_id}")
+async def get_task_status(task_id: str):
+    return ai_task_results.get(task_id, {"status": "not_found"})
 
 @router.post("/api/token_recharge")
 async def process_token_recharge(request: Request, amount: str = Form(...), cookie_store_id: Union[str, None] = Cookie(default=None, alias="admin_session")):

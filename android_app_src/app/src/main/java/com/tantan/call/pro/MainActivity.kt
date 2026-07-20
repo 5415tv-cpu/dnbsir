@@ -53,6 +53,30 @@ class MainActivity : AppCompatActivity() {
     private lateinit var layoutSettings: LinearLayout
     private var isPopupActive = false
 
+    private var uploadMessage: android.webkit.ValueCallback<Array<Uri>>? = null
+
+    private val fileChooserLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val data = result.data
+            if (data != null) {
+                val clipData = data.clipData
+                if (clipData != null) {
+                    val uris = Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+                    uploadMessage?.onReceiveValue(uris)
+                } else if (data.data != null) {
+                    uploadMessage?.onReceiveValue(arrayOf(data.data!!))
+                } else {
+                    uploadMessage?.onReceiveValue(null)
+                }
+            } else {
+                uploadMessage?.onReceiveValue(null)
+            }
+        } else {
+            uploadMessage?.onReceiveValue(null)
+        }
+        uploadMessage = null
+    }
+
     private val requestRoleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             Toast.makeText(this, "스팸 차단 및 발신번호 확인 기본 앱 등록 완료!", Toast.LENGTH_SHORT).show()
@@ -243,7 +267,35 @@ class MainActivity : AppCompatActivity() {
                     return true
                 }
             }
-            webViewDashboard.webChromeClient = android.webkit.WebChromeClient()
+            webViewDashboard.webChromeClient = object : android.webkit.WebChromeClient() {
+                override fun onShowFileChooser(
+                    webView: android.webkit.WebView?,
+                    filePathCallback: android.webkit.ValueCallback<Array<Uri>>?,
+                    fileChooserParams: android.webkit.WebChromeClient.FileChooserParams?
+                ): Boolean {
+                    uploadMessage?.onReceiveValue(null)
+                    uploadMessage = filePathCallback
+
+                    val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "*/*"
+                        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                        
+                        val acceptTypes = fileChooserParams?.acceptTypes
+                        if (acceptTypes != null && acceptTypes.isNotEmpty() && acceptTypes[0].isNotBlank()) {
+                            putExtra(Intent.EXTRA_MIME_TYPES, acceptTypes)
+                            type = acceptTypes[0]
+                        }
+                    }
+                    try {
+                        fileChooserLauncher.launch(intent)
+                    } catch (e: Exception) {
+                        uploadMessage = null
+                        return false
+                    }
+                    return true
+                }
+            }
             webViewDashboard.loadUrl("https://dongnebiseo.com/admin/dashboard")
             
 

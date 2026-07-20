@@ -258,8 +258,15 @@
 <header>
     <button class="btn-back" onclick="history.back()">←</button>
     <div class="header-center">{{ product.name }}</div>
-    <div class="cart-btn" id="cartBtn" onclick="goToCart()">
-        🛒 <span class="cart-count" id="cartCount">0</span>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="cart-btn" id="cartBtn" onclick="goToCart()" style="position: relative;">
+            🛒 <span class="cart-count" id="cartCount">0</span>
+        </div>
+        {% if request.cookies.get("admin_session") %}
+        <a href="/logout" style="font-size: 12px; font-weight: 800; color: #ff4d4d; text-decoration: none; background: rgba(255, 77, 77, 0.15); padding: 5px 10px; border-radius: 12px; border: 1px solid rgba(255, 77, 77, 0.3); white-space: nowrap; line-height: 1;">로그아웃</a>
+        {% else %}
+        <a href="/admin?mode=login" style="font-size: 12px; font-weight: 800; color: #00f2fe; text-decoration: none; background: rgba(0, 242, 254, 0.15); padding: 5px 10px; border-radius: 12px; border: 1px solid rgba(0, 242, 254, 0.3); white-space: nowrap; line-height: 1;">로그인</a>
+        {% endif %}
     </div>
 </header>
 
@@ -582,5 +589,23 @@
 
     updateCartBadge();
 </script>
+
+<!-- TANTAN LEGAL FOOTER -->
+<footer style="background-color: #f1f3f5; padding: 40px 20px; text-align: center; color: #495057; font-size: 14px; line-height: 1.8; width: 100%; border-top: 1px solid #e9ecef; position: relative; z-index: 9999; clear: both; margin-top: auto;">
+    <div style="font-weight: 800; font-size: 16px; margin-bottom: 8px; color: #212529;">상호명: 탄탄제작소</div>
+    <div>대표자: 이영준</div>
+    <div>사업자등록번호: 442-32-01655</div>
+    <div>주소: 강원특별자치도 태백시 (상세주소)</div>
+    <div>연락처: 010-2384-7447</div>
+    <div>통신판매업 신고번호: 제2026-강원태백-0013호</div>
+    <div>출원된 상표(출원번호: 4-2026-023525-4)</div>
+    <div style="margin-top: 15px; margin-bottom: 15px;">
+        <a href="/agreement" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">이용약관</a>
+        <a href="/agreement?tab=tab2" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px; margin-right: 15px;">개인정보처리방침</a>
+        <a href="/agreement?tab=tab3" style="color: #495057; text-decoration: underline; font-weight: bold; font-size: 14px;">위치기반서비스 이용약관</a>
+    </div>
+    <div style="margin-top: 15px; font-size: 13px; color: #868e96;">Copyright 2026. Tantan Studio all rights reserved.</div>
+</footer>
+
 </body>
 </html>

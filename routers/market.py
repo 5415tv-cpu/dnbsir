@@ -78,7 +78,7 @@ async def create_market_order(order: MarketOrderRequest):
     total_amount = 0
     
     # PostgreSQL 커넥션 획득
-    conn = db_postgres.get_connection()
+    conn = db_postgres.db.get_connection()
     if conn is None:
         return {"success": False, "error": "데이터베이스 연결 실패"}
         
@@ -420,7 +420,7 @@ async def market_success_page(
 
     # 1. [선행] DB 중복 주문 확인 — 토스 confirm 전에 먼저 체크 (ALREADY_PROCESSED_PAYMENT 방지)
     try:
-        _conn = db_postgres.get_connection() if hasattr(db_postgres, 'get_connection') else None
+        _conn = db_postgres.db.get_connection() if hasattr(db_postgres.db, 'get_connection') else None
         if _conn is None and hasattr(db_postgres, 'get_db_session'):
             _conn = db_postgres.get_db_session()
         if _conn is not None:
@@ -442,66 +442,91 @@ async def market_success_page(
     except Exception as pre_e:
         print(f"[중복체크 선행 오류 - 스킵] {pre_e}")
 
-    # 2. 토스 결제 승인 API 호출 (Confirm)
-    toss_secret_key = config.get_secret("TOSS_SECRET_KEY")
-    if not toss_secret_key:
-        return templates.TemplateResponse(
-            request, 
-            "market_fail.html", 
-            {"request": request, "error_msg": "결제 승인용 토스 시크릿 키가 설정되지 않았습니다."}
-        )
-
-    credential = f"{toss_secret_key}:"
-    encoded_credential = base64.b64encode(credential.encode("utf-8")).decode("utf-8")
+    # 2. 토스 결제 승인 API 호출 (Confirm) 또는 카카오페이 가상 승인
+    is_kakaopay = paymentKey.startswith("KAKAOPAY_")
     
-    headers = {
-        "Authorization": f"Basic {encoded_credential}",
-        "Content-Type": "application/json"
-    }
-    
-    payload = {
-        "paymentKey": paymentKey,
-        "orderId": orderId,
-        "amount": amount
-    }
-
-    try:
-        response = requests.post(
-            "https://api.tosspayments.com/v1/payments/confirm",
-            json=payload,
-            headers=headers,
-            timeout=10
-        )
-        
-        resp_data = response.json()
-        
-        if response.status_code != 200:
-            error_code = resp_data.get("code", "")
-            error_msg = resp_data.get("message", "토스 결제 승인 실패")
-            # ALREADY_PROCESSED_PAYMENT: 토스에선 이미 처리됐으나 DB 누락된 엣지케이스
-            if error_code == "ALREADY_PROCESSED_PAYMENT":
-                return templates.TemplateResponse(
-                    request,
-                    "market_success.html",
-                    {
-                        "request": request,
-                        "order_name": "마켓 주문 상품",
-                        "order_id": orderId,
-                        "amount": f"{amount:,}"
-                    }
-                )
+    if is_kakaopay:
+        # 카카오페이의 경우, 이미 /api/payment/kakao/approve에서 승인이 완료되었으므로
+        # 토스 API 호출을 우회하고 가상 성공 데이터를 생성합니다.
+        product_name_summary = "마켓 주문 상품"
+        if items_json:
+            try:
+                items_list = json.loads(items_json)
+                if items_list:
+                    first_item_name = items_list[0].get("name", "마켓 상품")
+                    if len(items_list) > 1:
+                        product_name_summary = f"{first_item_name} 외 {len(items_list) - 1}건"
+                    else:
+                        qty = items_list[0].get("qty", 1)
+                        product_name_summary = f"{first_item_name} {qty}개"
+            except Exception as e_json:
+                print(f"Failed to parse items_json beforehand: {e_json}")
+                
+        resp_data = {
+            "orderName": product_name_summary,
+            "totalAmount": amount
+        }
+    else:
+        toss_secret_key = config.get_secret("TOSS_SECRET_KEY")
+        if not toss_secret_key:
             return templates.TemplateResponse(
                 request, 
                 "market_fail.html", 
-                {"request": request, "error_msg": f"토스 API 에러: {error_msg} (코드: {error_code})"}
+                {"request": request, "error_msg": "결제 승인용 토스 시크릿 키가 설정되지 않았습니다."}
             )
+
+        credential = f"{toss_secret_key}:"
+        encoded_credential = base64.b64encode(credential.encode("utf-8")).decode("utf-8")
+        
+        headers = {
+            "Authorization": f"Basic {encoded_credential}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "paymentKey": paymentKey,
+            "orderId": orderId,
+            "amount": amount
+        }
+
+    try:
+        if not is_kakaopay:
+            response = requests.post(
+                "https://api.tosspayments.com/v1/payments/confirm",
+                json=payload,
+                headers=headers,
+                timeout=10
+            )
+            
+            resp_data = response.json()
+            
+            if response.status_code != 200:
+                error_code = resp_data.get("code", "")
+                error_msg = resp_data.get("message", "토스 결제 승인 실패")
+                # ALREADY_PROCESSED_PAYMENT: 토스에선 이미 처리됐으나 DB 누락된 엣지케이스
+                if error_code == "ALREADY_PROCESSED_PAYMENT":
+                    return templates.TemplateResponse(
+                        request,
+                        "market_success.html",
+                        {
+                            "request": request,
+                            "order_name": "마켓 주문 상품",
+                            "order_id": orderId,
+                            "amount": f"{amount:,}"
+                        }
+                    )
+                return templates.TemplateResponse(
+                    request, 
+                    "market_fail.html", 
+                    {"request": request, "error_msg": f"토스 API 에러: {error_msg} (코드: {error_code})"}
+                )
             
         # 승인 완료된 정보 추출
         product_name = resp_data.get("orderName", "마켓 주문 상품")
         total_amount = resp_data.get("totalAmount", amount)
         
         # 3. PostgreSQL 트랜잭션 기록 (Atomicity 보장)
-        conn = db_postgres.get_connection()
+        conn = db_postgres.db.get_connection()
         if conn is None:
             return templates.TemplateResponse(
                 request, 
@@ -590,9 +615,10 @@ async def market_success_page(
                 
                 # SQLite 상품 재고 감소 (이름 기반 매핑)
                 try:
-                    conn_sq = db.db_impl.get_connection()
+                    conn_sq = db.db.get_connection()
                     c_sq = conn_sq.cursor(cursor_factory=psycopg2.extras.RealDictCursor) if hasattr(conn_sq, 'cursor_factory') else conn_sq.cursor()
-                    c_sq.execute("SELECT id FROM products WHERE name = %s", (p_name,))
+                    placeholder = "%s" if db_postgres.use_postgres else "?"
+                    c_sq.execute(f"SELECT id FROM products WHERE name = {placeholder}", (p_name,))
                     prod_sq = c_sq.fetchone()
                     if prod_sq:
                         p_id = prod_sq['id'] if isinstance(prod_sq, dict) else prod_sq[0]

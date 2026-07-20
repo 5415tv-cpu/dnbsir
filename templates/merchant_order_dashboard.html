@@ -12,36 +12,38 @@
 {% block content %}
 <style>
     body {
-        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;
-        color: #ffffff !important;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+        background-attachment: fixed !important;
+        color: #f8fafc !important;
     }
     .app-title {
-        color: #ffffff !important;
-        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        color: #f8fafc !important;
     }
     .sticky-header {
-        background: transparent !important;
+        background: rgba(15, 21, 36, 0.85) !important;
         box-shadow: none !important;
-        border-bottom: none !important;
-        backdrop-filter: blur(5px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(10px) !important;
     }
     .card {
-        background: rgba(255, 255, 255, 0.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        backdrop-filter: blur(10px);
-        color: #ffffff !important;
-        border-radius: 16px;
+        background: rgba(30, 41, 59, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        color: #f8fafc !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
     }
     .glass-btn {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
-        color: #ffffff;
+        color: #f8fafc;
         border-radius: 12px;
         transition: all 0.2s;
     }
     .glass-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(0, 242, 254, 0.3);
     }
 </style>
 <div style="max-width: 600px; margin: 0 auto; padding: 1rem;">
