@@ -32,6 +32,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 from templates_config import templates
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "https://dongnebiseo.com")
 
+def get_cookie_domain(host: str) -> str:
+    host = host.lower()
+    if "dongnebisor.com" in host:
+        return ".dongnebisor.com"
+    elif "dongnebiseo.com" in host:
+        return ".dongnebiseo.com"
+    return None
+
+def is_domain_secure(host: str, scheme: str, x_proto: str = None) -> bool:
+    host = host.lower()
+    return "dongnebisor.com" in host or "dongnebiseo.com" in host or scheme == "https" or x_proto == "https"
+
 class User(BaseModel):
     store_id: str
     role: str = "owner"
@@ -232,7 +244,7 @@ async def farmer_signup(
         from fastapi.responses import JSONResponse as _JSONResponse
         resp = _JSONResponse(content={"success": True})
         host = request.headers.get("host", "").lower()
-        cookie_domain = ".dongnebiseo.com" if "dongnebiseo.com" in host else None
+        cookie_domain = get_cookie_domain(host)
         resp.set_cookie("admin_session", phone, httponly=True, samesite="lax",
                         domain=cookie_domain, max_age=86400 * 30)
         return resp
@@ -398,8 +410,8 @@ async def login(
                  response = RedirectResponse(url=target_url, status_code=303)
         
         host = request.headers.get("host", "").lower()
-        cookie_domain = ".dongnebiseo.com" if "dongnebiseo.com" in host else None
-        is_secure = "dongnebiseo.com" in host or request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+        cookie_domain = get_cookie_domain(host)
+        is_secure = is_domain_secure(host, request.url.scheme, request.headers.get("x-forwarded-proto"))
         
         response.set_cookie(
             key="admin_session", 
@@ -533,6 +545,7 @@ async def logout(response: Response, next_url: str = "/"):
     response = RedirectResponse(url=next_url, status_code=303)
     response.delete_cookie("admin_session")
     response.delete_cookie("admin_session", domain=".dongnebiseo.com")
+    response.delete_cookie("admin_session", domain=".dongnebisor.com")
     return response
 
 # ==========================================
@@ -778,12 +791,8 @@ async def oauth_callback(
         # ── Step 7: httpOnly 세션 쿠키 발급 (프론트엔드에 토큰 노출 없음) ──
         resp = RedirectResponse(url=next_url, status_code=303)
         host          = request.headers.get("host", "").lower()
-        cookie_domain = ".dongnebiseo.com" if "dongnebiseo.com" in host else None
-        is_secure     = (
-            "dongnebiseo.com" in host
-            or request.url.scheme == "https"
-            or request.headers.get("x-forwarded-proto") == "https"
-        )
+        cookie_domain = get_cookie_domain(host)
+        is_secure     = is_domain_secure(host, request.url.scheme, request.headers.get("x-forwarded-proto"))
         resp.set_cookie(
             key="admin_session",
             value=mapped_store_id,
@@ -1023,8 +1032,8 @@ async def verify_otp(req: VerifyOTPRequest, response: Response, request: Request
         
     # Login session cookie
     host = request.headers.get("host", "").lower()
-    cookie_domain = ".dongnebiseo.com" if "dongnebiseo.com" in host else None
-    is_secure = "dongnebiseo.com" in host or request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    cookie_domain = get_cookie_domain(host)
+    is_secure = is_domain_secure(host, request.url.scheme, request.headers.get("x-forwarded-proto"))
     
     response.set_cookie(
         key="admin_session", 
@@ -1068,8 +1077,8 @@ async def auth_sync(req: SyncRequest, response: Response, request: Request):
         
     # Re-issue cookie
     host = request.headers.get("host", "").lower()
-    cookie_domain = ".dongnebiseo.com" if "dongnebiseo.com" in host else None
-    is_secure = "dongnebiseo.com" in host or request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+    cookie_domain = get_cookie_domain(host)
+    is_secure = is_domain_secure(host, request.url.scheme, request.headers.get("x-forwarded-proto"))
     
     response.set_cookie(
         key="admin_session", 
@@ -1170,8 +1179,8 @@ async def hybrid_login(req: HybridLoginRequest, response: Response, request: Req
                 db.save_store(phone, store)
             
             host = request.headers.get("host", "").lower()
-            cookie_domain = ".dongnebiseo.com" if "dongnebiseo.com" in host else None
-            is_secure = "dongnebiseo.com" in host or request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+            cookie_domain = get_cookie_domain(host)
+            is_secure = is_domain_secure(host, request.url.scheme, request.headers.get("x-forwarded-proto"))
             
             response.set_cookie(
                 key="admin_session", 
@@ -1205,8 +1214,8 @@ async def hybrid_login(req: HybridLoginRequest, response: Response, request: Req
             db.save_store(phone, store)
             
         host = request.headers.get("host", "").lower()
-        cookie_domain = ".dongnebiseo.com" if "dongnebiseo.com" in host else None
-        is_secure = "dongnebiseo.com" in host or request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+        cookie_domain = get_cookie_domain(host)
+        is_secure = is_domain_secure(host, request.url.scheme, request.headers.get("x-forwarded-proto"))
         
         response.set_cookie(
             key="admin_session", 
