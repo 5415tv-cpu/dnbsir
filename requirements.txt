@@ -49,6 +49,7 @@ tenacity>=8.0.0
 cryptography>=41.0.0
 solapi>=1.1.2
 
-# --- Celery & Redis Task Queue ---
+# --- Celery & Redis Task Queue & Google GenAI ---
 celery==5.3.6
 redis==5.0.1
+google-genai
