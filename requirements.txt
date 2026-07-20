@@ -1,5 +1,54 @@
-fastapi==0.104.1
-uvicorn==0.24.0.post1
+# ==========================================
+# 동네비서 (Dongnebiseo) — 배포용 의존성 목록
+# 운영 주체: 탄탄제작소 | 서비스 브랜드: 동네비서
+# 최종 정리: 2026-07-20 (복구 완료)
+# ==========================================
+
+# --- Web Framework ---
+fastapi>=0.110.0
+uvicorn>=0.27.0
+python-multipart
+gunicorn>=21.2.0
+jinja2>=3.1.0
+httpx>=0.27.0
+
+# --- HTTP / 네트워크 ---
+requests>=2.31.0
+
+# --- AI / LLM (Google Gemini) ---
+google-generativeai>=0.3.0
+
+# --- 데이터 검증 ---
+pydantic>=2.0.0
+pydantic-settings>=2.0.0      # Phase 2: dongnebiseo/config/settings.py 필수
+
+# --- 데이터베이스 (PostgreSQL + SQLite) ---
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+asyncpg>=0.29.0
+databases[postgresql]>=0.8.0
+
+# --- Google 연동 (Sheets, Auth) ---
+gspread>=5.12.0
+google-auth>=2.23.0
+
+# --- 데이터 처리 ---
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+
+# --- 유틸리티 ---
+qrcode[pil]>=7.4.0
+pillow>=10.0.0
+bcrypt>=4.0.0
+toml>=0.10.0
+python-dotenv>=1.0.0
+schedule>=1.2.0
+tenacity>=8.0.0
+cryptography>=41.0.0
+solapi>=1.1.2
+
+# --- Celery & Redis Task Queue ---
 celery==5.3.6
 redis==5.0.1
-gunicorn
