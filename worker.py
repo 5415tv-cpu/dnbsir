@@ -119,8 +119,8 @@ def render_short_form_video(self, user_id, script_json, image_urls=None):
         shutil.copy(str(final_video_path), str(serve_path))
         print(f"[{user_id}] 3. 영상 렌더링 성공! 웹 서빙 경로: {serve_path}")
         
-        # 4. Solapi 알림톡 발송
-        video_url = f"https://dongnebiseo.com/videos/{JOB_ID}.mp4"
+        base_url = os.environ.get("APP_BASE_URL", "https://dongnebisor.com")
+        video_url = f"{base_url.rstrip('/')}/videos/{JOB_ID}.mp4"
         
         import urllib.request
         from datetime import datetime
