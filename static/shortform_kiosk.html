@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>탄탄제작소 — 내 가게 영상 만들기</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       탄탄제작소 브랜드 토큰 — 화이트 베이스
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    :root {
+      --white:    #FFFFFF;
+      --bg:       #F4F6F9;        /* 옅은 회색 배경 */
+      --surface:  #FFFFFF;        /* 카드·패널 흰색 */
+      --border:   #DDE1E7;
+      --border-dk:#C2C8D0;
+      --text:     #111827;        /* 거의 검정 */
+      --mid:      #4B5563;
+      --sub:      #9CA3AF;
+      --blue:     #1B5CE7;        /* 동네비서 메인 블루 */
+      --blue-dk:  #1448C0;
+      --blue-lt:  #EBF0FF;
+      --green:    #15803D;
+      --green-lt: #DCFCE7;
+      --red:      #DC2626;
+      --red-lt:   #FEE2E2;
+      --shadow:   0 2px 12px rgba(0,0,0,.07);
+      --font:     'Noto Sans KR', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100vw; height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       레이아웃 — 헤더 72px / 본체 / 풋바 88px
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .shell {
+      display: grid;
+      grid-template-rows: 72px 1fr 88px;
+      width: 100vw; height: 100vh;
+    }
+
+    /* ── 헤더 ───────────────────────── */
+    .hd {
+      background: var(--white);
+      border-bottom: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 52px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    }
+    .hd-logo {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hd-logo-dot { color: var(--blue); }
+
+    /* 단계 표시 */
+    .hd-steps { display: flex; align-items: center; gap: 0; }
+    .hd-step {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 16px;
+      font-size: 15px; font-weight: 700;
+      color: var(--sub);
+    }
+    .hd-step .arrow {
+      margin-left: 16px;
+      color: var(--border-dk);
+      font-size: 14px;
+    }
+    .hd-step:last-child .arrow { display: none; }
+    .hd-step .num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--sub);
+      font-size: 13px; font-weight: 900;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hd-step.active { color: var(--blue); }
+    .hd-step.active .num { background: var(--blue); color: #fff; }
+    .hd-step.done   { color: var(--green); }
+    .hd-step.done   .num { background: var(--green); color: #fff; font-size: 12px; }
+    .hd-step.done   .num::before { content: '✓'; }
+
+    .hd-clock {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--mid);
+      min-width: 60px;
+      text-align: right;
+    }
+
+    /* ── 본체 ───────────────────────── */
+    .body {
+      overflow: hidden;
+      position: relative;
+      background: var(--bg);
+    }
+
+    /* 화면 슬라이드 */
+    .screen {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 32px 52px;
+      opacity: 0;
+      transform: translateX(48px);
+      pointer-events: none;
+      transition: opacity .3s ease, transform .3s ease;
+    }
+    .screen.active {
+      opacity: 1; transform: translateX(0);
+      pointer-events: auto;
+    }
+    .screen.out {
+      opacity: 0; transform: translateX(-48px);
+    }
+
+    /* ── 풋바 ───────────────────────── */
+    .ft {
+      background: var(--white);
+      border-top: 1.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 52px;
+      gap: 20px;
+      box-shadow: 0 -1px 4px rgba(0,0,0,.05);
+    }
+    .ft-hint {
+      font-size: 14px;
+      color: var(--sub);
+      text-align: center;
+      flex: 1;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       공통 컴포넌트
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+    /* 버튼 */
+    .btn {
+      height: 56px;
+      padding: 0 40px;
+      border: none; border-radius: 10px;
+      font-size: 18px; font-weight: 700;
+      font-family: var(--font);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      transition: background .15s, box-shadow .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0,0,0,.12);
+    }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; box-shadow: none; }
+    .btn.primary {
+      background: var(--blue); color: #fff;
+    }
+    .btn.primary:hover:not(:disabled) { background: var(--blue-dk); }
+    .btn.ghost {
+      background: var(--white);
+      color: var(--mid);
+      border: 1.5px solid var(--border-dk);
+    }
+    .btn.ghost:hover:not(:disabled) { color: var(--text); border-color: var(--mid); }
+    .btn.success { background: var(--green); color: #fff; }
+    .btn.xl { height: 68px; font-size: 22px; padding: 0 52px; border-radius: 12px; }
+
+    /* 라벨 */
+    .lbl {
+      font-size: 17px; font-weight: 700;
+      color: var(--mid);
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .lbl .req { color: var(--red); font-size: 13px; font-weight: 700; }
+    .lbl .ex  { color: var(--sub); font-weight: 400; font-size: 14px; }
+
+    /* 입력 */
+    .inp {
+      width: 100%;
+      height: 64px;
+      padding: 0 20px;
+      background: var(--white);
+      border: 1.5px solid var(--border-dk);
+      border-radius: 10px;
+      font-size: 22px;
+      font-family: var(--font);
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .inp:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(27,92,231,.1);
+    }
+    .inp.err { border-color: var(--red); }
+    .inp::placeholder { color: var(--sub); font-size: 17px; }
+
+    .txta {
+      width: 100%; height: 110px;
+      padding: 16px 20px;
+      background: var(--white);
+      border: 1.5px solid var(--border-dk);
+      border-radius: 10px;
+      font-size: 20px;
+      font-family: var(--font);
+      color: var(--text);
+      outline: none; resize: none;
+      line-height: 1.6;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .txta:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(27,92,231,.1);
+    }
+    .txta.err { border-color: var(--red); }
+    .txta::placeholder { color: var(--sub); font-size: 16px; }
+
+    .err-msg {
+      font-size: 14px; color: var(--red); font-weight: 700;
+      margin-top: 5px; display: none;
+    }
+    .err-msg.on { display: block; }
+
+    /* 카드 선택 (BGM) */
+    .sel-cards { display: flex; gap: 14px; }
+    .sel-card {
+      flex: 1;
+      background: var(--white);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+    }
+    .sel-card:hover { border-color: var(--blue); }
+    .sel-card.on {
+      border-color: var(--blue);
+      background: var(--blue-lt);
+      box-shadow: 0 0 0 3px rgba(27,92,231,.12);
+    }
+    .sel-card .ic { font-size: 36px; margin-bottom: 8px; display: block; }
+    .sel-card .nm { font-size: 18px; font-weight: 900; color: var(--text); }
+    .sel-card .ds { font-size: 13px; color: var(--sub); margin-top: 3px; }
+    .sel-card.on .nm { color: var(--blue); }
+
+    /* 업로드 영역 */
+    .upload {
+      border: 2px dashed var(--border-dk);
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      background: var(--white);
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+    .upload:hover { border-color: var(--blue); background: var(--blue-lt); }
+    .upload input { display: none; }
+    .upload .u-ic { font-size: 44px; display: block; margin-bottom: 8px; }
+    .upload .u-t  { font-size: 18px; font-weight: 700; color: var(--mid); }
+    .upload .u-s  { font-size: 13px; color: var(--sub); margin-top: 4px; }
+
+    .prev-row { display: flex; gap: 10px; margin-top: 12px; }
+    .prev-img { width: 100px; height: 72px; object-fit: cover; border-radius: 8px; border: 1.5px solid var(--border); }
+    .prev-slot {
+      width: 100px; height: 72px;
+      border-radius: 8px;
+      border: 1.5px dashed var(--border-dk);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: var(--sub);
+      background: var(--bg);
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       화면 1 — 상품 정보 입력
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .s1-wrap { width: 700px; }
+    .s1-ttl {
+      font-size: 28px; font-weight: 900;
+      color: var(--text); margin-bottom: 4px;
+    }
+    .s1-sub {
+      font-size: 16px; color: var(--sub);
+      margin-bottom: 28px;
+    }
+    .s1-row { margin-bottom: 20px; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       화면 2 — 사진 & 음악
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .s2-wrap { width: 800px; }
+    .s2-ttl { font-size: 28px; font-weight: 900; color: var(--text); margin-bottom: 24px; }
+    .s2-section { margin-bottom: 28px; }
+    .s2-lbl { font-size: 17px; font-weight: 700; color: var(--mid); margin-bottom: 12px; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       화면 3 — 최종 확인
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .s3-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 32px 40px;
+      width: 640px;
+      box-shadow: var(--shadow);
+    }
+    .s3-ttl { font-size: 22px; font-weight: 900; color: var(--text); margin-bottom: 20px; }
+    .s3-row {
+      display: flex; align-items: flex-start; gap: 16px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .s3-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .s3-k { font-size: 14px; font-weight: 700; color: var(--sub); min-width: 80px; padding-top: 2px; }
+    .s3-v { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.4; }
+    .s3-note {
+      margin-top: 18px;
+      font-size: 15px; color: var(--sub);
+      text-align: center;
+    }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       화면 4 — 로딩
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .s4-wrap { text-align: center; }
+    .s4-ic {
+      width: 96px; height: 96px;
+      border: 8px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      margin: 0 auto 32px;
+      animation: spin .9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .s4-ttl { font-size: 30px; font-weight: 900; color: var(--text); margin-bottom: 10px; }
+    .s4-msg {
+      font-size: 22px; font-weight: 700;
+      color: var(--blue);
+      margin-bottom: 28px; min-height: 32px;
+    }
+    .s4-track {
+      width: 520px; height: 12px;
+      background: var(--bg);
+      border-radius: 6px; overflow: hidden;
+      margin: 0 auto 10px;
+      border: 1px solid var(--border);
+    }
+    .s4-fill {
+      height: 100%; background: var(--blue);
+      border-radius: 6px;
+      transition: width .5s ease;
+      width: 0%;
+    }
+    .s4-pct { font-size: 16px; color: var(--sub); margin-bottom: 28px; }
+    .s4-steps { display: flex; width: 520px; margin: 0 auto; }
+    .s4-step {
+      flex: 1; text-align: center;
+      font-size: 13px; color: var(--sub);
+      padding: 10px 4px 0;
+      border-top: 3px solid var(--border);
+      transition: color .3s, border-color .3s;
+    }
+    .s4-step .s-ic { font-size: 20px; display: block; margin-bottom: 4px; }
+    .s4-step.done   { color: var(--green); border-color: var(--green); }
+    .s4-step.active { color: var(--blue);  border-color: var(--blue); font-weight: 700; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       화면 5 — 완성
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .s5-wrap { display: flex; gap: 36px; align-items: flex-start; width: min(960px, 95vw); }
+    .s5-video {
+      flex: 0 0 380px;
+      background: #000;
+      border-radius: 12px; overflow: hidden;
+      border: 1.5px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+    .s5-video video { width: 100%; display: block; }
+    .s5-info { flex: 1; }
+    .s5-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--green-lt);
+      border: 1.5px solid var(--green);
+      color: var(--green);
+      font-size: 14px; font-weight: 900;
+      padding: 4px 14px; border-radius: 20px;
+      margin-bottom: 14px;
+    }
+    .s5-ttl { font-size: 28px; font-weight: 900; color: var(--text); margin-bottom: 8px; line-height: 1.3; }
+    .s5-meta { font-size: 15px; color: var(--sub); margin-bottom: 20px; }
+    .s5-script {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-bottom: 20px;
+    }
+    .s5-script h3 { font-size: 14px; color: var(--sub); font-weight: 700; margin-bottom: 10px; }
+    .s5-srow { display: flex; gap: 8px; margin-bottom: 6px; align-items: flex-start; }
+    .s5-badge2 {
+      background: var(--blue); color: #fff;
+      font-size: 11px; font-weight: 900;
+      padding: 2px 7px; border-radius: 6px;
+      margin-top: 3px; flex-shrink: 0;
+    }
+    .s5-stxt { font-size: 16px; color: var(--text); line-height: 1.5; }
+    .s5-btn-row { display: flex; gap: 12px; }
+
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       스낵바
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    .snack {
+      position: fixed;
+      bottom: 108px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: #fff;
+      font-size: 16px; font-weight: 700;
+      padding: 12px 28px;
+      border-radius: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      opacity: 0; pointer-events: none;
+      transition: opacity .25s;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    .snack.err { background: var(--red); }
+    .snack.on  { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ══════════ 헤더 ══════════ -->
+  <header class="hd">
+    <div class="hd-logo">
+      <span>🎬</span>
+      <span>탄탄<span class="hd-logo-dot">제작소</span></span>
+      <span style="font-size:14px;font-weight:500;color:var(--sub);margin-left:4px;">by 동네비서</span>
+    </div>
+
+    <div class="hd-steps">
+      <div class="hd-step active" id="st1">
+        <div class="num">1</div>상품 정보<span class="arrow">›</span>
+      </div>
+      <div class="hd-step" id="st2">
+        <div class="num">2</div>사진·음악<span class="arrow">›</span>
+      </div>
+      <div class="hd-step" id="st3">
+        <div class="num">3</div>최종 확인<span class="arrow">›</span>
+      </div>
+      <div class="hd-step" id="st4">
+        <div class="num">4</div>제작 중<span class="arrow">›</span>
+      </div>
+      <div class="hd-step" id="st5">
+        <div class="num">5</div>완성
+      </div>
+    </div>
+
+    <div class="hd-clock" id="clock">--:--</div>
+  </header>
+
+  <!-- ══════════ 본체 ══════════ -->
+  <main class="body">
+
+    <!-- 화면1: 상품 정보 -->
+    <section class="screen active" id="sc1">
+      <div class="s1-wrap">
+        <div class="s1-ttl">상품 정보를 입력해 주세요</div>
+        <div class="s1-sub">3가지만 입력하면 AI가 15~30초 광고 영상을 자동으로 만들어 드립니다.</div>
+
+        <div class="s1-row">
+          <div class="lbl">📦 상품명 <span class="req">필수</span> <span class="ex">예) 강원도 태백 고랭지 배추</span></div>
+          <input class="inp" id="product" type="text" placeholder="판매하는 상품 이름을 입력하세요" maxlength="50" autocomplete="off">
+          <div class="err-msg" id="e-product">상품명을 입력해 주세요.</div>
+        </div>
+
+        <div class="s1-row">
+          <div class="lbl">💰 가격 <span class="req">필수</span> <span class="ex">예) 3kg 9,900원 (배송비 포함)</span></div>
+          <input class="inp" id="price" type="text" placeholder="가격 정보를 정확히 입력하세요" maxlength="50" autocomplete="off">
+          <div class="err-msg" id="e-price">가격을 입력해 주세요.</div>
+        </div>
+
+        <div class="s1-row">
+          <div class="lbl">✨ 핵심 특징 <span class="req">필수</span> <span class="ex">쉼표 구분 예) 당일 수확, 산지직송, 무농약</span></div>
+          <textarea class="txta" id="features" placeholder="자랑하고 싶은 특징을 쉼표로 구분해 입력하세요&#10;예) 당일 새벽 수확, 산지직송, 직거래 할인" maxlength="150"></textarea>
+          <div class="err-msg" id="e-features">핵심 특징을 입력해 주세요.</div>
+        </div>
+
+        <div class="s1-row">
+          <div class="lbl">📍 원산지 <span class="ex">선택 · 예) 강원도 태백 해발 1,400m</span></div>
+          <input class="inp" id="origin" type="text" placeholder="원산지를 입력하면 대본에 포함됩니다 (없어도 됩니다)" maxlength="60" autocomplete="off">
+        </div>
+      </div>
+    </section>
+
+    <!-- 화면2: 사진 & BGM -->
+    <section class="screen" id="sc2">
+      <div class="s2-wrap">
+        <div class="s2-ttl">사진과 배경 음악을 선택해 주세요</div>
+
+        <div class="s2-section">
+          <div class="s2-lbl">📷 상품 사진 <span style="font-weight:400;color:var(--sub);font-size:14px;">· 최대 3장 · 없으면 기본 이미지 사용</span></div>
+          <div class="upload" id="upload-zone" tabindex="0" role="button">
+            <input type="file" id="images" accept="image/*" multiple>
+            <span class="u-ic">📸</span>
+            <div class="u-t">여기를 눌러 사진을 올려 주세요</div>
+            <div class="u-s">JPG, PNG · 최대 3장 · 없어도 영상 생성 가능</div>
+          </div>
+          <div class="prev-row" id="prev-row">
+            <div class="prev-slot">📷</div>
+            <div class="prev-slot">📷</div>
+            <div class="prev-slot">📷</div>
+          </div>
+        </div>
+
+        <div class="s2-section">
+          <div class="s2-lbl">🎵 배경 음악</div>
+          <div class="sel-cards">
+            <div class="sel-card on" data-bgm="1" tabindex="0" role="button">
+              <span class="ic">🏛️</span>
+              <div class="nm">신뢰감 있게</div>
+              <div class="ds">차분하고 묵직한 분위기</div>
+            </div>
+            <div class="sel-card" data-bgm="2" tabindex="0" role="button">
+              <span class="ic">⚡</span>
+              <div class="nm">활기차게</div>
+              <div class="ds">빠르고 에너지 넘침</div>
+            </div>
+            <div class="sel-card" data-bgm="3" tabindex="0" role="button">
+              <span class="ic">🍃</span>
+              <div class="nm">차분하게</div>
+              <div class="ds">부드럽고 따뜻한 느낌</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 화면3: 최종 확인 -->
+    <section class="screen" id="sc3">
+      <div class="s3-card">
+        <div class="s3-ttl">📋 입력 내용을 확인해 주세요</div>
+        <div class="s3-row"><span class="s3-k">상품명</span><span class="s3-v" id="cf-product">—</span></div>
+        <div class="s3-row"><span class="s3-k">가격</span><span class="s3-v" id="cf-price">—</span></div>
+        <div class="s3-row"><span class="s3-k">핵심 특징</span><span class="s3-v" id="cf-features">—</span></div>
+        <div class="s3-row"><span class="s3-k">원산지</span><span class="s3-v" id="cf-origin" style="color:var(--sub)">미입력</span></div>
+        <div class="s3-row"><span class="s3-k">배경 음악</span><span class="s3-v" id="cf-bgm">—</span></div>
+      </div>
+      <div class="s3-note">맞으면 아래 <strong>영상 만들기</strong> 버튼을 눌러 주세요.</div>
+    </section>
+
+    <!-- 화면4: 로딩 -->
+    <section class="screen" id="sc4">
+      <div class="s4-wrap">
+        <div class="s4-ic"></div>
+        <div class="s4-ttl">AI가 영상을 만들고 있습니다</div>
+        <div class="s4-msg" id="l-msg">잠시만 기다려 주세요...</div>
+        <div class="s4-track"><div class="s4-fill" id="l-fill"></div></div>
+        <div class="s4-pct"  id="l-pct">0%</div>
+        <div class="s4-steps">
+          <div class="s4-step" id="ls1"><span class="s-ic">📝</span>대본 작성</div>
+          <div class="s4-step" id="ls2"><span class="s-ic">🎙️</span>나레이션</div>
+          <div class="s4-step" id="ls3"><span class="s-ic">🎬</span>렌더링</div>
+          <div class="s4-step" id="ls4"><span class="s-ic">✅</span>완성</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 화면5: 완성 -->
+    <section class="screen" id="sc5">
+      <div class="s5-wrap">
+        <div class="s5-video">
+          <video id="r-video" controls playsinline></video>
+        </div>
+        <div class="s5-info">
+          <div class="s5-badge">✅ 영상 완성!</div>
+          <div class="s5-ttl">광고 영상이<br>완성되었습니다! 🎉</div>
+          <div class="s5-meta" id="r-meta">영상을 확인하고 다운로드 버튼을 눌러 주세요.</div>
+          <div class="s5-script">
+            <h3>📝 AI 작성 대본 (팩트만 사용)</h3>
+            <div id="r-script"></div>
+          </div>
+          <div class="s5-btn-row">
+            <a class="btn success xl" id="r-dl" href="#" download style="text-decoration:none;flex:2;">
+              ⬇&nbsp; 영상 다운로드
+            </a>
+            <button class="btn ghost xl" id="r-restart" style="flex:1;">
+              🔄 다시 만들기
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ══════════ 풋바 ══════════ -->
+  <footer class="ft">
+    <button class="btn ghost" id="btn-back" style="visibility:hidden;">← 이전</button>
+    <div class="ft-hint">
+      입력하신 팩트 정보 외의 내용은 절대 추가하지 않습니다 · AI 환각 방지 적용
+    </div>
+    <button class="btn primary" id="btn-next">다음 →</button>
+  </footer>
+</div>
+
+<div class="snack" id="snack"></div>
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   키오스크 위자드 — 화이트 테마
+   스크롤 없음 · 5단계 슬라이드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let cur = 1, bgm = 1, pollTmr = null, taskId = null;
+const BGM_NM = {1:'🏛️ 신뢰감 있게', 2:'⚡ 활기차게', 3:'🍃 차분하게'};
+
+const $  = id => document.getElementById(id);
+const sc = [1,2,3,4,5].map(i => $(`sc${i}`));
+const st = [1,2,3,4,5].map(i => $(`st${i}`));
+const bk = $('btn-back'), nx = $('btn-next');
+
+// 시계
+function tick() {
+  const n = new Date();
+  $('clock').textContent = `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+tick(); setInterval(tick, 10000);
+
+// 화면 전환
+function go(n) {
+  sc[cur-1].classList.remove('active'); sc[cur-1].classList.add('out');
+  setTimeout(()=>sc[cur-1].classList.remove('out'), 350);
+  cur = n;
+  sc[cur-1].classList.add('active');
+  st.forEach((s,i) => {
+    s.classList.remove('active','done');
+    if (i+1 < cur) s.classList.add('done');
+    else if (i+1===cur) s.classList.add('active');
+  });
+  bk.style.visibility = (cur===1||cur>=4) ? 'hidden' : 'visible';
+  if (cur>=4) {
+    nx.style.visibility = 'hidden';
+    bk.style.visibility = 'hidden';
+  } else if (cur===3) {
+    nx.style.visibility = 'visible';
+    nx.textContent = '🎬 영상 만들기';
+    nx.className   = 'btn primary xl';
+    fillConfirm();
+  } else {
+    nx.style.visibility = 'visible';
+    nx.textContent = '다음 →';
+    nx.className   = 'btn primary';
+  }
+}
+
+// 유효성
+function valid() {
+  let ok = true;
+  [['product','e-product'],['price','e-price'],['features','e-features']].forEach(([id,eid])=>{
+    const el=$( id), er=$( eid);
+    if (!el.value.trim()) { el.classList.add('err'); er.classList.add('on'); ok=false; }
+  });
+  return ok;
+}
+['product','price','features'].forEach(id=>{
+  $(id).addEventListener('input',function(){
+    if (this.value.trim()) { this.classList.remove('err'); $('e-'+id).classList.remove('on'); }
+  });
+});
+
+// 다음
+nx.addEventListener('click',()=>{
+  if (cur===1) { if (!valid()) { snack('빨간 항목을 모두 입력해 주세요.','err'); return; } go(2); }
+  else if (cur===2) go(3);
+  else if (cur===3) startGen();
+});
+
+// 이전
+bk.addEventListener('click',()=>{ if (cur>1&&cur<4) go(cur-1); });
+
+// BGM
+document.querySelectorAll('.sel-card').forEach(c=>{
+  c.addEventListener('click',()=>selBgm(+c.dataset.bgm));
+  c.addEventListener('keydown',e=>{ if(e.key==='Enter') selBgm(+c.dataset.bgm); });
+});
+function selBgm(n) {
+  bgm=n;
+  document.querySelectorAll('.sel-card').forEach(c=>c.classList.toggle('on',+c.dataset.bgm===n));
+}
+
+// 사진 업로드
+const uz=$('upload-zone'), fi=$('images'), pr=$('prev-row');
+uz.addEventListener('click',()=>fi.click());
+uz.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ') fi.click(); });
+fi.addEventListener('change',()=>{
+  pr.innerHTML='';
+  const files=Array.from(fi.files).slice(0,3);
+  files.forEach(f=>{
+    const img=document.createElement('img');
+    img.src=URL.createObjectURL(f); img.className='prev-img'; img.alt=f.name;
+    pr.appendChild(img);
+  });
+  for(let i=files.length;i<3;i++){
+    const d=document.createElement('div'); d.className='prev-slot'; d.textContent='📷'; pr.appendChild(d);
+  }
+});
+
+// 확인 화면
+function fillConfirm() {
+  $('cf-product').textContent  = $('product').value.trim()  || '—';
+  $('cf-price').textContent    = $('price').value.trim()    || '—';
+  $('cf-features').textContent = $('features').value.trim() || '—';
+  const o=$('origin').value.trim();
+  $('cf-origin').textContent=$('cf-origin').style.color = o ? ($('cf-origin').style.color='var(--text)', o) : ($('cf-origin').style.color='var(--sub)', '미입력');
+  $('cf-bgm').textContent = BGM_NM[bgm];
+}
+
+// 생성 시작
+async function startGen() {
+  go(4);
+  setLoad(5,'⏳ 영상 생성 준비 중...',0);
+  const fd=new FormData();
+  fd.append('product',$('product').value.trim());
+  fd.append('price',  $('price').value.trim());
+  fd.append('features',$('features').value.trim());
+  fd.append('origin', $('origin').value.trim());
+  fd.append('bgm',    bgm);
+  fd.append('voice',  'Kore');
+  Array.from(fi.files).slice(0,3).forEach(f=>fd.append('images',f));
+  try {
+    const r=await fetch('/api/kiosk/video/generate',{method:'POST',body:fd});
+    const d=await r.json();
+    if (!r.ok) { snack(d.error||'서버 오류','err'); setTimeout(()=>go(3),1500); return; }
+    taskId=d.task_id;
+    poll(d.task_id);
+  } catch(e) { snack('네트워크 오류가 발생했습니다.','err'); setTimeout(()=>go(3),1500); }
+}
+
+// 로딩 상태
+function setLoad(pct,msg,step) {
+  $('l-fill').style.width = pct+'%';
+  $('l-pct').textContent  = pct+'%';
+  $('l-msg').textContent  = msg;
+  [1,2,3,4].forEach(i=>{
+    const el=$('ls'+i); el.classList.remove('active','done');
+    if (i<step) el.classList.add('done');
+    else if (i===step) el.classList.add('active');
+  });
+}
+
+// 폴링
+function poll(tid) {
+  pollTmr=setInterval(async()=>{
+    try {
+      const r=await fetch(`/api/kiosk/video/status/${tid}`);
+      const d=await r.json();
+      setLoad(d.percent||5, d.message||'처리 중...', d.step||0);
+      if (d.state==='SUCCESS') { clearInterval(pollTmr); showResult(d,tid); }
+      else if (d.state==='FAILURE') { clearInterval(pollTmr); snack('오류가 발생했습니다. 다시 시도해 주세요.','err'); setTimeout(restart,2500); }
+    } catch(_) {}
+  },2000);
+}
+
+// 결과 표시
+function showResult(d,tid) {
+  // StaticFiles가 HEAD + range request를 완벽 지원 → 직접 경로 사용
+  const staticUrl = `/static/output/${tid}.mp4`;
+
+  // 비디오 플레이어
+  const vid = $('r-video');
+  vid.src = staticUrl;
+  vid.load();
+
+  const dur = d.duration_sec ? `${d.duration_sec.toFixed(1)}초 · ` : '';
+  const sz  = d.file_size_mb  ? `${d.file_size_mb}MB` : '';
+  $('r-meta').textContent = `${dur}${sz} · 영상을 확인하고 다운로드해 주세요.`;
+
+  const sc2 = $('r-script'); sc2.innerHTML = '';
+  (d.script_scenes||[]).forEach((s,i) => {
+    const row = document.createElement('div'); row.className = 's5-srow';
+    row.innerHTML = `<span class="s5-badge2">씬${i+1}</span><span class="s5-stxt">${esc(s.narration||'')}</span>`;
+    sc2.appendChild(row);
+  });
+
+  // 다운로드 버튼 — fetch+Blob 강제 저장 (서버 헤더 무관, 100% 동작)
+  const fname = `shortform_${tid.slice(6,14)}.mp4`;
+  $('r-dl').onclick = async (e) => {
+    e.preventDefault();
+    const btn = $('r-dl');
+    btn.innerHTML = '⏳ 다운로드 중...';
+    btn.style.opacity = '0.7';
+    try {
+      const res  = await fetch(staticUrl);
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = fname; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    } catch(err) {
+      alert('다운로드 실패. 다시 시도해 주세요.');
+    } finally {
+      btn.innerHTML = '⬇ 영상 다운로드';
+      btn.style.opacity = '1';
+    }
+  };
+  $('r-restart').onclick = restart;
+  go(5);
+}
+
+// 다시 만들기
+function restart() {
+  clearInterval(pollTmr); taskId=null;
+  ['product','price','features','origin'].forEach(id=>{
+    $(id).value=''; $(id).classList.remove('err');
+    const e=$('e-'+id); if(e) e.classList.remove('on');
+  });
+  $('r-video').src='';
+  pr.innerHTML='<div class="prev-slot">📷</div><div class="prev-slot">📷</div><div class="prev-slot">📷</div>';
+  selBgm(1);
+  nx.textContent='다음 →'; nx.className='btn primary'; nx.style.visibility='visible';
+  bk.style.visibility='hidden';
+  go(1);
+}
+
+// 스낵바
+function snack(msg, type='') {
+  const el=$('snack');
+  el.textContent=msg; el.className='snack on'+(type?' '+type:'');
+  setTimeout(()=>el.classList.remove('on'),3000);
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

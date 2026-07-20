@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>탄탄제작소 스튜디오 — AI 광고 영상 제작</title>
+  <meta name="description" content="소상공인을 위한 AI 광고 영상 제작 서비스. 탄탄제작소에서 30초 만에 완성.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <script src="https://js.tosspayments.com/v2/standard"></script>
+  <style>
+    /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+       탄탄제작소 스튜디오 — 모바일 퍼스트 디자인
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    :root {
+      --bg:       #0a0a0f;
+      --surface:  #141420;
+      --card:     #1e1e2e;
+      --border:   rgba(255,255,255,0.08);
+      --gold:     #FFD600;
+      --gold-dim: rgba(255,214,0,0.15);
+      --blue:     #4F8EF7;
+      --green:    #2ecc71;
+      --red:      #e74c3c;
+      --text:     #f0f0f8;
+      --sub:      #8888aa;
+      --radius:   16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; width: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── 앱 껍데기 ── */
+    #app {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      max-width: 480px; margin: 0 auto;
+    }
+
+    /* ── 헤더 ── */
+    .hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .hd-logo { display: flex; align-items: center; gap: 8px; }
+    .hd-logo-icon { font-size: 22px; }
+    .hd-logo-text { font-size: 18px; font-weight: 900; letter-spacing: -0.5px; }
+    .hd-logo-text span { color: var(--gold); }
+    .hd-credit {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(255,214,0,0.3);
+      border-radius: 20px; padding: 6px 14px;
+      font-size: 13px; font-weight: 700; color: var(--gold);
+      cursor: pointer;
+    }
+    .hd-right { display: flex; align-items: center; gap: 8px; }
+    .btn-admin-login {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 20px; padding: 6px 12px;
+      font-size: 12px; color: var(--sub); cursor: pointer;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .btn-admin-login:hover { border-color: var(--blue); color: var(--blue); }
+
+    /* ── 관리자 모달 ── */
+    .modal-bg {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75); z-index: 200;
+      align-items: flex-end; justify-content: center;
+    }
+    .modal-bg.show { display: flex; }
+    .modal-sheet {
+      background: var(--card); border-radius: 24px 24px 0 0;
+      padding: 32px 24px 40px; width: 100%; max-width: 480px;
+      animation: slideUp 0.3s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-handle {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 0 auto 24px;
+    }
+
+    /* ── 관리자 대시보드 ── */
+    .admin-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(79,142,247,0.15);
+      border: 1px solid rgba(79,142,247,0.4);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 12px; font-weight: 700; color: var(--blue);
+      margin-bottom: 20px;
+    }
+    .user-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .user-table th {
+      text-align: left; font-size: 12px; color: var(--sub);
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+      font-weight: 700; text-transform: uppercase;
+    }
+    .user-table td {
+      padding: 12px; border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .user-table tr:last-child td { border-bottom: none; }
+    .credit-pill {
+      display: inline-block; padding: 2px 10px;
+      border-radius: 100px; font-size: 13px; font-weight: 700;
+      background: var(--gold-dim); color: var(--gold);
+    }
+    .credit-pill.zero { background: rgba(255,255,255,0.05); color: var(--sub); }
+    .grant-row { display: flex; gap: 8px; align-items: center; }
+    .grant-row input { flex: 1; padding: 10px 12px; font-size: 14px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--text); font-family: inherit; }
+    .grant-row input:focus { outline: none; border-color: var(--blue); }
+    .btn-sm {
+      padding: 10px 16px; font-size: 13px; font-weight: 700;
+      border: none; border-radius: 10px; cursor: pointer;
+      font-family: inherit; white-space: nowrap;
+    }
+    .btn-sm-blue  { background: var(--blue); color: #fff; }
+    .btn-sm-red   { background: rgba(231,76,60,0.2); color: var(--red); border: 1px solid rgba(231,76,60,0.3); }
+    .admin-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+    .admin-tab {
+      flex: 1; padding: 10px; border-radius: 10px;
+      border: 1.5px solid var(--border); background: transparent;
+      color: var(--sub); font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit; transition: all 0.2s;
+    }
+    .admin-tab.active { border-color: var(--blue); color: var(--blue); background: rgba(79,142,247,0.1); }
+
+    /* ── 스크린 시스템 ── */
+    .screen { display: none; flex: 1; flex-direction: column; padding: 24px 20px; }
+    .screen.active { display: flex; }
+
+    /* ── 공통 타이틀 ── */
+    .page-title { font-size: 24px; font-weight: 900; line-height: 1.3; margin-bottom: 8px; }
+    .page-sub   { font-size: 14px; color: var(--sub); margin-bottom: 28px; }
+
+    /* ── 입력 폼 ── */
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 700; color: var(--sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .input {
+      width: 100%; padding: 14px 16px;
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-size: 16px; font-family: inherit;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .input:focus { outline: none; border-color: var(--gold); }
+    .input::placeholder { color: var(--sub); }
+    textarea.input { resize: vertical; min-height: 90px; }
+
+    /* ── 버튼 ── */
+    .btn {
+      width: 100%; padding: 16px;
+      border: none; border-radius: var(--radius);
+      font-size: 16px; font-weight: 700; font-family: inherit;
+      cursor: pointer; transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold), #ff9500);
+      color: #000;
+    }
+    .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+    .btn-secondary {
+      background: var(--card); color: var(--text);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost { background: transparent; color: var(--sub); font-size: 14px; }
+    .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+    /* ── OTP 입력 ── */
+    .otp-row { display: flex; gap: 8px; }
+    .otp-input {
+      flex: 1; padding: 14px 8px;
+      text-align: center; font-size: 22px; font-weight: 700;
+      background: var(--card); border: 1.5px solid var(--border);
+      border-radius: 12px; color: var(--text);
+      -webkit-appearance: none;
+    }
+    .otp-input:focus { outline: none; border-color: var(--gold); }
+
+    /* ── 크레딧 카드 ── */
+    .credit-card {
+      background: linear-gradient(135deg, #1e1e3f, #16213e);
+      border: 1px solid rgba(79,142,247,0.3);
+      border-radius: 20px; padding: 24px;
+      text-align: center; margin-bottom: 24px;
+    }
+    .credit-num { font-size: 56px; font-weight: 900; color: var(--gold); line-height: 1; }
+    .credit-label { font-size: 14px; color: var(--sub); margin-top: 4px; }
+
+    /* ── 패키지 카드 ── */
+    .pkg-grid { display: flex; flex-direction: column; gap: 12px; }
+    .pkg-card {
+      background: var(--card); border: 2px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .pkg-card.selected { border-color: var(--gold); background: var(--gold-dim); }
+    .pkg-card:active { transform: scale(0.98); }
+    .pkg-info { text-align: left; }
+    .pkg-name { font-size: 16px; font-weight: 700; }
+    .pkg-count { font-size: 13px; color: var(--sub); margin-top: 2px; }
+    .pkg-badge { font-size: 13px; font-weight: 700; color: var(--green);
+                 background: rgba(46,204,113,0.15); padding: 3px 8px; border-radius: 8px; }
+    .pkg-price { font-size: 20px; font-weight: 900; color: var(--gold); }
+
+    /* ── 스텝 인디케이터 ── */
+    .steps { display: flex; align-items: center; justify-content: center;
+             gap: 6px; margin-bottom: 28px; }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--border); transition: all 0.3s;
+    }
+    .step-dot.active { background: var(--gold); width: 24px; border-radius: 4px; }
+    .step-dot.done   { background: var(--green); }
+
+    /* ── 영상 제작 폼 ── */
+    .wizard-nav { display: flex; gap: 10px; margin-top: auto; padding-top: 20px; }
+    .wizard-nav .btn { flex: 1; }
+
+    /* ── 진행 화면 ── */
+    .progress-wrap { flex: 1; display: flex; flex-direction: column;
+                     align-items: center; justify-content: center; gap: 20px; }
+    .spinner {
+      width: 72px; height: 72px;
+      border: 6px solid var(--border);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-bar-wrap {
+      width: 100%; background: var(--card);
+      border-radius: 100px; height: 8px; overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; background: linear-gradient(90deg, var(--gold), #ff9500);
+      border-radius: 100px; transition: width 0.5s ease;
+    }
+    .step-badges { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .step-badge {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      font-size: 12px; color: var(--sub);
+    }
+    .step-badge .icon { font-size: 22px; }
+    .step-badge.done .icon-wrap {
+      background: rgba(46,204,113,0.2); border-radius: 50%; padding: 6px;
+    }
+
+    /* ── 완성 화면 ── */
+    .complete-video {
+      width: 100%; border-radius: 16px; overflow: hidden;
+      background: #000; aspect-ratio: 9/16; max-height: 45vh;
+    }
+    .complete-video video { width: 100%; height: 100%; object-fit: contain; }
+    .action-buttons { display: flex; flex-direction: column; gap: 10px; }
+    .btn-download { background: linear-gradient(135deg, var(--blue), #2980b9); color: #fff; }
+    .btn-share    { background: linear-gradient(135deg, #25D366, #128C7E); color: #fff; }
+    .btn-kakao    { background: #FEE500; color: #000; }
+
+    /* ── 스낵바 ── */
+    .snack {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #333; color: #fff; padding: 12px 20px;
+      border-radius: 100px; font-size: 14px; font-weight: 500;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+      white-space: nowrap; z-index: 999;
+    }
+    .snack.show { opacity: 1; }
+
+    /* ── 오버레이 (결제 로딩) ── */
+    .overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8); z-index: 500;
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    }
+    .overlay.show { display: flex; }
+    .overlay p { color: #fff; font-size: 15px; }
+
+    /* ── 타이머 ── */
+    .otp-timer { font-size: 13px; color: var(--sub); text-align: right; margin-top: 6px; }
+    .otp-timer.urgent { color: var(--red); }
+
+    /* ── 반응형 (태블릿 이상) ── */
+    @media (min-width: 480px) {
+      #app { border: 1px solid var(--border); min-height: 100vh; }
+      body { background: #06060c; display: flex; align-items: flex-start;
+             justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════ 헤더 ══════════ -->
+  <header class="hd">
+    <div class="hd-logo">
+      <span class="hd-logo-icon">🎬</span>
+      <span class="hd-logo-text">탄탄<span>제작소</span></span>
+    </div>
+    <div class="hd-right">
+      <div class="hd-credit" id="credit-badge" onclick="goScreen('s-credit')" style="display:none">
+        🪙 <span id="hd-credit-num">0</span>개
+      </div>
+      <button class="btn-admin-login" id="btn-admin-area" onclick="openAdminModal()">⚙️ 관리자</button>
+    </div>
+  </header>
+
+  <!-- ══════════ 관리자 로그인 모달 ══════════ -->
+  <div class="modal-bg" id="modal-admin-login" onclick="closeAdminModal(event)">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <p class="page-title" style="font-size:20px;margin-bottom:6px">🔐 관리자 로그인</p>
+      <p class="page-sub">관리자 비밀번호를 입력하세요</p>
+      <div class="field">
+        <label>비밀번호</label>
+        <input class="input" type="password" id="admin-pw-input"
+               placeholder="••••••••" autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')adminLogin()">
+      </div>
+      <button class="btn btn-primary" onclick="adminLogin()">로그인</button>
+    </div>
+  </div>
+
+  <!-- ══════════ S1: 전화번호 입력 ══════════ -->
+  <div class="screen active" id="s-phone">
+    <p class="page-title">안녕하세요 👋<br>전화번호를 알려주세요</p>
+    <p class="page-sub">인증 후 영상 제작을 시작합니다</p>
+    <div class="field">
+      <label>휴대폰 번호</label>
+      <input class="input" type="tel" id="phone-input" placeholder="01012345678"
+             maxlength="11" inputmode="numeric" autocomplete="tel">
+    </div>
+    <button class="btn btn-primary" id="btn-send-otp" onclick="sendOtp()">
+      인증번호 받기
+    </button>
+    <p style="text-align:center;font-size:12px;color:var(--sub);margin-top:20px">
+      by 동네비서 · 입력 정보는 영상 제작 외 사용 안 함
+    </p>
+  </div>
+
+  <!-- ══════════ S2: OTP 입력 ══════════ -->
+  <div class="screen" id="s-otp">
+    <p class="page-title">인증번호를<br>입력해주세요</p>
+    <p class="page-sub" id="otp-sub">전송된 6자리 숫자를 입력하세요</p>
+    <div class="otp-row" id="otp-boxes"></div>
+    <p class="otp-timer" id="otp-timer"></p>
+    <div style="margin-top:24px; display:flex; flex-direction:column; gap:10px">
+      <button class="btn btn-primary" id="btn-verify-otp" onclick="verifyOtp()">확인</button>
+      <button class="btn btn-ghost" onclick="goScreen('s-phone')">← 번호 다시 입력</button>
+    </div>
+  </div>
+
+  <!-- ══════════ S3: 크레딧 현황 ══════════ -->
+  <div class="screen" id="s-credit">
+    <p class="page-title">내 크레딧</p>
+    <p class="page-sub">크레딧 1개 = 광고 영상 1편</p>
+    <div class="credit-card">
+      <div class="credit-num" id="credit-num">0</div>
+      <div class="credit-label">잔여 크레딧</div>
+    </div>
+    <button class="btn btn-primary" id="btn-start-make" onclick="startWizard()" style="margin-bottom:12px">
+      🎬 영상 만들기
+    </button>
+    <button class="btn btn-secondary" onclick="goScreen('s-buy')">
+      + 크레딧 충전하기
+    </button>
+  </div>
+
+  <!-- ══════════ S4: 크레딧 구매 ══════════ -->
+  <div class="screen" id="s-buy">
+    <p class="page-title">크레딧 충전</p>
+    <p class="page-sub">필요한 만큼만 구매하세요</p>
+    <div class="pkg-grid">
+      <div class="pkg-card" id="pkg-1" onclick="selectPkg('pkg_1')">
+        <div class="pkg-info">
+          <div class="pkg-name">🎬 영상 1개</div>
+          <div class="pkg-count">광고 영상 1편 제작</div>
+        </div>
+        <div class="pkg-price">4,000원</div>
+      </div>
+      <div class="pkg-card" id="pkg-3" onclick="selectPkg('pkg_3')">
+        <div class="pkg-info">
+          <div class="pkg-name">🎬 영상 3개</div>
+          <div class="pkg-count">광고 영상 3편 제작 <span class="pkg-badge">개당 4,000원</span></div>
+        </div>
+        <div class="pkg-price">12,000원</div>
+      </div>
+      <div class="pkg-card" id="pkg-5" onclick="selectPkg('pkg_5')">
+        <div class="pkg-info">
+          <div class="pkg-name">🎬 영상 5개</div>
+          <div class="pkg-count">광고 영상 5편 제작 <span class="pkg-badge">개당 3,600원</span></div>
+        </div>
+        <div class="pkg-price">18,000원</div>
+      </div>
+    </div>
+    <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px">
+      <button class="btn btn-primary" id="btn-pay" onclick="startPayment()">
+        토스로 결제하기
+      </button>
+      <button class="btn btn-ghost" onclick="goScreen('s-credit')">← 뒤로</button>
+    </div>
+  </div>
+
+  <!-- ══════════ S5~S9: 영상 제작 위자드 ══════════ -->
+  <!-- 위자드 스텝 1: 상품 정보 -->
+  <div class="screen" id="s-w1">
+    <div class="steps" id="wizard-steps"></div>
+    <p class="page-title">상품 정보</p>
+    <p class="page-sub">팩트 데이터만 입력해 주세요</p>
+    <div class="field">
+      <label>상품·가게 이름 *</label>
+      <input class="input" id="w-product" placeholder="예: 태백 고랭지 배추김치" maxlength="50">
+    </div>
+    <div class="field">
+      <label>판매 가격 *</label>
+      <input class="input" id="w-price" placeholder="예: 10kg 35,000원" maxlength="30">
+    </div>
+    <div class="field">
+      <label>원산지 (선택)</label>
+      <input class="input" id="w-origin" placeholder="예: 강원도 태백" maxlength="30">
+    </div>
+    <div class="wizard-nav">
+      <button class="btn btn-secondary" onclick="goScreen('s-credit')" style="flex:0 0 80px">← 취소</button>
+      <button class="btn btn-primary" onclick="wizardNext(1)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- 위자드 스텝 2: 특징 & CTA -->
+  <div class="screen" id="s-w2">
+    <div class="steps" id="wizard-steps2"></div>
+    <p class="page-title">특징 & 홍보 문구</p>
+    <p class="page-sub">자랑하고 싶은 내용만 입력하세요</p>
+    <div class="field">
+      <label>주요 특징 (쉼표로 구분) *</label>
+      <textarea class="input" id="w-features" placeholder="예: 당일 수확, 무농약, 아삭한 식감, 산지 직배송"></textarea>
+    </div>
+    <div class="field">
+      <label>행동 유도 문구 (CTA)</label>
+      <input class="input" id="w-cta" placeholder="예: 지금 바로 주문하세요!" maxlength="40">
+    </div>
+    <div class="wizard-nav">
+      <button class="btn btn-secondary" onclick="goScreen('s-w1')" style="flex:0 0 80px">← 이전</button>
+      <button class="btn btn-primary" onclick="wizardNext(2)">다음 →</button>
+    </div>
+  </div>
+
+  <!-- 위자드 스텝 3: 사진 & 분위기 -->
+  <div class="screen" id="s-w3">
+    <div class="steps" id="wizard-steps3"></div>
+    <p class="page-title">사진 & 배경음악</p>
+    <p class="page-sub">없어도 AI가 배경을 자동 생성합니다</p>
+    <div class="field">
+      <label>상품 사진 (최대 3장, 선택)</label>
+      <input class="input" type="file" id="w-images" accept="image/*" multiple
+             style="padding:10px;cursor:pointer">
+    </div>
+    <div class="field">
+      <label>배경음악 분위기</label>
+      <select class="input" id="w-bgm">
+        <option value="1">🏛️ 신뢰감 있게</option>
+        <option value="2">⚡ 활기차게</option>
+        <option value="3">🍃 차분하게</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>AI 목소리</label>
+      <select class="input" id="w-voice">
+        <option value="Kore">🤖 기본 (자연스러운 남성)</option>
+        <option value="Charon">📢 힘차고 또렷하게</option>
+        <option value="Aoede">🎶 부드럽게</option>
+      </select>
+    </div>
+    <div class="wizard-nav">
+      <button class="btn btn-secondary" onclick="goScreen('s-w2')" style="flex:0 0 80px">← 이전</button>
+      <button class="btn btn-primary" onclick="wizardNext(3)">🎬 영상 만들기</button>
+    </div>
+  </div>
+
+  <!-- ══════════ S-ADMIN: 관리자 대시보드 ══════════ -->
+  <div class="screen" id="s-admin">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <p class="page-title" style="font-size:20px;margin-bottom:0">관리자 대시보드</p>
+      <button class="btn-sm btn-sm-red" onclick="adminLogout()">로그아웃</button>
+    </div>
+    <span class="admin-badge">⚙️ 관리자 모드</span>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" id="tab-users" onclick="adminSwitchTab('users')">👥 회원 크레딧</button>
+      <button class="admin-tab" id="tab-grant"  onclick="adminSwitchTab('grant')">🪙 크레딧 지급</button>
+    </div>
+
+    <!-- 회원 크레딧 탭 -->
+    <div id="admin-tab-users">
+      <button class="btn btn-secondary" style="margin-bottom:14px;padding:10px"
+              onclick="loadAdminUsers()" id="btn-refresh-users">
+        🔄 새로고침
+      </button>
+      <div id="admin-users-wrap" style="overflow-x:auto">
+        <p style="color:var(--sub);font-size:14px">버튼을 눌러 불러오세요</p>
+      </div>
+    </div>
+
+    <!-- 크레딧 지급 탭 -->
+    <div id="admin-tab-grant" style="display:none">
+      <p style="font-size:13px;color:var(--sub);margin-bottom:16px">전화번호로 크레딧을 직접 지급합니다</p>
+      <div class="field">
+        <label>전화번호</label>
+        <input class="input" type="tel" id="grant-phone" placeholder="01012345678" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>지급 크레딧 수</label>
+        <div class="grant-row">
+          <input type="number" id="grant-amount" value="1" min="1" max="100">
+          <button class="btn-sm btn-sm-blue" onclick="grantCredit()">지급하기</button>
+        </div>
+      </div>
+      <div id="grant-result" style="display:none;margin-top:12px;
+           padding:14px;background:rgba(46,204,113,0.1);border-radius:12px;
+           border:1px solid rgba(46,204,113,0.3);font-size:14px;color:var(--green)">
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ S-PROGRESS: 제작 중 ══════════ -->
+  <div class="screen" id="s-progress">
+    <div class="progress-wrap">
+      <div class="spinner"></div>
+      <p style="font-size:20px;font-weight:900">AI가 영상을 만들고 있습니다</p>
+      <p id="progress-msg" style="font-size:14px;color:var(--sub);text-align:center">준비 중...</p>
+      <div style="width:100%">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="progress-bar" style="width:5%"></div>
+        </div>
+        <p style="text-align:center;font-size:13px;color:var(--sub);margin-top:8px" id="progress-pct">5%</p>
+      </div>
+      <div class="step-badges">
+        <div class="step-badge" id="pb-script"><span class="icon">📝</span><span>대본</span></div>
+        <div class="step-badge" id="pb-tts"><span class="icon">🎙️</span><span>녹음</span></div>
+        <div class="step-badge" id="pb-render"><span class="icon">🎬</span><span>렌더링</span></div>
+        <div class="step-badge" id="pb-done"><span class="icon">✅</span><span>완성</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ S-DONE: 완성 ══════════ -->
+  <div class="screen" id="s-done">
+    <div style="text-align:center;margin-bottom:16px">
+      <p style="font-size:28px">🎉</p>
+      <p class="page-title" style="font-size:22px">광고 영상 완성!</p>
+      <p id="done-size" style="font-size:13px;color:var(--sub)"></p>
+    </div>
+    <div class="complete-video">
+      <video id="done-video" controls playsinline preload="metadata"></video>
+    </div>
+    <div id="done-script" style="background:var(--card);border-radius:12px;padding:14px;margin:16px 0;font-size:13px;color:var(--sub);display:none">
+      <strong style="color:var(--text)">📝 AI 대본</strong><br>
+      <span id="done-script-text"></span>
+    </div>
+    <div class="action-buttons" style="margin-top:16px">
+      <button class="btn btn-download" onclick="downloadVideo()">⬇️ 영상 다운로드</button>
+      <button class="btn btn-kakao"   onclick="shareKakao()">💬 카카오톡 공유</button>
+      <button class="btn btn-share"   onclick="shareNative()">📤 공유하기</button>
+      <button class="btn btn-secondary" onclick="resetWizard()">+ 새 영상 만들기</button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- 로딩 오버레이 -->
+<div class="overlay" id="overlay">
+  <div class="spinner"></div>
+  <p id="overlay-msg">처리 중...</p>
+</div>
+
+<div class="snack" id="snack"></div>
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   탄탄제작소 스튜디오 — 클라이언트 JS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+// ── 전역 상태 ──────────────────────────────────────────────
+let sessionToken = localStorage.getItem('tantan_session') || '';
+let userCredits  = 0;
+let selectedPkg  = 'pkg_3';
+let taskId       = null;
+let pollTimer    = null;
+let videoUrl     = null;
+let otpCountdown = null;
+
+// ── 화면 전환 ───────────────────────────────────────────────
+function goScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── 초기화: 세션 복원 ──────────────────────────────────────
+window.addEventListener('load', async () => {
+  buildOtpBoxes();
+  buildWizardSteps();
+  selectPkg('pkg_3');
+  if (sessionToken) {
+    await refreshCredit();
+    if (userCredits >= 0) {
+      showCreditBadge();
+      goScreen('s-credit');
+    }
+  }
+});
+
+// ── 스낵바 ─────────────────────────────────────────────────
+function snack(msg, dur=3000) {
+  const el = document.getElementById('snack');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── 오버레이 ───────────────────────────────────────────────
+function showOverlay(msg='처리 중...') {
+  document.getElementById('overlay-msg').textContent = msg;
+  document.getElementById('overlay').classList.add('show');
+}
+function hideOverlay() {
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// OTP
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildOtpBoxes() {
+  const wrap = document.getElementById('otp-boxes');
+  for (let i = 0; i < 6; i++) {
+    const inp = document.createElement('input');
+    inp.className = 'otp-input';
+    inp.type = 'tel'; inp.inputMode = 'numeric';
+    inp.maxLength = 1; inp.dataset.idx = i;
+    inp.addEventListener('input', e => {
+      if (e.target.value.length === 1 && i < 5)
+        wrap.children[i+1].focus();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0)
+        wrap.children[i-1].focus();
+    });
+    wrap.appendChild(inp);
+  }
+}
+
+async function sendOtp() {
+  const phone = document.getElementById('phone-input').value.replace(/\D/g,'');
+  if (!/^01[016789]\d{7,8}$/.test(phone)) {
+    snack('올바른 휴대폰 번호를 입력해주세요'); return;
+  }
+  document.getElementById('btn-send-otp').disabled = true;
+  try {
+    const r = await fetch('/api/tantan/otp/send', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({phone})
+    });
+    const d = await r.json();
+    if (!r.ok) { snack(d.detail || '발송 실패'); return; }
+    document.getElementById('otp-sub').textContent =
+      `${phone.slice(0,3)}-****-${phone.slice(-4)} 로 발송됐습니다`;
+    if (d.dev_code) snack(`[테스트] 인증번호: ${d.dev_code}`, 8000);
+    goScreen('s-otp');
+    startOtpTimer(300);
+  } catch(e) { snack('네트워크 오류'); }
+  finally { document.getElementById('btn-send-otp').disabled = false; }
+}
+
+function startOtpTimer(sec) {
+  clearInterval(otpCountdown);
+  const el = document.getElementById('otp-timer');
+  otpCountdown = setInterval(() => {
+    const m = String(Math.floor(sec/60)).padStart(2,'0');
+    const s = String(sec % 60).padStart(2,'0');
+    el.textContent = `${m}:${s} 남음`;
+    el.className   = 'otp-timer' + (sec < 60 ? ' urgent' : '');
+    if (--sec < 0) { clearInterval(otpCountdown); el.textContent = '만료됨'; }
+  }, 1000);
+}
+
+async function verifyOtp() {
+  const phone = document.getElementById('phone-input').value.replace(/\D/g,'');
+  const boxes = document.getElementById('otp-boxes').children;
+  const code  = Array.from(boxes).map(b => b.value).join('');
+  if (code.length !== 6) { snack('인증번호 6자리를 모두 입력하세요'); return; }
+
+  document.getElementById('btn-verify-otp').disabled = true;
+  try {
+    const r = await fetch('/api/tantan/otp/verify', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({phone, code})
+    });
+    const d = await r.json();
+    if (!r.ok) { snack(d.detail || '인증 실패'); return; }
+    sessionToken = d.session_token;
+    userCredits  = d.credits;
+    localStorage.setItem('tantan_session', sessionToken);
+    clearInterval(otpCountdown);
+    updateCreditDisplay();
+    showCreditBadge();
+    goScreen('s-credit');
+  } catch(e) { snack('네트워크 오류'); }
+  finally { document.getElementById('btn-verify-otp').disabled = false; }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 크레딧
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function showCreditBadge() {
+  document.getElementById('credit-badge').style.display = 'flex';
+}
+function updateCreditDisplay() {
+  document.getElementById('credit-num').textContent = userCredits;
+  document.getElementById('hd-credit-num').textContent = userCredits;
+  const btn = document.getElementById('btn-start-make');
+  if (btn) btn.disabled = userCredits <= 0;
+}
+async function refreshCredit() {
+  if (!sessionToken) return;
+  try {
+    const r = await fetch('/api/tantan/credit',
+      {headers: {'X-Session-Token': sessionToken}});
+    if (r.status === 401) { sessionToken=''; localStorage.removeItem('tantan_session'); return; }
+    const d = await r.json();
+    userCredits = d.credits;
+    updateCreditDisplay();
+  } catch(e) {}
+}
+function startWizard() {
+  if (userCredits <= 0) { goScreen('s-buy'); return; }
+  goScreen('s-w1');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 결제
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function selectPkg(id) {
+  selectedPkg = id;
+  document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
+  const map = {'pkg_1':'pkg-1','pkg_3':'pkg-3','pkg_5':'pkg-5'};
+  document.getElementById(map[id])?.classList.add('selected');
+}
+
+async function startPayment() {
+  if (!sessionToken) { goScreen('s-phone'); return; }
+  showOverlay('결제 준비 중...');
+  try {
+    const r = await fetch('/api/tantan/payment/prepare', {
+      method: 'POST', headers: {'Content-Type':'application/json',
+                                'X-Session-Token': sessionToken},
+      body: JSON.stringify({package_id: selectedPkg,
+                            phone: document.getElementById('phone-input').value})
+    });
+    const d = await r.json();
+    if (!r.ok) { snack(d.detail || '결제 준비 실패'); hideOverlay(); return; }
+    hideOverlay();
+
+    const toss = TossPayments(d.client_key);
+    const pkgLabels = {'pkg_1':'영상 1개','pkg_3':'영상 3개','pkg_5':'영상 5개'};
+    await toss.requestPayment('카드', {
+      amount:     d.amount,
+      orderId:    d.order_id,
+      orderName:  `탄탄제작소 ${pkgLabels[selectedPkg]} 이용권`,
+      successUrl: d.success_url,
+      failUrl:    d.fail_url,
+    });
+  } catch(e) {
+    hideOverlay();
+    if (e.code !== 'USER_CANCEL') snack(e.message || '결제 오류');
+  }
+}
+
+// 토스 결과 수신 (팝업 postMessage)
+window.addEventListener('message', async e => {
+  if (e.data?.type === 'TANTAN_SUCCESS') {
+    snack(`✅ ${e.data.message}`);
+    userCredits = e.data.credits;
+    updateCreditDisplay();
+    goScreen('s-credit');
+  } else if (e.data?.type === 'TANTAN_FAIL') {
+    snack(`❌ ${e.data.message || '결제 실패'}`);
+  }
+});
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 위자드
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildWizardSteps() {
+  ['wizard-steps','wizard-steps2','wizard-steps3'].forEach((id, si) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const d = document.createElement('div');
+      d.className = 'step-dot' + (i < si ? ' done' : (i === si ? ' active' : ''));
+      el.appendChild(d);
+    }
+  });
+}
+
+function wizardNext(step) {
+  if (step === 1) {
+    if (!document.getElementById('w-product').value.trim()) {
+      snack('상품·가게 이름을 입력해주세요'); return;
+    }
+    if (!document.getElementById('w-price').value.trim()) {
+      snack('판매 가격을 입력해주세요'); return;
+    }
+    goScreen('s-w2');
+  } else if (step === 2) {
+    if (!document.getElementById('w-features').value.trim()) {
+      snack('주요 특징을 하나 이상 입력해주세요'); return;
+    }
+    goScreen('s-w3');
+  } else if (step === 3) {
+    submitVideo();
+  }
+}
+
+async function submitVideo() {
+  if (!sessionToken) { goScreen('s-phone'); return; }
+
+  // 1. 크레딧 차감
+  showOverlay('크레딧 확인 중...');
+  try {
+    const cr = await fetch('/api/tantan/credit/use', {
+      method: 'POST', headers: {'X-Session-Token': sessionToken}
+    });
+    if (cr.status === 402) {
+      hideOverlay(); snack('크레딧이 부족합니다'); goScreen('s-buy'); return;
+    }
+    if (!cr.ok) { hideOverlay(); snack('오류 발생'); return; }
+    const cd = await cr.json();
+    userCredits = cd.remaining;
+    updateCreditDisplay();
+  } catch(e) { hideOverlay(); snack('네트워크 오류'); return; }
+  hideOverlay();
+
+  // 2. 폼 데이터 구성
+  const fd = new FormData();
+  fd.append('product',  document.getElementById('w-product').value.trim());
+  fd.append('price',    document.getElementById('w-price').value.trim());
+  fd.append('features', document.getElementById('w-features').value.trim());
+  fd.append('origin',   document.getElementById('w-origin').value.trim());
+  fd.append('cta',      document.getElementById('w-cta').value.trim() || '지금 바로 주문하세요!');
+  fd.append('bgm',      document.getElementById('w-bgm').value);
+  fd.append('voice',    document.getElementById('w-voice').value);
+  const imgs = document.getElementById('w-images').files;
+  for (let i = 0; i < Math.min(imgs.length, 3); i++) fd.append('images', imgs[i]);
+
+  // 3. 제출
+  goScreen('s-progress');
+  try {
+    const r = await fetch('/api/kiosk/video/generate', {method:'POST', body: fd});
+    if (!r.ok) {
+      const d = await r.json(); snack(d.detail || '제출 실패');
+      goScreen('s-credit'); return;
+    }
+    const d = await r.json();
+    taskId = d.task_id;
+    startPolling();
+  } catch(e) { snack('네트워크 오류'); goScreen('s-credit'); }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 폴링
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function startPolling() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(pollStatus, 3000);
+}
+async function pollStatus() {
+  try {
+    const r = await fetch(`/api/kiosk/video/status/${taskId}`);
+    const d = await r.json();
+    updateProgress(d.percent || 5, d.message || '');
+    if (d.state === 'SUCCESS') {
+      clearInterval(pollTimer);
+      showDone(d);
+    } else if (d.state === 'FAILURE') {
+      clearInterval(pollTimer);
+      snack('❌ 영상 제작 실패. 크레딧이 복구됩니다.');
+      // 크레딧 복구
+      await fetch('/api/tantan/credit', {headers:{'X-Session-Token':sessionToken}})
+        .then(r=>r.json()).then(d=>{userCredits=d.credits;updateCreditDisplay();});
+      goScreen('s-credit');
+    }
+  } catch(e) {}
+}
+function updateProgress(pct, msg) {
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-msg').textContent = msg;
+  // 단계 뱃지 업데이트
+  if (pct >= 25) document.getElementById('pb-script').classList.add('done');
+  if (pct >= 50) document.getElementById('pb-tts').classList.add('done');
+  if (pct >= 75) document.getElementById('pb-render').classList.add('done');
+  if (pct >= 100) document.getElementById('pb-done').classList.add('done');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 완성 화면
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function showDone(d) {
+  videoUrl = d.video_url;
+  const video = document.getElementById('done-video');
+  video.src = videoUrl;
+  const mb = d.file_size_mb ? `${d.file_size_mb}MB` : '';
+  document.getElementById('done-size').textContent = mb ? `${mb} · 완성됐습니다!` : '완성됐습니다!';
+  if (d.script) {
+    document.getElementById('done-script').style.display = 'block';
+    document.getElementById('done-script-text').textContent = d.script;
+  }
+  goScreen('s-done');
+}
+
+async function downloadVideo() {
+  if (!videoUrl) return;
+  try {
+    const r = await fetch(videoUrl);
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `탄탄제작소_광고영상_${Date.now()}.mp4`;
+    a.click();
+  } catch(e) { window.open(videoUrl, '_blank'); }
+}
+
+function shareNative() {
+  if (!videoUrl) return;
+  if (navigator.share) {
+    navigator.share({title:'탄탄제작소 광고 영상', url: location.origin + videoUrl})
+      .catch(()=>{});
+  } else {
+    navigator.clipboard?.writeText(location.origin + videoUrl);
+    snack('링크가 복사됐습니다');
+  }
+}
+
+function shareKakao() {
+  if (!window.Kakao?.isInitialized()) {
+    snack('카카오 공유는 준비 중입니다');
+    shareNative(); return;
+  }
+  Kakao.Share.sendDefault({
+    objectType: 'feed',
+    content: {
+      title: '탄탄제작소 AI 광고 영상',
+      description: '동네비서 × 탄탄제작소가 만든 광고 영상입니다',
+      imageUrl: location.origin + '/static/tantan_og.png',
+      link: {mobileWebUrl: location.href, webUrl: location.href}
+    }
+  });
+}
+
+function resetWizard() {
+  taskId = null; videoUrl = null;
+  document.getElementById('w-product').value = '';
+  document.getElementById('w-price').value = '';
+  document.getElementById('w-origin').value = '';
+  document.getElementById('w-features').value = '';
+  document.getElementById('w-cta').value = '';
+  goScreen('s-credit');
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 관리자
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let adminSecret = localStorage.getItem('tantan_admin_secret') || '';
+let adminTabActive = 'users';
+
+function openAdminModal() {
+  // 이미 로그인된 경우 바로 대시보드
+  if (adminSecret) { goScreen('s-admin'); return; }
+  document.getElementById('modal-admin-login').classList.add('show');
+  setTimeout(() => document.getElementById('admin-pw-input')?.focus(), 300);
+}
+function closeAdminModal(e) {
+  if (e.target.id === 'modal-admin-login')
+    document.getElementById('modal-admin-login').classList.remove('show');
+}
+
+async function adminLogin() {
+  const pw = document.getElementById('admin-pw-input').value;
+  if (!pw) { snack('비밀번호를 입력하세요'); return; }
+
+  // 서버에서 관리자 목록 조회로 비밀번호 검증
+  showOverlay('인증 확인 중...');
+  try {
+    const r = await fetch(`/api/tantan/admin/credits?secret=${encodeURIComponent(pw)}`);
+    if (r.status === 403) { hideOverlay(); snack('❌ 비밀번호가 틀렸습니다'); return; }
+    if (!r.ok)            { hideOverlay(); snack('서버 오류'); return; }
+    const d = await r.json();
+    adminSecret = pw;
+    localStorage.setItem('tantan_admin_secret', pw);
+    document.getElementById('modal-admin-login').classList.remove('show');
+    document.getElementById('admin-pw-input').value = '';
+    hideOverlay();
+    renderAdminUsers(d);
+    goScreen('s-admin');
+  } catch(e) { hideOverlay(); snack('네트워크 오류'); }
+}
+
+function adminLogout() {
+  adminSecret = '';
+  localStorage.removeItem('tantan_admin_secret');
+  document.getElementById('btn-admin-area').textContent = '⚙️ 관리자';
+  goScreen('s-phone');
+  snack('로그아웃됐습니다');
+}
+
+function adminSwitchTab(tab) {
+  adminTabActive = tab;
+  document.getElementById('admin-tab-users').style.display = tab === 'users' ? 'block' : 'none';
+  document.getElementById('admin-tab-grant').style.display = tab === 'grant' ? 'block' : 'none';
+  document.querySelectorAll('.admin-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+async function loadAdminUsers() {
+  if (!adminSecret) return;
+  const btn = document.getElementById('btn-refresh-users');
+  btn.disabled = true; btn.textContent = '불러오는 중...';
+  try {
+    const r = await fetch(`/api/tantan/admin/credits?secret=${encodeURIComponent(adminSecret)}`);
+    if (r.status === 403) { snack('세션 만료. 다시 로그인하세요'); adminLogout(); return; }
+    const d = await r.json();
+    renderAdminUsers(d);
+  } catch(e) { snack('불러오기 실패'); }
+  finally { btn.disabled = false; btn.textContent = '🔄 새로고침'; }
+}
+
+function renderAdminUsers(d) {
+  const wrap = document.getElementById('admin-users-wrap');
+  if (!d.users || d.users.length === 0) {
+    wrap.innerHTML = '<p style="color:var(--sub);font-size:14px">등록된 사용자가 없습니다</p>';
+    return;
+  }
+  const sorted = [...d.users].sort((a,b) => b.credits - a.credits);
+  wrap.innerHTML = `
+    <p style="font-size:12px;color:var(--sub);margin-bottom:8px">총 ${d.total_users}명</p>
+    <table class="user-table">
+      <thead><tr><th>전화번호</th><th>크레딧</th><th>지급</th></tr></thead>
+      <tbody>
+        ${sorted.map(u => `
+          <tr>
+            <td style="font-family:monospace">${maskPhone(u.phone)}</td>
+            <td><span class="credit-pill ${u.credits===0?'zero':''}">🪙 ${u.credits}</span></td>
+            <td>
+              <button class="btn-sm btn-sm-blue" style="font-size:11px;padding:6px 10px"
+                onclick="quickGrant('${u.phone}')">+1</button>
+            </td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function maskPhone(phone) {
+  if (phone.length >= 10)
+    return phone.slice(0,3) + '-****-' + phone.slice(-4);
+  return phone;
+}
+
+async function quickGrant(phone) {
+  if (!adminSecret) return;
+  try {
+    const r = await fetch('/api/tantan/admin/grant', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({phone, credits: 1, secret: adminSecret})
+    });
+    const d = await r.json();
+    if (r.ok) { snack(`✅ ${maskPhone(phone)} → 총 ${d.total_credits}크레딧`); loadAdminUsers(); }
+    else snack('지급 실패');
+  } catch(e) { snack('네트워크 오류'); }
+}
+
+async function grantCredit() {
+  if (!adminSecret) return;
+  const phone  = document.getElementById('grant-phone').value.replace(/\D/g,'');
+  const amount = parseInt(document.getElementById('grant-amount').value) || 1;
+  if (!/^01[016789]\d{7,8}$/.test(phone)) { snack('올바른 전화번호를 입력하세요'); return; }
+
+  try {
+    const r = await fetch('/api/tantan/admin/grant', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({phone, credits: amount, secret: adminSecret})
+    });
+    const d = await r.json();
+    if (r.ok) {
+      const res = document.getElementById('grant-result');
+      res.style.display = 'block';
+      res.textContent = `✅ ${maskPhone(phone)} 에게 ${amount}크레딧 지급 완료! 잔여: ${d.total_credits}개`;
+      document.getElementById('grant-phone').value = '';
+    } else snack(d.detail || '지급 실패');
+  } catch(e) { snack('네트워크 오류'); }
+}
+</script>
+</body>
+</html>

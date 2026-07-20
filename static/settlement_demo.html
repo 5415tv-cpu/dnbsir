@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정산 관리 시스템 — 무결성 데모</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#060d1a;color:#e2e8f0;font-family:'Noto Sans KR',sans-serif}
+
+/* ── 전체 레이아웃 (3열 고정 키오스크) ── */
+.root{display:grid;grid-template-rows:56px 1fr;grid-template-columns:1fr 1fr 380px;height:100vh;gap:0}
+.topbar{grid-column:1/-1;background:#0d1b2e;border-bottom:1px solid #1e3a5f;display:flex;align-items:center;padding:0 24px;gap:16px;z-index:10}
+.topbar h1{font-size:1rem;font-weight:900;letter-spacing:-0.3px}
+.topbar .subtitle{font-size:0.75rem;color:#4a7fa5;margin-left:4px}
+.live{width:8px;height:8px;background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,.4)}50%{opacity:.6;box-shadow:0 0 0 6px rgba(34,197,94,0)}}
+.badge-demo{background:#7c3aed;color:white;font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:20px;margin-left:8px}
+
+/* 패널 공통 */
+.panel{border-right:1px solid #1e293b;display:flex;flex-direction:column;overflow:hidden}
+.panel-head{padding:14px 18px;background:#0d1b2e;border-bottom:1px solid #1e3a5f;flex-shrink:0}
+.panel-head h2{font-size:0.85rem;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:#4a7fa5}
+.panel-body{flex:1;overflow-y:auto;padding:14px}
+
+/* ── 왼쪽: 정산 목록 ── */
+.settle-card{background:#0d1b2e;border:1px solid #1e3a5f;border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all .2s;position:relative}
+.settle-card:hover{border-color:#3b82f6;background:#111f35}
+.settle-card.selected{border-color:#3b82f6;background:#111f35;box-shadow:0 0 0 2px rgba(59,130,246,.25)}
+.settle-card .sc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sc-id{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:#4a7fa5}
+.sc-name{font-weight:700;font-size:0.9rem}
+.sc-role{font-size:0.72rem;color:#64748b;margin-top:2px}
+.sc-amounts{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.sc-amt{font-size:0.75rem}
+.sc-amt span{color:#64748b}
+
+/* 상태 배지 */
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:900;font-family:'JetBrains Mono',monospace}
+.s-READY    {background:rgba(100,116,139,.2);color:#94a3b8;border:1px solid #334155}
+.s-APPROVED {background:rgba(234,179,8,.1);color:#fbbf24;border:1px solid rgba(234,179,8,.3)}
+.s-COMPLETED{background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+.s-FAILED   {background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+.s-dot{width:6px;height:6px;border-radius:50%}
+.s-READY .s-dot{background:#94a3b8}
+.s-APPROVED .s-dot{background:#fbbf24;animation:pulse 1s infinite}
+.s-COMPLETED .s-dot{background:#4ade80}
+.s-FAILED .s-dot{background:#f87171}
+
+/* ── 가운데: 액션 패널 ── */
+.action-panel{background:#060d1a}
+.no-select{text-align:center;padding:60px 24px;color:#334155}
+.no-select svg{opacity:.2;margin-bottom:12px}
+
+.detail-block{background:#0d1b2e;border:1px solid #1e3a5f;border-radius:10px;padding:16px;margin-bottom:12px}
+.detail-block h3{font-size:0.75rem;font-weight:900;color:#4a7fa5;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.kv-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #1e293b;font-size:0.82rem}
+.kv-row:last-child{border:none}
+.kv-k{color:#64748b}
+.kv-v{font-weight:700;font-family:'JetBrains Mono',monospace}
+.kv-v.green{color:#4ade80}
+.kv-v.yellow{color:#fbbf24}
+.kv-v.red{color:#f87171}
+.kv-v.blue{color:#60a5fa}
+
+/* 상태 흐름 표시 */
+.flow-track{display:flex;align-items:center;gap:0;margin:14px 0;padding:0 4px}
+.flow-step{flex:1;text-align:center;position:relative}
+.flow-step .fs-circle{width:32px;height:32px;border-radius:50%;border:2px solid #1e3a5f;display:flex;align-items:center;justify-content:center;margin:0 auto 4px;font-size:0.7rem;font-weight:900;transition:all .4s;background:#060d1a}
+.flow-step .fs-label{font-size:0.65rem;color:#64748b;font-weight:700}
+.flow-step.active .fs-circle{border-color:#3b82f6;color:#60a5fa;background:#111f35;box-shadow:0 0 12px rgba(59,130,246,.4)}
+.flow-step.done .fs-circle{border-color:#4ade80;color:#4ade80;background:rgba(34,197,94,.1)}
+.flow-step.failed .fs-circle{border-color:#f87171;color:#f87171;background:rgba(239,68,68,.1)}
+.flow-arrow{color:#1e3a5f;font-size:1rem;flex-shrink:0;margin:0 2px;padding-bottom:20px}
+
+/* 버튼 */
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.btn{padding:10px 14px;border:none;border-radius:8px;font-weight:700;font-size:0.82rem;cursor:pointer;transition:all .18s;font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-approve{background:#d97706;color:white}
+.btn-approve:hover:not(:disabled){background:#b45309}
+.btn-complete{background:#16a34a;color:white}
+.btn-complete:hover:not(:disabled){background:#15803d}
+.btn-fail{background:#dc2626;color:white}
+.btn-fail:hover:not(:disabled){background:#b91c1c}
+.btn-error{background:linear-gradient(135deg,#7c3aed,#dc2626);color:white;grid-column:1/-1}
+.btn-error:hover:not(:disabled){filter:brightness(1.15)}
+.btn-adj{background:#0369a1;color:white;grid-column:1/-1}
+.btn-adj:hover:not(:disabled){background:#0284c7}
+.btn-reset{background:#334155;color:#94a3b8}
+.btn-reset:hover{background:#475569;color:white}
+
+/* 조정 폼 */
+.adj-form{background:#060d1a;border:1px solid #334155;border-radius:8px;padding:12px;margin-top:8px;display:none}
+.adj-form input,.adj-form textarea{width:100%;background:#0d1b2e;border:1px solid #1e3a5f;color:#e2e8f0;padding:8px 10px;border-radius:6px;font-size:0.82rem;margin-top:6px;font-family:'Noto Sans KR',sans-serif}
+.adj-form textarea{resize:none;height:54px}
+.adj-form label{font-size:0.75rem;color:#64748b;font-weight:700}
+
+/* ── 오른쪽: 트랜잭션 로그 ── */
+.log-panel{background:#040b14;border-right:none}
+.log-panel .panel-head{background:#040b14;border-bottom:1px solid #1e293b}
+.log-body{flex:1;overflow-y:auto;padding:10px 12px;font-family:'JetBrains Mono',monospace;font-size:0.72rem}
+.log-entry{padding:5px 0;border-bottom:1px solid #0d1b2e;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.log-time{color:#334155;margin-right:6px}
+.log-ok{color:#4ade80}
+.log-err{color:#f87171}
+.log-warn{color:#fbbf24}
+.log-info{color:#60a5fa}
+.log-sys{color:#7c3aed}
+.log-tx{color:#a78bfa}
+
+/* 롤백 시뮬레이션 오버레이 */
+.rollback-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:999;display:none;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.rollback-box{background:#0d1b2e;border:2px solid #dc2626;border-radius:16px;padding:32px 40px;max-width:520px;width:90%;text-align:center}
+.rollback-box h2{color:#f87171;font-size:1.3rem;font-weight:900;margin-bottom:8px}
+.rollback-box .rb-detail{font-size:0.82rem;color:#94a3b8;line-height:1.7;margin-bottom:24px;text-align:left;background:#060d1a;border-radius:8px;padding:14px;font-family:'JetBrains Mono',monospace}
+.rollback-progress{height:6px;background:#1e293b;border-radius:3px;overflow:hidden;margin-bottom:20px}
+.rollback-bar{height:100%;width:0;background:linear-gradient(90deg,#dc2626,#7c3aed);transition:width .1s}
+.rollback-status{font-size:0.85rem;font-weight:700;color:#f87171;min-height:20px}
+
+/* 스크롤바 */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1e3a5f;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="root">
+
+<!-- 상단 바 -->
+<div class="topbar">
+  <div class="live"></div>
+  <h1>동네비서 정산 관리 시스템 <span class="subtitle">tantanfab / admin</span></h1>
+  <span class="badge-demo">INTERACTIVE DEMO</span>
+  <div style="margin-left:auto;font-size:0.75rem;color:#334155" id="clock"></div>
+</div>
+
+<!-- 왼쪽: 정산 목록 -->
+<div class="panel" id="panelLeft">
+  <div class="panel-head">
+    <h2>📋 정산 목록 <span id="totalCount" style="color:#64748b;font-size:0.7rem;font-weight:400;margin-left:6px"></span></h2>
+  </div>
+  <div class="panel-body" id="listBody"></div>
+</div>
+
+<!-- 가운데: 액션 -->
+<div class="panel action-panel">
+  <div class="panel-head">
+    <h2>⚙️ 정산 처리</h2>
+  </div>
+  <div class="panel-body" id="actionBody">
+    <div class="no-select">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      <p style="font-size:.85rem;color:#334155;font-weight:700">왼쪽에서 정산을 선택하세요</p>
+    </div>
+  </div>
+</div>
+
+<!-- 오른쪽: 트랜잭션 로그 -->
+<div class="panel log-panel">
+  <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center">
+    <h2>📟 트랜잭션 로그</h2>
+    <button onclick="clearLog()" style="background:none;border:1px solid #1e3a5f;color:#64748b;padding:3px 8px;border-radius:4px;font-size:0.7rem;cursor:pointer">CLEAR</button>
+  </div>
+  <div class="log-body" id="logBody"></div>
+</div>
+
+</div>
+
+<!-- 롤백 오버레이 -->
+<div class="rollback-overlay" id="rollbackOverlay">
+  <div class="rollback-box">
+    <h2>🔴 강제 에러 발생 — 트랜잭션 롤백</h2>
+    <div class="rb-detail" id="rbDetail"></div>
+    <div class="rollback-progress"><div class="rollback-bar" id="rbBar"></div></div>
+    <div class="rollback-status" id="rbStatus"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// 초기 더미 데이터
+// ══════════════════════════════════════
+const SETTLEMENTS = [
+  {id:'S-2026-001', store:'탄탄농원',      role:'FARMER',   total:1480000, platform:88800, service:44400, status:'READY',     memo:'6월 농산물 판매 정산'},
+  {id:'S-2026-002', store:'강남 치킨집',   role:'BUSINESS', total:890000,  platform:26700, service:17800, status:'READY',     memo:'5월 자체 플랫폼 정산'},
+  {id:'S-2026-003', store:'바다수산',       role:'FARMER',   total:2240000, platform:134400,service:67200, status:'APPROVED',  memo:'6월 수산물 위탁 판매'},
+  {id:'S-2026-004', store:'동네 베이커리',  role:'BUSINESS', total:560000,  platform:16800, service:11200, status:'COMPLETED', memo:'5월 네이버 스마트스토어'},
+  {id:'S-2026-005', store:'황금 쌀농가',   role:'FARMER',   total:3120000, platform:187200,service:93600, status:'READY',     memo:'6월 쌀 도매 정산'},
+];
+
+const ADJUSTMENTS = {};  // settlement_id → [{amount, reason, by, at}]
+const TRANSITIONS = {READY:['APPROVED','FAILED'], APPROVED:['COMPLETED','FAILED'], COMPLETED:[], FAILED:[]};
+let selected = null;
+
+// net 계산
+function net(s){ return s.total - s.platform - s.service; }
+function fmt(n){ return n.toLocaleString('ko-KR') + '원'; }
+function now(){ return new Date().toTimeString().slice(0,8); }
+
+// ══════════════════════════════════════
+// 로그 패널
+// ══════════════════════════════════════
+function log(type, msg){
+  const lb = document.getElementById('logBody');
+  const cls = {OK:'log-ok',ERR:'log-err',WARN:'log-warn',INFO:'log-info',SYS:'log-sys',TX:'log-tx'}[type]||'log-info';
+  const prefix = {OK:'✓',ERR:'✗',WARN:'⚠',INFO:'·',SYS:'◈',TX:'⬡'}[type]||'·';
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.innerHTML = `<span class="log-time">${now()}</span><span class="${cls}">${prefix} ${msg}</span>`;
+  lb.prepend(el);
+}
+function clearLog(){ document.getElementById('logBody').innerHTML=''; log('SYS','로그 클리어됨'); }
+
+// ══════════════════════════════════════
+// 정산 목록 렌더
+// ══════════════════════════════════════
+function renderList(){
+  const lb = document.getElementById('listBody');
+  lb.innerHTML = '';
+  document.getElementById('totalCount').textContent = `(${SETTLEMENTS.length}건)`;
+  SETTLEMENTS.forEach((s,i) => {
+    const card = document.createElement('div');
+    card.className = 'settle-card' + (selected===i?' selected':'');
+    card.onclick = () => selectSettlement(i);
+    const netAmt = net(s);
+    const roleLabel = {FARMER:'🌾 농어민',BUSINESS:'🏪 소상공인',CITIZEN:'👤 시민'}[s.role]||s.role;
+    card.innerHTML = `
+      <div class="sc-top">
+        <div>
+          <div class="sc-id">${s.id}</div>
+          <div class="sc-name">${s.store}</div>
+          <div class="sc-role">${roleLabel} · ${s.memo}</div>
+        </div>
+        <div class="${'status-badge s-'+s.status}"><span class="s-dot"></span>${s.status}</div>
+      </div>
+      <div class="sc-amounts">
+        <div class="sc-amt"><span>총액</span> ${fmt(s.total)}</div>
+        <div class="sc-amt"><span>수수료</span> -${fmt(s.platform+s.service)}</div>
+        <div class="sc-amt" style="color:#4ade80;font-weight:700"><span>순정산</span> ${fmt(netAmt)}</div>
+      </div>`;
+    lb.appendChild(card);
+  });
+}
+
+// ══════════════════════════════════════
+// 정산 선택
+// ══════════════════════════════════════
+function selectSettlement(i){
+  selected = i;
+  renderList();
+  renderAction();
+  log('INFO', `선택: [${SETTLEMENTS[i].id}] ${SETTLEMENTS[i].store}`);
+}
+
+// ══════════════════════════════════════
+// 액션 패널 렌더
+// ══════════════════════════════════════
+function renderAction(){
+  if(selected===null) return;
+  const s = SETTLEMENTS[selected];
+  const netAmt = net(s);
+  const adjs = ADJUSTMENTS[s.id]||[];
+  const adjTotal = adjs.reduce((a,b)=>a+b.amount,0);
+  const finalNet = netAmt + adjTotal;
+
+  const steps = ['READY','APPROVED','COMPLETED'];
+  const failIdx = s.status==='FAILED' ? steps.indexOf(s._prevStatus||'READY') : -1;
+
+  function stepClass(st){
+    if(s.status==='FAILED') return 'failed';
+    const cur = steps.indexOf(s.status);
+    const idx = steps.indexOf(st);
+    if(idx < cur) return 'done';
+    if(idx === cur) return 'active';
+    return '';
+  }
+
+  const canApprove  = s.status==='READY';
+  const canComplete = s.status==='APPROVED';
+  const canFail     = ['READY','APPROVED'].includes(s.status);
+  const canAdj      = ['READY','APPROVED'].includes(s.status);
+  const canError    = ['READY','APPROVED'].includes(s.status);
+
+  document.getElementById('actionBody').innerHTML = `
+    <!-- 상태 흐름 -->
+    <div class="detail-block">
+      <h3>상태 흐름 (State Machine)</h3>
+      <div class="flow-track">
+        ${steps.map((st,i)=>`
+          <div class="flow-step ${stepClass(st)}">
+            <div class="fs-circle">${i+1}</div>
+            <div class="fs-label">${st}</div>
+          </div>
+          ${i<steps.length-1?'<div class="flow-arrow">→</div>':''}
+        `).join('')}
+        ${s.status==='FAILED'?`<div class="flow-arrow">→</div><div class="flow-step failed"><div class="fs-circle">✗</div><div class="fs-label">FAILED</div></div>`:''}
+      </div>
+    </div>
+
+    <!-- 금액 스냅샷 -->
+    <div class="detail-block">
+      <h3>금액 스냅샷 (Immutable Snapshot)</h3>
+      <div class="kv-row"><span class="kv-k">원천 판매 금액</span><span class="kv-v">${fmt(s.total)}</span></div>
+      <div class="kv-row"><span class="kv-k">플랫폼 수수료</span><span class="kv-v red">-${fmt(s.platform)}</span></div>
+      <div class="kv-row"><span class="kv-k">동네비서 수수료</span><span class="kv-v red">-${fmt(s.service)}</span></div>
+      <div class="kv-row"><span class="kv-k">기본 순정산액</span><span class="kv-v green">${fmt(netAmt)}</span></div>
+      ${adjs.length>0?`<div class="kv-row"><span class="kv-k">조정 합계 (${adjs.length}건)</span><span class="kv-v ${adjTotal>=0?'blue':'yellow'}">${adjTotal>=0?'+':''}${fmt(adjTotal)}</span></div>`:''}
+      <div class="kv-row" style="margin-top:4px;padding-top:8px;border-top:1px dashed #1e3a5f"><span class="kv-k" style="font-weight:700">최종 정산액</span><span class="kv-v green" style="font-size:1rem">${fmt(finalNet)}</span></div>
+    </div>
+
+    <!-- 조정 이력 -->
+    ${adjs.length>0?`
+    <div class="detail-block">
+      <h3>조정 이력 (Immutable Log)</h3>
+      ${adjs.map(a=>`
+        <div class="kv-row">
+          <span class="kv-k" style="font-size:0.72rem">${a.reason}</span>
+          <span class="kv-v ${a.amount>=0?'blue':'yellow'}">${a.amount>=0?'+':''}${fmt(a.amount)}</span>
+        </div>
+      `).join('')}
+    </div>`:''}
+
+    <!-- 액션 버튼 -->
+    <div class="action-grid">
+      <button class="btn btn-approve"  onclick="doTransition('APPROVED')"  ${canApprove?'':'disabled'}>✓ 정산 승인</button>
+      <button class="btn btn-complete" onclick="doTransition('COMPLETED')" ${canComplete?'':'disabled'}>✅ 송금 완료</button>
+      <button class="btn btn-fail"     onclick="doTransition('FAILED')"    ${canFail?'':'disabled'}>✗ 정산 실패</button>
+      <button class="btn btn-reset"    onclick="resetSettlement()">↺ 초기화</button>
+      <button class="btn btn-adj"      onclick="toggleAdjForm()"           ${canAdj?'':'disabled'}>📝 금액 조정 추가</button>
+      <button class="btn btn-error"    onclick="simulateRollback()"        ${canError?'':'disabled'}>⚡ 강제 에러 발생 & 롤백 시뮬레이션</button>
+    </div>
+
+    <!-- 조정 폼 -->
+    <div class="adj-form" id="adjForm">
+      <label>조정 금액 (양수=추가, 음수=차감)</label>
+      <input type="number" id="adjAmt" placeholder="예: -5000 또는 10000" step="1000">
+      <label style="margin-top:8px;display:block">조정 사유 (필수 · 세무 감사 대비)</label>
+      <textarea id="adjReason" placeholder="예: 반품 처리 차감 / 배송비 오적용 수정"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-adj" style="flex:1;padding:8px" onclick="submitAdj()">📥 조정 내역 INSERT</button>
+        <button class="btn btn-reset" style="padding:8px 14px" onclick="toggleAdjForm()">취소</button>
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════
+// 상태 전이
+// ══════════════════════════════════════
+function doTransition(newStatus){
+  const s = SETTLEMENTS[selected];
+  const allowed = TRANSITIONS[s.status]||[];
+  if(!allowed.includes(newStatus)){
+    log('ERR', `[거부] ${s.status} → ${newStatus} 전이 불가 (State Machine 차단)`);
+    return;
+  }
+
+  log('TX',  `BEGIN TRANSACTION`);
+  log('INFO',`SELECT status FROM settlements WHERE id='${s.id}' -- 현재: ${s.status}`);
+  log('INFO',`UPDATE settlements SET status='${newStatus}' WHERE id='${s.id}' AND status='${s.status}'`);
+
+  // Race condition 시뮬레이션 (APPROVED→COMPLETED 시 25% 확률 동시 처리 감지)
+  if(newStatus==='COMPLETED' && Math.random()<0.25){
+    log('WARN','rowcount=0 감지 — 동시 처리 충돌! 다른 요청이 먼저 변경함');
+    log('ERR', 'ROLLBACK — 이중 송금 차단');
+    log('TX',  'ROLLBACK TRANSACTION');
+    return;
+  }
+
+  s._prevStatus = s.status;
+  s.status = newStatus;
+  log('OK',  `COMMIT — ${s._prevStatus} → ${newStatus} 완료`);
+  log('TX',  'COMMIT TRANSACTION');
+  if(newStatus==='COMPLETED') log('OK','✅ 정산 완료 — 이 레코드는 더 이상 수정 불가 (불변성)');
+  if(newStatus==='FAILED')    log('ERR','❌ 정산 실패 — 이 레코드는 더 이상 수정 불가');
+
+  renderList();
+  renderAction();
+}
+
+// ══════════════════════════════════════
+// 금액 조정 (INSERT 방식)
+// ══════════════════════════════════════
+function toggleAdjForm(){
+  const f = document.getElementById('adjForm');
+  f.style.display = f.style.display==='block'?'none':'block';
+}
+
+function submitAdj(){
+  const amt    = parseInt(document.getElementById('adjAmt').value);
+  const reason = document.getElementById('adjReason').value.trim();
+  const s = SETTLEMENTS[selected];
+
+  if(isNaN(amt)||amt===0){ log('ERR','금액을 입력하세요'); return; }
+  if(!reason){ log('ERR','[거부] 조정 사유 미입력 — 세무 감사 대비 필수'); return; }
+
+  if(!ADJUSTMENTS[s.id]) ADJUSTMENTS[s.id]=[];
+  ADJUSTMENTS[s.id].push({amount:amt, reason, by:'master', at:now()});
+
+  log('TX',  'BEGIN TRANSACTION');
+  log('INFO',`INSERT INTO settlement_adjustments (settlement_id, adj_amount, reason)`);
+  log('INFO',`VALUES ('${s.id}', ${amt>=0?'+':''}${amt.toLocaleString()}, '${reason}')`);
+  log('OK',  `COMMIT — 조정 내역 영구 보관 (기존 행 UPDATE 금지)`);
+  log('TX',  'COMMIT TRANSACTION');
+
+  renderAction();
+}
+
+// ══════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════
+function resetSettlement(){
+  const s = SETTLEMENTS[selected];
+  const old = s.status;
+  s.status = 'READY';
+  delete s._prevStatus;
+  if(ADJUSTMENTS[s.id]) delete ADJUSTMENTS[s.id];
+  log('SYS', `[데모 초기화] ${s.id} → READY 리셋`);
+  renderList(); renderAction();
+}
+
+// ══════════════════════════════════════
+// 롤백 시뮬레이션
+// ══════════════════════════════════════
+function simulateRollback(){
+  const s = SETTLEMENTS[selected];
+  const overlay = document.getElementById('rollbackOverlay');
+  const bar     = document.getElementById('rbBar');
+  const status  = document.getElementById('rbStatus');
+  const detail  = document.getElementById('rbDetail');
+
+  const steps = [
+    {pct:10,  delay:200,  type:'TX',   msg:`BEGIN TRANSACTION`},
+    {pct:25,  delay:500,  type:'INFO', msg:`INSERT INTO settlements (order_id='${s.id}', status='APPROVED') ...`},
+    {pct:40,  delay:800,  type:'INFO', msg:`UPDATE wallet SET balance = balance - ${fmt(net(s))} ...`},
+    {pct:55,  delay:1100, type:'ERR',  msg:`[FATAL] 네트워크 타임아웃 — 외부 송금 API 응답 없음`},
+    {pct:70,  delay:1400, type:'ERR',  msg:`[감지] 트랜잭션 중간 실패 — 데이터 고아(Orphan) 위험!`},
+    {pct:85,  delay:1700, type:'TX',   msg:`ROLLBACK TRANSACTION — 모든 변경사항 취소`},
+    {pct:100, delay:2100, type:'OK',   msg:`롤백 완료 ✓ DB는 BEGIN 이전 상태로 완벽 복원`},
+  ];
+
+  let logs = '';
+  detail.innerHTML = '⏳ 트랜잭션 실행 중...';
+  overlay.style.display = 'flex';
+  bar.style.width = '0%';
+  status.textContent = '';
+
+  steps.forEach(step => {
+    setTimeout(()=>{
+      bar.style.transition = `width ${step.delay*0.3}ms ease`;
+      bar.style.width = step.pct+'%';
+      const cls = {TX:'log-tx',INFO:'log-info',ERR:'log-err',OK:'log-ok'}[step.type];
+      logs += `<span class="${cls}">${now()} ${step.msg}</span>\n`;
+      detail.innerHTML = `<pre style="white-space:pre-wrap">${logs}</pre>`;
+      log(step.type, step.msg);
+      if(step.pct===100){
+        status.textContent = '✓ 데이터 무결성 보호 완료 — 잔액/상태 변경 없음';
+        status.style.color = '#4ade80';
+        setTimeout(()=>{ overlay.style.display='none'; }, 2000);
+      }
+    }, step.delay);
+  });
+}
+
+// 오버레이 클릭으로 닫기
+document.getElementById('rollbackOverlay').addEventListener('click', function(e){
+  if(e.target===this) this.style.display='none';
+});
+
+// ══════════════════════════════════════
+// 시계
+// ══════════════════════════════════════
+setInterval(()=>{
+  document.getElementById('clock').textContent =
+    new Date().toLocaleString('ko-KR',{hour12:false});
+}, 1000);
+
+// ══════════════════════════════════════
+// 초기 실행
+// ══════════════════════════════════════
+renderList();
+log('SYS', '정산 관리 시스템 초기화 완료');
+log('SYS', 'WAL 저널 모드 활성화 · 외래 키 ON');
+log('INFO','settlements 테이블: 5건 로드됨');
+log('INFO','State Machine: READY→APPROVED→COMPLETED');
+log('INFO','동시성 보호: threading.Lock + 조건부 UPDATE');
+</script>
+</body>
+</html>
