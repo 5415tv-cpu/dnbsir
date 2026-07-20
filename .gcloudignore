@@ -1,0 +1,63 @@
+# gcloud builds submit uses this file to decide what to upload.
+# The syntax is identical to .gitignore.
+
+# Virtual environments & caches
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+
+# IDE & VCS
+.git/
+.vscode/
+.idea/
+.devcontainer/
+.streamlit/
+.DS_Store
+
+# Large binary files (executables, JDK, installers)
+*.exe
+*.deb
+*.apk
+*.zip
+jdk17/
+python-3.10.11-amd64.exe
+ngrok.exe
+cloudflared-linux-amd64.deb
+
+# Large media & data files
+*.jpg
+*.png
+dummy.jpg
+*.db
+!requirements.txt
+!VERSION
+
+# Log & temp files
+*.log
+*.txt
+!requirements.txt
+!VERSION
+
+# Backup & extraction directories
+android_app_src/
+android_app_src_backup/
+extract_app/
+core_engine/
+extracted_files/
+temp_check_zip/
+tantan_web/
+images/
+uploads/
+
+# Secrets (never upload)
+.env
+secrets.toml
+
+# Docs (not needed in container)
+docs/
+*.md
+!README.md
+*.tar
+all_code.tar
