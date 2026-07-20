@@ -60,7 +60,7 @@ KAKAO_CLIENT_ID: cf44d0281c879804571f2964f39c09ed
 TOSS_CLIENT_KEY: test_ck_PBal2vxj81ND2OPW6a7135RQgOAN
 TOSS_SECRET_KEY: test_sk_26DlbXAaV0Kbn1ljMQa43qY50Q9R
 TZ: Asia/Seoul
-APP_BASE_URL: https://dongnebisor.com
+APP_BASE_URL: https://dongnebiseo.com
 # [CRITICAL] Cloud SQL Connection - User must fill this DSN (Commented out until provided)
 # DB_BACKEND: cloudsql
 # CLOUD_SQL_DSN: postgresql+pg8000://[USER]:[PASSWORD]@/[DB_NAME]?unix_sock=/cloudsql/[PROJECT_ID]:[REGION]:[INSTANCE_NAME]

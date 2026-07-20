@@ -552,7 +552,7 @@ def send_smart_callback(store_id, customer_phone, store_name=""):
          store_name = "매장"
          
     # Link Generation (Dynamic based on Config)
-    base_url = _get_secret("APP_BASE_URL", "https://dongnebisor.com")
+    base_url = _get_secret("APP_BASE_URL", "https://dongnebiseo.com")
     if base_url.endswith("/"): base_url = base_url[:-1]
     
     store = db.get_store(store_id)
@@ -610,7 +610,7 @@ def _sync_send_highway(customer_phone: str, driver_phone: str, store_id: str, dr
     pf_id = _get_secret("SOLAPI_PF_ID", "")
     template_id = _get_secret("SOLAPI_TEMPLATE_ID", "")
     sender_number = _get_secret("SOLAPI_SENDER_NUMBER", driver_phone)
-    base_url = _get_secret("APP_BASE_URL", "https://dongnebisor.com").rstrip("/")
+    base_url = _get_secret("APP_BASE_URL", "https://dongnebiseo.com").rstrip("/")
 
     reservation_no = f"DNB{int(now_kst.timestamp()) % 100000000:08d}"
     # 방문예정: 내일 오전 (실제 예약 후 조율 가능)

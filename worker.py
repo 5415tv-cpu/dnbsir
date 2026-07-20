@@ -119,7 +119,7 @@ def render_short_form_video(self, user_id, script_json, image_urls=None):
         shutil.copy(str(final_video_path), str(serve_path))
         print(f"[{user_id}] 3. 영상 렌더링 성공! 웹 서빙 경로: {serve_path}")
         
-        base_url = os.environ.get("APP_BASE_URL", "https://dongnebisor.com")
+        base_url = os.environ.get("APP_BASE_URL", "https://dongnebiseo.com")
         video_url = f"{base_url.rstrip('/')}/videos/{JOB_ID}.mp4"
         
         import urllib.request
