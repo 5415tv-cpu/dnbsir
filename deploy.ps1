@@ -10,7 +10,7 @@ Write-Host "========================================" -ForegroundColor Green
 $ErrorActionPreference = "Stop"
 
 # 설정
-$PROJECT_ID = "gen-lang-client-0456120803-e47b4b325696"
+$PROJECT_ID = "gen-lang-client-0456120803"
 $SERVICE_NAME = "dnbsir-api"
 $REGION = "us-central1"
 $IMAGE_NAME = "gcr.io/$PROJECT_ID/$SERVICE_NAME"
